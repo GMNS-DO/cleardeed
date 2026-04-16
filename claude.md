@@ -165,13 +165,13 @@ Active
   Created: 2026-04-16
   Notes: Report, SourceResult, PlotIdentifier, OwnerRecord. Zod-first.
 
-[T-003] [TODO] [P0] Probe ORSAC KYL auth — produce working curl in scripts/probe/kyl.md
+[T-003] [DONE] [P0] Probe ORSAC KYL auth — produce working curl in scripts/probe/kyl.md
   Created: 2026-04-16
-  Notes: Test coord 20.272688, 85.701271. Deliverable: working request OR a definitive blocked memo.
+  Notes: BLOCKED — no bearer token, browser session with ViewState required. scripts/probe/kyl.md has definitive findings. Mitigation: GeoServer WFS provides GPS→plot without KYL.
 
-[T-004] [TODO] [P0] Probe Bhunaksha ArcGIS identify endpoint — produce working query
+[T-004] [DONE] [P0] Probe Bhunaksha ArcGIS identify endpoint — produce working query
   Created: 2026-04-16
-  Notes: Convert WGS84 → Web Mercator, hit identify, parse plot polygon.
+  Notes: UNREACHABLE — gis.odisha.nic.in blocks external requests. Mitigation: packages/fetchers/bhunaksha using GeoServer WFS at mapserver.odisha4kgeo.in — has same plot polygons.
 
 [T-005] [DONE] [P0] Build Bhulekh Playwright fetcher for tenant search (Khordha only)
   Created: 2026-04-16
@@ -281,54 +281,62 @@ Decision: Hardcode all Khordha villages (Census 2011 list, ~360 villages) with E
 Alternatives: Build dynamic resolver; outsource translation.
 Consequences: Adding a district is a known unit of work (~2 days). Can be productized as district expansion later.
 
+ADR-006: GeoServer WFS is the working GPS→plot path
+
+Date: 2026-04-16
+Status: ACCEPTED
+Context: KYL auth requires browser session (no bearer token). ArcGIS Bhunaksha (gis.odisha.nic.in) is unreachable from external network.
+Decision: Use ORSAC GeoServer WFS at mapserver.odisha4kgeo.in for GPS→plot lookup. BBOX query returns polygon features with revenue_plot, revenue_village_name, tehsil_name, shape_area. No auth required.
+Alternatives: Try KYL anyway; scrape ArcGIS via proxy.
+Consequences: GPS→plot chain is fully functional. KYL remains blocked; its value (khata-based RoR lookup) is covered by Bhulekh Playwright fetcher.
+
 
 Section 6: Current State Snapshot
 Updated at the end of every session. Single source of truth for "where are we right now."
-Last updated: 2026-04-16 (Session 002)
-Last session: Session 002 (Section 7)
+Last updated: 2026-04-16 (Session 004)
+Last session: Session 004 (Section 7)
 
 Built:
-  - T-001: Monorepo skeleton committed (d4f479e)
-  - T-002: Shared Zod schemas committed (7594efe)
-  - T-006: Nominatim fetcher committed (1a6fab2) — nominatimFetch, 7-day cache, 3 tests
-  - T-005: Bhulekh Playwright fetcher committed (d9f4bfc) — 20 Khordha villages, Odia mapping, table parser
+  - T-001: Monorepo skeleton committed
+  - T-002: Shared Zod schemas committed
+  - T-006: Nominatim fetcher (nominatimFetch, 7-day cache, 3 tests)
+  - T-005: Bhulekh Playwright fetcher (20 Khordha villages, Odia mapping, table parser)
+  - T-003: KYL auth probe — BLOCKED (browser session required, no bearer token). scripts/probe/kyl.md has definitive findings.
+  - T-004: Bhunaksha fetcher + ArcGIS probe — UNREACHABLE (gis.odisha.nic.in blocked). packages/fetchers/bhunaksha using GeoServer WFS instead. 8 tests passing.
   - apps/web/: Next.js 15 skeleton with Tailwind CSS v4
   - apps/web/src/app/api/geocode/route.ts: GET/POST /api/geocode → Nominatim
   - apps/web/src/app/api/report/create/route.ts: POST /api/report/create → pipeline stub
   - apps/web/next.config.ts: webpack aliases for @cleardeed/* workspace packages
   - infra/docker/docker-compose.yml for Postgres
-  - All package directories created with package.json
-  - vitest installed at workspace root
-  - playwright + chromium installed at workspace root
+  - vitest configured at workspace root (11 tests passing across nominatim + bhunaksha)
 
 Decided:
   - ADR-001 through ADR-005 (see Section 5)
+  - ADR-006: GeoServer WFS (mapserver.odisha4kgeo.in) is the working GPS→plot path, replacing both KYL auth and ArcGIS Bhunaksha. No auth required. BBOX query returns polygon features with revenue_plot, village, tehsil, area.
 
 In progress:
   - None
 
 Blocked:
-  - None
+  - T-003: KYL auth — no programmatic path. Browser automation with ViewState required.
 
 Pending — ordered by next-up:
-  1. T-003: KYL auth probe
-  2. T-004: Bhunaksha ArcGIS probe
-  3. T-010: eCourts fetcher
-  4. T-007: Orchestrator MVP
-  5. T-008: PDF renderer
-  6. T-011: RCCMS fetcher
-  7. T-012: IGR deep-link
-  8. T-009: Lawyer dashboard
-  9. T-013: Auth + multi-tenant
-  10. T-014: Billing
+  1. T-010: eCourts fetcher (party-name search, semi-public API)
+  2. T-007: Orchestrator MVP (parallel fetchers, partial results)
+  3. T-008: PDF renderer (lawyer-facing layout)
+  4. T-011: RCCMS fetcher
+  5. T-012: IGR deep-link + EC instructions panel
+  6. T-009: Lawyer dashboard
+  7. T-013: Auth + multi-tenant (Supabase Auth + RLS)
+  8. T-014: Billing (Razorpay)
 
 Single highest-leverage next step:
-  T-003 (KYL auth probe) — if it works, we get plot→khata lookup in one shot. If blocked, Bhunaksha ArcGIS is the fallback.
+  T-010 (eCourts fetcher) — court cases are a key due-diligence dimension. Odisha eCourts has a semi-public party-name search API. Probe first, then build fetcher.
 
 Risks currently tracking:
-  - KYL auth may be uncrackable without mobile-app interception. Mitigation: Bhunaksha ArcGIS path is the fallback for GPS→plot.
-  - Bhulekh may rate-limit Playwright. Mitigation: rotate user agents, throttle, cache aggressively.
-  - eCourts party-name search has no documented API. Mitigation: scrape with Playwright if needed.
+  - KYL auth uncrackable — mitigated via GeoServer WFS for GPS→plot
+  - Bhulekh may rate-limit Playwright — mitigated with throttling + caching
+  - eCourts API may have changed or require auth — probe first before building
 
 Environment / accounts needed:
   - [ ] Supabase project created
@@ -517,6 +525,64 @@ Notes for future self:
   - Nominatim geocode returned district="Chandaka" (village used as fallback) — Nominatim in this region doesn't have county field. The tahasil/district parsing needs refinement once we have more test coords.
   - All fetchers should use named exports (nominatimFetch, bhulekhFetch) not "fetch" to avoid global shadowing in Next.js/Node.
 
+
+### Session 004 — 2026-04-16
+
+Mode: execution
+Duration: ~1 hour
+Focus: Complete T-003 (KYL auth probe) and T-004 (Bhunaksha ArcGIS probe), write bhunaksha fetcher.
+Reconstructed state from: Section 6 snapshot (Session 003).
+Highest-leverage step identified: T-003/T-004 were blocked due to token limits in Session 003. Finish them, then write the bhunaksha fetcher.
+
+Tasks worked:
+  - [T-003] DONE — KYL auth probe complete. BLOCKED. scripts/probe/kyl.md updated with definitive findings.
+  - [T-004] DONE — Bhunaksha ArcGIS probe complete. UNREACHABLE. GeoServer WFS is the working path.
+  - [T-004] DONE — Bhunaksha fetcher written and committed. packages/fetchers/bhunaksha/ with 8 tests.
+
+Decisions made:
+  - [ADR-006] GeoServer WFS (mapserver.odisha4kgeo.in) is the working GPS→plot path. Replaces both KYL auth and ArcGIS Bhunaksha. No auth required. BBOX query returns polygon features.
+
+Code changes (high-level):
+  - packages/fetchers/bhunaksha/: bhunakshaFetch using GeoServer WFS
+    - Point-in-polygon (ray casting) to find exact plot containing GPS coords
+    - Falls back to nearest polygon by centroid when outside all returned features
+    - Shoelace formula for polygon area → sq km approximation
+    - Default layer: revenue:khurda_bhubaneswar (14,054 features)
+    - 8 unit tests, fixture: fixtures/wfs-response.json
+  - scripts/probe/kyl.md: updated with definitive findings on KYL auth, ArcGIS Bhunaksha, and GeoServer WFS
+  - vitest.config.ts: added bhunaksha test pattern
+  - vitest.config.ts: switched from --filter to path-based include
+  - packages/fetchers/bhunaksha/package.json: added "type": "module", vitest devDependency, healthcheck script
+  - packages/fetchers/bhunaksha/tsconfig.json: standalone (no extends) for vitest compatibility
+
+Sub-agents used:
+  - None
+
+What was done:
+  - Resolved RangeError in bhunaksha tests: vi.stubGlobal("fetch") wasn't mocking before module load. Fixed by using vi.resetModules() + vi.stubGlobal in beforeEach, importing fresh each time.
+  - Fixed globalThis.fetch usage in bhunaksha to avoid Node.js fetch shadowing.
+  - Confirmed pnpm lives at node_modules/.bin/pnpm — use that path instead of expecting pnpm in PATH.
+
+What changed:
+  - Bhunaksha fetcher ready for integration. GPS→plot lookup chain now complete: Nominatim geocode → Bhunaksha plot polygon.
+
+What is pending:
+  - T-010: eCourts fetcher (party-name search, semi-public API)
+  - T-007: Orchestrator MVP (parallel fetchers, partial results)
+  - T-008: PDF renderer
+  - T-011: RCCMS
+  - T-012: IGR deep-link
+  - T-009: Lawyer dashboard
+  - T-013: Auth + multi-tenant
+  - T-014: Billing
+
+Exact next step for continuation:
+  Start Session 005. Run T-010 (eCourts party-name search fetcher). Inspect eCourts network calls first — there is a semi-public API for party-name search in Odisha/Khordha. Write scripts/probe/ecourts.md with findings, then build packages/fetchers/ecourts/.
+
+Notes for future self:
+  - GeoServer WFS layers follow pattern revenue:<district>_<tehsil> (e.g., khurda_bhubaneswar, baleswar_baleswar). Query BBOX in EPSG:4326.
+  - For Nominatim, addr.county is often empty in this region — use addr.state_district or addr.village as district fallback.
+  - All fetchers using fetch() must use globalThis.fetch to avoid Node.js global shadowing.
 
 Appendix A: Sub-Agent Brief Template
 Use this exact format when delegating to a sub-agent. Save the brief in docs/sub-agent-briefs/<date>-<slug>.md so it's auditable.
