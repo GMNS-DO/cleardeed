@@ -1,6 +1,8 @@
 import { NominatimResult, GPSCoordinates } from "@cleardeed/schema";
 import { z } from "zod";
 
+type GPS = z.infer<typeof GPSCoordinates>;
+
 const NOMINATIM_BASE = "https://nominatim.openstreetmap.org";
 const USER_AGENT = "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)";
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -33,8 +35,8 @@ async function fetchFromNominatim(lat: number, lon: number): Promise<{
   return res.json() as Promise<{ display_name: string; address: Record<string, string> }>;
 }
 
-export async function fetch(input: {
-  gps: GPSCoordinates;
+export async function nominatimFetch(input: {
+  gps: GPS;
 }): Promise<z.infer<typeof NominatimResult>> {
   const key = cacheKey(input.gps.lat, input.gps.lon);
 
