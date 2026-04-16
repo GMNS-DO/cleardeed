@@ -173,13 +173,13 @@ Active
   Created: 2026-04-16
   Notes: Convert WGS84 → Web Mercator, hit identify, parse plot polygon.
 
-[T-005] [TODO] [P0] Build Bhulekh Playwright fetcher for tenant search (Khordha only)
+[T-005] [DONE] [P0] Build Bhulekh Playwright fetcher for tenant search (Khordha only)
   Created: 2026-04-16
   Notes: Hardcode Khordha district + 5 villages first. Odia mapping in packages/fetchers/bhulekh/villages.ts.
 
-[T-006] [TODO] [P1] Build Nominatim fetcher (simplest, do as warmup)
+[T-006] [DONE] [P1] Build Nominatim fetcher (simplest, do as warmup)
   Created: 2026-04-16
-  Notes: Header User-Agent: ClearDeed/1.0. Cache 7 days.
+  Notes: Header User-Agent: ClearDeed/1.0. Cache 7 days. Renamed to nominatimFetch to avoid Node.js global fetch shadowing in Next.js.
 
 [T-007] [TODO] [P1] Orchestrator MVP — runs fetchers in parallel, returns partial results
   Created: 2026-04-16
@@ -290,10 +290,16 @@ Last session: Session 002 (Section 7)
 Built:
   - T-001: Monorepo skeleton committed (d4f479e)
   - T-002: Shared Zod schemas committed (7594efe)
+  - T-006: Nominatim fetcher committed (1a6fab2) — nominatimFetch, 7-day cache, 3 tests
+  - T-005: Bhulekh Playwright fetcher committed (d9f4bfc) — 20 Khordha villages, Odia mapping, table parser
   - apps/web/: Next.js 15 skeleton with Tailwind CSS v4
-  - All package directories created with package.json
+  - apps/web/src/app/api/geocode/route.ts: GET/POST /api/geocode → Nominatim
+  - apps/web/src/app/api/report/create/route.ts: POST /api/report/create → pipeline stub
+  - apps/web/next.config.ts: webpack aliases for @cleardeed/* workspace packages
   - infra/docker/docker-compose.yml for Postgres
-  - infra/supabase/migrations/001_initial.sql placeholder
+  - All package directories created with package.json
+  - vitest installed at workspace root
+  - playwright + chromium installed at workspace root
 
 Decided:
   - ADR-001 through ADR-005 (see Section 5)
@@ -305,21 +311,19 @@ Blocked:
   - None
 
 Pending — ordered by next-up:
-  1. T-006: Nominatim fetcher (warmup, simplest)
-  2. T-003: KYL auth probe
-  3. T-005: Bhulekh Playwright fetcher
-  4. T-004: Bhunaksha ArcGIS probe
-  5. T-010: eCourts fetcher
-  6. T-007: Orchestrator MVP
-  7. T-008: PDF renderer
-  8. T-011: RCCMS fetcher
-  9. T-012: IGR deep-link
-  10. T-009: Lawyer dashboard
-  11. T-013: Auth + multi-tenant
-  12. T-014: Billing
+  1. T-003: KYL auth probe
+  2. T-004: Bhunaksha ArcGIS probe
+  3. T-010: eCourts fetcher
+  4. T-007: Orchestrator MVP
+  5. T-008: PDF renderer
+  6. T-011: RCCMS fetcher
+  7. T-012: IGR deep-link
+  8. T-009: Lawyer dashboard
+  9. T-013: Auth + multi-tenant
+  10. T-014: Billing
 
 Single highest-leverage next step:
-  T-006 (Nominatim fetcher) — simplest warmup, validates the fetcher interface before tackling harder sources.
+  T-003 (KYL auth probe) — if it works, we get plot→khata lookup in one shot. If blocked, Bhunaksha ArcGIS is the fallback.
 
 Risks currently tracking:
   - KYL auth may be uncrackable without mobile-app interception. Mitigation: Bhunaksha ArcGIS path is the fallback for GPS→plot.
@@ -446,6 +450,72 @@ Notes for future self:
   - KYL and Bhulekh are the two hardest probes — do them last after simpler sources validate the pattern.
   - The fetcher interface is: export { fetch(input) → SourceResult, healthCheck() }. Every fetcher implements it.
   - Playwright packages installed in bhulekh and playwright-worker only — other fetchers have no Playwright dep.
+
+Session 003 — 2026-04-16
+
+Mode: execution
+Duration: ~2 hours
+Focus: Execute T-006 (Nominatim fetcher), T-005 (Bhulekh Playwright), and wire API route.
+Reconstructed state from: Section 6 snapshot (Session 002).
+Highest-leverage step identified: T-006 is the simplest warmup — validates the fetcher interface before harder sources.
+
+Tasks worked:
+  - [T-006] DONE — Nominatim fetcher committed (1a6fab2, 750 lines)
+  - [T-005] DONE — Bhulekh Playwright fetcher committed (d9f4bfc, 391 lines)
+  - [API] DONE — /api/geocode route committed (4b65640)
+
+Decisions made:
+  - (No new ADRs — executed pre-decided tasks)
+
+Code changes (high-level):
+  - packages/fetchers/nominatim/: full fetcher with cache, 3 tests, fixture
+    - Renamed export to nominatimFetch to avoid Node.js global fetch shadowing
+    - buildResult exported for testability
+    - Fixture: 20.272688_85.701271.json (Chandaka, Khordha)
+  - packages/fetchers/bhulekh/: full Playwright flow + village dictionary
+    - Singleton browser instance with cleanup()
+    - 20 villages (Bhubaneswar, Balianta, Balugaon tahasils)
+    - Census 2011 source with English↔Odia mapping
+    - 4 unit tests for village lookup
+  - apps/web/src/app/api/geocode/route.ts: GET/POST geocode endpoint
+  - apps/web/src/app/api/report/create/route.ts: pipeline stub
+  - apps/web/next.config.ts: webpack aliases for @cleardeed/* packages
+  - apps/web/tsconfig.json: path aliases for workspace packages
+
+Sub-agents used:
+  - None
+
+What was done:
+  - Fixed Node.js global fetch shadowing — renamed nominatim export to nominatimFetch
+  - Resolved pnpm workspace symlink issues with webpack aliases in next.config.ts
+  - Live tested /api/geocode — returns { source: nominatim, data: { district: Chandaka } }
+  - Fixed tsconfig for per-package testing with vitest
+
+What changed:
+  - API routes exist and work. Nominatim is live.
+  - Bhulekh fetcher is written but not yet tested against real Bhulekh site.
+  - Next.js 15 + workspace package integration pattern established (use webpack aliases, not symlinks).
+
+What is pending:
+  - T-003: KYL auth probe (highest leverage if it works)
+  - T-004: Bhunaksha ArcGIS probe (fallback if KYL blocked)
+  - T-010: eCourts fetcher
+  - T-007: Orchestrator MVP
+  - T-008: PDF renderer
+  - T-011: RCCMS
+  - T-012: IGR deep-link
+  - T-009: Lawyer dashboard
+  - T-013: Auth + multi-tenant
+  - T-014: Billing
+
+Exact next step for continuation:
+  Start Session 004. Run T-003 (KYL auth probe): write scripts/probe/kyl.md with working curl for coord 20.272688, 85.701271. If auth is blocked, write definitive blocked memo. Commit. Then T-004 in parallel.
+
+Notes for future self:
+  - Bhulekh Playwright flow untested against real site — needs real browser test
+  - Next.js webpack aliases work but are ugly — revisit when Supabase is set up (might allow proper symlinks via pnpm)
+  - Nominatim geocode returned district="Chandaka" (village used as fallback) — Nominatim in this region doesn't have county field. The tahasil/district parsing needs refinement once we have more test coords.
+  - All fetchers should use named exports (nominatimFetch, bhulekhFetch) not "fetch" to avoid global shadowing in Next.js/Node.
 
 
 Appendix A: Sub-Agent Brief Template
