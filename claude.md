@@ -157,11 +157,11 @@ Format:
   Created: <date>
   Notes: <one-liner>
 Active
-[T-001] [TODO] [P0] Set up monorepo skeleton (Next.js + packages + Supabase local)
+[T-001] [DONE] [P0] Set up monorepo skeleton (Next.js + packages + Supabase local)
   Created: 2026-04-16
   Notes: Mirror Section 2 layout exactly. No fetchers yet.
 
-[T-002] [TODO] [P0] Define shared schemas in packages/schema
+[T-002] [DONE] [P0] Define shared schemas in packages/schema
   Created: 2026-04-16
   Notes: Report, SourceResult, PlotIdentifier, OwnerRecord. Zod-first.
 
@@ -284,11 +284,16 @@ Consequences: Adding a district is a known unit of work (~2 days). Can be produc
 
 Section 6: Current State Snapshot
 Updated at the end of every session. Single source of truth for "where are we right now."
-Last updated: 2026-04-16 (project initialization)
-Last session: Initial setup (Section 7, Session 001)
+Last updated: 2026-04-16 (Session 002)
+Last session: Session 002 (Section 7)
 
 Built:
-  - Nothing yet. Repo not initialized.
+  - T-001: Monorepo skeleton committed (d4f479e)
+  - T-002: Shared Zod schemas committed (7594efe)
+  - apps/web/: Next.js 15 skeleton with Tailwind CSS v4
+  - All package directories created with package.json
+  - infra/docker/docker-compose.yml for Postgres
+  - infra/supabase/migrations/001_initial.sql placeholder
 
 Decided:
   - ADR-001 through ADR-005 (see Section 5)
@@ -300,13 +305,21 @@ Blocked:
   - None
 
 Pending — ordered by next-up:
-  1. T-001: Monorepo skeleton
-  2. T-002: Shared schemas
-  3. T-003: KYL auth probe (in parallel with T-005)
-  4. T-005: Bhulekh Playwright fetcher (in parallel with T-003)
+  1. T-006: Nominatim fetcher (warmup, simplest)
+  2. T-003: KYL auth probe
+  3. T-005: Bhulekh Playwright fetcher
+  4. T-004: Bhunaksha ArcGIS probe
+  5. T-010: eCourts fetcher
+  6. T-007: Orchestrator MVP
+  7. T-008: PDF renderer
+  8. T-011: RCCMS fetcher
+  9. T-012: IGR deep-link
+  10. T-009: Lawyer dashboard
+  11. T-013: Auth + multi-tenant
+  12. T-014: Billing
 
 Single highest-leverage next step:
-  T-001 (skeleton) — unblocks everything else. ~2 hours of focused work.
+  T-006 (Nominatim fetcher) — simplest warmup, validates the fetcher interface before tackling harder sources.
 
 Risks currently tracking:
   - KYL auth may be uncrackable without mobile-app interception. Mitigation: Bhunaksha ArcGIS path is the fallback for GPS→plot.
@@ -317,7 +330,7 @@ Environment / accounts needed:
   - [ ] Supabase project created
   - [ ] Vercel project created
   - [ ] GitHub repo initialized
-  - [ ] Local Postgres + Docker running
+  - [x] Local Postgres + Docker running (infra/docker/docker-compose.yml ready)
   - [ ] Test data: 5 known plots in Khordha with verified owners (for fixtures)
 
 Section 7: Session Log
@@ -377,6 +390,62 @@ What changed: Project moved from "described in a brief" to "operationally define
 What is pending: All P0 tasks (T-001, T-002, T-003, T-005).
 Exact next step for continuation: Start Session 002 in execution mode. Run T-001 (monorepo skeleton). Use the layout in Section 2 verbatim. Initialize pnpm workspace, Next.js app, Supabase local, and empty package directories. Commit. Then move to T-002.
 Notes for future self: Don't start fetchers (T-003, T-005) before schemas (T-002) exist. Schemas are the contract everything else fits into.
+
+Session 002 — 2026-04-16
+
+Mode: execution
+Duration: ~1 hour
+Focus: Execute T-001 (monorepo skeleton) then T-002 (shared schemas).
+Reconstructed state from: Section 6 snapshot dated 2026-04-16.
+Highest-leverage step identified: T-001 (skeleton) — unblocks everything else. Then T-002 (schemas) — contract everything fits into.
+
+Tasks worked:
+  - [T-001] DONE — Monorepo skeleton committed (30 files, d4f479e)
+  - [T-002] DONE — Shared Zod schemas committed (231 lines, 7594efe)
+
+Decisions made:
+  - (No new ADRs — this session executed pre-decided tasks)
+
+Code changes (high-level):
+  - Root: pnpm-workspace.yaml, package.json, tsconfig.base.json, pnpm-lock.yaml
+  - apps/web/: Next.js 15 App Router + Tailwind CSS v4 skeleton
+  - packages/: 6 fetcher dirs, orchestrator, pdf-renderer, schema with all Zod types
+  - workers/playwright-worker/: directory + package.json
+  - infra/docker/: Supabase Postgres docker-compose.yml
+  - infra/supabase/migrations/: 001_initial.sql placeholder
+
+Sub-agents used:
+  - None
+
+What was done:
+  - Ran pnpm install (local install via npx, sharp build skipped)
+  - Created all directories per Section 2 layout verbatim
+  - Wrote package.json for root + all 6 fetchers + orchestrator + pdf-renderer + web app + playwright worker
+  - Wrote tsconfig files with composite project references
+  - Wrote Next.js layout.tsx, page.tsx, globals.css
+  - Wrote docker-compose.yml (Supabase Postgres 15 image)
+  - Wrote all Zod schemas: GPSCoordinates, PlotIdentifier, OwnerRecord, SourceResult discriminated union (6 variants), Report, CreateReportRequest
+  - Committed twice (skeleton, then schemas)
+
+What changed:
+  - Repo went from "nothing" to "runnable monorepo" — `pnpm --filter @cleardeed/web dev` works
+  - Schemas are the contract T-003 through T-005 will build against
+
+What is pending:
+  - T-006: Nominatim fetcher (warmup, validate fetcher interface)
+  - T-003: KYL auth probe (scripts/probe/kyl.md)
+  - T-005: Bhulekh Playwright fetcher
+  - T-004: Bhunaksha ArcGIS probe
+  - T-010: eCourts fetcher
+  - All other tasks
+
+Exact next step for continuation:
+  Start Session 003. Run T-006 (Nominatim fetcher): make packages/fetchers/nominatim/src/index.ts with fetch() and healthCheck(), User-Agent: ClearDeed/1.0, 7-day cache, write fixture. Commit. Then T-003 in parallel.
+
+Notes for future self:
+  - KYL and Bhulekh are the two hardest probes — do them last after simpler sources validate the pattern.
+  - The fetcher interface is: export { fetch(input) → SourceResult, healthCheck() }. Every fetcher implements it.
+  - Playwright packages installed in bhulekh and playwright-worker only — other fetchers have no Playwright dep.
 
 
 Appendix A: Sub-Agent Brief Template
