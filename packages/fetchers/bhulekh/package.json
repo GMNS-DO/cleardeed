@@ -9,6 +9,11 @@
   },
   "devDependencies": {
     "typescript": "^5.0.0",
-    "playwright": "^1.49.0"
+    "playwright": "^1.49.0",
+    "vitest": "^2.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "healthcheck": "node -e \"require('./src/index').healthCheck().then(r => { console.log(r ? 'OK' : 'FAIL'); process.exit(r ? 0 : 1); })\""
   }
 }

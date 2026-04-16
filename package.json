@@ -11,6 +11,7 @@
     "typecheck": "pnpm -r tsc --noEmit"
   },
   "devDependencies": {
+    "playwright": "^1.59.1",
     "pnpm": "^10.33.0",
     "typescript": "^5.0.0",
     "vitest": "^4.1.4"
