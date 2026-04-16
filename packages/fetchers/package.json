@@ -1,0 +1,13 @@
+{
+  "name": "@cleardeed/fetchers",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "nominatim",
+    "orsac-kyl",
+    "bhulekh",
+    "bhunaksha",
+    "ecourts",
+    "rccms"
+  ]
+}

@@ -1,0 +1,2 @@
+-- ClearDeed schema placeholder
+-- Migration files go here in numbered order, e.g., 001_initial.sql
