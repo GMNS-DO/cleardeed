@@ -1,0 +1,74 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "khurda_bhubaneswar.1234",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.6992, 20.2720],
+            [85.7025, 20.2718],
+            [85.7028, 20.2750],
+            [85.6990, 20.2752],
+            [85.6992, 20.2720]
+          ]
+        ]
+      },
+      "properties": {
+        "revenue_plot": "784",
+        "revenue_village_name": "Haripur",
+        "revenue_village_code": "202401700100",
+        "grampanchayat_name": "Haripur",
+        "grampanchayat_code": "2024017",
+        "tehsil_name": "Bhubaneswar",
+        "tehsil_code": "2024",
+        "block_name": "Khordha",
+        "block_code": "202",
+        "district_name": "Khordha",
+        "district_code": "20",
+        "state_name": "Odisha",
+        "state_code": "18",
+        "shape_area": 0.0000123,
+        "shape_length": 0.0189
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "khurda_bhubaneswar.1235",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.7025, 20.2718],
+            [85.7060, 20.2715],
+            [85.7063, 20.2745],
+            [85.7028, 20.2750],
+            [85.7025, 20.2718]
+          ]
+        ]
+      },
+      "properties": {
+        "revenue_plot": "785",
+        "revenue_village_name": "Mendhasala",
+        "revenue_village_code": "202401700200",
+        "grampanchayat_name": "Mendhasala",
+        "grampanchayat_code": "2024018",
+        "tehsil_name": "Bhubaneswar",
+        "tehsil_code": "2024",
+        "block_name": "Khordha",
+        "block_code": "202",
+        "district_name": "Khordha",
+        "district_code": "20",
+        "state_name": "Odisha",
+        "state_code": "18",
+        "shape_area": 0.0000141,
+        "shape_length": 0.0195
+      }
+    }
+  ],
+  "totalFeatures": 2,
+  "numberReturned": 2,
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4326" } }
+}

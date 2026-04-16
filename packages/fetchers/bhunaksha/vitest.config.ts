@@ -4,10 +4,8 @@ import path from "path";
 export default defineConfig({
   test: {
     environment: "node",
-    include: [
-      "packages/fetchers/nominatim/src/**/*.test.ts",
-      "packages/fetchers/bhunaksha/src/**/*.test.ts",
-    ],
+    include: ["src/**/*.test.ts"],
+    globals: true,
   },
   resolve: {
     alias: {
