@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       "packages/fetchers/nominatim/src/**/*.test.ts",
       "packages/fetchers/bhunaksha/src/**/*.test.ts",
+      "packages/fetchers/ecourts/src/**/*.test.ts",
     ],
   },
   resolve: {

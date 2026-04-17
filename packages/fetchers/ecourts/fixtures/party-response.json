@@ -1,0 +1,5 @@
+// Mock HTML response from eCourts party search
+{
+  "type": "FeatureCollection",
+  "note": "eCourts HTML table rows (simulated)"
+}
