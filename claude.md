@@ -142,6 +142,18 @@ On scope discipline:
 If a task expands mid-session, stop, write the expansion as a new task in Section 4, and ask whether to continue or defer.
 "While I'm here" changes are forbidden. They become separate tasks.
 
+On product-readiness:
+
+The product is the report a lawyer reads, not the pipeline that generates it. Every session must move toward a usable artifact, not just more infrastructure. If three sessions pass without a user-visible output, stop and ask why.
+Fetchers marked DONE must have been validated against real production servers. Code that only passes unit tests with mocked data is UNTESTED, not DONE.
+
+On communication style:
+
+Be human. Give good news and bad news clearly — don't hide problems. Report progress in plain language, not system output.
+When running commands, narrate what's happening in one sentence before, and what the outcome was after.
+End-of-turn summaries are one or two sentences. What changed and what's next. Nothing else.
+Code changes are described by what they achieve, not by listing every modified file.
+
 On the user (lawyer) experience:
 
 Every report section answers: what does this mean, what's the source, what's the timestamp, what should the lawyer verify manually.
@@ -150,7 +162,7 @@ Failure to fetch a source is shown explicitly, not hidden.
 
 
 Section 4: Task List
-Tasks have status: TODO, IN PROGRESS, BLOCKED, DONE, DEFERRED. Each has an ID for cross-reference.
+Tasks have status: TODO, IN PROGRESS, BLOCKED, DONE, UNTESTED, DEFERRED. UNTESTED means code exists and unit tests pass, but the fetcher has never been validated against the real production server. Each has an ID for cross-reference.
 Format:
 [ID] [STATUS] [PRIORITY: P0/P1/P2] Title
   Owner: <session date or sub-agent name>
@@ -173,9 +185,9 @@ Active
   Created: 2026-04-16
   Notes: UNREACHABLE — gis.odisha.nic.in blocks external requests. Mitigation: packages/fetchers/bhunaksha using GeoServer WFS at mapserver.odisha4kgeo.in — has same plot polygons.
 
-[T-005] [DONE] [P0] Build Bhulekh Playwright fetcher for tenant search (Khordha only)
+[T-005] [UNTESTED] [P0] Build Bhulekh Playwright fetcher for tenant search (Khordha only)
   Created: 2026-04-16
-  Notes: Hardcode Khordha district + 5 villages first. Odia mapping in packages/fetchers/bhulekh/villages.ts.
+  Notes: Code written, 4 unit tests pass, but NEVER tested against real bhulekh.ori.nic.in. ViewState handling is the biggest risk.
 
 [T-006] [DONE] [P1] Build Nominatim fetcher (simplest, do as warmup)
   Created: 2026-04-16
@@ -193,9 +205,9 @@ Active
   Created: 2026-04-16
   Notes: After single-report flow works end-to-end.
 
-[T-010] [TODO] [P0] eCourts party-name search fetcher
+[T-010] [UNTESTED] [P0] eCourts party-name search fetcher
   Created: 2026-04-16
-  Notes: State Odisha, district Khordha. Inspect their network calls — there's a semi-public API.
+  Notes: Code written, Playwright + Tesseract.js OCR, 3 tests pass. NEVER tested against real services.ecourts.gov.in. Captcha solve rate unknown.
 
 [T-011] [TODO] [P1] RCCMS revenue court fetcher
   Created: 2026-04-16
@@ -212,6 +224,26 @@ Active
 [T-014] [TODO] [P2] Billing + per-report metering
   Created: 2026-04-16
   Notes: Razorpay. Per-report or subscription — decide post-MVP.
+
+[T-015] [TODO] [P0] Live-validate Bhulekh fetcher against real bhulekh.ori.nic.in
+  Created: 2026-04-17
+  Notes: Test with "Mohapatra", Khordha, Mendhasala. Expect ViewState breakage. Fix until real ROR data returns. Success = actual owner name returned.
+
+[T-016] [TODO] [P0] Live-validate eCourts fetcher against real services.ecourts.gov.in
+  Created: 2026-04-17
+  Notes: Test with "Mohapatra", Khordha. Run 10 attempts, measure captcha solve rate. If <70%, evaluate 2captcha fallback. Success = at least one real case record returned (or confirmed zero cases).
+
+[T-017] [TODO] [P1] Build demo-mode with cached golden-path data
+  Created: 2026-04-17
+  Notes: For test coords (20.272688, 85.701271) + name "Mohapatra", store a complete real result. Serve instantly. Flag as "cached demo — live fetch available". Ensures demos never fail due to govt site downtime.
+
+[T-018] [TODO] [P0] Golden path end-to-end script
+  Created: 2026-04-17
+  Notes: scripts/golden-path.ts — calls all 4 fetchers serially for test input, saves full output to fixtures/golden-path-result.json. Diagnostic, not orchestrator.
+
+[T-019] [TODO] [P0] Static HTML report template from golden path output
+  Created: 2026-04-17
+  Notes: Single HTML file, printable, sections per source, verified/failed/manual status per section, deep-links for manual verification. This IS the product. Show to a lawyer.
 Done
 (empty — populated as work completes)
 Deferred
@@ -266,7 +298,7 @@ Consequences: Locked into Vercel/Supabase ecosystem. Acceptable for V1.
 ADR-004: Playwright in isolated worker container
 
 Date: 2026-04-16
-Status: ACCEPTED
+Status: SUPERSEDED by ADR-007 for V1. Remains target architecture for scale.
 Context: Bhulekh requires browser automation. Scrapers are slow, crash-prone, memory-heavy.
 Decision: Playwright runs in a dedicated worker, communicates via job queue (Postgres-backed for V1).
 Alternatives: Run Playwright inline in API route.
@@ -290,11 +322,20 @@ Decision: Use ORSAC GeoServer WFS at mapserver.odisha4kgeo.in for GPS→plot loo
 Alternatives: Try KYL anyway; scrape ArcGIS via proxy.
 Consequences: GPS→plot chain is fully functional. KYL remains blocked; its value (khata-based RoR lookup) is covered by Bhulekh Playwright fetcher.
 
+ADR-007: Simplify V1 — skip Playwright worker isolation, run inline
+
+Date: 2026-04-17
+Status: ACCEPTED
+Context: ADR-004 says Playwright runs in a separate worker container with a job queue. This requires Docker, inter-process communication, and doubles deployment complexity. We have zero users and zero concurrent load.
+Decision: For V1, run Playwright inline in API routes with a 30-second timeout. Accept that it's ugly. Move to worker isolation when we have 10+ concurrent users or deployment demands it.
+Alternatives: Keep worker architecture (more robust, 3x more work to ship V1).
+Consequences: Single deployment target (one Vercel function or one VPS). Risk of timeouts under concurrent load — acceptable at zero users. Known migration path: extract to worker when load justifies it. ADR-004 is SUPERSEDED for V1 but remains the target architecture.
+
 
 Section 6: Current State Snapshot
 Updated at the end of every session. Single source of truth for "where are we right now."
-Last updated: 2026-04-16 (Session 004)
-Last session: Session 004 (Section 7)
+Last updated: 2026-04-17 (Session 005)
+Last session: Session 005 (Section 7)
 
 Built:
   - T-001: Monorepo skeleton committed
@@ -303,12 +344,13 @@ Built:
   - T-005: Bhulekh Playwright fetcher (20 Khordha villages, Odia mapping, table parser)
   - T-003: KYL auth probe — BLOCKED (browser session required, no bearer token). scripts/probe/kyl.md has definitive findings.
   - T-004: Bhunaksha fetcher + ArcGIS probe — UNREACHABLE (gis.odisha.nic.in blocked). packages/fetchers/bhunaksha using GeoServer WFS instead. 8 tests passing.
+  - T-010: eCourts fetcher (Playwright + Tesseract.js OCR, 3 tests, 17 total across all packages)
   - apps/web/: Next.js 15 skeleton with Tailwind CSS v4
   - apps/web/src/app/api/geocode/route.ts: GET/POST /api/geocode → Nominatim
   - apps/web/src/app/api/report/create/route.ts: POST /api/report/create → pipeline stub
   - apps/web/next.config.ts: webpack aliases for @cleardeed/* workspace packages
   - infra/docker/docker-compose.yml for Postgres
-  - vitest configured at workspace root (11 tests passing across nominatim + bhunaksha)
+  - vitest configured at workspace root (17 tests passing across nominatim + bhunaksha + ecourts)
 
 Decided:
   - ADR-001 through ADR-005 (see Section 5)
@@ -321,22 +363,34 @@ Blocked:
   - T-003: KYL auth — no programmatic path. Browser automation with ViewState required.
 
 Pending — ordered by next-up:
-  1. T-010: eCourts fetcher (party-name search, semi-public API)
-  2. T-007: Orchestrator MVP (parallel fetchers, partial results)
-  3. T-008: PDF renderer (lawyer-facing layout)
-  4. T-011: RCCMS fetcher
-  5. T-012: IGR deep-link + EC instructions panel
-  6. T-009: Lawyer dashboard
-  7. T-013: Auth + multi-tenant (Supabase Auth + RLS)
-  8. T-014: Billing (Razorpay)
+  1. T-018: Golden path end-to-end script (validate what actually works)
+  2. T-015: Live-validate Bhulekh against real server
+  3. T-016: Live-validate eCourts against real server
+  4. T-019: Static HTML report template (the actual product artifact)
+  5. T-007: Orchestrator MVP (wire proven fetchers, skip broken ones gracefully)
+  6. T-008: PDF renderer (from HTML template)
+  7. T-017: Demo-mode with cached data
+  8. T-011: RCCMS fetcher
+  9. T-012: IGR deep-link + EC instructions panel
+  10. T-009: Lawyer dashboard
+  11. T-013: Auth + multi-tenant (Supabase Auth + RLS)
+  12. T-014: Billing (Razorpay)
 
 Single highest-leverage next step:
-  T-010 (eCourts fetcher) — court cases are a key due-diligence dimension. Odisha eCourts has a semi-public party-name search API. Probe first, then build fetcher.
+  T-018 (Golden path script) — we have 4 fetchers but have never run them together against real servers. Before building the orchestrator, we need to know exactly what works, what breaks, and what real data looks like. This is a diagnostic, not a product feature.
 
 Risks currently tracking:
-  - KYL auth uncrackable — mitigated via GeoServer WFS for GPS→plot
-  - Bhulekh may rate-limit Playwright — mitigated with throttling + caching
-  - eCourts API may have changed or require auth — probe first before building
+  - KYL auth uncrackable — MITIGATED via GeoServer WFS for GPS→plot
+  - Bhulekh Playwright untested against real server — ViewState handling is the biggest technical risk. T-015 will resolve.
+  - eCourts captcha OCR accuracy unknown against real captchas — T-016 will measure. Fallback: 2captcha API.
+  - Government sites may be down during demos — T-017 (demo mode) mitigates.
+  - Over-engineering risk — ADR-007 simplifies deployment by removing worker isolation for V1.
+
+Reality check (updated each session):
+  - Can a user use this product today? NO
+  - What's the minimum path to first usable report? T-018 (golden path) → T-019 (HTML report) → show to lawyer
+  - Biggest unknown: Bhulekh Playwright against real server (T-015)
+  - Estimated sessions to first lawyer demo: 5
 
 Environment / accounts needed:
   - [ ] Supabase project created
@@ -583,6 +637,70 @@ Notes for future self:
   - GeoServer WFS layers follow pattern revenue:<district>_<tehsil> (e.g., khurda_bhubaneswar, baleswar_baleswar). Query BBOX in EPSG:4326.
   - For Nominatim, addr.county is often empty in this region — use addr.state_district or addr.village as district fallback.
   - All fetchers using fetch() must use globalThis.fetch to avoid Node.js global shadowing.
+
+### Session 005 — 2026-04-17
+
+Mode: execution
+Duration: ~1 hour
+Focus: Complete T-010 (eCourts party-name search fetcher).
+Reconstructed state from: Section 6 snapshot (Session 004).
+Highest-leverage step identified: T-010 — court cases are a key due-diligence dimension. eCourts blocks curl; Playwright + OCR is the only path.
+
+Tasks worked:
+  - [T-010] DONE — eCourts fetcher built and tested (Playwright + Tesseract.js OCR, 3 tests, 17 total)
+  - [T-010] DONE — Khordha district code confirmed (code 8, eCourts spells it "Khurda")
+  - [T-010] DONE — All 5 Khurda court complexes enumerated
+  - [T-010] DONE — scripts/probe/ecourts.md updated with definitive findings
+
+Decisions made:
+  - eCourts fetcher hardcodes district code 8 (Khurda) and state code 11 (Odisha) for Khordha V1 scope
+  - Captcha solving via Tesseract.js v7 (root dep, bundled) — simpler than 2captcha API
+  - Court complexes enumerated statically — no need to probe per-request
+
+Code changes (high-level):
+  - packages/fetchers/ecourts/src/index.ts: full Playwright flow + Tesseract OCR
+    - setupForm() — navigates, selects state/district, triggers lazy captcha
+    - solveCaptcha() — converts image URL to canvas data URL, runs Tesseract v7 eng
+    - ecourtsFetch() — orchestrates form fill + submit + parse
+    - parsePartyTable() — HTML row parser (HTMLTableRowElement-aware)
+    - 5 court complexes hardcoded: Bhubaneswar, Khurda, Banapur, Jatni, Tangi
+  - packages/fetchers/ecourts/package.json: tesseract.js added as dependency
+  - packages/fetchers/ecourts/tsconfig.json: DOM lib, skipLibCheck, ESNext module
+  - packages/fetchers/ecourts/src/index.test.ts: 3 tests for parsePartyTable and healthCheck
+  - scripts/probe/ecourts.md: complete findings (district codes, court complexes, working approach)
+  - .claude/settings.json: Bash(*) allowlist added
+
+What was done:
+  - Probed eCourts with Playwright to confirm captcha lazy-loading behavior
+  - Confirmed AJAX dropdowns only work via selectOption() not evaluate() (Playwright handles browser-level JS events)
+  - Discovered Khordha is code 8 in eCourts (spelled "Khurda" in UI — a data quality issue baked into their system)
+  - Discovered all 5 court complexes for Khurda with their establishment codes
+  - Discovered captcha triggers when user focuses petres_name field (not on page load)
+  - Built full eCourts fetcher with Tesseract.js v7 OCR — 3 passing tests
+
+What changed:
+  - eCourts fetcher ready for orchestrator integration. Court case lookup now functional.
+  - Added communication style to Section 3 (human-first, plain language, plain-language summaries)
+  - Added Bash(*) allowlist to .claude/settings.json (no more bash permission prompts)
+
+What is pending:
+  - T-007: Orchestrator MVP (parallel fetchers, partial results) — highest leverage next step
+  - T-008: PDF renderer
+  - T-011: RCCMS fetcher
+  - T-012: IGR deep-link + EC instructions panel
+  - T-009: Lawyer dashboard
+  - T-013: Auth + multi-tenant (Supabase Auth + RLS)
+  - T-014: Billing (Razorpay)
+
+Exact next step for continuation:
+  Start Session 006. Run T-007 (Orchestrator MVP): packages/orchestrator/src/index.ts — runs nominatimFetch + bhunakshaFetch + ecourtsFetch in parallel, returns partial results on failure, returns a full Report. Wire into POST /api/report/create.
+
+Notes for future self:
+  - eCourts district "Khordha" = code 8, spelled "Khurda" in their UI. Hardcode this in the fetcher.
+  - eCourts captcha lazy-loads: must focus petres_name first before reading captcha_image src
+  - AJAX dropdowns in eCourts only work via Playwright selectOption() — evaluate() doesn't trigger browser events
+  - Tesseract.js v7 bundled at root as workspace dep (not individual fetcher) — consider moving all shared deps here
+  - eCourts 5 complexes: Bhubaneswar (1110045@2,3,4@Y), Khurda (1110044@5,6,7@Y), Banapur (1110043@9,10,11@Y), Jatni (1110046@8@N), Tangi (1110132@12@N)
 
 Appendix A: Sub-Agent Brief Template
 Use this exact format when delegating to a sub-agent. Save the brief in docs/sub-agent-briefs/<date>-<slug>.md so it's auditable.
