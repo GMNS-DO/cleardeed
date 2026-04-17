@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-04-17T12:54:25.581Z",
+  "coordinates": {
+    "lat": 20.272688,
+    "lon": 85.701271
+  },
+  "name_searched": "Mohapatra",
+  "results": {
+    "nominatim": {
+      "status": "success",
+      "district": "Chandaka",
+      "village": null
+    },
+    "bhunaksha": {
+      "status": "partial",
+      "plot_number": "128",
+      "village": "Mendhasala"
+    },
+    "bhulekh": {
+      "status": "failed",
+      "owners": [],
+      "error": "Village \"Mendhasala\" not found in Khordha village dictionary. Add it to villages.ts first."
+    },
+    "ecourts": {
+      "status": "partial",
+      "cases_found": 0,
+      "captcha_solved": true,
+      "error": null
+    }
+  }
+}

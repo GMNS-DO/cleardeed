@@ -1,27 +1,44 @@
-import { CourtCaseResult } from "@cleardeed/schema";
-import { z } from "zod";
-import { chromium, Browser, Page } from "playwright";
+// eCourts Party Name Search fetcher
+// State: Odisha (code 11), District: Khurda (code 8, eCourts spells it "Khurda")
+// eCourts blocks external requests. Playwright with OCR is the only path.
+//
+// Key findings from probe (2026-04-17):
+// - AJAX district dropdown only works via Playwright selectOption(), not evaluate()
+// - Captcha is lazy-loaded: focus petres_name first to trigger captcha render
+// - Tesseract.js v5 handles the captcha OCR
+// - Court complexes for Khurda: Bhubaneswar, Khurda, Banapur, Jatni, Tangi
 
-export interface ECourtsInput {
-  /** Party name to search (partial match supported) */
-  partyName: string;
-  /** State code: "11" for Odisha (from eCourts dropdown) */
-  stateCode?: string;
-  /** District code — probe fillDistrict to get codes */
-  districtCode?: string;
-  /** Court complex code */
-  courtComplexCode?: string;
-  /** Establishment code */
-  estCode?: string;
-  /** Registration year filter */
-  year?: string;
-  /** Case status filter */
-  caseStatus?: "Pending" | "Disposed";
-}
+import { z } from "zod";
+import { chromium, type Browser, type Page } from "playwright";
+import { createWorker } from "tesseract.js";
+import { CourtCaseResult } from "@cleardeed/schema";
 
 const BASE_URL = "https://services.ecourts.gov.in/ecourtindia_v6";
-const USER_AGENT =
-  "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)";
+const USER_AGENT = "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)";
+
+const ODISHA_STATE_CODE = "11";
+const KHURDA_DISTRICT_CODE = "8"; // eCourts spells it "Khurda"
+
+interface CourtComplex {
+  name: string;
+  value: string;
+  estCodes: string;
+}
+
+interface ECourtsInput {
+  /** Party name to search (partial match supported) */
+  partyName: string;
+  /** Optional court complex override */
+  courtComplex?: string;
+}
+
+const COURT_COMPLEXES: CourtComplex[] = [
+  { name: "Bhubaneswar", value: "1110045@2,3,4@Y", estCodes: "2,3,4" },
+  { name: "Khurda", value: "1110044@5,6,7@Y", estCodes: "5,6,7" },
+  { name: "Banapur", value: "1110043@9,10,11@Y", estCodes: "9,10,11" },
+  { name: "Jatni", value: "1110046@8@N", estCodes: "8" },
+  { name: "Tangi", value: "1110132@12@N", estCodes: "12" },
+];
 
 let browser: Browser | null = null;
 
@@ -32,7 +49,7 @@ async function getBrowser(): Promise<Browser> {
   return browser;
 }
 
-async function cleanup() {
+export async function cleanup() {
   if (browser) {
     await browser.close();
     browser = null;
@@ -40,75 +57,75 @@ async function cleanup() {
 }
 
 /**
- * Navigate to casestatus page and return the page object with state/district loaded.
- * State must be set before district codes can be obtained.
+ * Solve a captcha image via Tesseract OCR.
+ * Returns the recognized text (uppercase, alphanumeric, stripped of noise).
  */
-async function navigateToCaseStatus(
-  page: Page,
-  stateCode: string
-): Promise<void> {
-  await page.goto(
-    `${BASE_URL}/?p=casestatus/index`,
-    { waitUntil: "networkidle", timeout: 20_000 }
-  );
-  await page.selectOption("#sess_state_code", stateCode);
-  await page.waitForTimeout(1_500); // wait for district dropdown to populate
+async function solveCaptcha(imageUrl: string, page: Page): Promise<string> {
+  const fullUrl = imageUrl.startsWith("http")
+    ? imageUrl
+    : `${BASE_URL}${imageUrl}`;
+
+  const screenshot = await page.evaluate(async (url) => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = rej;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    return canvas.toDataURL("image/png");
+  }, fullUrl);
+
+  const worker = await createWorker("eng");
+  const {
+    data: { text },
+  } = await worker.recognize(screenshot);
+  await worker.terminate();
+
+  // Clean: remove spaces, make uppercase, keep only captcha-safe chars
+  return text
+    .replace(/[^A-Z0-9]/gi, "")
+    .toUpperCase()
+    .substring(0, 6);
 }
 
 /**
- * Fill district and court complex, then get the captcha image.
- * Returns the page ready for captcha entry.
+ * Navigate to case status page, select Odisha + Khurda, wait for form to be ready.
+ * Returns the page object ready for party name entry + captcha.
  */
-async function setupSearchForm(
+async function setupForm(
   page: Page,
-  districtCode: string,
-  courtComplexCode?: string
+  districtCode: string
 ): Promise<void> {
+  await page.goto(`${BASE_URL}/?p=casestatus/index`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30_000,
+  });
+  await page.waitForTimeout(500);
+
+  // Select state (triggers AJAX to load districts)
+  await page.selectOption("#sess_state_code", ODISHA_STATE_CODE);
+  await page.waitForFunction(
+    () => document.querySelectorAll("#sess_dist_code option").length > 2,
+    { timeout: 15_000 }
+  );
+
+  // Select district (triggers AJAX to load court complexes)
   await page.selectOption("#sess_dist_code", districtCode);
-  await page.waitForTimeout(1_500);
-  if (courtComplexCode) {
-    await page.selectOption("#court_complex_code", courtComplexCode);
-    await page.waitForTimeout(500);
-  }
-}
-
-/**
- * Submit party name search and parse the result table.
- */
-async function submitAndParse(
-  page: Page,
-  partyName: string,
-  captchaCode: string,
-  year?: string,
-  caseStatus?: "Pending" | "Disposed"
-): Promise<{
-  partyData: string;
-  newCaptchaHtml: string;
-  success: boolean;
-}> {
-  await page.fill("#petres_name", partyName);
-  if (year) await page.fill("#rgyearP", year);
-  if (caseStatus === "Disposed") {
-    await page.click("#radD");
-  }
-  await page.fill("#fcaptcha_code", captchaCode);
-  await page.click('button[value="Go"]');
-  await page.waitForTimeout(3_000);
-
-  const newCaptchaHtml = await page.$eval(
-    "#div_captcha_party",
-    (el) => el.innerHTML
-  );
-  const partyData = await page.$eval("#res_party", (el) => el.innerHTML);
-  const hasError = await page.$eval("#res_party", (el) =>
-    el.textContent?.includes("Invalid captcha")
+  await page.waitForFunction(
+    () => document.querySelectorAll("#court_complex_code option").length > 1,
+    { timeout: 15_000 }
   );
 
-  return {
-    partyData,
-    newCaptchaHtml,
-    success: !hasError,
-  };
+  // Focus party name to trigger lazy captcha loading
+  await page.focus("#petres_name");
+  await page.waitForSelector("#captcha_image", { timeout: 10_000 });
+  await page.waitForTimeout(500);
 }
 
 /**
@@ -133,53 +150,53 @@ export function parsePartyTable(html: string): {
     parties: Array<{ name: string; role: string }>;
   }> = [];
 
-  // eCourts returns a table with class "table" or similar
+  // eCourts returns a table. Parse each <tr> into a case.
   const rowRegex =
-    /<tr[^>]*>.*?<td[^>]*>(.*?)<\/td>.*?<td[^>]*>(.*?)<\/td>.*?<td[^>]*>(.*?)<\/td>.*?<td[^>]*>(.*?)<\/td>.*?<td[^>]*>(.*?)<\/td>.*?<\/tr>/gis;
+    /<tr[^>]*>(.*?)<\/tr>/gis;
   let match;
   while ((match = rowRegex.exec(html)) !== null) {
-    const [td1, td2, td3, td4, td5] = [
-      (match[1] || "").trim(),
-      (match[2] || "").trim(),
-      (match[3] || "").trim(),
-      (match[4] || "").trim(),
-      (match[5] || "").trim(),
-    ];
-    if (!td1 || td1 === "" || td1.includes("No records found")) continue;
+    const row = match[1];
+    const cellRegex = /<td[^>]*>(.*?)<\/td>/gis;
+    const cells: string[] = [];
+    let cellMatch;
+    while ((cellMatch = cellRegex.exec(row)) !== null) {
+      cells.push(cellMatch[1].trim());
+    }
+    if (cells.length < 5) continue;
+    if (cells[0].includes("No records found") || cells[0].includes("No Cases")) continue;
+    if (!cells[0] || cells[0] === "") continue;
 
-    // Parse first cell for case number and type
-    const caseMatch = td1.match(
+    // First cell: case number + type
+    const caseMatch = cells[0].match(
       /(?:CNR\s*)?([A-Z]{2}\d+\/\d+|[A-Z]{2}\d+)/
     );
-    const caseTypeMatch = td1.match(/\(([^)]+)\)/);
-    const caseNo = caseMatch ? caseMatch[0] : td1;
+    const caseTypeMatch = cells[0].match(/\(([^)]+)\)/);
+    const caseNo = caseMatch ? caseMatch[0].replace(/\s+/g, "") : cells[0].replace(/<[^>]+>/g, "");
     const caseType = caseTypeMatch ? caseTypeMatch[1] : "";
 
-    // Parse party info from second cell
-    const partyParts = td2.split(/<br\s*\/?>/i);
+    // Second cell: parties (separated by <br>)
+    const partyParts = cells[1].split(/<br\s*\/?>/i);
     const parties = partyParts
       .map((p) => {
-        const roleMatch = p.match(
-          /(Petitioner|Respondent|Applicant|Complainant|Accused|Other)/i
+        const clean = p.replace(/<[^>]+>/g, "").trim();
+        if (!clean) return null;
+        const roleMatch = clean.match(
+          /^(Petitioner|Respondent|Applicant|Complainant|Accused|Other)[:\-]?\s*/i
         );
-        const nameMatch = p.replace(/<[^>]+>/g, "").trim();
-        if (!nameMatch) return null;
-        return {
-          name: nameMatch,
-          role: roleMatch
-            ? (roleMatch[0].toLowerCase() as
-                | "petitioner"
-                | "respondent"
-                | "other")
-            : ("other" as const),
-        };
+        const role = roleMatch
+          ? (roleMatch[1].toLowerCase() as "petitioner" | "respondent" | "other")
+          : ("other" as const);
+        const name = clean.replace(
+          /^(Petitioner|Respondent|Applicant|Complainant|Accused|Other)[:\-]?\s*/i,
+          ""
+        ).trim();
+        return { name, role };
       })
       .filter(Boolean) as Array<{ name: string; role: string }>;
 
-    // filing date from third cell, status from fourth
-    const filingDate = td3.replace(/<[^>]+>/g, "").trim();
-    const status = td4.replace(/<[^>]+>/g, "").trim();
-    const court = td5.replace(/<[^>]+>/g, "").trim();
+    const filingDate = cells[2].replace(/<[^>]+>/g, "").trim();
+    const status = cells[3].replace(/<[^>]+>/g, "").trim();
+    const court = cells[4].replace(/<[^>]+>/g, "").trim();
 
     cases.push({ caseNo, caseType, court, filingDate, status, parties });
   }
@@ -191,67 +208,62 @@ export async function ecourtsFetch(
   input: ECourtsInput
 ): Promise<z.infer<typeof CourtCaseResult>> {
   const fetchedAt = new Date().toISOString();
-  const {
-    partyName,
-    stateCode = "11",
-    districtCode,
-    courtComplexCode,
-    year,
-    caseStatus = "Pending",
-  } = input;
+  const { partyName, courtComplex } = input;
 
-  if (!districtCode) {
-    return {
-      source: "ecourts",
-      status: "partial",
-      verification: "manual_required",
-      fetchedAt,
-      error:
-        "districtCode required — probe fillDistrict endpoint to get codes for Khordha",
-    };
-  }
+  const districtCode = KHURDA_DISTRICT_CODE;
 
-  let browserCleanup = false;
+  let page: Awaited<ReturnType<Browser["newPage"]>> | null = null;
   try {
     const bro = await getBrowser();
-    const page = await bro.newPage();
+    page = await bro.newPage();
     await page.setExtraHTTPHeaders({ "User-Agent": USER_AGENT });
 
-    await navigateToCaseStatus(page, stateCode);
-    await setupSearchForm(page, districtCode, courtComplexCode);
+    await setupForm(page, districtCode);
 
-    // Get captcha image for solving
+    const complexCode = courtComplex || COURT_COMPLEXES[0].value;
+
+    // Optionally select a court complex
+    if (courtComplex) {
+      await page.selectOption("#court_complex_code", complexCode);
+      await page.waitForTimeout(500);
+    }
+
+    // Get captcha image URL
     const captchaImgSrc = await page.$eval(
       "#captcha_image",
       (el) => (el as HTMLImageElement).src
     );
 
-    // For V1: require captcha code to be passed in,
-    // or use OCR / captcha service
-    if (!captchaImgSrc) {
-      return {
-        source: "ecourts",
-        status: "failed",
-        verification: "manual_required",
-        fetchedAt,
-        error: "Could not retrieve captcha image",
-      };
-    }
+    const captchaCode = await solveCaptcha(captchaImgSrc, page);
 
-    // Return partial asking for captcha solution
+    // Fill and submit
+    await page.fill("#petres_name", partyName);
+    await page.fill("#fcaptcha_code", captchaCode);
+    await page.click('button[value="Go"]');
+    await page.waitForTimeout(3_000);
+
+    const resultHtml = await page.$eval("#res_party", (el) => el.innerHTML);
+    const { cases } = parsePartyTable(resultHtml);
+
     return {
       source: "ecourts",
-      status: "partial",
-      verification: "manual_required",
+      status: cases.length > 0 ? "success" : "partial",
+      verification: cases.length > 0 ? "verified" : "manual_required",
       fetchedAt,
-      error: `Captcha required. Image: ${captchaImgSrc}. Submit captcha solution via /api/sources/ecourts/solve`,
-      // TODO: implement captcha solving (OCR or 2captcha service)
+      data: {
+        cases: cases.map((c) => ({
+          caseNo: c.caseNo,
+          caseType: c.caseType,
+          court: c.court,
+          filingDate: c.filingDate || undefined,
+          status: c.status,
+          parties: c.parties,
+        })),
+        total: cases.length,
+      },
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    if (browserCleanup) {
-      await cleanup();
-    }
     return {
       source: "ecourts",
       status: "failed",
@@ -259,6 +271,8 @@ export async function ecourtsFetch(
       fetchedAt,
       error: errorMessage,
     };
+  } finally {
+    await page?.close();
   }
 }
 
@@ -268,11 +282,12 @@ export async function healthCheck(): Promise<boolean> {
     const page = await bro.newPage();
     await page.goto(`${BASE_URL}/?p=casestatus/index`, {
       waitUntil: "domcontentloaded",
-      timeout: 10_000,
+      timeout: 15_000,
     });
-    const title = await page.title();
+    await page.waitForTimeout(500);
+    const ready = await page.$("#sess_state_code");
     await page.close();
-    return title.includes("eCourt");
+    return ready !== null;
   } catch {
     return false;
   }

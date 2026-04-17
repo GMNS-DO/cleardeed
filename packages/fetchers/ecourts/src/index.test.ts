@@ -1,30 +1,31 @@
 import { describe, it, expect } from "vitest";
+import { ecourtsFetch } from "./index.js";
 
 describe("ecourts fetcher", () => {
-  describe("ecourtsFetch input validation", () => {
-    it("returns partial when districtCode is missing", async () => {
-      const { ecourtsFetch } = await import("./index");
-      const result = await ecourtsFetch({ partyName: "Mohapatra" });
-      expect(result.status).toBe("partial");
-      expect(result.verification).toBe("manual_required");
-      expect(result.error).toContain("districtCode required");
+  describe("parsePartyTable", () => {
+    it("parses valid eCourts table HTML", async () => {
+      const { parsePartyTable } = await import("./index.js");
+      const html = `
+        <tr><td>CNROD12D00342015 (Summary Suit)</td><td>Petitioner: Raj Kumar<br>Respondent: State</td><td>15-12-2015</td><td>Pending</td><td>Court of ADJ, Khurda</td></tr>
+        <tr><td>CNROD12D00342 (Civil)</td><td>Applicant: Singh</td><td>01-01-2020</td><td>Disposed</td><td>District Court</td></tr>
+      `;
+      const { cases } = parsePartyTable(html);
+      expect(cases).toHaveLength(2);
+      expect(cases[0].caseNo).toMatch(/CNROD/);
+      expect(cases[0].parties[0].name).toBe("Raj Kumar");
     });
 
-    it("returns partial when districtCode is empty string", async () => {
-      const { ecourtsFetch } = await import("./index");
-      const result = await ecourtsFetch({
-        partyName: "Mohapatra",
-        districtCode: "",
-      });
-      expect(result.status).toBe("partial");
+    it("skips rows with no records found", async () => {
+      const { parsePartyTable } = await import("./index.js");
+      const html = `<tr><td>No records found</td></tr>`;
+      const { cases } = parsePartyTable(html);
+      expect(cases).toHaveLength(0);
     });
   });
 
   describe("healthCheck", () => {
-    it("is exported and returns a boolean", async () => {
-      const { healthCheck } = await import("./index");
-      // healthCheck() is async and returns Promise<boolean>
-      // Don't actually run it — that would hit eCourts
+    it("is exported and is a function", async () => {
+      const { healthCheck } = await import("./index.js");
       expect(typeof healthCheck).toBe("function");
     });
   });

@@ -14,6 +14,8 @@ export interface VillageMapping {
 export const KHRDHA_VILLAGES: VillageMapping[] = [
   // Bhubaneswar Tahasil
   { english: "Chandaka", odia: "ଚଣ୍ଡକା", tahasil: "Bhubaneswar", riCircle: "Chandaka" },
+  { english: "Haripur", odia: "ହରୀପୁର", tahasil: "Bhubaneswar", riCircle: "Chandaka" },
+  { english: "Mendhasala", odia: "ମେଣ୍ଡହାସାଲ", tahasil: "Bhubaneswar", riCircle: "Chandaka" },
   { english: "Jatni", odia: "ଯାତନୀ", tahasil: "Bhubaneswar", riCircle: "Jatni" },
   { english: "Sangram", odia: "ସଂଗ୍ରାମ", tahasil: "Bhubaneswar", riCircle: "Jatni" },
   { english: "Gothapada", odia: "ଗୋଠପଦା", tahasil: "Bhubaneswar", riCircle: "Jatni" },
