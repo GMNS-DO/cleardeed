@@ -1,0 +1,2206 @@
+/**
+ * A10 ConsumerReportWriter — generateConsumerReport()
+ *
+ * Takes all Tier 1 (fetcher) + Tier 2 (interpreter) outputs and produces
+ * a plain-English consumer property verification report as mobile-responsive HTML.
+ *
+ * Sections (per PRODUCT.md Section 3):
+ *   1. The Plot       — GPS, location, official plot identifier, what matched
+ *   2. The Owner     — official owner name, seller-claimed name comparison
+ *   3. Land Class    — agricultural/residential/etc, conversion requirements
+ *   4. Encumbrances  — court cases, EC status
+ *   5. Regulatory   — protected zone proximity flags
+ *   6. What to Ask   — concrete checklist for seller + broker + lawyer
+ *
+ * Prohibited: scores, verdicts, "safe to buy", legal jargon without translation.
+ */
+
+import { z } from "zod";
+import { LAND_CLASS_MAP, translateLandClass, formatArea } from "./types";
+import {
+  transliterateOdia,
+  containsOdia,
+  ODIA_SURNAME_MAP,
+} from "./lib";
+import {
+  ConsumerReportGenInputSchema,
+  type ConsumerReportGenInputData,
+} from "./mapper";
+import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
+import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
+
+export type ConsumerReportGenInput = ConsumerReportGenInputData;
+export { ConsumerReportGenInputSchema } from "./mapper";
+export type { Tier2Input, OwnershipReasonerResult, OrchestratorOutput } from "./mapper";
+export { mapToReportInput } from "./mapper";
+
+// ─── HTML generation ────────────────────────────────────────────────────────────
+
+export interface GenerateReportOptions {
+  /** Render in demo mode (shows "DEMO REPORT" banner, uses golden-path data). */
+  demo?: boolean;
+}
+
+/**
+ * Generate the consumer-facing property report as HTML string.
+ * Returns { html, title } — html is a standalone, print-friendly HTML fragment.
+ */
+export function generateConsumerReport(
+  input: z.infer<typeof ConsumerReportGenInputSchema>
+): { html: string; title: string } {
+  const parsed = ConsumerReportGenInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return generateErrorReport("Invalid report input. Please try again.");
+  }
+
+  const data = parsed.data;
+  const { gpsCoordinates: gps, geoFetch, revenueRecords, courtCases, registryLinks,
+          ownershipReasoner, landClassifier, encumbranceReasoner,
+          regulatoryScreener, validationFindings } = data;
+  const sourceStatus = data.sourceStatus ?? {};
+  const sourceDetails = data.sourceDetails ?? {};
+  const tenants: any[] = revenueRecords?.tenants ?? [];
+  const bhulekhUsable = sourceStatus.bhulekh === "success" && tenants.length > 0;
+  const bhunakshaUsable = sourceStatus.bhunaksha === "success";
+  const gpsDisplay = formatGpsDisplay(gps);
+  const claimedNameParts = data.claimedOwnerName.trim().split(/\s+/).filter(Boolean);
+  const claimedNameQualityWarning = claimedNameParts.length > 0 && claimedNameParts.length < 2;
+
+  // ── Derive primary plot info ───────────────────────────────────────────────────
+  const plotVillage = geoFetch?.village ?? revenueRecords?.village ?? "—";
+  const plotTahasil = geoFetch?.tahasil ?? "—";
+  const plotDistrict = geoFetch?.district ?? registryLinks?.params?.district ?? "Not verified";
+  const targetPlotNo = geoFetch?.plotNo ?? registryLinks?.params?.plotNo ?? null;
+  const targetTenant = targetPlotNo
+    ? tenants.find((tenant) => plotNosMatch(tenant?.surveyNo, targetPlotNo))
+    : tenants[0];
+  const plotNo = targetPlotNo
+    ?? (bhulekhUsable ? targetTenant?.surveyNo ?? revenueRecords?.tenants?.[0]?.surveyNo : null)
+    ?? registryLinks?.params?.plotNo
+    ?? "—";
+  const bhulekhVillage = revenueRecords?.village ?? plotVillage;
+
+  // ── Derive primary owner info ─────────────────────────────────────────────────
+  const officialOdia = ownershipReasoner?.officialOwnerName ?? "";
+  const transliteratedOwner = ownershipReasoner?.transliteratedOwnerName
+    ?? (officialOdia && containsOdia(officialOdia)
+      ? transliterateOdia(officialOdia)
+      : officialOdia);
+
+  const ownerClaimState = bhulekhUsable ? ownershipReasoner?.claimState ?? null : null;
+  // When no seller name was provided, skip the comparison — show Bhulekh owners directly
+  const nameMatch = !ownershipReasoner
+    ? "not_requested"
+    : bhulekhUsable
+      ? ownerClaimState === "ambiguous"
+        ? "ambiguous"
+        : ownershipReasoner?.nameMatch ?? "unknown"
+      : "unknown";
+  const discrepancyExplanation = ownershipReasoner?.discrepancyExplanation ?? "";
+  const coOwners: string[] = ownershipReasoner?.coOwners ?? [];
+  const fatherOnRecord = ownershipReasoner?.fatherNameOnRecord ?? "";
+
+  // ── Derive land classification ──────────────────────────────────────────────────
+  const primaryTenant = targetPlotNo ? targetTenant : revenueRecords?.tenants?.[0];
+  const landClassOdia = primaryTenant?.landClass ?? "";
+  const landClassEnglish = translateLandClass(landClassOdia);
+
+  const classification = bhulekhUsable
+    ? landClassifier?.currentClassification
+      ?? (landClassEnglish !== "Unknown" ? landClassEnglish : "Not verified")
+    : "Not verified";
+  const conversionRequired = bhulekhUsable ? landClassifier?.conversionRequired ?? null : null;
+  const conversionUnknown = bhulekhUsable && conversionRequired == null;
+  const classificationUnknown =
+    !bhulekhUsable ||
+    (!landClassifier?.currentClassification &&
+      (!landClassEnglish || landClassEnglish === "Unknown" || landClassEnglish === landClassOdia));
+  const bhulekhUnavailableReason = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
+  const landClassSourceStatus = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
+  const classificationBasisText = bhulekhUsable
+    ? `Based on the Bhulekh land record (${landClassOdia || "—"})`
+    : "Not verified from Bhulekh in this run";
+  const landRestrictions = (landClassifier?.restrictions ?? []).map((restriction: any) => ({
+    flag: titleFromSnakeCase(restriction.type ?? "Restriction"),
+    severity: normalizeLandSeverity(restriction.severity),
+    description: restriction.description,
+    recommendedAction: restriction.action ?? restriction.citation ?? null,
+  }));
+  const redFlags = dedupeFlags(
+    [...(landClassifier?.redFlags ?? []), ...landRestrictions].filter((flag: any) =>
+      Boolean(flag?.flag?.trim?.() && flag?.description?.trim?.())
+    )
+  );
+
+  // ── Derive court case summary ───────────────────────────────────────────────────
+  const totalCases = courtCases?.total ?? 0;
+  const cases: any[] = courtCases?.cases ?? [];
+  const courtSourceStatuses = courtCases?.sources ?? {
+    ecourts: sourceStatus.ecourts ?? "not_run",
+    rccms: sourceStatus.rccms ?? "not_run",
+  };
+  const caseList = cases.length > 0
+    ? cases.map(c => ({
+        caseType: c.caseType ?? "—",
+        caseNo: c.caseNo ?? c.caseId ?? "—",
+        court: c.court ?? c.courtName ?? c.courtComplex ?? "—",
+        status: c.status ?? "—",
+        filing: c.filingDate ?? "—",
+        source: c.source ?? 'eCourts',
+      }))
+    : null;
+  const mutationReferencePanel = buildMutationReferencePanel(
+    revenueRecords?.mutationReferences ?? []
+  );
+
+  // ── Derive regulatory flags ────────────────────────────────────────────────────
+  const regFlags = (regulatoryScreener?.flags ?? []).filter((flag: any) =>
+    Boolean(flag?.flag?.trim?.() && flag?.description?.trim?.())
+  );
+  const regFlagList = regFlags.length > 0 ? regFlags.map((f: any) => ({
+        name: f.flag,
+        severity: normalizeRegSeverity(f.severity),
+        description: f.description,
+        action: f.recommendedAction ?? "Verify with the relevant government department before proceeding.",
+      })) :
+    null;
+  const regulatoryVerified = isRegulatoryScreeningVerified(regulatoryScreener);
+
+  // ── Derive validation warnings ──────────────────────────────────────────────────
+  const areaWarning = validationFindings?.find(f => f.dimension === "area" && f.severity === "warning");
+  const villageWarning = validationFindings?.find(f => f.dimension === "village" && f.severity === "warning");
+  const gpsWarning = validationFindings?.find(f => f.dimension === "gps" && f.severity === "error");
+
+  // ── Build HTML ────────────────────────────────────────────────────────────────────
+  const safeDislcaimer = escapeHtml(data.disclaimerText);
+  const safeClaimed = escapeHtml(data.claimedOwnerName);
+  const safeTransliterated = escapeHtml(transliteratedOwner);
+  const safeVillage = escapeHtml(plotVillage);
+  const safeDistrict = escapeHtml(plotDistrict);
+  const safeTahasil = escapeHtml(plotTahasil);
+  const safeKhataNo = escapeHtml(revenueRecords?.khataNo ?? "—");
+  const safeClassification = escapeHtml(classification);
+  const safeRegUrl = escapeHtml(registryLinks?.url ?? "https://igrodisha.gov.in/ecsearch");
+  const safeSro = escapeHtml(registryLinks?.params.sro ?? "Not verified");
+  const safePlotNo = escapeHtml(plotNo);
+  const bhunakshaSourceStatus = sourceStatusLine(sourceDetails, sourceStatus, "bhunaksha");
+  const bhulekhSourceStatus = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
+
+  const generatedDate = new Date(data.generatedAt).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const fetchedDate = new Date(data.generatedAt).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  // Build tenant table HTML
+  const tenantRows = tenants.length > 0
+    ? tenants.map((t, i) => {
+        const nameOdia = escapeHtml(t.tenantName ?? "—");
+        const nameLatin = containsOdia(t.tenantName ?? "")
+          ? escapeHtml(transliterateOdia(t.tenantName))
+          : nameOdia;
+        const areaStr = formatArea(t.area ?? null, t.unit ?? null);
+        const lc = translateLandClass(t.landClass ?? "");
+        const father = t.fatherName
+          ? containsOdia(t.fatherName)
+            ? escapeHtml(transliterateOdia(t.fatherName))
+            : escapeHtml(t.fatherName)
+          : "—";
+        return `<tr>
+          <td class="num">${i + 1}</td>
+          <td class="odia">${nameOdia}</td>
+          <td class="latin">${nameLatin}</td>
+          <td class="num">${escapeHtml(t.surveyNo ?? "—")}</td>
+          <td class="num">${areaStr}</td>
+          <td>${escapeHtml(lc)}</td>
+          <td>${father}</td>
+        </tr>`;
+      }).join("\n")
+    : `<tr><td colspan="7" class="empty">No tenant records returned from Bhulekh.</td></tr>`;
+
+  // Build co-owner note
+  const coOwnerNote = coOwners.length > 0
+    ? `<div class="caution-box">
+        <span class="caution-label">&#9888; Multiple owners recorded</span>
+        <p>The Bhulekh RoR owner block lists <strong>${coOwners.length} other owner(s)</strong> in addition to ${escapeHtml(transliteratedOwner)}: ${coOwners.map(c => escapeHtml(c)).join(", ")}. Ask a property lawyer to confirm every recorded owner's consent, legal-heir status, and authority before any sale or transfer.</p>
+      </div>`
+    : "";
+
+  // Build name match section
+  const nameMatchSection = buildNameMatchSection({
+    claimed: safeClaimed,
+    official: safeTransliterated,
+    nameMatch,
+    explanation: discrepancyExplanation,
+    bhulekhUsable,
+    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
+    claimedNameQualityWarning,
+    confidenceBasis: ownershipReasoner?.confidenceBasis ?? "",
+    confidenceMethod: ownershipReasoner?.nameMatchConfidence?.method ?? null,
+    readiness: ownershipReasoner?.readiness ?? null,
+    fatherHusbandMatch: ownershipReasoner?.fatherHusbandMatch ?? null,
+    matchReasons: ownershipReasoner?.matchReasons ?? [],
+    blockingWarnings: ownershipReasoner?.blockingWarnings ?? [],
+  });
+
+  // Build court case section
+  const courtSection = buildCourtSection(
+    totalCases,
+    caseList,
+    courtSourceStatuses,
+    plotDistrict,
+    courtCases?.searchMetadata ?? null
+  );
+
+  // Build regulatory section
+  const regSection = buildRegSection(regFlagList as any, regulatoryVerified);
+
+  // Build LARR section
+  const larrHtml = buildLarrSection(data.larrRiskAssessment);
+
+  // Build Encumbrance section
+  const ecSection = buildEcSection(encumbranceReasoner, safeRegUrl, safeDistrict, safeSro, safePlotNo, safeTransliterated || safeClaimed);
+  const actionItems = buildActionItems({
+    nameMatch,
+    bhulekhUsable,
+    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
+    coOwners,
+    conversionRequired,
+    conversionUnknown,
+    classification,
+    classificationUnknown,
+    courtStatuses: courtSourceStatuses,
+    regulatoryVerified,
+    sourceDetails,
+    safeRegUrl,
+    safePlotNo,
+    safeVillage,
+  });
+
+  // Build area warning
+  const areaWarningHtml = areaWarning
+    ? `<div class="warning-box"><span class="warning-label">&#9888; Area discrepancy</span><p>${escapeHtml(areaWarning.description)} The numbers from the revenue map and the land records don't quite add up. Please verify the plot boundaries on the ground before transacting.</p></div>`
+    : "";
+
+  const villageWarningHtml = villageWarning
+    ? `<div class="info-box"><span class="info-label">&#8505; Location note</span><p>${escapeHtml(villageWarning.description)} We used the revenue map (Bhunaksha) village name for this report as it is more accurate for rural Odisha.</p></div>`
+    : "";
+
+  const gpsError = gpsWarning
+    ? `<div class="error-box"><span class="error-label">&#10007; Location out of range</span><p>${escapeHtml(gpsWarning.description)}</p></div>`
+    : "";
+
+  const demoBanner = data.disclaimerText.includes("demo") || input.reportId?.includes("DEMO")
+    ? `<div class="demo-banner">DEMO REPORT — Using cached sample data &nbsp;|&nbsp; <a href="/?demo=false">Run a real search</a></div>`
+    : "";
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClearDeed — Property Report ${data.reportId}</title>
+<style>
+${CSS}
+</style>
+</head>
+<body>
+${demoBanner}
+<div class="page">
+
+<!-- ── Header ────────────────────────────────────────────────────────── -->
+<header class="report-header">
+  <div class="brand">
+    <div class="brand-name">ClearDeed</div>
+    <div class="brand-sub">Property Due-Diligence Report</div>
+    <div class="gps-chip">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+      ${escapeHtml(gpsDisplay)}
+      &nbsp;&bull;&nbsp;
+      ${escapeHtml(plotVillage)}, ${escapeHtml(plotTahasil)}
+    </div>
+  </div>
+  <div class="meta">
+    <div class="report-id">${escapeHtml(data.reportId)}</div>
+    <div>Generated: ${generatedDate}</div>
+    <div>District: ${safeDistrict}, Odisha</div>
+    <div class="source-time">Report generated: ${fetchedDate}</div>
+    <div class="report-actions">
+      <a href="/api/report/${escapeHtml(data.reportId)}/pdf" class="pdf-button" download>Download PDF</a>
+    </div>
+  </div>
+</header>
+
+${buildBuyerSummary({
+    bhunakshaUsable,
+    bhulekhUsable,
+    plotNo: safePlotNo,
+    plotVillage: safeVillage,
+    nameMatch,
+    claimedNameQualityWarning,
+    courtStatuses: courtSourceStatuses,
+    totalCases,
+    courtSearchMetadata: courtCases?.searchMetadata ?? null,
+    validationFindings: validationFindings ?? [],
+    conversionRequired,
+    classification,
+    redFlags,
+    regFlags,
+    regulatoryVerified,
+    encumbranceStatus: encumbranceReasoner?.status ?? null,
+    encumbranceInstructions: encumbranceReasoner?.instructions ?? null,
+  })}
+
+${buildSourceAuditPanel(sourceDetails)}
+
+<!-- ── Section 1: The Plot ─────────────────────────────────────────── -->
+<section class="section" id="section-plot">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">The Plot</div>
+      <div class="section-sub">What this land is, where it is, and what the revenue map shows</div>
+    </div>
+  </div>
+  <div class="section-body">
+    ${gpsError}
+    <table class="data-table">
+      <tbody>
+        <tr><td class="key">GPS Location</td><td class="mono">${escapeHtml(gpsDisplay)}</td></tr>
+        <tr><td class="key">Village</td><td>${safeVillage}${villageWarning ? '&nbsp;<span class="badge-info">Revenue map used</span>' : ''}</td></tr>
+        <tr><td class="key">Tahasil</td><td>${safeTahasil}</td></tr>
+        <tr><td class="key">District</td><td>${safeDistrict}</td></tr>
+        <tr><td class="key">Khatiyan Number</td><td class="mono">${safeKhataNo}</td></tr>
+        <tr><td class="key">Plot Number</td><td class="mono">${safePlotNo}</td></tr>
+        ${revenueRecords?.riCircle ? `<tr><td class="key">RI Circle</td><td class="mono">${escapeHtml(revenueRecords.riCircle)}</td></tr>` : ''}
+      </tbody>
+    </table>
+    <div class="source-line">
+      <span>Revenue map source: Bhunaksha (${escapeHtml(bhunakshaSourceStatus)}) — GeoServer WFS (mapserver.odisha4kgeo.in)</span>
+      <span>Land-record source: Bhulekh RoR (${escapeHtml(bhulekhSourceStatus)}) — bhulekh.ori.nic.in</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 2: The Owner ────────────────────────────────────────── -->
+<section class="section" id="section-owner">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">The Owner</div>
+      <div class="section-sub">Who the government record shows as the owner — and how that compares to what the seller told you</div>
+    </div>
+    <div class="status-badge status-${ownerBadge(nameMatch).status}">
+      ${ownerBadge(nameMatch).label}
+    </div>
+  </div>
+  <div class="section-body">
+    ${nameMatchSection}
+    ${coOwnerNote}
+    <details class="tenant-table-details">
+      <summary>View ${tenants.length} Bhulekh owner/plot row${tenants.length === 1 ? "" : "s"} (Khatiyan #${safeKhataNo})</summary>
+      <p class="table-note">These rows are source-limited Bhulekh RoR owner records joined with the selected plot/khata fields. Treat them as land-record rows, not a title-chain or sale-authority certificate.</p>
+      <table class="data-table tenant-table">
+        <thead>
+          <tr><th>#</th><th>RoR Name (Odia)</th><th>RoR Name (English)</th><th>Survey No.</th><th>Area</th><th>Land Class</th><th>Guardian/Father</th></tr>
+        </thead>
+        <tbody>${tenantRows}</tbody>
+      </table>
+    </details>
+    <div class="source-line">
+      <span>Source: Bhulekh RoR (bhulekh.ori.nic.in) &mdash; last published: ${escapeHtml(revenueRecords?.lastUpdated ?? '—')}</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 3: Land Classification ────────────────────────────── -->
+<section class="section" id="section-land">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h18v4H3zM3 12h18v4H3zM3 18h18v4H3z"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Land Classification</div>
+      <div class="section-sub">What this land can be used for, and what permissions you need before building</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="classification-card">
+      <div class="classification-type">${safeClassification}</div>
+      <div class="classification-sub">${escapeHtml(classificationBasisText)}</div>
+    </div>
+    ${conversionRequired ? `
+    <div class="caution-box">
+      <span class="caution-label">&#9888; Land use conversion required</span>
+      <p>This land is currently classified as agricultural. Before you can build a house or use it for commercial purposes, you must confirm the conversion process with the Odisha Revenue Department or tehsil office and obtain the required approval. Ask the seller whether conversion has already been initiated and ask your lawyer to verify the current timeline and requirements.</p>
+    </div>` : ''}
+    ${conversionUnknown ? `
+    <div class="warning-box">
+      <span class="warning-label">&#9888; Conversion requirement not verified</span>
+      <p>Bhulekh records were available, but the land-classifier did not confirm whether land-use conversion is required. Ask the tehsil office or a property lawyer to confirm whether conversion is needed for your intended use.</p>
+    </div>` : ''}
+    ${redFlags.length > 0 ? redFlags.map((flag: any) => `
+    <div class="caution-box flag-${escapeHtml(flag.severity)}">
+      <span class="caution-label">&#9888; ${escapeHtml(flag.flag)}</span>
+      <p>${escapeHtml(flag.description)}</p>
+      ${flag.recommendedAction ? `<p><strong>What to do:</strong> ${escapeHtml(flag.recommendedAction)}</p>` : ''}
+    </div>`).join('\n') : ''}
+    ${areaWarningHtml}
+    ${!bhulekhUsable ? `<div class="warning-box"><span class="warning-label">&#9888; Classification not verified</span><p>Bhulekh land-record data was not usable in this run, so ClearDeed cannot verify the official land class. Source status: <strong>${escapeHtml(bhulekhUnavailableReason)}</strong>. Ask the seller for the current Bhulekh Khatiyan and confirm the land class with a lawyer or tehsil office.</p></div>` : ''}
+    <div class="source-line">
+      <span>Land-class source: Bhulekh RoR (${escapeHtml(landClassSourceStatus)}) — per-plot land class fields in Khatiyan #${safeKhataNo}</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 4: Encumbrances & Disputes ──────────────────────────── -->
+<section class="section" id="section-encumbrance">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Court Cases &amp; Encumbrances</div>
+      <div class="section-sub">Any active court cases or loans, liens, or transfers on this land</div>
+    </div>
+  </div>
+  <div class="section-body">
+    ${courtSection} ${mutationReferencePanel} ${ecSection}
+    <div class="source-line">
+      <span>Court cases: services.ecourts.gov.in, rccms.odisha.gov.in &mdash; Encumbrance Certificate: igrodisha.gov.in</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 5: Regulatory Flags ──────────────────────────────── -->
+<section class="section" id="section-regulatory">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Regulatory Flags</div>
+      <div class="section-sub">Protected zones and restrictions that affect what you can do with this land</div>
+    </div>
+  </div>
+  <div class="section-body">
+    ${regSection}
+    <div class="info-box">
+      <span class="info-label">&#8505; About regulatory screening</span>
+      <p>ClearDeed only reports regulatory overlays that were actually checked during this run. Forest, coastal, PESA, airport, archaeological, and town-planning restrictions may require separate manual verification until those layers are listed above as completed sources.</p>
+    </div>
+    <div class="source-line">
+      <span>Overlay screening: ${regulatoryVerified ? 'completed overlay source(s) listed in findings above' : 'not fully verified in this run'}</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 6: Land Acquisition Risk (LARR) ────────────────────── -->
+<section class="section" id="section-larr">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Land Acquisition Risk</div>
+      <div class="section-sub">Check if the government is planning to acquire this land</div>
+    </div>
+  </div>
+  <div class="section-body">
+    ${larrHtml}
+  </div>
+</section>
+
+<!-- ── Section 7: Market Benchmark ────────────────────────────────── -->
+<section class="section" id="section-benchmark">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Market Benchmark &amp; Circle Rate</div>
+      <div class="section-sub">Official stamp duty and registration minimum guidance value</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="info-box">
+      <span class="info-label">Check official benchmark valuation</span>
+      <p>ClearDeed provides this link to the official IGR Odisha benchmark valuation portal. The exact circle rate depends on the specific Kisam (land type), proximity to roads, and mouza.</p>
+      <p><strong>Guidance for Khordha Zone:</strong> Rural agricultural land often ranges from ₹20L to ₹50L per acre. Urban/Bhubaneswar outskirts can range from ₹1,000 to ₹3,000+ per sqft.</p>
+      <p style="margin-top: 8px;">
+        <a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener" style="font-weight: 600; color: #1e4d3b; text-decoration: underline;">Verify official circle rate at regis.odisha.gov.in &rarr;</a>
+      </p>
+    </div>
+    <div class="source-line">
+      <span>Source: IGR Odisha Benchmark Valuation Portal &mdash; Last verified: 2026-05-01</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 8: What to Ask Next ──────────────────────────────── -->
+<section class="section section-action" id="section-action">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">What to Ask Next</div>
+      <div class="section-sub">Specific questions to ask the seller and broker — and steps to get the EC</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <p class="action-intro">Before you sign anything or pay any money, ask the seller and broker these questions and get clear answers:</p>
+    <ol class="action-list">
+      ${actionItems}
+    </ol>
+    <div class="disclaimer-box">
+      <div class="disclaimer-label">&#9888; Important disclaimer</div>
+      <p>${safeDislcaimer}</p>
+    </div>
+    <div class="source-line">
+      <span>ClearDeed — ${safeDistrict}, Odisha &mdash; Report ${escapeHtml(data.reportId)}</span>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>`;
+
+  const title = `ClearDeed — ${plotVillage}, ${plotTahasil} (Plot ${safePlotNo})`;
+
+  return { html, title };
+}
+
+// ─── Section builders ─────────────────────────────────────────────────────────
+
+function buildEcSection(
+  encumbranceResult: EncumbranceResult | null,
+  safeRegUrl: string,
+  safeDistrict: string,
+  safeSro: string,
+  safePlotNo: string,
+  safeOwnerName: string
+): string {
+  let stepsHtml: string;
+
+  if (encumbranceResult?.instructions && typeof encumbranceResult.instructions === "string") {
+    // Instructions is a plain-text string — split into list items
+    const lines = encumbranceResult.instructions
+      .split(/\n+/)
+      .map((l: string) => l.trim())
+      .filter(Boolean);
+    stepsHtml = lines
+      .map((line: string) => {
+        // Make URLs clickable in the text
+        const urlPattern = /https?:\/\/[^\s]+/g;
+        const linked = line.replace(urlPattern, (url: string) =>
+          `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
+        );
+        return `<li>${linked}</li>`;
+      })
+      .join("\n");
+  } else {
+    // Fallback steps when no instructions provided
+    const districtSroStep = isVerifiedDisplayValue(safeDistrict) && isVerifiedDisplayValue(safeSro)
+      ? `Navigate to the Encumbrance Certificate section and search using District: ${escapeHtml(safeDistrict)}, SRO: ${escapeHtml(safeSro)}.`
+      : "Navigate to the Encumbrance Certificate section and confirm the correct district/SRO in the live IGR Odisha flow or at the Sub-Registrar office.";
+    stepsHtml = [
+      `Visit the Inspector General of Registration (IGR) Odisha portal at <a href="${escapeHtml(safeRegUrl)}" target="_blank" rel="noopener">${escapeHtml(safeRegUrl)}</a>`,
+      districtSroStep,
+      `Enter Plot Number ${escapeHtml(safePlotNo)} or owner name ${escapeHtml(safeOwnerName)} and request the EC for the last 15-30 years.`,
+      `<strong>Fees:</strong> Online search is typically free. Certified copy fees vary (approx. ₹100-500 depending on search years).`,
+      `<strong>Required Docs for manual request:</strong> ID proof, copy of RoR/Khatiyan, and application form.`,
+      `<strong>Bhubaneswar SRO:</strong> If manual verification is needed, visit the Sub-Registrar Office at Khordha or Bhubaneswar depending on exact tahasil jurisdiction.`
+    ]
+      .map((action) => `<li>${action}</li>`)
+      .join("\n");
+  }
+
+  return `<div class="igr-panel">
+      <div class="igr-label">Encumbrance Certificate (EC)</div>
+      <p>To check for prior transfers, liens, or loans on this plot, obtain an Encumbrance Certificate (EC) from IGR Odisha or the Sub-Registrar's office and have it reviewed by a property lawyer.</p>
+      <ol class="igr-steps">${stepsHtml}</ol>
+    </div>`;
+}
+
+function buildActionItems(input: {
+  nameMatch: string;
+  bhulekhUsable: boolean;
+  bhulekhStatus: string;
+  coOwners: string[];
+  conversionRequired: boolean | null;
+  conversionUnknown: boolean;
+  classification: string;
+  classificationUnknown: boolean;
+  courtStatuses: Record<string, string>;
+  regulatoryVerified: boolean;
+  sourceDetails: Record<string, any>;
+  safeRegUrl: string;
+  safePlotNo: string;
+  safeVillage: string;
+}): string {
+  const items: string[] = [];
+
+  if (!input.bhulekhUsable) {
+    items.push(
+      `<li><strong>Owner match is unavailable.</strong> Bhulekh owner records were not usable in this run (status: ${escapeHtml(input.bhulekhStatus)}). Ask the seller for the current Bhulekh Khatiyan, photo ID, and legal heir or mutation papers, then have a lawyer match every recorded owner to the seller before paying any advance.</li>`
+    );
+  } else if (input.nameMatch === "unknown") {
+    items.push(
+      `<li><strong>Owner match is unknown.</strong> The claim could not be compared with confidence. Ask the seller for the current Bhulekh Khatiyan, photo ID, and title documents, and ask your lawyer to write down whether the seller is the same person as the recorded owner.</li>`
+    );
+  } else if (input.nameMatch === "exact") {
+    items.push(
+      `<li><strong>Bhulekh RoR name match found.</strong> Ask to see the original Khatiyan document and verify the seller's ID and sale documents use the same full legal name.</li>`
+    );
+  } else if (input.nameMatch === "ambiguous") {
+    items.push(
+      `<li><strong>Owner identity is not confirmed.</strong> The entered name is only a surname or single word. Ask for the seller's full legal name, photo ID, and title documents, then have a lawyer compare them with the Bhulekh RoR.</li>`
+    );
+  } else if (input.nameMatch === "mismatch" || input.nameMatch === "partial") {
+    items.push(
+      `<li><strong>The seller's name does not match the government record.</strong> Ask the seller to explain exactly why. Ask for the original title documents — registered sale deeds going back at least 30 years — that connect their name to this plot. Do not proceed without this.</li>`
+    );
+  }
+
+  if (input.coOwners.length > 0) {
+    items.push(
+      `<li><strong>All co-owners must consent to the sale.</strong> The Bhulekh record shows ${input.coOwners.length} other owner(s): ${input.coOwners.slice(0, 3).map((c: string) => escapeHtml(c)).join(", ")}${input.coOwners.length > 3 ? ` and ${input.coOwners.length - 3} more` : ""}. Ask the seller to confirm all co-owners are aware of and have agreed to this sale. If any co-owner is deceased, you will need a legal heir certificate.</li>`
+    );
+  }
+
+  if (input.classificationUnknown || isClassificationUnknown(input.classification)) {
+    items.push(
+      `<li><strong>Land classification is unknown.</strong> Ask the tehsil office or a property lawyer to confirm the official kisam/land class for this plot and whether your intended use is allowed.</li>`
+    );
+  }
+
+  if (input.conversionRequired === true) {
+    items.push(
+      `<li><strong>Land-use conversion may be required and was not verified online.</strong> Ask the seller whether conversion from agricultural to your intended use has already been approved. Ask the tehsil office or your lawyer for the current process, expected timeline, and government fees.</li>`
+    );
+  }
+
+  if (input.conversionUnknown) {
+    items.push(
+      `<li><strong>Land use conversion status is unknown.</strong> Ask the seller for written tehsil confirmation on whether conversion is required for your intended use.</li>`
+    );
+  }
+
+  if (isCourtSearchIncomplete(input.courtStatuses)) {
+    items.push(
+      `<li><strong>Court and revenue-case search is incomplete.</strong> Manually search eCourts and RCCMS using the seller's full legal name, village, plot number, and khata number before treating the dispute check as clear.</li>`
+    );
+  }
+
+  if (!input.regulatoryVerified) {
+    items.push(
+      `<li><strong>Regulatory screening is incomplete.</strong> Ask the local tehsildar or Town Planning office to check forest, coastal, PESA, airport, archaeological, and town-planning restrictions for this plot.</li>`
+    );
+  }
+
+  const sourceFailures = getSourceFailures(input.sourceDetails);
+  if (sourceFailures.length > 0) {
+    items.push(
+      `<li><strong>Some source checks failed.</strong> Re-run or manually verify these source(s): ${sourceFailures.join("; ")}. Do not treat missing online data as a clean result.</li>`
+    );
+  }
+
+  items.push(
+    `<li><strong>Get the Encumbrance Certificate before paying anything.</strong> Visit <a href="${input.safeRegUrl}" target="_blank" rel="noopener">igrodisha.gov.in</a> or the Sub-Registrar office, confirm the current fee on the portal/counter, and request the EC for plot ${input.safePlotNo} in ${input.safeVillage} village. Look for any entries in the "Transfers" or "Charges" section.</li>`,
+    `<li><strong>Verify the plot boundaries on the ground.</strong> Ask the seller to show you the boundary markers (pukhuri/pillars) on the ground. Ask a local surveyor to confirm the GPS coordinates match the physical boundaries.</li>`,
+    `<li><strong>Ask for the 30-year title chain.</strong> Request photocopies of all registered sale deeds going back at least 30 years. A property lawyer should review these before you pay.</li>`,
+    `<li><strong>Confirm no pending mutations.</strong> Ask the seller whether any mutation (name transfer) is pending in their name at the local tehsil office.</li>`
+  );
+
+  return items.join("\n      ");
+}
+
+function isClassificationUnknown(classification: string): boolean {
+  const normalized = classification.trim().toLowerCase();
+  return normalized === "" || normalized === "unknown" || normalized === "not verified";
+}
+
+function isVerifiedDisplayValue(value: string | null | undefined): boolean {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized !== "" && normalized !== "unknown" && normalized !== "not verified" && normalized !== "—";
+}
+
+function formatGpsDisplay(gps: { latitude: number; longitude: number }): string {
+  const hasNumericGps = Number.isFinite(gps.latitude) && Number.isFinite(gps.longitude);
+  const isPlaceholder = gps.latitude === 0 && gps.longitude === 0;
+  if (!hasNumericGps || isPlaceholder) return "GPS not captured";
+  return `${gps.latitude.toFixed(6)}°N, ${gps.longitude.toFixed(6)}°E`;
+}
+
+function isCourtSearchIncomplete(sourceStatuses: Record<string, string>): boolean {
+  const ecourtsUsable = sourceStatuses.ecourts === "success";
+  const rccmsUsable = sourceStatuses.rccms === "success";
+  return !ecourtsUsable || !rccmsUsable;
+}
+
+function reportSafeSourceReason(value: unknown): string | null {
+  const raw = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!raw) return null;
+
+  if (
+    /browserType\.launch|Executable doesn't exist|chromium_headless_shell|ms-playwright|playwright install|Playwright was just installed/i.test(raw)
+  ) {
+    return "Browser runtime was unavailable in this deployment. ClearDeed should retry this report after the verification service redeploys.";
+  }
+
+  return raw.length > 240 ? `${raw.slice(0, 237)}...` : raw;
+}
+
+function sourceStatusLine(
+  sourceDetails: Record<string, any>,
+  sourceStatus: Record<string, string>,
+  source: string
+): string {
+  const detail = sourceDetails[source] ?? {};
+  const status = detail?.status ?? sourceStatus[source] ?? "unknown";
+  const reason = reportSafeSourceReason(detail?.statusReason ?? detail?.error ?? null);
+  return reason ? `${status}: ${reason}` : String(status);
+}
+
+function getSourceFailures(sourceDetails: Record<string, any>): string[] {
+  return Object.entries(sourceDetails)
+    .filter(([, detail]) => isSourceFailureStatus(detail?.status))
+    .map(([source, detail]) => {
+      const status = escapeHtml(detail?.status ?? "unknown");
+      const safeReason = reportSafeSourceReason(detail?.statusReason);
+      const reason = safeReason ? ` (${escapeHtml(safeReason)})` : "";
+      return `${escapeHtml(source)}: ${status}${reason}`;
+    });
+}
+
+function isSourceFailureStatus(status: unknown): boolean {
+  return ["error", "failed", "failure", "unavailable", "manual_required"].includes(String(status ?? "").toLowerCase());
+}
+
+function buildBuyerSummary(input: {
+  bhunakshaUsable: boolean;
+  bhulekhUsable: boolean;
+  plotNo: string;
+  plotVillage: string;
+  nameMatch: string;
+  claimedNameQualityWarning: boolean;
+  courtStatuses: Record<string, string>;
+  totalCases: number;
+  courtSearchMetadata: {
+    ecourts?: {
+      captchaAcceptedCount?: number;
+    } | null;
+  } | null;
+  validationFindings: Array<{ dimension?: string; severity?: string; description?: string }>;
+  conversionRequired: boolean | null;
+  classification: string;
+  redFlags: Array<any>;
+  regFlags: Array<any>;
+  regulatoryVerified: boolean;
+  encumbranceStatus: "clear" | "encumbered" | "manual_required" | "error" | null;
+  encumbranceInstructions: string | null;
+}): string {
+  const gridItems = buildSummaryGridItems(input);
+  const executiveSummary = buildExecutiveSummary(input);
+  const keyQuestions = buildKeyQuestions({ ...input, validationFindings: input.validationFindings });
+
+  return `<section class="summary-panel" id="section-summary">
+  <div class="summary-header">
+    <div class="summary-title">Property record status</div>
+    <div class="summary-subtitle">At a glance — scroll down for full details and what to do next</div>
+  </div>
+  <div class="status-grid">
+    ${gridItems}
+  </div>
+  <div class="executive-summary">
+    <div class="exec-sum-label">What this means for you</div>
+    <p>${executiveSummary}</p>
+  </div>
+  ${keyQuestions ? `<div class="key-questions">
+    <div class="key-questions-label">Key questions for your lawyer</div>
+    <ol class="key-questions-list">${keyQuestions}</ol>
+  </div>` : ''}
+</section>`;
+}
+
+function buildSummaryGridItems(input: {
+  bhunakshaUsable: boolean;
+  bhulekhUsable: boolean;
+  plotNo: string;
+  plotVillage: string;
+  nameMatch: string;
+  claimedNameQualityWarning: boolean;
+  courtStatuses: Record<string, string>;
+  totalCases: number;
+  courtSearchMetadata: {
+    ecourts?: {
+      captchaAcceptedCount?: number;
+    } | null;
+  } | null;
+  conversionRequired: boolean | null;
+  classification: string;
+  redFlags: Array<any>;
+  regFlags: Array<any>;
+  regulatoryVerified: boolean;
+  encumbranceStatus: "clear" | "encumbered" | "manual_required" | "error" | null;
+  encumbranceInstructions: string | null;
+}): string {
+  const items: Array<{ icon: string; label: string; finding: string; cls: string }> = [];
+
+  // 1. Plot — Revenue map
+  if (input.bhunakshaUsable) {
+    items.push({
+      icon: "&#10003;",
+      label: "Plot location",
+      finding: `Plot ${input.plotNo || "—"} found in ${input.plotVillage || "—"}${input.plotVillage && input.plotVillage !== "—" ? " village" : ""}`,
+      cls: "status-ok",
+    });
+  } else if (input.bhulekhUsable && isVerifiedDisplayValue(input.plotNo)) {
+    items.push({
+      icon: "&#8505;",
+      label: "Plot record",
+      finding: `Plot ${input.plotNo} found in Bhulekh for ${input.plotVillage || "the selected village"}; map overlay was not checked in this run.`,
+      cls: "status-unknown",
+    });
+  } else {
+    items.push({
+      icon: "&#10007;",
+      label: "Plot location",
+      finding: "Revenue map lookup did not return a usable result.",
+      cls: "status-fail",
+    });
+  }
+
+  // 2. Owner — Bhulekh
+  if (input.bhulekhUsable) {
+    if (input.nameMatch === "exact" || input.nameMatch === "matched") {
+      items.push({
+        icon: "&#10003;",
+        label: "Owner match",
+        finding: "RoR owner name matches the seller-provided name.",
+        cls: "status-ok",
+      });
+    } else if (input.nameMatch === "ambiguous") {
+      items.push({
+        icon: "&#9888;",
+        label: "Owner match",
+        finding: "Only a surname given — identity not confirmed.",
+        cls: "status-warn",
+      });
+    } else if (input.nameMatch === "partial" || input.nameMatch === "mismatch") {
+      items.push({
+        icon: "&#10007;",
+        label: "Owner match",
+        finding: input.nameMatch === "mismatch"
+          ? "Seller name does not match government records."
+          : "Seller name only partially matches government records.",
+        cls: "status-fail",
+      });
+    } else {
+      items.push({
+        icon: "&#8505;",
+        label: "Owner match",
+        finding: "Bhulekh found but manual review needed.",
+        cls: "status-warn",
+      });
+    }
+  } else {
+    items.push({
+      icon: "&#10007;",
+      label: "Owner match",
+      finding: "Bhulekh owner records not available.",
+      cls: "status-fail",
+    });
+  }
+
+  // 3. Court cases
+  const ecourtsOk = input.courtStatuses.ecourts === "success";
+  const rccmsOk = input.courtStatuses.rccms === "success";
+  const ecourtsAccepted = Number(input.courtSearchMetadata?.ecourts?.captchaAcceptedCount ?? 0) > 0;
+  if (input.totalCases > 0) {
+    items.push({
+      icon: "&#9888;",
+      label: "Court cases",
+      finding: `${input.totalCases} case${input.totalCases === 1 ? "" : "s"} found — review required.`,
+      cls: "status-warn",
+    });
+  } else if (ecourtsOk && rccmsOk && ecourtsAccepted) {
+    items.push({
+      icon: "&#10003;",
+      label: "Court cases",
+      finding: "No cases found in eCourts / RCCMS.",
+      cls: "status-ok",
+    });
+  } else if (ecourtsOk || rccmsOk) {
+    items.push({
+      icon: "&#8505;",
+      label: "Court cases",
+      finding: "Only part of the court/revenue case check returned usable results.",
+      cls: "status-warn",
+    });
+  } else {
+    items.push({
+      icon: "&#8505;",
+      label: "Court cases",
+      finding: "Court search not confirmed in this run.",
+      cls: "status-unknown",
+    });
+  }
+
+  // 4. Encumbrance Certificate
+  if (input.encumbranceStatus === "clear") {
+    items.push({
+      icon: "&#10003;",
+      label: "EC (Encumbrance)",
+      finding: "No encumbrances found in automated search.",
+      cls: "status-ok",
+    });
+  } else if (input.encumbranceStatus === "encumbered") {
+    items.push({
+      icon: "&#9888;",
+      label: "EC (Encumbrance)",
+      finding: "Encumbrance found — review required.",
+      cls: "status-warn",
+    });
+  } else {
+    items.push({
+      icon: "&#8505;",
+      label: "EC (Encumbrance)",
+      finding: input.encumbranceInstructions
+        ? "Manual EC retrieval required — see instructions below."
+        : "Manual EC required — see instructions below.",
+      cls: "status-unknown",
+    });
+  }
+
+  // 5. Land classification
+  if (input.bhulekhUsable) {
+    if (input.conversionRequired === true) {
+      items.push({
+        icon: "&#9888;",
+        label: "Land class",
+        finding: `${input.classification} — conversion required before building.`,
+        cls: "status-warn",
+      });
+    } else if (input.conversionRequired === false) {
+      items.push({
+        icon: "&#10003;",
+        label: "Land class",
+        finding: input.classification && input.classification !== "Not verified"
+          ? `${input.classification}.`
+          : "Land class found but confirm with tehsil.",
+        cls: "status-ok",
+      });
+    } else {
+      items.push({
+        icon: "&#8505;",
+        label: "Land class",
+        finding: input.classification && input.classification !== "Not verified"
+          ? `${input.classification}; conversion requirement not verified.`
+          : "Land class found but conversion requirement needs manual confirmation.",
+        cls: "status-warn",
+      });
+    }
+  } else {
+    items.push({
+      icon: "&#8505;",
+      label: "Land class",
+      finding: "Land class not verified from Bhulekh.",
+      cls: "status-unknown",
+    });
+  }
+
+  // 6. Regulatory flags
+  if (input.redFlags.length > 0 || input.regFlags.length > 0) {
+    const flagCount = input.redFlags.length + input.regFlags.length;
+    items.push({
+      icon: "&#9888;",
+      label: "Regulatory flags",
+      finding: `${flagCount} restriction${flagCount === 1 ? "" : "s"} found — see details.`,
+      cls: "status-warn",
+    });
+  } else if (input.regulatoryVerified) {
+    items.push({
+      icon: "&#10003;",
+      label: "Regulatory flags",
+      finding: "No immediate flags in checked overlays.",
+      cls: "status-ok",
+    });
+  } else {
+    items.push({
+      icon: "&#8505;",
+      label: "Regulatory flags",
+      finding: "Regulatory overlay screening incomplete — verify manually.",
+      cls: "status-warn",
+    });
+  }
+
+  return items.map((item) => `
+    <div class="status-item ${item.cls}">
+      <div class="status-icon">${item.icon}</div>
+      <div class="status-body">
+        <div class="status-label">${escapeHtml(item.label)}</div>
+        <div class="status-finding">${escapeHtml(item.finding)}</div>
+      </div>
+    </div>`).join("");
+}
+
+function buildExecutiveSummary(input: {
+  bhunakshaUsable: boolean;
+  bhulekhUsable: boolean;
+  nameMatch: string;
+  claimedNameQualityWarning: boolean;
+  courtStatuses: Record<string, string>;
+  totalCases: number;
+  courtSearchMetadata: {
+    ecourts?: {
+      captchaAcceptedCount?: number;
+    } | null;
+  } | null;
+  conversionRequired: boolean | null;
+  redFlags: Array<any>;
+  regFlags: Array<any>;
+  regulatoryVerified: boolean;
+  encumbranceStatus: "clear" | "encumbered" | "manual_required" | "error" | null;
+}): string {
+  const ecourtsOk = input.courtStatuses.ecourts === "success";
+  const rccmsOk = input.courtStatuses.rccms === "success";
+  const ecourtsAccepted = Number(input.courtSearchMetadata?.ecourts?.captchaAcceptedCount ?? 0) > 0;
+  const allClean = input.bhunakshaUsable && input.bhulekhUsable
+    && (input.nameMatch === "exact" || input.nameMatch === "matched")
+    && (ecourtsOk && rccmsOk && ecourtsAccepted)
+    && input.totalCases === 0
+    && input.conversionRequired !== true
+    && input.conversionRequired !== null
+    && input.regulatoryVerified
+    && input.redFlags.length === 0
+    && input.regFlags.length === 0
+    && input.encumbranceStatus === "clear";
+
+  if (allClean) {
+    return "The property records checked in this run are consistent: the plot is confirmed in the revenue map, Bhulekh shows the owner name you provided, no court cases were found in the checked databases, and no immediate regulatory flags were raised. However, a lawyer should still review the title chain and EC before you sign or pay anything.";
+  }
+
+  const allFailed = !input.bhunakshaUsable && !input.bhulekhUsable
+    && input.courtStatuses.ecourts !== "success"
+    && input.courtStatuses.rccms !== "success";
+
+  if (allFailed) {
+    return "We could not verify this plot online in this run. The government portals that power ClearDeed may be temporarily unavailable or the plot may not be in the digital records yet. Ask the seller for the current Bhulekh Khatiyan and pull Bhunaksha and Bhulekh records directly from the tehsil office before making any payment.";
+  }
+
+  const bhulekhOk = input.bhulekhUsable && input.nameMatch !== "mismatch";
+  const courtIncomplete = !ecourtsOk || !rccmsOk || !ecourtsAccepted;
+
+  if (bhulekhOk && courtIncomplete) {
+    return "Bhulekh land records were successfully retrieved and show an owner record, but the court and revenue-case search was not fully completed. Records match so far. Before transacting, ask your lawyer to manually search eCourts and RCCMS, and to pull the EC to confirm no prior transfers or encumbrances.";
+  }
+
+  if (input.nameMatch === "mismatch" || input.nameMatch === "partial") {
+    return "The name you provided does not match the government land record for this plot. This is a significant red flag — ask the seller to explain the discrepancy with original title documents before going further. Do not pay any money or sign anything until this is resolved.";
+  }
+
+  if (input.conversionRequired === true || input.redFlags.length > 0 || input.regFlags.length > 0) {
+    return "The land records retrieved show the plot but flagged restrictions: land-use conversion requirements, protected zones, or regulatory restrictions were found. These require action from the seller or government clearances before you can develop or use the land as intended. Ask your lawyer to get written confirmation from the tehsil or relevant department.";
+  }
+
+  // Default partial summary
+  return "The property records show some findings but are incomplete — one or more checks are pending or did not return results in this run. Review the details below, then ask your lawyer to verify the Bhulekh Khatiyan, run a manual court search, and pull the EC before you make any decision about this plot.";
+}
+
+function buildKeyQuestions(input: {
+  bhulekhUsable: boolean;
+  nameMatch: string;
+  claimedNameQualityWarning: boolean;
+  courtStatuses: Record<string, string>;
+  conversionRequired: boolean | null;
+  redFlags: Array<any>;
+  regFlags: Array<any>;
+  validationFindings: Array<{ dimension?: string; severity?: string; description?: string }>;
+}): string {
+  const questions: string[] = [];
+
+  // Add validation findings as questions
+  for (const finding of input.validationFindings) {
+    if (finding.severity === "error" || finding.severity === "warning") {
+      const q = finding.description?.includes("WFS plot")
+        ? `The revenue map and Bhulekh show different plot numbers for the same land. Can you show me the boundary map and confirm which plot you are selling?`
+        : finding.description;
+      if (q) questions.push(q);
+    }
+  }
+
+  if (!input.bhulekhUsable) {
+    questions.push("Can you show me the original Bhulekh Khatiyan for this plot?");
+  } else if (input.nameMatch === "exact" || input.nameMatch === "matched") {
+    questions.push("Can you show me the original Bhulekh Khatiyan and confirm your name is listed exactly as shown there?");
+  } else if (input.nameMatch === "mismatch" || input.nameMatch === "partial") {
+    questions.push("Why does your name not match the Bhulekh record? Can you show the title documents connecting you to this plot?");
+  } else if (input.claimedNameQualityWarning || input.nameMatch === "ambiguous") {
+    questions.push("What is your full legal name as it appears on your photo ID and sale documents?");
+  }
+
+  const courtIncomplete = input.courtStatuses.ecourts !== "success" || input.courtStatuses.rccms !== "success";
+  if (courtIncomplete) {
+    questions.push("Have you ever had a court case in Bhubaneswar or Khordha district — civil, criminal, or revenue? Please show me the clearance certificate.");
+  }
+
+  if (input.conversionRequired === true) {
+    questions.push("Has the land-use conversion (CLU) from agricultural to your intended use already been approved? Can you show the order?");
+  }
+
+  const hasFlag = input.redFlags.length > 0 || input.regFlags.length > 0;
+  if (hasFlag) {
+    const flagNames = [...input.redFlags.map(f => f.flag), ...input.regFlags.map(f => f.name)].filter(Boolean).slice(0, 2);
+    if (flagNames.length > 0) {
+      questions.push(`For the ${flagNames.join(" / ")} restriction(s) flagged above — has the required clearance from the department been obtained? Can you show it?`);
+    }
+  }
+
+  questions.push("Can you show me all registered sale deeds going back at least 30 years for this plot?");
+  questions.push("Has any mutation (name transfer) been completed in your name at the tehsil office?");
+
+  return questions.map(q => `<li>${escapeHtml(q)}</li>`).join("");
+}
+
+function buildSourceAuditPanel(sourceDetails: Record<string, any>): string {
+  const entries = Object.entries(sourceDetails);
+  if (entries.length === 0) return "";
+
+  const rows = entries
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([source, detail]) => {
+      const fetchedAt = detail?.fetchedAt
+        ? new Date(detail.fetchedAt).toLocaleString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "—";
+      const reason = reportSafeSourceReason(detail?.statusReason) ?? "—";
+      return `<tr>
+        <td>${escapeHtml(source)}</td>
+        <td>${escapeHtml(detail?.status ?? "unknown")}</td>
+        <td>${escapeHtml(fetchedAt)}</td>
+        <td>${escapeHtml(reason)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `<section class="source-audit" id="section-source-audit">
+    <details>
+      <summary>Source status and timestamps</summary>
+      <table class="data-table">
+        <thead><tr><th>Source</th><th>Status</th><th>Fetched at</th><th>Status reason</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </details>
+  </section>`;
+}
+
+function buildNameMatchSection(input: {
+  claimed: string;
+  official: string;
+  nameMatch: string;
+  explanation: string;
+  bhulekhUsable: boolean;
+  bhulekhStatus: string;
+  claimedNameQualityWarning: boolean;
+  confidenceBasis: string;
+  confidenceMethod: string | null;
+  readiness: string | null;
+  fatherHusbandMatch: string | null;
+  matchReasons: Array<{ code?: string; label?: string; weight?: number; detail?: string }>;
+  blockingWarnings: string[];
+}): string {
+  const { claimed, official, nameMatch, explanation, bhulekhUsable, bhulekhStatus, claimedNameQualityWarning } = input;
+  const fullNameWarning = claimedNameQualityWarning
+    ? `<p><strong>Input quality note:</strong> You entered a single-word name. For owner matching, use the seller's full legal name, not just a surname.</p>`
+    : "";
+  const basis = buildOwnerMatchBasis(input);
+
+  if (!bhulekhUsable) {
+    return `<div class="error-notice">
+      <p>We could not verify the owner name because Bhulekh did not return usable owner records in this run. Source status: <strong>${escapeHtml(bhulekhStatus)}</strong>.</p>
+      ${fullNameWarning}
+      ${basis}
+      <p><strong>What to do:</strong> Ask the seller for the current Bhulekh Khatiyan and the seller's full legal name. Cross-check every recorded owner and legal heir before paying any advance.</p>
+    </div>`;
+  }
+
+  if (nameMatch === "not_requested") {
+    return `<div class="success-notice">
+      <p>Bhulekh owner records retrieved. No seller name was provided for comparison — ownership verification is pending. The recorded owners are shown below.</p>
+    </div>`;
+  }
+
+  if (nameMatch === "unknown") {
+    return `<div class="error-notice">
+      <p>We could not verify the owner name. The land records were retrieved but could not be compared against the seller's name.</p>
+      ${fullNameWarning}
+      ${basis}
+      <p><strong>What to do:</strong> Ask the seller to show you the original Bhulekh Khatiyan document. Cross-check the owner name on the document against the seller's name.</p>
+    </div>`;
+  }
+
+  if (nameMatch === "exact") {
+    return `<div class="success-notice">
+      <p>Bhulekh RoR shows a recorded owner name that matches the seller-provided full name <strong>"${claimed}"</strong>: <strong>"${official}"</strong>.</p>
+      ${fullNameWarning}
+      ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
+      ${basis}
+    </div>`;
+  }
+
+  if (nameMatch === "ambiguous") {
+    return `<div class="warning-notice owner-ambiguous">
+      <p>The provided name <strong>"${claimed}"</strong> is only a surname or single word. Bhulekh contains a similar recorded owner name (<strong>"${official}"</strong>), but this is not enough to confirm the seller's identity.</p>
+      ${fullNameWarning}
+      ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
+      ${basis}
+      <p><strong>What to do:</strong> Ask for the seller's full legal name as written on ID and sale documents, then have a lawyer compare it with the RoR and title chain.</p>
+    </div>`;
+  }
+
+  if (nameMatch === "partial") {
+    return `<div class="warning-notice">
+      <p>The seller-claimed name <strong>"${claimed}"</strong> partially matches the government record which shows <strong>"${official}"</strong> as the owner.</p>
+      ${fullNameWarning}
+      ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
+      ${basis}
+    </div>`;
+  }
+
+  // mismatch
+  return `<div class="error-notice">
+    <p>The seller-claimed name <strong>"${claimed}"</strong> does <strong>not</strong> appear in the government land record for this plot. The record shows <strong>"${official}"</strong> as the official owner.</p>
+    ${fullNameWarning}
+    ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
+    ${basis}
+  </div>`;
+}
+
+function ownerBadge(nameMatch: string): { status: "green" | "amber" | "red" | "gray"; label: string } {
+  if (nameMatch === "exact") return { status: "green", label: "&#10003; Full-name match" };
+  if (nameMatch === "ambiguous") return { status: "amber", label: "&#9888; Needs identity proof" };
+  if (nameMatch === "partial") return { status: "amber", label: "&#9888; Partial match" };
+  if (nameMatch === "mismatch") return { status: "red", label: "&#10007; Mismatch" };
+  if (nameMatch === "not_requested") return { status: "gray", label: "&#8505; Pending — no seller name" };
+  return { status: "gray", label: "&#8505; Unverified" };
+}
+
+function buildOwnerMatchBasis(input: {
+  confidenceBasis: string;
+  confidenceMethod: string | null;
+  readiness: string | null;
+  fatherHusbandMatch: string | null;
+  matchReasons: Array<{ code?: string; label?: string; weight?: number; detail?: string }>;
+  blockingWarnings: string[];
+}): string {
+  const rows = [
+    input.confidenceMethod ? `Method: ${input.confidenceMethod}` : null,
+    input.readiness ? `Readiness: ${input.readiness}` : null,
+    input.fatherHusbandMatch ? `Guardian check: ${input.fatherHusbandMatch.replace(/_/g, " ")}` : null,
+  ].filter(Boolean) as string[];
+  const reasons = input.matchReasons
+    .map((reason) => reason.label ?? reason.code)
+    .filter((reason): reason is string => Boolean(reason));
+  const warnings = input.blockingWarnings.filter(Boolean);
+  const basisText = [input.confidenceBasis, ...rows, ...reasons, ...warnings].filter(Boolean);
+  if (basisText.length === 0) return "";
+  return `<div class="match-basis"><strong>Match basis:</strong><ul>${basisText.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`;
+}
+
+function buildCourtSection(
+  totalCases: number,
+  caseList: Array<{
+    caseType: string;
+    caseNo: string;
+    court: string;
+    status: string;
+    filing: string;
+    source: string;
+  }> | null,
+  sourceStatuses: Record<string, string>,
+  district: string,
+  searchMetadata: {
+    ecourts?: {
+      captchaAcceptedCount?: number;
+      captchaFailedCount?: number;
+      attempts?: Array<{ outcome?: string; complexName?: string }>;
+    } | null;
+    ecourtsStatusReason?: string | null;
+    rccmsStatusReason?: string | null;
+  } | null
+): string {
+  const ecourtsUsable = sourceStatuses.ecourts === "success";
+  const rccmsUsable = sourceStatuses.rccms === "success";
+  const ecourtsCaptchaAccepted = Number(searchMetadata?.ecourts?.captchaAcceptedCount ?? 0) > 0;
+
+  if (!ecourtsUsable && !rccmsUsable) {
+    return `<div class="error-notice">
+      <p>Court and revenue-case status could not be verified in this run.</p>
+      <p><strong>Source status:</strong> eCourts: ${escapeHtml(sourceStatuses.ecourts ?? "not_run")}; RCCMS: ${escapeHtml(sourceStatuses.rccms ?? "not_run")}.</p>
+      <p><strong>What to do:</strong> Search manually on services.ecourts.gov.in and RCCMS using the seller's full legal name, village, plot number, and khata number.</p>
+    </div>`;
+  }
+
+  if (caseList === null || caseList.length === 0) {
+    if (!ecourtsUsable || !rccmsUsable) {
+      const missing = [
+        !ecourtsUsable ? `eCourts: ${sourceStatuses.ecourts ?? "not_run"}` : null,
+        !rccmsUsable ? `RCCMS: ${sourceStatuses.rccms ?? "not_run"}` : null,
+      ].filter(Boolean).join("; ");
+
+      return `<div class="warning-notice">
+        <p>No cases were returned by the source(s) that responded, but the case search is not complete.</p>
+        <p><strong>Not verified:</strong> ${escapeHtml(missing)}.</p>
+        <p><strong>What to do:</strong> Manually search the missing source before treating this as clear.</p>
+      </div>`;
+    }
+
+    if (!ecourtsCaptchaAccepted) {
+      return `<div class="warning-notice">
+        <p>No cases were returned by the source(s) that responded, but eCourts did not provide accepted-captcha negative-result metadata.</p>
+        <p><strong>Not verified:</strong> eCourts captcha acceptance is required before a zero-case result can be used as a clean finding.</p>
+        <p><strong>What to do:</strong> Manually search eCourts and RCCMS before treating the court/revenue-case check as clear.</p>
+      </div>`;
+    }
+
+    return `<div class="success-notice">
+      <p>No case records were returned in this source-scoped eCourts/RCCMS search for the claimed owner in ${escapeHtml(district)} district, but this is not a full court-clearance finding.</p>
+      <p class="small-print">eCourts recorded accepted captcha metadata for this run. Still search manually at <a href="https://services.ecourts.gov.in" target="_blank" rel="noopener">services.ecourts.gov.in</a>, RCCMS, Orissa High Court, and DRT using the owner's full legal name before relying on the result.</p>
+    </div>`;
+  }
+
+  const rows = caseList.map(c => `
+    <tr>
+      <td class="num">${escapeHtml(c.caseType)}</td>
+      <td class="mono">${escapeHtml(c.caseNo)}</td>
+      <td>${escapeHtml(c.court)}</td>
+      <td>${escapeHtml(c.status)}</td>
+      <td>${escapeHtml(c.source)}</td>
+      <td>${escapeHtml(c.filing)}</td>
+    </tr>`).join("\n");
+
+  return `<div class="warning-notice">
+    <p><strong>${totalCases} court case(s)</strong> found involving the property or owner in ${escapeHtml(district)}. Review each case carefully before proceeding.</p>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Case Type</th><th>Case No.</th><th>Court</th><th>Status</th><th>Source</th><th>Filed</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function buildMutationReferencePanel(
+  mutationReferences: Array<{
+    caseType?: string | null;
+    caseNo?: string | null;
+    orderDate?: string | null;
+    plotNo?: string | null;
+    sourceField?: string | null;
+    rawText?: string | null;
+  }>
+): string {
+  const references = mutationReferences.filter((reference) =>
+    Boolean(reference?.caseNo || reference?.caseType || reference?.orderDate || reference?.plotNo)
+  );
+  if (references.length === 0) return "";
+
+  const rows = references.map((reference) => `
+    <tr>
+      <td class="mono">${escapeHtml(reference.caseNo ?? "—")}</td>
+      <td>${escapeHtml(reference.caseType ?? "—")}</td>
+      <td>${escapeHtml(reference.orderDate ?? "—")}</td>
+      <td class="mono">${escapeHtml(reference.plotNo ?? "—")}</td>
+      <td>${escapeHtml(formatMutationReferenceSource(reference.sourceField))}</td>
+    </tr>`).join("\n");
+
+  return `<div class="info-box mutation-reference-panel">
+    <span class="info-label">&#8505; Bhulekh RoR remark/case anchors</span>
+    <p>These are case or order references found in Bhulekh RoR remarks. They are anchors for manual follow-up only, not verified ownership history or a confirmed mutation timeline.</p>
+    <table class="data-table compact-table">
+      <thead><tr><th>Case No.</th><th>Type</th><th>Date</th><th>Plot</th><th>Source</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function formatMutationReferenceSource(sourceField?: string | null): string {
+  if (sourceField === "specialRemarksRawOdia") return "Bhulekh RoR special remarks";
+  if (sourceField === "plotRemarks") return "Bhulekh RoR plot remarks";
+  return sourceField ? `Bhulekh RoR ${sourceField}` : "Bhulekh RoR remarks";
+}
+
+function buildLarrSection(larr: any): string {
+  const riskLevel = larr?.riskLevel ?? "unknown";
+  const isHighRisk = riskLevel === "elevated" || riskLevel === "high";
+  const riskBadgeClass = riskLevel === "unknown" ? "flag-low" : (isHighRisk ? "flag-high" : "flag-low");
+  const riskDisplay = riskLevel.toUpperCase();
+  const verifiedText = larr?.verifiedInEcourts ? "Verified in eCourts" : "Manual verification recommended";
+
+  return `<div class="caution-box ${riskBadgeClass}">
+    <span class="caution-label">&#9888; Land Acquisition Risk: ${escapeHtml(riskDisplay)}</span>
+    ${larr?.siaNotification ? `<p><strong>SIA Notification found:</strong> ${escapeHtml(String(larr.siaNotification))}</p>` : `<p>No known Social Impact Assessment (SIA) notifications detected automatically.</p>`}
+    <p>Status: ${escapeHtml(verifiedText)}</p>
+    <p><strong>What to do:</strong> File an RTI application at the District Collector's office (Land Acquisition section) to confirm no preliminary notifications (Section 11 of LARR Act 2013) exist for this plot. Statutory RTI fee is typically ₹10.</p>
+  </div>`;
+}
+
+function buildRegSection(
+  flags: Array<{
+    name: string;
+    severity: "warning" | "info";
+    description: string;
+    action: string;
+  }> | null,
+  screeningVerified: boolean
+): string {
+  if (!flags || flags.length === 0) {
+    if (!screeningVerified) {
+      return `<div class="warning-notice">
+        <p>Regulatory overlay screening was not complete enough to confirm that this plot has no restrictions.</p>
+        <p><strong>What to do:</strong> Ask the local tehsildar or Town Planning office to check forest, coastal, PESA, airport, archaeological, and other regulated-zone restrictions before purchase.</p>
+      </div>`;
+    }
+
+    return `<div class="success-notice">
+      <p>No immediate regulatory flags were found in the overlay source(s) that completed successfully for this run.</p>
+      <p class="small-print">This is not a complete clearance. Some restrictions may not be mapped digitally or may not yet be integrated into ClearDeed. Consult the local tehsildar or Town Planning office for complete assurance.</p>
+    </div>`;
+  }
+
+  return flags.map(f => {
+    const cls = f.severity === "warning" ? "warning-notice" : "info-notice";
+    const label = f.severity === "warning" ? "Warning" : "Info";
+    return `<div class="${cls}">
+      <p><strong>[${label}] ${escapeHtml(f.name)}</strong></p>
+      <p>${escapeHtml(f.description)}</p>
+      <p><strong>What to do:</strong> ${escapeHtml(f.action)}</p>
+    </div>`;
+  }).join("\n");
+}
+
+function normalizeRegSeverity(severity: unknown): "warning" | "info" {
+  return severity === "high" || severity === "medium" ? "warning" : "info";
+}
+
+function dedupeFlags<T extends { flag?: string; description?: string }>(flags: T[]): T[] {
+  const seen = new Set<string>();
+  return flags.filter((flag) => {
+    const key = `${String(flag.flag ?? "").toLowerCase()}|${String(flag.description ?? "").replace(/\s+/g, " ").trim().toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function normalizeLandSeverity(severity: unknown): "high" | "medium" | "low" {
+  if (severity === "critical" || severity === "high") return "high";
+  if (severity === "warning" || severity === "medium") return "medium";
+  return "low";
+}
+
+function titleFromSnakeCase(value: string): string {
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function plotNosMatch(left: unknown, right: unknown): boolean {
+  if (typeof left !== "string" || typeof right !== "string") return false;
+  return normalizePlotNo(left) === normalizePlotNo(right);
+}
+
+function normalizePlotNo(value: string): string {
+  const normalized = value.trim().replace(/\s+/g, "");
+  return /^\d+$/.test(normalized) ? normalized.replace(/^0+/, "") || "0" : normalized.toLowerCase();
+}
+
+function isRegulatoryScreeningVerified(regulatoryScreener: RegulatoryScreenerResult | null | undefined): boolean {
+  if (!regulatoryScreener) return false;
+  if ((regulatoryScreener.flags ?? []).length > 0) return true;
+  if (regulatoryScreener.plotConfirmedInRegulatedZone === true) return true;
+  const completedOverlayLayers = Array.isArray((regulatoryScreener as any).completedOverlayLayers)
+    ? (regulatoryScreener as any).completedOverlayLayers
+    : [];
+  if (completedOverlayLayers.length === 0) return false;
+
+  const basis = (regulatoryScreener.confidenceBasis ?? "").toLowerCase();
+  const source = (regulatoryScreener.overlaySource ?? "").toLowerCase();
+  const looksPlaceholder =
+    basis.includes("placeholder") ||
+    basis.includes("requires orsac") ||
+    basis.includes("not yet built") ||
+    basis.includes("full overlay screening requires") ||
+    source.includes("bhunaksha geoserver");
+
+  return regulatoryScreener.confidence >= 0.8 && !looksPlaceholder;
+}
+
+// ─── Error fallback ────────────────────────────────────────────────────────────
+
+function generateErrorReport(message: string): { html: string; title: string } {
+  return {
+    html: `<!DOCTYPE html><html><head><style>body{font-family:system-ui;padding:40px;color:#333;}</style></head>
+<body><h1>Report Error</h1><p>${escapeHtml(message)}</p></body></html>`,
+    title: "ClearDeed — Error",
+  };
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function escapeHtml(str: unknown): string {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// ─── CSS ───────────────────────────────────────────────────────────────────────
+
+const CSS = `
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:      #111111;
+  --gray-800:   #1f2937;
+  --gray-600:   #4b5563;
+  --gray-400:   #9ca3af;
+  --gray-200:   #e5e7eb;
+  --gray-100:   #f9fafb;
+  --white:      #ffffff;
+  --green-50:   #f0fdf4;
+  --green-700:  #15803d;
+  --green-200:  #bbf7d0;
+  --amber-50:   #fffbeb;
+  --amber-700:  #b45309;
+  --amber-200:  #fde68a;
+  --red-50:     #fef2f2;
+  --red-700:    #b91c1c;
+  --red-200:    #fecaca;
+  --blue-50:    #eff6ff;
+  --blue-700:   #1d4ed8;
+  --blue-200:   #bfdbfe;
+  --border:     1px solid var(--gray-200);
+  --radius:     6px;
+}
+
+.report-actions { margin-top: 8px; }
+.pdf-button {
+  display: inline-block;
+  background: var(--black);
+  color: var(--white);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.pdf-button:hover { background: var(--gray-800); }
+
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--black);
+  background: var(--white);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: 760px; margin: 0 auto; padding: 36px 48px; }
+
+/* Header */
+.report-header {
+  border-bottom: 3px solid var(--black);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.brand-name {
+  font-family: 'Georgia', 'Merriweather', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--black);
+  letter-spacing: -0.5px;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.gps-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gray-100);
+  border: var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.meta {
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--gray-600);
+  line-height: 2;
+}
+.report-id {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--black);
+  font-variant-numeric: tabular-nums;
+}
+.source-time { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+/* Sections */
+.section {
+  margin-bottom: 22px;
+  border: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.section-hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--gray-100);
+  border-bottom: var(--border);
+}
+.section-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--white);
+  border: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--gray-600);
+}
+.section-title-group { flex: 1; }
+.section-title { font-size: 14px; font-weight: 600; color: var(--black); }
+.section-sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+.section-body { padding: 16px; }
+.section-action { border-color: var(--black); }
+.section-action .section-hdr { background: var(--black); }
+.section-action .section-title { color: var(--white); }
+.section-action .section-sub { color: var(--gray-400); }
+.section-action .section-icon { background: var(--gray-800); border-color: var(--gray-800); color: var(--white); }
+
+/* Buyer summary */
+.summary-panel {
+  margin-bottom: 22px;
+  border: 2px solid var(--black);
+  border-radius: var(--radius);
+  padding: 20px;
+  background: var(--white);
+}
+.summary-header {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 12px;
+}
+.summary-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.summary-subtitle {
+  font-size: 12px;
+  color: var(--gray-400);
+}
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.status-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  background: var(--gray-100);
+  align-items: flex-start;
+}
+.status-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.status-body { flex: 1; min-width: 0; }
+.status-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.status-finding {
+  font-size: 12px;
+  color: var(--gray-600);
+  line-height: 1.45;
+}
+.status-ok { background: var(--green-50); border-color: var(--green-200); }
+.status-ok .status-icon { background: var(--green-700); color: var(--white); }
+.status-ok .status-label { color: var(--green-700); }
+.status-warn { background: var(--amber-50); border-color: var(--amber-200); }
+.status-warn .status-icon { background: var(--amber-700); color: var(--white); }
+.status-warn .status-label { color: var(--amber-700); }
+.status-fail { background: var(--red-50); border-color: var(--red-200); }
+.status-fail .status-icon { background: var(--red-700); color: var(--white); }
+.status-fail .status-label { color: var(--red-700); }
+.status-unknown { background: var(--blue-50); border-color: var(--blue-200); }
+.status-unknown .status-icon { background: var(--blue-700); color: var(--white); }
+.status-unknown .status-label { color: var(--blue-700); }
+
+.executive-summary {
+  background: var(--gray-100);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border: 1px solid var(--gray-200);
+}
+.exec-sum-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-600);
+  margin-bottom: 6px;
+}
+.executive-summary p {
+  font-size: 13px;
+  color: var(--gray-800);
+  line-height: 1.65;
+}
+
+.key-questions {
+  background: var(--amber-50);
+  border: 1px solid var(--amber-200);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.key-questions-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--amber-700);
+  margin-bottom: 10px;
+}
+.key-questions-list {
+  list-style: none;
+  counter-reset: key-q;
+  margin: 0;
+  padding: 0;
+}
+.key-questions-list li {
+  counter-increment: key-q;
+  padding: 6px 0 6px 28px;
+  position: relative;
+  font-size: 13px;
+  color: var(--amber-700);
+  border-bottom: 1px solid var(--amber-200);
+  line-height: 1.5;
+}
+.key-questions-list li:last-child { border-bottom: none; }
+.key-questions-list li::before {
+  content: counter(key-q);
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--amber-700);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.source-audit {
+  margin-bottom: 22px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  background: var(--gray-100);
+}
+.source-audit summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.source-audit table {
+  margin-top: 10px;
+  table-layout: fixed;
+}
+.source-audit th:nth-child(1), .source-audit td:nth-child(1) { width: 14%; }
+.source-audit th:nth-child(2), .source-audit td:nth-child(2) { width: 14%; }
+.source-audit th:nth-child(3), .source-audit td:nth-child(3) { width: 22%; }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.status-green  { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-200); }
+.status-amber  { background: var(--amber-50); color: var(--amber-700); border: 1px solid var(--amber-200); }
+.status-red    { background: var(--red-50); color: var(--red-700); border: 1px solid var(--red-200); }
+.status-gray   { background: var(--gray-100); color: var(--gray-600); border: 1px solid var(--gray-200); }
+
+/* Badges */
+.badge-info {
+  display: inline-block;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Tables */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  padding: 6px 8px 6px 0;
+  font-size: 13px;
+  color: var(--black);
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+  vertical-align: top;
+}
+.data-table td {
+  padding: 6px 8px 6px 0;
+  font-size: 13px;
+  color: var(--gray-800);
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: top;
+}
+.data-table th, .data-table td {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td.key { width: 36%; font-weight: 500; color: var(--black); padding-right: 16px; }
+.mono { font-variant-numeric: tabular-nums; }
+.num { text-align: center; font-variant-numeric: tabular-nums; }
+.odia { font-size: 13px; direction: ltr; text-align: left; }
+.latin { font-size: 13px; color: var(--blue-700); font-style: italic; }
+.empty { color: var(--gray-400); font-size: 12px; text-align: center; padding: 12px 0; }
+
+/* Tenant table */
+.tenant-table-details { margin-top: 14px; }
+.tenant-table-details summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--blue-700);
+  font-weight: 500;
+  padding: 4px 0;
+  list-style: none;
+}
+.tenant-table-details summary::before { content: "▸ "; }
+.tenant-table-details[open] summary::before { content: "▾ "; }
+.tenant-table-details summary:hover { text-decoration: underline; }
+.table-note {
+  margin: 4px 0 8px;
+  color: var(--gray-500);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.tenant-table { margin-top: 8px; }
+.tenant-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--gray-200);
+}
+.tenant-table td { padding: 6px 8px; font-size: 12px; color: var(--gray-800); border-bottom: 1px solid var(--gray-100); }
+.tenant-table td:first-child { width: 28px; }
+
+/* Notices */
+.success-notice, .error-notice, .warning-notice, .info-notice {
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.success-notice { background: var(--green-50); border: 1px solid var(--green-200); color: var(--green-700); }
+.error-notice   { background: var(--red-50);   border: 1px solid var(--red-200);   color: var(--red-700); }
+.warning-notice { background: var(--amber-50); border: 1px solid var(--amber-200); color: var(--amber-700); }
+.info-notice    { background: var(--blue-50);  border: 1px solid var(--blue-200);  color: var(--blue-700); }
+
+.success-notice p, .error-notice p, .warning-notice p, .info-notice p { margin-bottom: 6px; }
+.success-notice p:last-child, .error-notice p:last-child,
+.warning-notice p:last-child, .info-notice p:last-child { margin-bottom: 0; }
+.success-notice strong, .error-notice strong, .warning-notice strong, .info-notice strong { display: block; margin-bottom: 4px; }
+
+.caution-box {
+  margin-top: 12px;
+  background: var(--amber-50);
+  border: 1px solid var(--amber-200);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--amber-700);
+}
+.caution-label { display: block; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+.caution-box.flag-high { background: var(--red-50); border-color: var(--red-200); color: var(--red-700); }
+.caution-box.flag-medium { background: var(--amber-50); border-color: var(--amber-200); color: var(--amber-700); }
+.caution-box p { margin-bottom: 5px; }
+.caution-box p:last-child { margin-bottom: 0; }
+
+.warning-box {
+  margin-top: 12px;
+  background: var(--amber-50);
+  border: 1px solid var(--amber-200);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--amber-700);
+}
+.warning-label { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+.warning-box p, .info-box p, .error-box p { margin-top: 4px; font-size: 13px; }
+
+.info-box {
+  margin-top: 12px;
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--blue-700);
+}
+.info-label { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.error-box {
+  margin-bottom: 14px;
+  background: var(--red-50);
+  border: 1px solid var(--red-200);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--red-700);
+}
+.error-label { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Classification card */
+.classification-card {
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 14px;
+  background: var(--white);
+}
+.classification-type { font-size: 18px; font-weight: 700; color: var(--black); font-family: 'Georgia', serif; }
+.classification-sub { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+
+/* EC panel */
+.igr-panel {
+  margin-top: 14px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: var(--gray-100);
+}
+.igr-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+.igr-panel p { font-size: 13px; color: var(--gray-600); margin-bottom: 10px; }
+.igr-steps { list-style: none; counter-reset: ec-steps; margin: 0; }
+.igr-steps li {
+  counter-increment: ec-steps;
+  padding: 5px 0 5px 30px;
+  position: relative;
+  font-size: 13px;
+  color: var(--gray-800);
+}
+.igr-steps li::before {
+  content: counter(ec-steps);
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--black);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.igr-panel a { color: var(--blue-700); }
+
+/* Action list */
+.action-intro {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: 14px;
+}
+.action-list {
+  list-style: none;
+  counter-reset: action-steps;
+  margin: 0;
+  padding: 0;
+}
+.action-list li {
+  counter-increment: action-steps;
+  padding: 8px 0 8px 32px;
+  position: relative;
+  font-size: 13px;
+  color: var(--gray-800);
+  border-bottom: 1px solid var(--gray-100);
+  line-height: 1.6;
+}
+.action-list li:last-child { border-bottom: none; }
+.action-list li::before {
+  content: counter(action-steps);
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--black);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-list a { color: var(--blue-700); }
+
+/* Disclaimer */
+.disclaimer-box {
+  margin-top: 20px;
+  border: 2px solid var(--amber-200);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--amber-50);
+}
+.disclaimer-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--amber-700);
+  margin-bottom: 6px;
+}
+.disclaimer-box p { font-size: 12px; color: var(--amber-700); line-height: 1.65; }
+
+/* Source line */
+.source-line {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--gray-200);
+  font-size: 11px;
+  color: var(--gray-400);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.source-line a { color: var(--blue-700); }
+
+/* Demo banner */
+.demo-banner {
+  background: var(--amber-200);
+  color: var(--amber-700);
+  text-align: center;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.demo-banner a { color: var(--amber-700); text-decoration: underline; }
+
+/* Misc */
+.small-print { font-size: 11px; color: var(--gray-400); }
+
+/* Print */
+@media print {
+  @page { size: A4; margin: 18mm 15mm; }
+  body { font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { max-width: 100%; padding: 0; }
+  .section { break-inside: avoid; }
+  .success-notice, .error-notice, .warning-notice, .caution-box, .info-box, .error-box {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .demo-banner { display: none; }
+  .tenant-table-details summary { cursor: default; }
+}
+@media (max-width: 600px) {
+  .page { padding: 20px 20px; }
+  .report-header { flex-direction: column; gap: 12px; }
+  .meta { text-align: left; }
+  .section-hdr { flex-wrap: wrap; }
+  .data-table td.key { width: 40%; }
+  .summary-grid { grid-template-columns: 1fr; }
+}
+`;

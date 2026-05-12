@@ -287,6 +287,185 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
   };
 }
 
+// ── V1.1 Bhulekh-only pipeline ────────────────────────────────────────────────
+
+export interface V11PipelineInput {
+  reportId?: string;
+  tehsil: string;
+  tehsilValue: string;
+  village: string;
+  villageCode: string;
+  searchMode: "Plot" | "Khatiyan" | "Tenant";
+  identifier: string;
+  claimedOwnerName?: string;
+}
+
+export interface V11PipelineOutput {
+  reportId: string;
+  html: string;
+  title: string;
+  validationFindings: Array<{
+    dimension: string;
+    severity: "error" | "warning" | "info";
+    source: string;
+    description: string;
+  }>;
+  sourceSummary: {
+    bhulekh: string;
+  };
+}
+
+/**
+ * V1.1 pipeline: Bhulekh fetcher only → A5 OwnershipReasoner → A10 ConsumerReportWriter.
+ * All other sources are dormant per CLEARDEED_HANDOFF_V1.1.md §1.
+ */
+export async function generateReportV11(input: V11PipelineInput): Promise<V11PipelineOutput> {
+  const reportId = input.reportId ?? crypto.randomUUID();
+
+  // ── Step 1: Run Bhulekh fetcher ────────────────────────────────────────────
+  const orchestratorOutput = await runReport({
+    reportId,
+    tehsil: input.tehsil,
+    tehsilCode: input.tehsilValue,
+    village: input.village,
+    villageCode: input.villageCode,
+    searchMode: input.searchMode,
+    identifierValue: input.identifier,
+    identifierLabel: input.identifier,
+    claimedOwnerName: input.claimedOwnerName,
+  });
+
+  const bhulekhSrc = orchestratorOutput.sources.find((s) => s.source === "bhulekh");
+  const bhulekhData = bhulekhSrc?.data as {
+    khataNo?: string;
+    village?: string;
+    tenants?: Array<{
+      tenantName?: string;
+      fatherHusbandName?: string;
+      surveyNo?: string;
+      area?: number;
+      unit?: string;
+      landClass?: string;
+    }>;
+    lastUpdated?: string;
+  } | null;
+
+  // ── Step 2: A5 OwnershipReasoner ───────────────────────────────────────────
+  // Only run ownership comparison if a seller name was provided.
+  // When no name is provided, skip comparison and show Bhulekh owners directly.
+  let ownershipReasoner: Awaited<ReturnType<typeof reasonOwnership>> | null = null;
+  if (bhulekhData?.tenants && bhulekhData.tenants.length > 0 && input.claimedOwnerName?.trim()) {
+    try {
+      ownershipReasoner = await reasonOwnership({
+        claimedOwnerName: input.claimedOwnerName ?? "",
+        rorDocument: {
+          village: bhulekhData.village ?? input.village,
+          khatiyanNo: bhulekhData.khataNo ?? undefined,
+          tenants: bhulekhData.tenants.map((t) => ({
+            tenantName: t.tenantName ?? "",
+            fatherHusbandName: t.fatherHusbandName,
+            surveyNo: t.surveyNo ?? "",
+            area: t.area,
+            landClass: t.landClass,
+          })),
+        },
+      });
+    } catch (err) {
+      console.error("[pipeline/v11] A5 OwnershipReasoner error:", err);
+    }
+  }
+
+  // ── Step 3: A6 LandClassifier ───────────────────────────────────────────────
+  let landClassifier: Awaited<ReturnType<typeof classifyLand>> | null = null;
+  if (bhulekhData?.tenants && bhulekhData.tenants.length > 0) {
+    try {
+      const plots: LandClassifierInput["plots"] = bhulekhData.tenants.map((t) => ({
+        plotNo: t.surveyNo ?? "",
+        areaAcres: t.area ?? 0,
+        landClassOdia: t.landClass ?? undefined,
+      }));
+      landClassifier = classifyLand({
+        plots,
+        gpsCoordinates: { lat: 0, lng: 0 },  // V1.1 doesn't use GPS
+        village: bhulekhData.village ?? input.village,
+      });
+    } catch (err) {
+      console.error("[pipeline/v11] A6 LandClassifier error:", err);
+    }
+  }
+
+  // ── Step 4: Build tier2 input ──────────────────────────────────────────────
+  const tier2Input: Tier2Input = {
+    gps: { lat: 0, lon: 0 },
+    claimedOwnerName: input.claimedOwnerName ?? "",
+    ownershipReasoner,
+    landClassifier,
+    encumbranceReasoner: null,
+    regulatoryScreener: null,
+    disclaimerText: DEFAULT_DISCLAIMER,
+  };
+
+  const igrLink = {
+    url: "https://igrodisha.gov.in/ecsearch",
+    params: {
+      district: "Khordha",
+      sro: input.tehsil,
+      plotNo: input.searchMode === "Plot" ? input.identifier : undefined,
+    },
+  };
+
+  // ── Step 5: Map orchestrator → A10 input ───────────────────────────────────
+  const reportInput = mapToReportInput(
+    {
+      reportId,
+      sources: orchestratorOutput.sources,
+      completedAt: orchestratorOutput.completedAt,
+      validationFindings: orchestratorOutput.validationFindings ?? [],
+      igrLink,
+    },
+    tier2Input
+  );
+  reportInput.geoFetch = {
+    ...(reportInput.geoFetch ?? {}),
+    village: input.village,
+    tahasil: input.tehsil,
+    district: "Khordha",
+    state: "Odisha",
+    plotNo: input.searchMode === "Plot"
+      ? input.identifier
+      : bhulekhData?.tenants?.[0]?.surveyNo ?? reportInput.geoFetch?.plotNo ?? null,
+  };
+
+  // ── Step 6: A10 ConsumerReportWriter ───────────────────────────────────────
+  const { html, title } = generateConsumerReport(reportInput);
+
+  // ── Step 7: A11 OutputAuditor ────────────────────────────────────────────
+  try {
+    const { auditOrThrow } = await import("@cleardeed/output-auditor");
+    auditOrThrow(html, reportId);
+  } catch (err) {
+    console.error("[pipeline/v11] A11 OutputAuditor blocked report:", err);
+    throw err;
+  }
+
+  // ── Step 8: Source summary ──────────────────────────────────────────────────
+  const bhulekhSummary =
+    bhulekhSrc?.status === "success"
+      ? [
+          `${bhulekhData?.tenants?.length ?? 0} tenant(s) under Khatiyan #${bhulekhData?.khataNo ?? "—"}`,
+          input.village,
+        ].filter(Boolean).join("; ")
+      : bhulekhSrc?.status ?? "unknown";
+
+  return {
+    reportId,
+    html,
+    title,
+    validationFindings: orchestratorOutput.validationFindings ?? [],
+    sourceSummary: { bhulekh: bhulekhSummary },
+  };
+}
+
 function summarizeEcourtsStatus(
   ecourtsSrc: Awaited<ReturnType<typeof runReport>>["sources"][number] | undefined
 ): string {
