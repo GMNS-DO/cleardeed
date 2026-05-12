@@ -36,7 +36,7 @@ export const BHULEKH_KISAM_CODE_MAP: Record<string, string> = {
   "19": "khasra",               // Khasra (under preparation)
   "20": "chandigarh",           // Developed plot
   "21": "byabasaika",           // Commercial / Industrial
-  "22": "unnayana_jogya",       // Buildable / Construction ready
+  "22": "neya_niyogita",        // Neyanjori / notified govt. land
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,6 +81,8 @@ export const ODIA_KISAM_MAP: Record<string, string> = {
   "ସରକାର": "khalsa",                        // Government
   "ସ୍ଥିତି ବାନ": "khalsa",                  // Govt. land (Sitibon)
   "ଖେୱାଟ": "khalsa",                         // Khata / Govt. record
+  "ନୟନଯୋରୀ": "neya_niyogita",              // Neyanjori — notified government land / GairKhalsa
+  "ନୟୟୋନ୍ଜୋରୀ": "neya_niyogita",          // Variant spelling of Neyanjori
 
   // Community / public use
   "ଗୋଚର": "gochar",                         // Grazing land
