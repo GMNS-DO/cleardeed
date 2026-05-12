@@ -137,7 +137,9 @@ describe("orchestrator — V1.1 Bhulekh-only", () => {
         searchMode: "Khatiyan",
         identifierValue: "830",
         identifierLabel: "830 (Rakhit Anabadi)",
-        ownerName: "Rakhit Anabadi", // bhulekhFetch uses ownerName, not claimedOwnerName
+        claimedOwnerName: "Rakhit Anabadi", // V1.1 uses claimedOwnerName
+        tehsilCode: expect.any(String),
+        villageCode: expect.any(String),
       })
     );
     expect(output.sources).toHaveLength(1);
