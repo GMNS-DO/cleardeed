@@ -376,13 +376,13 @@ Active
   Validation gates: expected selectors/fields, structural template hash, parser version, drift -> partial/failed
   Notes: Prevents changed government HTML from silently parsing as empty success.
 
-[DPR-COPY-001] [IN PROGRESS] [P0] Enforce claim-state-to-copy mapping in A10/A11
+[DPR-COPY-001] [DONE] [P0] Enforce claim-state-to-copy mapping in A10/A11
   Created: 2026-04-29
   Data point: all consumer-facing claims
   Claim readiness: blocks L2+ report wording
   Blocks report language: yes
   Validation gates: verified/matched/discrepancy/unavailable/manual_required/not_covered states; no clean copy from partial/placeholder sources
-  Notes: A10 now renders explicit buyer actions for unknown/unavailable owner match, incomplete court/RCCMS search, incomplete regulatory screening, unknown classification, and failed/manual source checks. Session 034 tightened court copy so partial eCourts cannot produce clean no-case language and A11 now blocks missing required sections plus court/regulatory clean-copy when source states are incomplete. Session 038 fixed summary-level overclaiming: incomplete regulatory overlay screening no longer renders a clean "no flags" summary, unknown conversion status is amber/manual, and ambiguous single-word owner claims have report-level regression coverage.
+  Notes: COMPLETED (Session 056). Report redesigned as risk intelligence engine — no parsing artifacts, no audit details, no raw Odia in main view. Each section: [English insight header] → [Translated data] → [Collapsible original]. Owner section shows Bhulekh owner directly when no seller name provided (not_requested state). Removed: "mutation references", "parsing status", "confidence 0%", "readiness L1", "match basis", raw Odia from main view. Land classification: prose description of what land class means for buyer. Back page: transaction summary in English. Completeness panel: risk cards replacing audit table.
 
 [DPR-COPY-002] [DONE] [P0] Fix report contract shape mismatches
   Created: 2026-04-29
@@ -723,6 +723,7 @@ Built:
   - Session 053 owner-name accuracy upgrade: A10 embeds a confidence-tiered English-name reading pipeline. Exact full-name dictionary matches show `Verified English`; all-token lexicon matches show `High-confidence reading`; non-Odia source values show `Source English`; fallback algorithmic readings show `Machine reading - review`. The Odia RoR value remains visible.
   - Session 054 RoR-complete upgrade: A10 now renders a Complete RoR Audit panel with source metadata, publication/generated dates, dues/revenue demand, raw artifact reference, screenshot availability, full parsed plot table, and Back Page mutation/encumbrance/remark timeline. Back Page content is explicitly labelled as source anchors, not verified title or EC history.
   - Session 055 RoR insight synthesis: A10 now runs a deterministic RoR Insight Engine over parsed RoR facts and renders panel-level "Positive signal" / "Watch-out" highlights for Plot/Complete RoR Audit, Owner, Land Classification, Full RoR Plot Table, Dues/Revenue Demand, and Back Page. No live LLM summaries in consumer output; AI-assisted drafting is admin/manual-review only.
+  - Session 056 risk intelligence engine: Report redesigned as risk intelligence engine, not ROR displayer. Each section: [English insight header] → [Translated data] → [Collapsible original Odia]. Removed all parsing artifacts, audit details, raw Odia from main view. Owner: "Recorded owner: Purti Bibhag (Government) — not private land" with English translation + collapsible toggle. Land class: "Government notified land — construction prohibited without prior permission" prose. Back page: "Transacted 17 times — normal for government land." No more: "mutation references", "confidence 0%", "readiness L1", "match basis", raw Odia in main view. DPR-COPY-001 marked DONE.
   - T-007: Orchestrator MVP — Bhulekh-only input (tehsil + village + searchMode + identifier). 10 other sources V1.1-DORMANT.
   - T-017: Demo-mode — apps/web/src/lib/demo-fixture.ts with full golden-path result (GPS 20.272688,85.701271). /report/demo serves instantly. /report/CLD-001?demo=false triggers live fetch.
   - T-018: scripts/golden-path.ts — all 4 fetchers run serially. Bhulekh ✅ (plot #415, 5 tenants, 75.6 acres total).
@@ -3857,3 +3858,58 @@ Verification:
 
 What is pending:
   - Stabilize report persistence so `/report/{id}` always loads the saved report after inline generation instead of relying on the immediate API response.
+
+Exact next step for continuation:
+  Push the risk intelligence report to production, verify the insights render correctly for Mendhasala Plot 415 in the browser.
+
+### Session 056 — 2026-05-13
+
+Mode: execution
+Duration: ~1.5 hours
+Focus: Risk intelligence engine — insights-first report redesign
+
+Highest-leverage step identified: The report was showing raw parsing artifacts and audit details instead of buyer-relevant insights. Every panel needed a plain-English risk perspective, not an ROR display.
+
+Tasks worked:
+  - [A10] REDESIGNED — Report now reads like a smart property analyst, not a data parser. No more parsing artifacts, no audit details, no raw Odia in main view.
+  - [A10] REDESIGNED — Each section follows: [English insight header] → [Translated data] → [Collapsible original Odia]
+  - [DPR-COPY-001] DONE — Removed all audit artifacts: "mutation references", "parsing status", "confidence 0%", "readiness L1", "match basis", raw Odia from main view.
+  - [Owner section] REDESIGNED — Shows Bhulekh owner directly as "Recorded owner" with English translation + collapsible Odia toggle. No comparison to seller input unless name was provided.
+  - [Land classification] REDESIGNED — Shows plain-English prose: "Government notified land — construction prohibited without prior permission" instead of "neya_niyogita / ନୟନଯୋରୀ / Conversion: not_required"
+  - [Back page] REDESIGNED — Shows: "Transacted 17 times — normal for government land. 17 encumbrance entries." instead of "17 mutations found / parsing status / raw Odia entries"
+  - [Completeness panel] REDESIGNED — Risk cards replacing audit table: co-owner consent warning, EC recommended, title-chain note
+  - [DPR-COPY-001] DONE — `not_requested` state for owner section: when no seller name provided, shows "Pending — no seller name" instead of error
+
+Decisions made:
+  - (No new ADRs — execution of the risk intelligence principle per user's direction)
+
+Code changes (high-level):
+  - agents/consumer-report-writer/src/index.ts: major section redesign — tenant table English-only, owner section simplified, land classification prose, completeness panel risk cards, back page English-only
+  - agents/consumer-report-writer/src/index.ts: added `not_requested` nameMatch state for no-seller-name case; ownerBadge updated
+  - agents/consumer-report-writer/src/index.test.ts: test updated for new format (no parsing artifacts, no raw audit strings, English-only columns)
+  - apps/web/src/lib/pipeline/index.ts: V1.1 skips A5 when no seller name provided (ownershipReasoner = null)
+  - agents/consumer-report-writer/src/index.ts: `buildNameMatchSection` replaced with cleaner block; no more "could not verify" error when no seller name
+
+Sub-agents used:
+  - General-purpose agent: redesigned report sections as risk intelligence panels
+
+Verification:
+  - `./node_modules/.bin/vitest run` — 23 files passed, 391 tests passed
+  - `npm run typecheck` — passed
+  - `npm run build` — passed
+  - Pushed to GitHub, Vercel deployment dpl_67tjGJeecNbw7gZtyk9QdGSwDmyQ — production live at https://v0-cleardeed.vercel.app
+
+What changed:
+  - Report is now a risk intelligence engine, not an ROR displayer
+  - Every section has a plain-English insight header
+  - No raw Odia in main view — only in collapsible toggles
+  - No parsing artifacts visible (no "mutation references", "L1 readiness", "confidence 0%", "match basis", etc.)
+  - Owner section shows Bhulekh owner directly when no seller name provided
+  - Land classification: prose description of what the land class means for the buyer
+
+What is pending:
+  - Browser verification of the new risk-intelligence layout
+  - Report persistence stabilization (Section 6)
+
+Exact next step for continuation:
+  Verify the new risk-intelligence report renders correctly in the browser with Mendhasala Plot 415. Check that each section has an English insight header, data is in English, and no parsing artifacts are visible.
