@@ -440,6 +440,21 @@ export function generateConsumerReport(
     ? `<div class="demo-banner">DEMO REPORT — Using cached sample data &nbsp;|&nbsp; <a href="/?demo=false">Run a real search</a></div>`
     : "";
 
+  const sixBuyerQuestions = buildSixBuyerQuestions({
+    bhulekhUsable,
+    primaryOwnerName,
+    plotNo: safePlotNo,
+    landClassEnglish,
+    conversionRequired,
+    totalCases,
+    courtStatuses: courtSourceStatuses,
+    encumbranceStatus: encumbranceReasoner?.status ?? null,
+    redFlags,
+    regFlags,
+    plotArea,
+    estimatedValue: null,
+  });
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -476,6 +491,9 @@ ${demoBanner}
     </div>
   </div>
 </header>
+
+<!-- ── Six Buyer Questions ─────────────────────────────────────────────── -->
+${sixBuyerQuestions}
 
 ${buildBuyerSummary({
     bhunakshaUsable,
@@ -1466,6 +1484,136 @@ function buildFinancialExposureSummary(input: {
       Amounts are estimates based on Bhulekh records, Odisha fee schedules, and market norms.
       Exact figures require verification with the relevant government department before registration.
     </div>
+  </div>
+</section>`;
+}
+
+// ─── Six Buyer Questions ────────────────────────────────────────────────────────
+
+interface SixBuyerQuestionsInput {
+  bhulekhUsable: boolean;
+  primaryOwnerName: string;
+  plotNo: string;
+  landClassEnglish: string;
+  conversionRequired: boolean | null;
+  totalCases: number;
+  courtStatuses: Record<string, string>;
+  encumbranceStatus: string | null;
+  redFlags: Array<{ flag?: string; severity?: string; description?: string }>;
+  regFlags: Array<{ flag?: string; severity?: string; description?: string }>;
+  plotArea: { acres?: number | null; sqft?: number | null } | null;
+  estimatedValue: string | null;
+}
+
+/**
+ * The six questions every Khordha residential buyer asks, answered from report data.
+ * This is the primary executive summary — what the buyer's spouse reads in 30 seconds.
+ * ADR-023: Buyer Question Framework.
+ */
+function buildSixBuyerQuestions(input: SixBuyerQuestionsInput): string {
+  const { bhulekhUsable, primaryOwnerName, plotNo, landClassEnglish, conversionRequired,
+    totalCases, courtStatuses, encumbranceStatus, redFlags, regFlags, plotArea } = input;
+
+  // Q1: Does the seller actually own this?
+  const q1Icon = bhulekhUsable ? "&#10003;" : "&#9888;";
+  const q1Cls = bhulekhUsable ? "q-ok" : "q-warn";
+  const q1Body = bhulekhUsable && primaryOwnerName && primaryOwnerName !== "—"
+    ? `Bhulekh RoR shows: ${escapeHtml(primaryOwnerName)}. Verify seller ID matches this name.`
+    : "Bhulekh RoR not available. Ask seller for current Khatiyan and verify with Tehsil.";
+  const q1Label = bhulekhUsable ? "Owner verified in Bhulekh" : "Owner not verified — request Khatiyan";
+
+  // Q2: Can I build my house here?
+  const q2Icon = (!conversionRequired && bhulekhUsable) ? "&#10003;" : "&#9888;";
+  const q2Cls = (!conversionRequired && bhulekhUsable) ? "q-ok" : "q-warn";
+  const q2Body = (bhulekhUsable && !conversionRequired)
+    ? `Land class: ${escapeHtml(landClassEnglish || "—")}. No land-use conversion required for residential use.`
+    : bhulekhUsable
+      ? `Land class: ${escapeHtml(landClassEnglish || "—")}. CLU (Change of Land Use) required before building. Budget 6-18 months.`
+      : "Land class not verified from Bhulekh. Confirm with Tehsil before proceeding.";
+  const q2Label = (bhulekhUsable && !conversionRequired)
+    ? "Buildable as-is"
+    : bhulekhUsable ? "CLU required before building" : "Land class not verified";
+
+  // Q3: Could I lose it after paying?
+  const hasRegFlags = (redFlags.length + regFlags.length) > 0;
+  const hasEncumbrance = encumbranceStatus === "encumbered";
+  const hasCourtCases = totalCases > 0;
+  const ecourtsOk = courtStatuses.ecourts === "success";
+  const q3Icon = (!hasRegFlags && !hasEncumbrance && !hasCourtCases) ? "&#10003;"
+    : (hasRegFlags || hasEncumbrance || totalCases > 0) ? "&#9888;" : "&#8505;";
+  const q3Cls = (!hasRegFlags && !hasEncumbrance && !hasCourtCases) ? "q-ok"
+    : "q-warn";
+  const q3Body = (!hasRegFlags && !hasEncumbrance && totalCases === 0 && ecourtsOk)
+    ? "No court cases found in eCourts/RCCMS. No encumbrances in Bhulekh. No regulatory flags detected."
+    : hasRegFlags
+      ? `${redFlags.length + regFlags.length} restriction(s) detected in land records or regulatory overlays.`
+      : hasCourtCases
+        ? `${totalCases} court case(s) found. Verify current status before registration.`
+        : encumbranceStatus === "manual_required"
+          ? "Encumbrance status needs manual verification from IGR Odisha."
+          : "Court / encumbrance check incomplete. Request EC from Sub-Registrar.";
+  const q3Label = (!hasRegFlags && !hasEncumbrance && totalCases === 0 && ecourtsOk)
+    ? "No immediate loss risk detected"
+    : hasRegFlags ? `${redFlags.length + regFlags.length} restriction(s) — verify before paying`
+    : hasCourtCases ? `${totalCases} court case(s) — verify before paying`
+      : "Incomplete — request EC before paying";
+
+  // Q4: Am I overpaying?
+  const acres = plotArea?.acres ?? null;
+  const q4Icon = acres ? "&#8505;" : "&#9888;";
+  const q4Cls = "q-neutral";
+  const q4Body = acres
+    ? `Plot area: ${acres.toFixed(3)} acres. Verify asking price against IGR Odisha benchmark valuation at regis.odisha.gov.in for this mouza and Kisam.`
+    : "Area not determined. Verify asking price against circle rate for this mouza.";
+  const q4Label = "Check circle rate at regis.odisha.gov.in";
+
+  // Q5: Is the area going to develop or decay?
+  const q5Icon = "&#8505;";
+  const q5Cls = "q-neutral";
+  const q5Body = "Check BDA Master Plan for this mouza at bda.gov.in. Look for: metro corridor proximity (Bhubaneswar), road widening, industrial zone, or conservation areas. Ask the broker for the BDA zonal map.";
+  const q5Label = "Verify BDA zone + infrastructure plans";
+
+  // Q6: What happens after I buy?
+  const q6Icon = bhulekhUsable ? "&#8505;" : "&#9888;";
+  const q6Cls = "q-neutral";
+  const q6Body = bhulekhUsable
+    ? "Mutation fee: ~2% of property value. Property tax: varies by BMC/ULB. Verify civic dues (BMC/PHED/TPCODL) are cleared. Total post-purchase cost estimate: ₹10,000–50,000 + registration."
+    : "Post-purchase costs need manual estimation. Budget ₹10,000–50,000 for mutation, registration, and clearance certificates.";
+  const q6Label = "Budget ₹10,000–50,000 for post-purchase costs";
+
+  const questions = [
+    { num: "Q1", question: "Does the seller actually own this?",
+      icon: q1Icon, cls: q1Cls, label: q1Label, body: q1Body },
+    { num: "Q2", question: "Can I build my house here?",
+      icon: q2Icon, cls: q2Cls, label: q2Label, body: q2Body },
+    { num: "Q3", question: "Could I lose it after paying?",
+      icon: q3Icon, cls: q3Cls, label: q3Label, body: q3Body },
+    { num: "Q4", question: "Am I overpaying?",
+      icon: q4Icon, cls: q4Cls, label: q4Label, body: q4Body },
+    { num: "Q5", question: "Is the area going to develop or decay?",
+      icon: q5Icon, cls: q5Cls, label: q5Label, body: q5Body },
+    { num: "Q6", question: "What happens after I buy?",
+      icon: q6Icon, cls: q6Cls, label: q6Label, body: q6Body },
+  ];
+
+  const rows = questions.map(q => `
+    <div class="bq-item ${q.cls}">
+      <div class="bq-num">${q.num}</div>
+      <div class="bq-icon">${q.icon}</div>
+      <div class="bq-body">
+        <div class="bq-question">${escapeHtml(q.question)}</div>
+        <div class="bq-label">${escapeHtml(q.label)}</div>
+        <div class="bq-detail">${q.body}</div>
+      </div>
+    </div>`).join("\n");
+
+  return `<section class="bq-panel" id="section-six-questions">
+  <div class="bq-header">
+    <div class="bq-title">6 questions every land buyer asks</div>
+    <div class="bq-sub">Answered from Bhulekh, court records, and regulatory overlays — scroll for full details</div>
+  </div>
+  <div class="bq-grid">
+    ${rows}
   </div>
 </section>`;
 }
@@ -2597,6 +2745,98 @@ body {
 .summary-subtitle {
   font-size: 12px;
   color: var(--gray-400);
+}
+
+/* Six Buyer Questions */
+.bq-panel {
+  margin-bottom: 22px;
+  border: 2px solid var(--amber-700);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--amber-50);
+}
+.bq-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--amber-200);
+  background: var(--amber-50);
+}
+.bq-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--amber-700);
+  margin-bottom: 2px;
+}
+.bq-sub {
+  font-size: 11px;
+  color: var(--amber-700);
+  opacity: 0.7;
+}
+.bq-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+.bq-item {
+  padding: 12px 14px;
+  border-right: 1px solid var(--amber-200);
+  border-bottom: 1px solid var(--amber-200);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.bq-item:nth-child(3n) { border-right: none; }
+.bq-item:nth-last-child(-n+3) { border-bottom: none; }
+
+.bq-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.bq-ok .bq-num { background: var(--green-200); color: var(--green-700); }
+.bq-warn .bq-num { background: var(--amber-200); color: var(--amber-700); }
+.bq-neutral .bq-num { background: var(--gray-200); color: var(--gray-600); }
+
+.bq-icon {
+  width: 20px;
+  font-size: 14px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.bq-ok .bq-icon { color: var(--green-700); }
+.bq-warn .bq-icon { color: var(--amber-700); }
+.bq-neutral .bq-icon { color: var(--gray-600); }
+
+.bq-body { flex: 1; min-width: 0; }
+.bq-question {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--black);
+  margin-bottom: 2px;
+}
+.bq-label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.bq-ok .bq-label { color: var(--green-700); }
+.bq-warn .bq-label { color: var(--amber-700); }
+.bq-neutral .bq-label { color: var(--gray-600); }
+.bq-detail {
+  font-size: 11px;
+  color: var(--gray-600);
+  line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+  .bq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bq-item:nth-child(3n) { border-right: 1px solid var(--amber-200); }
+  .bq-item:nth-child(2n) { border-right: none; }
 }
 
 /* Financial Exposure Summary */

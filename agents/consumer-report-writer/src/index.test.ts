@@ -1087,6 +1087,49 @@ describe("A10 ConsumerReportWriter", () => {
     expect(forward).toContain("Full report");
   });
 
+  it("Six Buyer Questions renders all 6 questions with Q1-Q6 labels", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+    };
+    const { html } = generateConsumerReport(input as any);
+
+    expect(html).toContain('id="section-six-questions"');
+    expect(html).toContain("Q1");
+    expect(html).toContain("Q2");
+    expect(html).toContain("Q3");
+    expect(html).toContain("Q4");
+    expect(html).toContain("Q5");
+    expect(html).toContain("Q6");
+    expect(html).toContain("Does the seller actually own this");
+    expect(html).toContain("Can I build my house here");
+    expect(html).toContain("Could I lose it after paying");
+    expect(html).toContain("Am I overpaying");
+    expect(html).toContain("Is the area going to develop or decay");
+    expect(html).toContain("What happens after I buy");
+    expect(html).toContain("regis.odisha.gov.in");
+    expect(html).toContain("bda.gov.in");
+  });
+
+  it("Six Buyer Questions shows warning state when Bhulekh not usable", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: null,
+      sourceStatus: {
+        bhunaksha: "success",
+        bhulekh: "failed",
+        ecourts: "not_run",
+        rccms: "not_run",
+      },
+      gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+    };
+    const { html } = generateConsumerReport(input as any);
+
+    expect(html).toContain("Owner not verified");
+    expect(html).toContain("Land class not verified");
+    expect(html).toContain("Post-purchase costs need manual estimation");
+  });
+
   it("WhatsApp Forward falls back gracefully when bhulekh is not usable", () => {
     const input = {
       plotVillage: "Mendhasala",
