@@ -1,0 +1,31 @@
+name: Production Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Production base URL"
+        required: false
+        default: "https://v0-cleardeed.vercel.app"
+
+jobs:
+  production-smoke:
+    name: Verify Production Launch Path
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run production smoke
+        env:
+          CLEARDEED_BASE_URL: ${{ inputs.base_url }}
+          ADMIN_VIEW_TOKEN: ${{ secrets.ADMIN_VIEW_TOKEN }}
+          REPORT_CREATE_TOKEN: ${{ secrets.REPORT_CREATE_TOKEN }}
+        run: node scripts/verify-production-launch.mjs

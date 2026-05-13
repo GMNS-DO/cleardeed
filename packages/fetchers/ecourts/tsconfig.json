@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["ES2017", "DOM"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "bundler",
@@ -9,7 +9,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "baseUrl": ".",
+    "noEmit": true,
+    "paths": {
+      "@cleardeed/schema": ["../../schema/src/index.ts"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.json"],
   "exclude": ["node_modules"]

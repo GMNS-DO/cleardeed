@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClearDeed Property Report — CLD-2026-001</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* ─── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:       #111111;
+      --gray-900:    #1a1a1a;
+      --gray-700:    #374151;
+      --gray-500:    #6b7280;
+      --gray-200:    #e5e7eb;
+      --gray-100:    #f3f4f6;
+      --white:       #ffffff;
+      --amber-50:    #fffbeb;
+      --amber-200:   #fde68a;
+      --amber-700:   #b45309;
+      --green-50:    #f0fdf4;
+      --green-700:   #15803d;
+      --red-50:      #fef2f2;
+      --red-700:     #b91c1c;
+      --blue-50:     #eff6ff;
+      --blue-700:    #1d4ed8;
+      --border:      1px solid var(--gray-200);
+      --radius:      6px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      color: var(--black);
+      background: var(--white);
+      line-height: 1.6;
+    }
+
+    /* ─── Page layout ─────────────────────────────────────────────────────── */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 48px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    .report-header {
+      border-bottom: 3px solid var(--black);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-name {
+      font-family: 'Merriweather', Georgia, serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--black);
+    }
+
+    .brand-tagline {
+      font-size: 11px;
+      color: var(--gray-500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .report-meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--gray-700);
+      line-height: 1.8;
+    }
+
+    .report-meta strong {
+      display: block;
+      font-size: 14px;
+      color: var(--black);
+      font-weight: 600;
+    }
+
+    /* ─── GPS chip ───────────────────────────────────────────────────────── */
+    .gps-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gray-100);
+      border: var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--gray-700);
+      font-variant-numeric: tabular-nums;
+      margin-top: 8px;
+    }
+
+    /* ─── Section card ───────────────────────────────────────────────────── */
+    .section {
+      margin-bottom: 24px;
+      border: var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--gray-50);
+      border-bottom: var(--border);
+    }
+
+    .section-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--white);
+      border: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--black);
+    }
+
+    .section-subtitle {
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+
+    /* ─── Status badges ──────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .badge-verified {
+      background: var(--green-50);
+      color: var(--green-700);
+      border: 1px solid #86efac;
+    }
+
+    .badge-manual {
+      background: var(--amber-50);
+      color: var(--amber-700);
+      border: 1px solid var(--amber-200);
+    }
+
+    .badge-error {
+      background: var(--red-50);
+      color: var(--red-700);
+      border: 1px solid #fca5a5;
+    }
+
+    .badge-partial {
+      background: var(--blue-50);
+      color: var(--blue-700);
+      border: 1px solid #93c5fd;
+    }
+
+    /* ─── Section body ───────────────────────────────────────────────────── */
+    .section-body {
+      padding: 16px;
+    }
+
+    /* ─── Data rows ──────────────────────────────────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 0 8px;
+      border-bottom: var(--border);
+    }
+
+    .data-table td {
+      padding: 6px 0;
+      font-size: 13px;
+      color: var(--gray-700);
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table td:first-child {
+      width: 36%;
+      font-weight: 500;
+      color: var(--black);
+    }
+
+    .mono {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Source attribution ────────────────────────────────────────────── */
+    .source-attribution {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--gray-200);
+      font-size: 11px;
+      color: var(--gray-500);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .source-attribution a {
+      color: var(--blue-700);
+      text-decoration: none;
+    }
+
+    .source-attribution a:hover {
+      text-decoration: underline;
+    }
+
+    /* ─── Failed / error state ───────────────────────────────────────────── */
+    .error-notice {
+      background: var(--red-50);
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--red-700);
+    }
+
+    .error-notice strong { display: block; margin-bottom: 4px; }
+
+    .manual-action {
+      margin-top: 12px;
+      background: var(--amber-50);
+      border: 1px solid var(--amber-200);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--amber-700);
+    }
+
+    .manual-action strong { display: block; margin-bottom: 4px; }
+
+    /* ─── No-cases notice ────────────────────────────────────────────────── */
+    .zero-notice {
+      background: var(--blue-50);
+      border: 1px solid #93c5fd;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--blue-700);
+    }
+
+    /* ─── IGR panel ─────────────────────────────────────────────────────── */
+    .igr-panel {
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 16px;
+      background: var(--white);
+    }
+
+    .igr-steps {
+      list-style: none;
+      counter-reset: igr-steps;
+      margin: 10px 0;
+    }
+
+    .igr-steps li {
+      counter-increment: igr-steps;
+      padding: 5px 0 5px 28px;
+      position: relative;
+      font-size: 13px;
+      color: var(--gray-700);
+    }
+
+    .igr-steps li::before {
+      content: counter(igr-steps);
+      position: absolute;
+      left: 0;
+      top: 5px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--black);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .igr-url {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 14px;
+      background: var(--black);
+      color: var(--white);
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .igr-url:hover { opacity: 0.85; text-decoration: none; }
+
+    /* ─── Disclaimer box ─────────────────────────────────────────────────── */
+    .disclaimer-box {
+      margin-top: 32px;
+      border: 2px solid var(--amber-200);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      background: var(--amber-50);
+    }
+
+    .disclaimer-box .label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--amber-700);
+      margin-bottom: 6px;
+    }
+
+    .disclaimer-box p {
+      font-size: 12px;
+      color: var(--gray-700);
+      line-height: 1.7;
+    }
+
+    /* ─── Footer ─────────────────────────────────────────────────────────── */
+    .report-footer {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 2px solid var(--black);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--gray-500);
+    }
+
+    /* ─── Print overrides ─────────────────────────────────────────────────── */
+    @media print {
+      @page {
+        size: A4;
+        margin: 20mm 15mm;
+      }
+
+      body {
+        font-size: 11px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .badge-verified { background: #dcfce7 !important; color: #15803d !important; }
+      .badge-manual   { background: #fef9c3 !important; color: #a16207 !important; }
+      .badge-error    { background: #fee2e2 !important; color: #b91c1c !important; }
+      .badge-partial  { background: #dbeafe !important; color: #1d4ed8 !important; }
+      .disclaimer-box { background: #fffbeb !important; border-color: #fde68a !important; }
+      .error-notice   { background: #fef2f2 !important; }
+      .manual-action  { background: #fffbeb !important; }
+      .zero-notice    { background: #eff6ff !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header class="report-header">
+    <div class="brand">
+      <span class="brand-name">ClearDeed</span>
+      <span class="brand-tagline">Property Due-Diligence Report</span>
+      <div class="gps-chip">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        </svg>
+        20.272688&deg;N, 85.701271&deg;E &nbsp;|&nbsp; Plot #128, Mendhasala
+      </div>
+    </div>
+    <div class="report-meta">
+      <strong>CLD-2026-001</strong>
+      Generated: 18 Apr 2026, 10:24 IST<br />
+      District: Khordha, Odisha
+    </div>
+  </header>
+
+  <!-- ── Section: Summary ───────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-title-group">
+        <div class="section-icon">&#9776;</div>
+        <div>
+          <div class="section-title">Report Summary</div>
+          <div class="section-subtitle">Quick overview of all sources queried</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Finding</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nominatim (Geocoding)</td>
+            <td><span class="badge badge-partial">&#8776; Source-backed</span></td>
+            <td>Chandaka, Khordha — PIN 752054</td>
+          </tr>
+          <tr>
+            <td>Bhunaksha (Plot Polygon)</td>
+            <td><span class="badge badge-partial">&#8776; Source-backed</span></td>
+            <td>Plot #128 &middot; area must be reconciled with Bhulekh target row &middot; Mendhasala, Bhubaneswar</td>
+          </tr>
+          <tr>
+            <td>Bhulekh (Land Records)</td>
+            <td><span class="badge badge-error">&#10007; Failed</span></td>
+            <td>Records temporarily unavailable</td>
+          </tr>
+          <tr>
+            <td>eCourts (Court Cases)</td>
+            <td><span class="badge badge-manual">&#8505; Manual Req.</span></td>
+            <td>Court search incomplete &mdash; accepted captcha negative-result metadata unavailable</td>
+          </tr>
+          <tr>
+            <td>IGR (Encumbrance)</td>
+            <td><span class="badge badge-manual">&#8505; Manual Req.</span></td>
+            <td>Deep-link generated &mdash; EC must be obtained manually from IGR Odisha</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Section: Location ─────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-title-group">
+        <div class="section-icon">&#9906;</div>
+        <div>
+          <div class="section-title">Location</div>
+          <div class="section-subtitle">Geocoding &amp; plot polygon data</div>
+        </div>
+      </div>
+      <span class="badge badge-partial">&#8776; Source-backed</span>
+    </div>
+    <div class="section-body">
+      <table class="data-table">
+        <thead>
+          <tr><th>Field</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GPS Coordinates</td>
+            <td class="mono">20.272688&deg;N, 85.701271&deg;E</td>
+          </tr>
+          <tr>
+            <td>Village (Nominatim)</td>
+            <td>Chandaka</td>
+          </tr>
+          <tr>
+            <td>Village (Bhunaksha)</td>
+            <td>Mendhasala</td>
+          </tr>
+          <tr>
+            <td>Tahasil</td>
+            <td>Bhubaneswar</td>
+          </tr>
+          <tr>
+            <td>District</td>
+            <td>Khordha</td>
+          </tr>
+          <tr>
+            <td>Postcode</td>
+            <td class="mono">752054</td>
+          </tr>
+          <tr>
+            <td>Plot Number</td>
+            <td class="mono">128</td>
+          </tr>
+          <tr>
+            <td>Plot Area</td>
+            <td>Bhunaksha polygon area must be reconciled against the Bhulekh target plot row before use</td>
+          </tr>
+          <tr>
+            <td>Land Classification</td>
+            <td>Not verified in this static template</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="source-attribution">
+        <span>Nominatim &mdash; openstreetmap.org</span>
+        <span>Bhunaksha &mdash; GeoServer WFS (mapserver.odisha4kgeo.in) &mdash; 18 Apr 2026</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section: Bhulekh ────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-title-group">
+        <div class="section-icon">&#128203;</div>
+        <div>
+          <div class="section-title">Land Records — Bhulekh RoR</div>
+          <div class="section-subtitle">Record of Rights, Khordha district</div>
+        </div>
+      </div>
+      <span class="badge badge-error">&#10007; Failed</span>
+    </div>
+    <div class="section-body">
+      <div class="error-notice">
+        <strong>Automated retrieval failed</strong>
+        Bhulekh public RoR lookup is temporarily unavailable. The ASP.NET session handshake did not complete. This is a known intermittent issue with bhulekh.ori.nic.in.
+      </div>
+      <div class="manual-action">
+        <strong>Manual verification required</strong>
+        Visit <strong>bhulekh.ori.nic.in</strong>, navigate to RoRView.aspx, select District: <strong>Khordha</strong>, Tahasil: <strong>Bhubaneswar</strong>, Village: <strong>Mendhasala</strong>, then use the Bhulekh village/khatiyan/plot options confirmed in the live flow. Do not assume the revenue-map plot number is the Bhulekh lookup number unless the resolver has matched them. Cross-check the returned owner name against the claimed owner.
+      </div>
+      <div class="source-attribution">
+        <span>Source: <a href="https://bhulekh.ori.nic.in" target="_blank" rel="noopener">bhulekh.ori.nic.in</a></span>
+        <span>Last attempted: 18 Apr 2026</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section: eCourts ───────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-title-group">
+        <div class="section-icon">&#9878;</div>
+        <div>
+          <div class="section-title">Court Cases — eCourts</div>
+          <div class="section-subtitle">Civil &amp; criminal cases, Khordha district</div>
+        </div>
+      </div>
+      <span class="badge badge-partial">&#8776; Partial</span>
+    </div>
+    <div class="section-body">
+      <div class="zero-notice">
+        <strong>Court search not verified</strong>
+        The eCourts result in this static template does not include accepted-captcha negative-result metadata, and RCCMS is not automated. Do not treat this as a no-case finding.
+      </div>
+      <div class="manual-action" style="margin-top: 12px;">
+        <strong>Manual verification recommended</strong>
+        Search manually at <a href="https://services.ecourts.gov.in" style="color: inherit; font-weight: 600;">services.ecourts.gov.in</a>: select <strong>State: Odisha</strong>, <strong>District: Khurda</strong>, enter party name <strong>Mohapatra</strong>, and search across all court complexes: Bhubaneswar, Khurda, Banapur, Jatni, Tangi.
+      </div>
+      <div class="source-attribution">
+        <span>Source: <a href="https://services.ecourts.gov.in" target="_blank" rel="noopener">services.ecourts.gov.in</a></span>
+        <span>Queried: 18 Apr 2026 &nbsp;&bull;&nbsp; Court complexes: Bhubaneswar, Khurda, Banapur, Jatni, Tangi</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section: IGR ───────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <div class="section-title-group">
+        <div class="section-icon">&#128220;</div>
+        <div>
+          <div class="section-title">Encumbrance Certificate — IGR Odisha</div>
+          <div class="section-subtitle">Deep-link &amp; manual retrieval instructions</div>
+        </div>
+      </div>
+      <span class="badge badge-manual">&#8505; Manual Req.</span>
+    </div>
+    <div class="section-body">
+      <div class="igr-panel">
+        <p style="font-size: 13px; color: var(--gray-700); margin-bottom: 10px;">
+          ClearDeed V1 does not retrieve the Encumbrance Certificate automatically. Follow the steps below to obtain it manually from IGR Odisha.
+        </p>
+        <ol class="igr-steps">
+          <li>Visit <strong>igrodisha.gov.in</strong> and navigate to EC Search</li>
+          <li>Select the current district and SRO in the live IGR flow</li>
+          <li>Search by <strong>Plot #128</strong> or <strong>Owner Name: Mohapatra</strong></li>
+          <li>Pay the applicable fee shown by IGR Odisha</li>
+          <li>Download and review the EC for any prior transfers, liens, or mutations</li>
+        </ol>
+        <a class="igr-url" href="https://igrodisha.gov.in/ecsearch" target="_blank" rel="noopener">
+          &#8594; Open IGR Odisha EC Search &rarr;
+        </a>
+      </div>
+      <div class="source-attribution">
+        <span>Source: <a href="https://igrodisha.gov.in" target="_blank" rel="noopener">igrodisha.gov.in</a></span>
+        <span>Fee: verify in the live IGR flow</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Disclaimer ─────────────────────────────────────────────────────── -->
+  <div class="disclaimer-box">
+    <div class="label">&#9888; Important Disclaimer</div>
+    <p>
+      ClearDeed aggregates public land records, court case data, and registry information.
+      This report <strong>does not certify ownership</strong>, <strong>does not guarantee
+      the absence of fraud</strong>, and <strong>does not recommend any property transaction</strong>.
+      All findings must be independently verified by a qualified property lawyer before
+      any sale, purchase, or registration. ClearDeed is an information aggregation tool
+      only. Legal responsibility for property due diligence rests entirely with the
+      verifying lawyer and the parties to the transaction.
+    </p>
+  </div>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────── -->
+  <footer class="report-footer">
+    <span>Generated by <strong>ClearDeed</strong> &mdash; Khordha, Odisha</span>
+    <span>Manual verification required for all sections &mdash; CLD-2026-001</span>
+  </footer>
+
+</div><!-- /.page -->
+</body>
+</html>

@@ -75,13 +75,14 @@ async function step2() {
 
 // ─── Step 3: Bhulekh ──────────────────────────────────────────────────────────
 
-async function step3(village: string) {
+async function step3(village: string, plotNo?: string) {
   console.log("\n=== BHULEKH ===");
   const result = await safeResult("bhulekh", async () => {
     return await bhulekhFetch({
       gps: COORDS,
       village: village || "Mendhasala",
       ownerName: TEST_NAME,
+      plotNo,
     });
   });
   console.log(JSON.stringify(result, null, 2));
@@ -119,10 +120,14 @@ async function main() {
 
   // Step 2: Bhunaksha
   const bhuResult = await step2();
+  const plotNo =
+    (bhuResult as Record<string, unknown>).data &&
+    ((bhuResult as Record<string, { data: { plotNo?: string } }>).data as { plotNo?: string })
+      ?.plotNo;
   await delay();
 
   // Step 3: Bhulekh (most likely to fail — untested)
-  const blkhResult = await step3(village as string);
+  const blkhResult = await step3(village as string, plotNo);
   await delay();
 
   // Step 4: eCourts

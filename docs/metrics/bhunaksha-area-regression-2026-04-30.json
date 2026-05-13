@@ -1,0 +1,42 @@
+{
+  "measuredAt": "2026-04-30T07:01:00.000Z",
+  "coordinate": {
+    "lat": 20.272688,
+    "lon": 85.701271
+  },
+  "wfsHealthCheck": {
+    "ok": true,
+    "probeBbox": "85.7000,20.2720,85.7020,20.2740"
+  },
+  "wfsResult": {
+    "status": "success",
+    "statusReason": "point_contained_in_polygon",
+    "plotNo": "127",
+    "village": "Mendhasala",
+    "tahasil": "Bhubaneswar",
+    "area": 0.001808857090686576,
+    "areaUnit": "sq_km",
+    "areaAcres": 0.4469230970896605,
+    "shapeAreaRaw": 1.5595729140254912e-7,
+    "shapeAreaUnit": "degrees2"
+  },
+  "bhulekhPairing": {
+    "attempted": true,
+    "plotNo": "127",
+    "completed": false,
+    "blocker": "Bhulekh Playwright browser bootstrap did not progress in this shell before the probe was stopped.",
+    "targetPlotAreaAcres": null
+  },
+  "liveRegression": {
+    "implemented": true,
+    "enabledBy": "CLEARDEED_LIVE_BHUNAKSHA_AREA=1 and CLEARDEED_LIVE_BHULEKH_AREA_ACRES=<observed-target-plot-acres>",
+    "completed": false,
+    "reason": "A same-run Bhulekh target row area was not available."
+  },
+  "claimGate": {
+    "readiness": "L2",
+    "claimState": "partial",
+    "allowedCopy": "Bhunaksha returned a source-backed polygon area; Bhulekh area reconciliation still requires a live target-row area.",
+    "blockedCopy": "Bhunaksha area matches Bhulekh area"
+  }
+}

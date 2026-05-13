@@ -1,0 +1,15 @@
+{
+  "caseId": "TC003",
+  "description": "Plot within the Chandaka Forest regulatory zone.",
+  "input": {
+    "gps": { "lat": 20.35, "lon": 85.7 },
+    "claimedOwnerName": "John Doe"
+  },
+  "goldenOutput": {
+    "owner": {
+      "nameMatch": "unknown"
+    },
+    "land": {},
+    "regulatory": { "flagsCount": 1, "flagTypes": ["FOREST"] }
+  }
+}

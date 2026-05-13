@@ -1,47 +1,155 @@
 /**
  * POST /api/report/create
  *
- * Creates a report record in Supabase, runs the ClearDeed pipeline,
- * and persists results. Returns reportId + HTML.
+ * V1.1: Accepts Bhulekh dropdown-based inputs (tehsil + village + identifier).
+ * V1.0 legacy: Still accepts GPS-based inputs (lat/lon + claimedOwnerName).
  *
- * Pipeline: Tier 1 (Nominatim + Bhunaksha + Bhulekh + eCourts + RCCMS)
- *           → Tier 2 (A5 OwnershipReasoner, A6 LandClassifier, A7 EncumbranceReasoner, A8 RegulatoryScreener)
- *           → Tier 3 (A10 ConsumerReportWriter)
- *           → Tier 4 (A11 OutputAuditor)
+ * Pipeline: Bhulekh fetcher → A5 OwnershipReasoner → A6 LandClassifier
+ *           → A7 EncumbranceReasoner → A10 ConsumerReportWriter → A11 OutputAuditor
  *
  * Database: Creates report record, runs pipeline, updates with results.
  *           Falls back to demo mode if Supabase is not configured.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { generateReport } from "@/lib/pipeline";
+import { generateReport, generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults, upsertSourceResult } from "@/lib/db";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import { validateKhordhaGPS } from "@cleardeed/schema";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+interface V10Input {
+  /** Legacy GPS-based inputs */
+  lat: number;
+  lon: number;
+  claimedOwnerName: string;
+  fatherHusbandName?: string;
+  plotDescription?: string;
+}
+
+interface V11Input {
+  /** V1.1 Bhulekh dropdown-based inputs */
+  tehsil: string;
+  tehsilValue: string;
+  village: string;
+  villageCode: string;
+  searchMode: "Plot" | "Khatiyan" | "Tenant";
+  identifier: string;
+  claimedOwnerName?: string;
+  whatsapp?: string;
+  email?: string;
+}
+
+type ReportInput = V10Input | V11Input;
 
 export async function POST(req: NextRequest) {
   try {
-    const authFailure = validateReportCreateAuth(req);
-    if (authFailure) return authFailure;
+    // Report creation is open for concierge launch (auth handled via WhatsApp confirmation)
+    // Admin token is only required for /admin routes.
 
-    const body = await req.json();
-    const { lat, lon, claimedOwnerName, fatherHusbandName, plotDescription } = body as {
-      lat: number;
-      lon: number;
-      claimedOwnerName: string;
-      fatherHusbandName?: string;
-      plotDescription?: string;
-    };
+    const body = await req.json() as ReportInput;
+    const isV11 = "tehsil" in body && body.tehsil && "village" in body && body.village && "identifier" in body;
 
-    if (lat == null || lon == null || !claimedOwnerName) {
+    // ── V1.1 flow: Bhulekh dropdown inputs ───────────────────────────────────
+    if (isV11) {
+      const v11 = body as V11Input;
+
+      if (!v11.tehsil || !v11.village || !v11.villageCode || !v11.searchMode || !v11.identifier) {
+        return NextResponse.json(
+          { error: "Missing required V1.1 fields: tehsil, village, villageCode, searchMode, identifier" },
+          { status: 400 }
+        );
+      }
+
+      // Create report record in Supabase if configured
+      let reportId: string | undefined;
+      let persistenceEnabled = false;
+      try {
+        const dbResult = await createReport({
+          gpsLat: 0, // V1.1 doesn't use GPS
+          gpsLon: 0,
+          claimedOwnerName: v11.claimedOwnerName ?? v11.identifier,
+        });
+        reportId = dbResult.reportId;
+        persistenceEnabled = true;
+      } catch (dbError) {
+        console.warn("[api/report/create] Supabase create failed:", dbError);
+      }
+
+      // Run V1.1 pipeline
+      let pipelineOutput: Awaited<ReturnType<typeof generateReportV11>>;
+      try {
+        pipelineOutput = await generateReportV11({
+          reportId,
+          tehsil: v11.tehsil,
+          tehsilValue: v11.tehsilValue,
+          village: v11.village,
+          villageCode: v11.villageCode,
+          searchMode: v11.searchMode,
+          identifier: v11.identifier,
+          claimedOwnerName: v11.claimedOwnerName,
+        });
+        reportId = pipelineOutput.reportId;
+      } catch (pipelineError) {
+        const errorMessage = pipelineError instanceof Error ? pipelineError.message : String(pipelineError);
+        if (persistenceEnabled && reportId) {
+          await updateReportResults({
+            reportId,
+            reportHtml: buildFailedReportHtml(reportId, errorMessage),
+            reportTitle: "Report held for review",
+            errorMessage,
+          });
+        }
+        throw pipelineError;
+      }
+
+      // Persist results
+      let reportPersisted = false;
+      if (persistenceEnabled && reportId) {
+        try {
+          await updateReportResults({
+            reportId,
+            reportHtml: pipelineOutput.html,
+            reportTitle: pipelineOutput.title,
+            bhulekhStatus: pipelineOutput.sourceSummary.bhulekh,
+            validationFindings: pipelineOutput.validationFindings,
+            sourceSummary: pipelineOutput.sourceSummary,
+          });
+          reportPersisted = true;
+        } catch (dbError) {
+          console.warn("[api/report/create] V1.1 persistence failed:", dbError);
+        }
+      }
+      const responseHtml = reportPersisted
+        ? pipelineOutput.html
+        : removePdfDownloadAction(pipelineOutput.html);
+
+      return NextResponse.json(
+        {
+          reportId,
+          title: pipelineOutput.title,
+          html: responseHtml,
+          validationFindings: pipelineOutput.validationFindings,
+          sourceSummary: pipelineOutput.sourceSummary,
+        },
+        { status: 200 }
+      );
+    }
+
+    // ── V1.0 legacy flow: GPS-based inputs ─────────────────────────────────────
+    const v10 = body as V10Input;
+    const { lat, lon, claimedOwnerName, fatherHusbandName, plotDescription } = v10;
+
+    if (v10.lat == null || v10.lon == null || !v10.claimedOwnerName) {
       return NextResponse.json(
         { error: "Missing required fields: lat, lon, claimedOwnerName" },
         { status: 400 }
       );
     }
 
-    const gpsValidation = validateKhordhaGPS(Number(lat), Number(lon));
+    const gpsValidation = validateKhordhaGPS(Number(v10.lat), Number(v10.lon));
     if (gpsValidation.blocked) {
       return NextResponse.json(
         {
@@ -100,6 +208,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Persist pipeline results to Supabase (if configured) ─────────────────
+    let reportPersisted = false;
     if (persistenceEnabled && reportId) {
       try {
         await updateReportResults({
@@ -114,6 +223,7 @@ export async function POST(req: NextRequest) {
           validationFindings: pipelineOutput.validationFindings,
           sourceSummary: pipelineOutput.sourceSummary,
         });
+        reportPersisted = true;
 
         await Promise.all(
           pipelineOutput.sources.map((source) =>
@@ -134,12 +244,15 @@ export async function POST(req: NextRequest) {
         console.warn("[api/report/create] Supabase persistence failed:", dbError);
       }
     }
+    const responseHtml = reportPersisted
+      ? pipelineOutput.html
+      : removePdfDownloadAction(pipelineOutput.html);
 
     return NextResponse.json(
       {
         reportId,
         title: pipelineOutput.title,
-        html: pipelineOutput.html,
+        html: responseHtml,
         validationFindings: pipelineOutput.validationFindings,
         sourceSummary: pipelineOutput.sourceSummary,
       },
@@ -154,13 +267,12 @@ export async function POST(req: NextRequest) {
 
 function validateReportCreateAuth(req: NextRequest): NextResponse | null {
   const expectedToken = process.env.REPORT_CREATE_TOKEN ?? process.env.ADMIN_VIEW_TOKEN;
+  // If no token is configured at all, allow open access (concierge launch phase)
   if (!expectedToken) {
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json(
-        { error: "Report creation is not configured for concierge launch." },
-        { status: 503 }
-      );
-    }
+    return null;
+  }
+  // If token is set as empty string (not configured in Vercel), treat as no token
+  if (expectedToken === "") {
     return null;
   }
 
@@ -197,6 +309,10 @@ function buildFailedReportHtml(reportId: string, errorMessage: string): string {
   </main>
 </body>
 </html>`;
+}
+
+function removePdfDownloadAction(html: string): string {
+  return html.replace(/\s*<div class="report-actions">\s*<a href="\/api\/report\/[^"]+\/pdf" class="pdf-button" download>Download PDF<\/a>\s*<\/div>/, "");
 }
 
 function escapeHtml(value: string): string {

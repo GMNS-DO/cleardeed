@@ -1,0 +1,869 @@
+{
+  "source": "bhulekh",
+  "status": "success",
+  "verification": "verified",
+  "fetchedAt": "2026-04-18T09:45:38.202Z",
+  "data": {
+    "plotNo": "128",
+    "khataNo": "830",
+    "village": "Mendhasala",
+    "tenants": [
+      {
+        "surveyNo": "309",
+        "area": 10.5,
+        "unit": "acre",
+        "landClass": "ଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "318",
+        "area": 18,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "328",
+        "area": 29,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "36",
+        "area": 27,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "291",
+        "area": 8.5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "292",
+        "area": 4,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "295",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "296",
+        "area": 2.5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "301",
+        "area": 7.5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "302",
+        "area": 6,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "305",
+        "area": 4,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "53",
+        "area": 15.5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1315",
+        "area": 9,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1316",
+        "area": 3,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1319",
+        "area": 1.5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1321",
+        "area": 3.5,
+        "unit": "acre",
+        "landClass": "ଗୋଦଣ୍ଡା",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1326",
+        "area": 3.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1327",
+        "area": 1.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1328",
+        "area": 1.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1331",
+        "area": 1,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1332",
+        "area": 0.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1336",
+        "area": 0.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1365",
+        "area": 10,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1367",
+        "area": 2,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1369",
+        "area": 9.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1373",
+        "area": 1,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1379",
+        "area": 21,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1380",
+        "area": 31.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1385",
+        "area": 1,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1388",
+        "area": 2.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1391",
+        "area": 1,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1392",
+        "area": 2,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1397",
+        "area": 1,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1395",
+        "area": 7.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "734",
+        "area": 7,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "742",
+        "area": 5.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "545",
+        "area": 17.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1052",
+        "area": 1.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1053",
+        "area": 25,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1228",
+        "area": 20,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1295",
+        "area": 22,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1352",
+        "area": 2,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1353",
+        "area": 2,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1357",
+        "area": 1.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1359",
+        "area": 6,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "63",
+        "area": 6,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "89",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "103",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "106",
+        "area": 9.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "107",
+        "area": 49,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "110",
+        "area": 77,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "113",
+        "area": 28.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "122",
+        "area": 10.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "125",
+        "area": 7,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "124",
+        "area": 17,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "128",
+        "area": 7,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "130",
+        "area": 3,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "140",
+        "area": 17,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "151",
+        "area": 11,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "194",
+        "area": 11,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "195",
+        "area": 38.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "197",
+        "area": 30,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "218",
+        "area": 13.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "220",
+        "area": 5.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "22",
+        "area": 6.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "31",
+        "area": 9,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "34",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "306",
+        "area": 7.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "51",
+        "area": 4.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "319",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1713",
+        "area": 2.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1741",
+        "area": 10,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1760",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1764",
+        "area": 10,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1959",
+        "area": 22,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "3",
+        "area": 87,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "11",
+        "area": 43,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "8",
+        "area": 5.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2105",
+        "area": 5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2106",
+        "area": 4.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2268",
+        "area": 4,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2269",
+        "area": 8,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "17",
+        "area": 4.5,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1349",
+        "area": 1,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1377",
+        "area": 88,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1376",
+        "area": 24,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1372/2497",
+        "area": 94,
+        "unit": "acre",
+        "landClass": "ଗୋଚର",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2349",
+        "area": 14,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2360",
+        "area": 12,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2365",
+        "area": 19,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1872",
+        "area": 68,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1960",
+        "area": 41.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1964",
+        "area": 54,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2207/2393",
+        "area": 77.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2360/2522",
+        "area": 31.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2320",
+        "area": 38,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2327",
+        "area": 9,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2228",
+        "area": 40,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2245",
+        "area": 12.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2267",
+        "area": 6,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2112",
+        "area": 12,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2080",
+        "area": 43,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1972",
+        "area": 59.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2025",
+        "area": 11.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2026",
+        "area": 13.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2058",
+        "area": 32.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "2076",
+        "area": 19,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1858",
+        "area": 30.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1877/2498",
+        "area": 4,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1876",
+        "area": 28,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1744",
+        "area": 11,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1752",
+        "area": 29,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1755",
+        "area": 3.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "520",
+        "area": 10.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "724",
+        "area": 18.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "881",
+        "area": 34.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "985/2376",
+        "area": 1.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "800",
+        "area": 22,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "812",
+        "area": 9.5,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1409",
+        "area": 37,
+        "unit": "acre",
+        "landClass": "ପାଣି ନାଳ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "852",
+        "area": 2.5,
+        "unit": "acre",
+        "landClass": "ଚୁଆ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      },
+      {
+        "surveyNo": "1742",
+        "area": 24.5,
+        "unit": "acre",
+        "landClass": "ଚୁଆ",
+        "tenantName": "ରଖିତ ଅନାବାଦୀ"
+      }
+    ],
+    "lastUpdated": "03/06/1962",
+    "sourceDocument": "https://bhulekh.ori.nic.in/SRoRFront_Uni.aspx"
+  }
+}

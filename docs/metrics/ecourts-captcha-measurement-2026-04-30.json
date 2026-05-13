@@ -1,0 +1,28 @@
+{
+  "measuredAt": "2026-04-30T05:32:17.000Z",
+  "partyName": "Mohapatra",
+  "environment": "local_codex_shell",
+  "healthCheck": {
+    "command": "npx tsx --eval import healthCheck from packages/fetchers/ecourts",
+    "ok": false
+  },
+  "directHttpProbe": {
+    "url": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
+    "method": "HEAD",
+    "httpStatus": 403
+  },
+  "tenRunSample": {
+    "completed": false,
+    "runs": 0,
+    "captchaAcceptedRuns": 0,
+    "captchaFailedRuns": 0,
+    "solveRate": null,
+    "blocker": "eCourts portal was not reachable from this environment with a usable case-status session."
+  },
+  "claimGate": {
+    "readiness": "L1",
+    "claimState": "manual_required",
+    "allowedCopy": "Court search could not be verified from the eCourts portal in this run; manual court search is required.",
+    "blockedCopy": "No active cases"
+  }
+}

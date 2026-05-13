@@ -2,12 +2,27 @@
   "name": "@cleardeed/orchestrator",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@cleardeed/schema": "workspace:*"
+    "@cleardeed/schema": "workspace:*",
+    "@cleardeed/fetcher-nominatim": "workspace:*",
+    "@cleardeed/fetcher-bhunaksha": "workspace:*",
+    "@cleardeed/fetcher-ecourts": "workspace:*",
+    "@cleardeed/fetcher-bhulekh": "workspace:*",
+    "@cleardeed/fetcher-igr-ec": "workspace:*",
+    "@cleardeed/fetcher-cersai": "workspace:*",
+    "@cleardeed/fetcher-high-court": "workspace:*",
+    "@cleardeed/fetcher-drt": "workspace:*",
+    "@cleardeed/fetcher-larr": "workspace:*",
+    "@cleardeed/fetcher-civic-dues": "workspace:*"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.4"
   }
 }

@@ -87,6 +87,8 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
       area?: number;
       unit?: string;
       landClass?: string;
+      landClassOdia?: string;
+      landClassEnglish?: string;
     }>;
     lastUpdated?: string;
   } | null;
@@ -125,7 +127,8 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
       const plots: LandClassifierInput["plots"] = bhulekhData.tenants.map((t) => ({
         plotNo: t.surveyNo ?? "",
         areaAcres: t.area ?? 0,
-        landClassOdia: t.landClass ?? undefined,
+        landClassOdia: t.landClassOdia ?? undefined,
+        landClassEnglish: t.landClassEnglish ?? t.landClass ?? undefined,
       }));
       landClassifier = classifyLand({
         plots,
@@ -346,6 +349,8 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       area?: number;
       unit?: string;
       landClass?: string;
+      landClassOdia?: string;
+      landClassEnglish?: string;
     }>;
     lastUpdated?: string;
   } | null;
@@ -382,7 +387,8 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       const plots: LandClassifierInput["plots"] = bhulekhData.tenants.map((t) => ({
         plotNo: t.surveyNo ?? "",
         areaAcres: t.area ?? 0,
-        landClassOdia: t.landClass ?? undefined,
+        landClassOdia: t.landClassOdia ?? undefined,
+        landClassEnglish: t.landClassEnglish ?? t.landClass ?? undefined,
       }));
       landClassifier = classifyLand({
         plots,

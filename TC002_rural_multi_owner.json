@@ -1,0 +1,17 @@
+{
+  "caseId": "TC002",
+  "description": "Rural plot in Mendhasala with multiple owners.",
+  "input": {
+    "gps": { "lat": 20.272688, "lon": 85.701271 },
+    "claimedOwnerName": "Krushnachandra Barajena"
+  },
+  "goldenOutput": {
+    "owner": {
+      "nameMatch": "exact",
+      "transliteratedName": "Krushnachandra Barajena",
+      "coOwnersCount": 4
+    },
+    "land": { "classification": "Danda" },
+    "regulatory": { "flagsCount": 0 }
+  }
+}

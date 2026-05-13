@@ -1,0 +1,22 @@
+{
+  "name": "@cleardeed/fetcher-cersai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@cleardeed/schema": "workspace:*",
+    "playwright": "^1.52.0",
+    "zod": "^3.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "healthcheck": "node --input-type=module -e \"import {healthCheck} from './src/index.js'; healthCheck().then(r => { console.log(r ? 'OK' : 'FAIL'); process.exit(r ? 0 : 1); })\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

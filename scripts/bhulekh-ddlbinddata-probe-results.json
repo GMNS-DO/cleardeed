@@ -1,0 +1,11 @@
+{
+  "step1": {
+    "url": "http://bhulekh.ori.nic.in/BhulekhError.aspx",
+    "title": ".:BHULEKH || ODISHA:."
+  },
+  "step2_href": "javascript:__doPostBack('ctl00$ContentPlaceHolder1$LinkButton1','')",
+  "step2": {
+    "url": "http://bhulekh.ori.nic.in/RoRView.aspx"
+  },
+  "error": "TimeoutError: page.waitForFunction: Timeout 30000ms exceeded."
+}

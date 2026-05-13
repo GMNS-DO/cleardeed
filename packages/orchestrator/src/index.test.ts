@@ -342,8 +342,8 @@ describe("orchestrator timeout", () => {
       identifierLabel: "830",
     });
 
-    // Advance fake timers past the 30-second timeout
-    vi.advanceTimersByTime(30_001);
+    // Advance fake timers past the overall timeout.
+    vi.advanceTimersByTime(55_001);
 
     const output = await runPromise;
     expect(output.sources.length).toBeGreaterThanOrEqual(0); // returns whatever completed

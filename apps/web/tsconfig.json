@@ -17,7 +17,20 @@
     "paths": {
       "@/*": ["./src/*"],
       "@cleardeed/schema": ["../../packages/schema/src/index.ts"],
-      "@cleardeed/fetcher-nominatim": ["../../packages/fetchers/nominatim/src/index.ts"]
+      "@cleardeed/fetcher-nominatim": ["../../packages/fetchers/nominatim/src/index.ts"],
+      "@cleardeed/fetcher-bhulekh": ["../../packages/fetchers/bhulekh/src/index.ts"],
+      "@cleardeed/fetcher-bhunaksha": ["../../packages/fetchers/bhunaksha/src/index.ts"],
+      "@cleardeed/fetcher-ecourts": ["../../packages/fetchers/ecourts/src/index.ts"],
+      "@cleardeed/fetcher-rccms": ["../../packages/fetchers/rccms/src/index.ts"],
+      "@cleardeed/orchestrator": ["../../packages/orchestrator/src/index.ts"],
+      "@cleardeed/consumer-report-writer": ["../../agents/consumer-report-writer/src/index.ts"],
+      "@cleardeed/consumer-report-writer/fixtures/golden-path": ["../../agents/consumer-report-writer/fixtures/golden-path.ts"],
+      "@cleardeed/ownership-reasoner": ["../../agents/ownership-reasoner/index.ts"],
+      "@cleardeed/encumbrance-reasoner": ["../../agents/encumbrance-reasoner/index.ts"],
+      "@cleardeed/regulatory-screener": ["../../agents/regulatory-screener/index.ts"],
+      "@cleardeed/land-classifier": ["../../agents/land-classifier/index.ts"],
+      "@cleardeed/output-auditor": ["../../agents/output-auditor/src/index.ts"],
+      "@cleardeed/pdf-renderer": ["../../packages/pdf-renderer/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

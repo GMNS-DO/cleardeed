@@ -1,12 +1,22 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["ES2017"],
+    "target": "ES2022",
+    "lib": ["ES2022"],
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "bundler",
+    "module": "ESNext",
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@cleardeed/schema": ["../schema/src/index.ts"],
+      "@cleardeed/fetcher-nominatim": ["../fetchers/nominatim/src/index.ts"],
+      "@cleardeed/fetcher-bhunaksha": ["../fetchers/bhunaksha/src/index.ts"],
+      "@cleardeed/fetcher-ecourts": ["../fetchers/ecourts/src/index.ts"],
+      "@cleardeed/fetcher-bhulekh": ["../fetchers/bhulekh/src/index.ts"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.json"],
   "exclude": ["node_modules"]

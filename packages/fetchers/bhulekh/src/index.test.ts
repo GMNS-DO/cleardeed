@@ -82,12 +82,12 @@ describe("parseRoRHtml", () => {
     expect(result.data?.tenants).toHaveLength(1);
     expect(result.data?.tenants[0]).toMatchObject({
       surveyNo: "128",
-      area: 10.5,
+      area: 0.105,
       areaAcresRaw: "0",
       areaDecimalsRaw: "1050",
       areaHectaresRaw: "0.425",
       areaUnitRaw: "acre+decimal",
-      areaComputation: "acres_plus_decimals_over_100",
+      areaComputation: "acres_plus_decimal_column_over_10000",
       sourcePlotNo: "128",
       landClass: "jalasechita_single",
       tenantName: "ଗଫୁରନ ବିବି",
@@ -106,13 +106,13 @@ describe("parseRoRHtml", () => {
     expect(raw.remarks.revenueAssessmentDate).toBe("01/01/2024");
     expect(raw.remarks.generatedAtRaw).toContain("18/04/2026");
     expect(raw.plotTable.headersOdia).toContain("ପ୍ଲଟ ନଂ");
-    expect(raw.plotTable.totals.areaAcres).toBe("28.5");
+    expect(raw.plotTable.totals.areaAcres).toBe("0.285");
     expect(raw.raw.rawHtml).toContain("gvfront_ctl02_lblName");
     expect(raw.plotTable.rows[0]).toMatchObject({
       plotNo: "128",
       northBoundaryOdia: "ଉତ୍ତର",
       areaUnitRaw: "acre+decimal",
-      areaComputation: "acres_plus_decimals_over_100",
+      areaComputation: "acres_plus_decimal_column_over_10000",
       remarksOdia: "ନମୁନା",
     });
     expect(raw.plotTable.rows[0].sourceRowHash).toMatch(/^[a-f0-9]{64}$/);
@@ -165,8 +165,8 @@ describe("parseRoRHtml", () => {
 
     expect(result.data?.tenants).toHaveLength(2);
     expect(result.data?.tenants.map((tenant) => tenant.tenantName)).toEqual(["ପ୍ରଥମ", "ଦ୍ୱିତୀୟ"]);
-    expect(result.data?.tenants[0].area).toBe(28.5);
-    expect(result.data?.tenants[0].areaComputation).toBe("sum_unique_plot_rows_acres_plus_decimals_over_100");
+    expect(result.data?.tenants[0].area).toBe(0.285);
+    expect(result.data?.tenants[0].areaComputation).toBe("sum_unique_plot_rows_acres_plus_decimal_column_over_10000");
   });
 
   it("returns failure provenance with stable artifact hashes before live lookup is attempted", async () => {

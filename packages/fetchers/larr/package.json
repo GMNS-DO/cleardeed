@@ -1,0 +1,21 @@
+{
+  "name": "@cleardeed/fetcher-larr",
+  "version": "0.1.0",
+  "description": "LARR Act land acquisition risk fetcher for Odisha",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "probe": "node scripts/probe-sia.mjs"
+  },
+  "dependencies": {
+    "@cleardeed/schema": "workspace:*",
+    "playwright": "^1.49.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^4.0.0"
+  }
+}

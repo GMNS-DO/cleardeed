@@ -25,8 +25,30 @@ export type { LandClassifierInput } from "./schema";
 // ─── Odia → Kisam mapping (Bhulekh Odia labels → standardized) ─────────────
 
 const ODIA_KISAM_MAP: Record<string, OdishaKisam> = {
+  // Standardized identifiers emitted by Bhulekh fetcher
+  "nagariya_jogya": "gharabari",
+  "gharabari": "gharabari",
+  "byabasaika": "byabasaika",
+  "unnayana_jogya": "unnayana_jogya",
+  "anajalasechita": "anajalasechita",
+  "bagayat": "bagayat",
+  "patita": "patita",
+  "jalasechita_single": "jalasechita_single",
+  "jalasechita_double": "jalasechita_double",
+  "agricultural": "agricultural",
+  "danda": "danda",
+  "godanda": "godanda",
+  "khalsa": "khalsa",
+  "neya_niyogita": "neya_niyogita",
+  "jungle": "jungle",
+  "jalasaya": "jalasaya",
+  "nadi": "nadi",
+  "gochar": "gochar",
+  "smasana": "smasana",
   // SAFE/READY
   "ଗୃହ ବାଡ଼ି": "gharabari", "ଘର ବାଡ଼": "gharabari", "Gharabari": "gharabari",
+  "ଗୃହ": "gharabari", "ଘର": "gharabari", "ଘରବାରି": "gharabari", "ଘର ବାରି": "gharabari",
+  "Homestead / Residential": "gharabari",
   "ବ୍ୟବସାୟିକ": "byabasaika", "Byabasaika": "byabasaika",
   "ଉନ୍ନୟନ ଯୋଗ୍ୟ": "unnayana_jogya", "Unnayana jogya": "unnayana_jogya",
   // CONVERSION REQUIRED
@@ -44,6 +66,10 @@ const ODIA_KISAM_MAP: Record<string, OdishaKisam> = {
   "ସ୍ଥିତିବାନ": "anajalasechita",   // agricultural = rain-fed
   "ଦଣ୍ଡା":     "jalasechita_single", // irrigated single crop = Danda
   "ଗୋଦଣ୍ଡା":   "jalasechita_single", // go-danda = irrigated (single crop)
+  "ଶାରଦ": "agricultural",
+  "ଶାରଦ ଏକ": "agricultural",
+  "ଶାରଦ ଦୁଇ": "agricultural",
+  "ଶାରଦ ତିନି": "agricultural",
   "ଖାସର":     "other",              // khalsa = government land — classified as "other"
   "ପାଥର":     "other",
 };

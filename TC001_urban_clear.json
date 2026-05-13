@@ -1,0 +1,16 @@
+{
+  "caseId": "TC001",
+  "description": "Happy Path: Urban plot in Bhubaneswar, single clear owner.",
+  "input": {
+    "gps": { "lat": 20.27, "lon": 85.84 },
+    "claimedOwnerName": "Suresh Mohapatra"
+  },
+  "goldenOutput": {
+    "owner": {
+      "nameMatch": "exact",
+      "coOwnersCount": 0
+    },
+    "land": { "classification": "Gharabari" },
+    "regulatory": { "flagsCount": 0 }
+  }
+}

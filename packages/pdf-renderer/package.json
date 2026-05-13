@@ -2,12 +2,17 @@
   "name": "@cleardeed/pdf-renderer",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
-    "@cleardeed/schema": "workspace:*"
+    "@sparticuz/chromium": "^138.0.2",
+    "playwright": "^1.44.0",
+    "playwright-core": "^1.59.1"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "vitest": "^1.6.0"
   }
 }

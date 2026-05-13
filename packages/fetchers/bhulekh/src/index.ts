@@ -9,9 +9,12 @@
  *
  * Browser/Playwright is only for discovery — the runtime path is request replay.
  */
-import { chromium } from "playwright";
-import type { Page } from "playwright";
+import serverlessChromium from "@sparticuz/chromium";
+import { chromium } from "playwright-core";
+import type { Browser, LaunchOptions, Page } from "playwright-core";
 import { createHash } from "node:crypto";
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import {
   type RoRResult as RoRResultType,
   type RetryAttemptRecord,
@@ -45,13 +48,92 @@ const ROR_BACK_URL = `${BHULEKH_URL}/SRoRBack_Uni.aspx`;
 const TIMEOUT_MS = 30_000;
 const SCREENSHOT_TIMEOUT_MS = 15_000;
 const PARSER_VERSION = "bhulekh-ror-html-v3";
-const MAX_ATTEMPTS = 2;
+const MAX_ATTEMPTS = 3;
 
 const TAHASIL_SELECT = "#ctl00_ContentPlaceHolder1_ddlTahsil";
 const VILLAGE_SELECT = "#ctl00_ContentPlaceHolder1_ddlVillage";
 const BIND_DATA_SELECT = "#ctl00_ContentPlaceHolder1_ddlBindData";
 
-let browserInstance: ReturnType<typeof chromium.launch> | null = null;
+let browserInstance: Promise<Browser> | null = null;
+
+const DEFAULT_CHROMIUM_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+];
+const SERVERLESS_CHROMIUM_PNPM_PACKAGE = "@sparticuz+chromium@138.0.2";
+
+function isServerlessBrowserRuntime(): boolean {
+  return Boolean(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NETLIFY ||
+    process.env.CLEARED_USE_SERVERLESS_CHROMIUM === "1"
+  );
+}
+
+async function buildChromiumLaunchOptions(): Promise<LaunchOptions> {
+  const executablePath =
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
+    process.env.CHROMIUM_EXECUTABLE_PATH;
+
+  if (executablePath) {
+    return {
+      headless: true,
+      executablePath,
+      args: DEFAULT_CHROMIUM_ARGS,
+    };
+  }
+
+  if (isServerlessBrowserRuntime()) {
+    const binDir = findServerlessChromiumBinDir();
+    return {
+      headless: true,
+      executablePath: await serverlessChromium.executablePath(binDir),
+      args: [...serverlessChromium.args, "--disable-dev-shm-usage"],
+    };
+  }
+
+  return {
+    headless: true,
+    args: DEFAULT_CHROMIUM_ARGS,
+  };
+}
+
+function findServerlessChromiumBinDir(): string | undefined {
+  const directCandidates = [
+    process.env.SPARTICUZ_CHROMIUM_BIN_DIR,
+    join(process.cwd(), "node_modules", "@sparticuz", "chromium", "bin"),
+    join(process.cwd(), "node_modules", ".pnpm", SERVERLESS_CHROMIUM_PNPM_PACKAGE, "node_modules", "@sparticuz", "chromium", "bin"),
+    join(process.cwd(), "..", "..", "node_modules", ".pnpm", SERVERLESS_CHROMIUM_PNPM_PACKAGE, "node_modules", "@sparticuz", "chromium", "bin"),
+    join("/var/task", "node_modules", "@sparticuz", "chromium", "bin"),
+    join("/var/task", "node_modules", ".pnpm", SERVERLESS_CHROMIUM_PNPM_PACKAGE, "node_modules", "@sparticuz", "chromium", "bin"),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  for (const candidate of directCandidates) {
+    if (existsSync(join(candidate, "chromium.br"))) return candidate;
+  }
+
+  for (const base of [
+    join(process.cwd(), "node_modules", ".pnpm"),
+    join(process.cwd(), "..", "..", "node_modules", ".pnpm"),
+    join("/var/task", "node_modules", ".pnpm"),
+  ]) {
+    const discovered = findPnpmChromiumBinDir(base);
+    if (discovered) return discovered;
+  }
+
+  return undefined;
+}
+
+function findPnpmChromiumBinDir(base: string): string | undefined {
+  if (!existsSync(base)) return undefined;
+  for (const entry of readdirSync(base).filter((name) => name.startsWith("@sparticuz+chromium@")).sort()) {
+    const candidate = join(base, entry, "node_modules", "@sparticuz", "chromium", "bin");
+    if (existsSync(join(candidate, "chromium.br"))) return candidate;
+  }
+  return undefined;
+}
 
 type SearchMode = "Khatiyan" | "Plot" | "Tenant";
 
@@ -396,9 +478,19 @@ function extractRadioValue(html: string, radioGroupName: string): string | null 
 
 async function getBrowser() {
   if (!browserInstance) {
-    browserInstance = chromium.launch({ headless: true });
+    browserInstance = buildChromiumLaunchOptions()
+      .then((options) => chromium.launch(options))
+      .catch((error) => {
+        browserInstance = null;
+        throw error;
+      });
   }
-  return browserInstance;
+  const browser = await browserInstance;
+  if (!browser.isConnected()) {
+    browserInstance = null;
+    return getBrowser();
+  }
+  return browser;
 }
 
 async function browserBootstrap(): Promise<{
@@ -436,6 +528,53 @@ async function browserBootstrap(): Promise<{
   await page.close();
 
   return { cookies, hiddenFields, pageHtml: html };
+}
+
+function resetCachedBrowserIfClosed(message: string): void {
+  if (/target page|target closed|browser has been closed|context.*closed/i.test(message)) {
+    browserInstance = null;
+  }
+}
+
+async function closePageQuietly(page: Page | null): Promise<void> {
+  if (!page || page.isClosed()) return;
+  await page.close().catch(() => undefined);
+}
+
+async function captureRoRScreenshots(
+  page: Page | null,
+  frontPageUrl: string
+): Promise<{ frontPageScreenshot?: string; backPageScreenshot?: string }> {
+  if (!page || page.isClosed()) return {};
+
+  let frontPageScreenshot: string | undefined;
+  let backPageScreenshot: string | undefined;
+
+  try {
+    await page.goto(frontPageUrl, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS });
+    frontPageScreenshot = await page
+      .screenshot({ type: "png", fullPage: true })
+      .then((buffer) => buffer.toString("base64"))
+      .catch(() => undefined);
+
+    if (!page.isClosed()) {
+      await page.goto(ROR_BACK_URL, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS }).catch(() => undefined);
+    }
+    if (!page.isClosed()) {
+      backPageScreenshot = await page
+        .screenshot({ type: "png", fullPage: true })
+        .then((buffer) => buffer.toString("base64"))
+        .catch(() => undefined);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[bhulekh] Screenshot capture skipped:", message);
+    resetCachedBrowserIfClosed(message);
+  } finally {
+    await closePageQuietly(page);
+  }
+
+  return { frontPageScreenshot, backPageScreenshot };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -715,36 +854,63 @@ export async function fetch(input: {
     let frontPageScreenshot: string | undefined;
     let backPageScreenshot: string | undefined;
 
-    // Step 1: Browser bootstrap — establishes ASP.NET session cookies AND captures screenshots
-    console.log("[bhulekh] Browser bootstrap + screenshot capture...");
-    const browser = await getBrowser();
-    const browserPage = await browser.newPage();
-    await browserPage.setExtraHTTPHeaders({
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-    });
-    await browserPage.goto(ROR_VIEW_URL, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
-    if (browserPage.url().includes("BhulekhError.aspx")) {
-      await browserPage.locator("a", { hasText: "here" }).click();
-      await browserPage.waitForURL(/RoRView\.aspx/, { timeout: TIMEOUT_MS });
+    // Step 1: Bootstrap session. Playwright gives the best public-session setup,
+    // but screenshot/browser failures must not make the parsed RoR disappear.
+    console.log("[bhulekh] Browser bootstrap + optional screenshot capture...");
+    let browserPage: Page | null = null;
+    let session = new BhulekhSession(BHULEKH_URL);
+    if (attempt > 1) {
+      console.log("[bhulekh] HTTP bootstrap retry path...");
+      await session.bootstrap();
+      captureArtifact(
+        "http_retry_bootstrap",
+        JSON.stringify({ attempt, reason: "fresh_http_session_retry" }),
+        "json",
+        { attempt }
+      );
+    } else {
+    try {
+      const browser = await getBrowser();
+      browserPage = await browser.newPage();
+      await browserPage.setExtraHTTPHeaders({
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      });
+      await browserPage.goto(ROR_VIEW_URL, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+      if (browserPage.url().includes("BhulekhError.aspx")) {
+        await browserPage.locator("a", { hasText: "here" }).click();
+        await browserPage.waitForURL(/RoRView\.aspx/, { timeout: TIMEOUT_MS });
+      }
+      // Capture cookies + initial hidden fields from the browser session
+      const cookies = (await browserPage.context().cookies([ROR_VIEW_URL])).map((c) => `${c.name}=${c.value}`);
+      const initialHidden: Record<string, string> = {};
+      const hiddenInputs = await browserPage.locator("input[type=hidden]").evaluateAll(
+        (nodes) => nodes.map((n) => ({ name: (n as HTMLInputElement).name, value: (n as HTMLInputElement).value }))
+      );
+      for (const { name, value } of hiddenInputs) {
+        initialHidden[name] = value;
+      }
+      captureArtifact("browser_bootstrap_html", await browserPage.content(), "html", {
+        url: browserPage.url(),
+        hiddenFieldCount: Object.keys(initialHidden).length,
+        cookieCount: cookies.length,
+      });
+      session.injectSession({ cookies, hiddenFields: initialHidden });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.warn("[bhulekh] Browser bootstrap failed; falling back to HTTP bootstrap:", errorMessage);
+      resetCachedBrowserIfClosed(errorMessage);
+      await closePageQuietly(browserPage);
+      browserPage = null;
+      session = new BhulekhSession(BHULEKH_URL);
+      await session.bootstrap();
+      captureArtifact(
+        "http_bootstrap_fallback",
+        JSON.stringify({ reason: "browser_bootstrap_failed", error: errorMessage.slice(0, 500) }),
+        "json",
+        { fallback: "http_session_bootstrap" }
+      );
     }
-    // Capture cookies + initial hidden fields from the browser session
-    const cookies = (await browserPage.context().cookies([ROR_VIEW_URL])).map((c) => `${c.name}=${c.value}`);
-    const initialHidden: Record<string, string> = {};
-    const hiddenInputs = await browserPage.locator("input[type=hidden]").evaluateAll(
-      (nodes) => nodes.map((n) => ({ name: (n as HTMLInputElement).name, value: (n as HTMLInputElement).value }))
-    );
-    for (const { name, value } of hiddenInputs) {
-      initialHidden[name] = value;
     }
-    captureArtifact("browser_bootstrap_html", await browserPage.content(), "html", {
-      url: browserPage.url(),
-      hiddenFieldCount: Object.keys(initialHidden).length,
-      cookieCount: cookies.length,
-    });
-
-    // ── Step 2: HTTP session-replay with BhulekhSession ────────────────────────
-    const session = new BhulekhSession(BHULEKH_URL);
-    session.injectSession({ cookies, hiddenFields: initialHidden });
 
     console.log("[bhulekh] Select district:", districtCode);
     const d1 = await session.postAsync("ctl00$ContentPlaceHolder1$ddlDistrict", "", {
@@ -780,8 +946,14 @@ export async function fetch(input: {
     console.log("[bhulekh]   village options count:", villageOpts.length);
 
     if (villageOpts.length === 0) {
+      captureArtifact(
+        "village_dropdown_empty_warning",
+        JSON.stringify({ villageCode: resolvedVillageCode, message: "Village dropdown was absent from AJAX delta; retrying with a fresh session." }),
+        "json",
+        { villageCode: resolvedVillageCode }
+      );
       throw Object.assign(
-        new Error("Village dropdown empty after selection. Wrong village code?"),
+        new Error("Village dropdown empty after selection. Retrying with a fresh Bhulekh session."),
         { code: "VILLAGE_DROPDOWN_EMPTY", attempts: attemptCount }
       );
     }
@@ -818,6 +990,13 @@ export async function fetch(input: {
       "json",
       { optionCount: plotOpts.length }
     );
+
+    if (plotOpts.length === 0) {
+      throw Object.assign(
+        new Error("Plot dropdown empty after search-mode selection. Retrying with a fresh Bhulekh session."),
+        { code: "PLOT_DROPDOWN_EMPTY", attempts: attemptCount }
+      );
+    }
 
     if (plotNo) {
       const match = plotOpts.find(
@@ -861,15 +1040,10 @@ export async function fetch(input: {
       captureArtifact("ror_html", rorHtml, "html", { redirectUrl, searchMode: "Plot" });
 
       // ── V1.1 Screenshot capture via Playwright ─────────────────────────────
-      // Navigate to RoR page and capture screenshots
-      await browserPage.goto(redirectUrl, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS });
-      frontPageScreenshot = await browserPage.screenshot({ type: "png", fullPage: true }).then(b => b.toString("base64")).catch(() => undefined);
-
-      // Navigate to Back Page and capture screenshot
-      const backPageUrl = `${BHULEKH_URL}/SRoRBack_Uni.aspx`;
-      await browserPage.goto(backPageUrl, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS }).catch(() => {});
-      backPageScreenshot = await browserPage.screenshot({ type: "png", fullPage: true }).then(b => b.toString("base64")).catch(() => undefined);
-      await browserPage.close();
+      const screenshots = await captureRoRScreenshots(browserPage, redirectUrl);
+      frontPageScreenshot = screenshots.frontPageScreenshot;
+      backPageScreenshot = screenshots.backPageScreenshot;
+      browserPage = null;
 
       // ── Fetch Back Page ───────────────────────────────────────────────────────
       const backPageResult = await fetchBackPage(session, ROR_REPORT_URL, fetchedAt, artifactSnapshots);
@@ -924,12 +1098,10 @@ export async function fetch(input: {
       captureArtifact("ror_html", rorHtml, "html", { redirectUrl, searchMode: "Khatiyan" });
 
       // ── V1.1 Screenshot capture via Playwright (Khatiyan mode) ─────────────
-      await browserPage.goto(redirectUrl, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS });
-      frontPageScreenshot = await browserPage.screenshot({ type: "png", fullPage: true }).then(b => b.toString("base64")).catch(() => undefined);
-      const backPageUrl = `${BHULEKH_URL}/SRoRBack_Uni.aspx`;
-      await browserPage.goto(backPageUrl, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS }).catch(() => {});
-      backPageScreenshot = await browserPage.screenshot({ type: "png", fullPage: true }).then(b => b.toString("base64")).catch(() => undefined);
-      await browserPage.close();
+      const screenshots = await captureRoRScreenshots(browserPage, redirectUrl);
+      frontPageScreenshot = screenshots.frontPageScreenshot;
+      backPageScreenshot = screenshots.backPageScreenshot;
+      browserPage = null;
 
       // ── Fetch Back Page ───────────────────────────────────────────────────────
       const backPageResult = await fetchBackPage(session, redirectUrl, fetchedAt, artifactSnapshots);
@@ -1329,8 +1501,11 @@ function isRetryableBhulekhError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const code = (error as { code?: string }).code;
   // Only retry on transient errors — not on "not found" class errors
-  if (code && ["VILLAGE_DROPDOWN_EMPTY", "PLOT_NOT_FOUND", "KHATIYAN_NOT_FOUND"].includes(code)) {
+  if (code && ["PLOT_NOT_FOUND", "KHATIYAN_NOT_FOUND"].includes(code)) {
     return false;
+  }
+  if (code && ["VILLAGE_DROPDOWN_EMPTY", "PLOT_DROPDOWN_EMPTY"].includes(code)) {
+    return true;
   }
   return /EVENTVALIDATION|TIMEOUT|fetch failed|network|socket|ECONNRESET|ETIMEDOUT/i.test(message);
 }
@@ -1471,7 +1646,7 @@ export function parseRoRHtml(
         areaDecimals,
         areaHectares,
         areaUnitRaw: "acre+decimal",
-        areaComputation: "acres_plus_decimals_over_100",
+        areaComputation: "acres_plus_decimal_column_over_10000",
         sourceRowHash: hashPlotRow({
           plotNo,
           chakNameOdia,
@@ -1498,7 +1673,7 @@ export function parseRoRHtml(
           areaDecimals,
           areaHectares,
           areaUnitRaw: "acre+decimal",
-          areaComputation: "acres_plus_decimals_over_100",
+          areaComputation: "acres_plus_decimal_column_over_10000",
           remarksOdia,
         },
       });
@@ -1541,7 +1716,7 @@ export function parseRoRHtml(
       ? buildAreaSourceMetadata(matchingPlotRow)
       : {
           areaUnitRaw: "acre+decimal",
-          areaComputation: "sum_unique_plot_rows_acres_plus_decimals_over_100",
+          areaComputation: "sum_unique_plot_rows_acres_plus_decimal_column_over_10000",
         };
 
   const tenants = (ownerBlocks.length > 0 ? ownerBlocks : [{ tenantNameOdia }]).map((owner) => {
@@ -1551,7 +1726,7 @@ export function parseRoRHtml(
     const rawLandClassOdia = perPlotLandClass;
     return {
       surveyNo: matchingPlotRow?.plotNo ?? fallbackPlotNo,
-      area: Math.round(totalArea * 100) / 100,
+      area: Math.round(totalArea * 10_000) / 10_000,
       unit: "acre" as const,
       ...tenantAreaSource,
       landClass: perPlotLandClassStandardized,
@@ -1571,7 +1746,7 @@ export function parseRoRHtml(
     const stdLandClass = standardizeKisam(rawLandClass);
     tenants.push({
       surveyNo: row.plotNo,
-      area: Math.round(plotRowArea(row) * 100) / 100,
+      area: Math.round(plotRowArea(row) * 10_000) / 10_000,
       unit: "acre" as const,
       ...buildAreaSourceMetadata(row),
       landClass: stdLandClass,
@@ -1643,7 +1818,7 @@ export function parseRoRHtml(
       rows: plotRows,
       totals: {
         plotCount: plotRows.length ? String(plotRows.length) : null,
-        areaAcres: plotRows.length ? String(Math.round(plotRows.reduce((sum, row) => sum + plotRowArea(row), 0) * 100) / 100) : null,
+        areaAcres: plotRows.length ? String(Math.round(plotRows.reduce((sum, row) => sum + plotRowArea(row), 0) * 10_000) / 10_000) : null,
         areaDecimals: null,
         areaHectares: firstDistinctValue(plotRows.map((row) => row.areaHectares)) ?? null,
         rawTotalRowOdia: null,
@@ -1900,8 +2075,8 @@ function normalizePlotNo(text: string): string {
 
 function plotRowArea(row: { areaAcres: string | null; areaDecimals: string | null }): number {
   const acres = parseAreaComponent(row.areaAcres ?? "");
-  const decimals = parseAreaComponent(row.areaDecimals ?? "");
-  return acres + decimals / 100;
+  const decimalColumn = parseAreaComponent(row.areaDecimals ?? "");
+  return acres + decimalColumn / 10_000;
 }
 
 function buildAreaSourceMetadata(row: {
@@ -1924,7 +2099,7 @@ function buildAreaSourceMetadata(row: {
     areaDecimalsRaw: row.areaDecimals ?? undefined,
     areaHectaresRaw: row.areaHectares ?? undefined,
     areaUnitRaw: "acre+decimal",
-    areaComputation: "acres_plus_decimals_over_100",
+    areaComputation: "acres_plus_decimal_column_over_10000",
     sourcePlotNo: row.plotNo ?? undefined,
     sourceRowHash: row.sourceRowHash ?? hashPlotRow(row),
   };

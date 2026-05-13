@@ -6,7 +6,7 @@
  *
  * Sections (per PRODUCT.md Section 3):
  *   1. The Plot       — GPS, location, official plot identifier, what matched
- *   2. The Owner     — official owner name, seller-claimed name comparison
+ *   2. The Owner     — owner and family details directly from the RoR
  *   3. Land Class    — agricultural/residential/etc, conversion requirements
  *   4. Encumbrances  — court cases, EC status
  *   5. Regulatory   — protected zone proximity flags
@@ -16,16 +16,19 @@
  */
 
 import { z } from "zod";
-import { LAND_CLASS_MAP, translateLandClass, formatArea } from "./types";
+import { translateLandClass } from "./types";
 import {
-  transliterateOdia,
-  containsOdia,
-  ODIA_SURNAME_MAP,
+  transliterateOdiaWithConfidence,
+  type OdiaNameReading,
 } from "./lib";
 import {
   ConsumerReportGenInputSchema,
   type ConsumerReportGenInputData,
 } from "./mapper";
+import {
+  buildRoRInsightGroups,
+  type RoRInsight,
+} from "./ror-insights";
 import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 
@@ -55,7 +58,7 @@ export function generateConsumerReport(
 
   const data = parsed.data;
   const { gpsCoordinates: gps, geoFetch, revenueRecords, courtCases, registryLinks,
-          ownershipReasoner, landClassifier, encumbranceReasoner,
+          landClassifier, encumbranceReasoner,
           regulatoryScreener, validationFindings } = data;
   const sourceStatus = data.sourceStatus ?? {};
   const sourceDetails = data.sourceDetails ?? {};
@@ -63,8 +66,6 @@ export function generateConsumerReport(
   const bhulekhUsable = sourceStatus.bhulekh === "success" && tenants.length > 0;
   const bhunakshaUsable = sourceStatus.bhunaksha === "success";
   const gpsDisplay = formatGpsDisplay(gps);
-  const claimedNameParts = data.claimedOwnerName.trim().split(/\s+/).filter(Boolean);
-  const claimedNameQualityWarning = claimedNameParts.length > 0 && claimedNameParts.length < 2;
 
   // ── Derive primary plot info ───────────────────────────────────────────────────
   const plotVillage = geoFetch?.village ?? revenueRecords?.village ?? "—";
@@ -79,46 +80,43 @@ export function generateConsumerReport(
     ?? registryLinks?.params?.plotNo
     ?? "—";
   const bhulekhVillage = revenueRecords?.village ?? plotVillage;
+  const targetPlotRow = findTargetPlotRow(revenueRecords, plotNo);
+  const plotArea = buildPlotAreaDetails(targetTenant, targetPlotRow);
+  const plotRecordSummary = buildPlotRecordSummary({
+    plotNo,
+    khataNo: revenueRecords?.khataNo ?? null,
+    area: plotArea,
+    landClassOdia: targetPlotRow?.landTypeOdia ?? targetTenant?.landClassOdia ?? targetTenant?.landClass ?? null,
+    landClassEnglish: targetTenant?.landClassEnglish ?? null,
+  });
 
   // ── Derive primary owner info ─────────────────────────────────────────────────
-  const officialOdia = ownershipReasoner?.officialOwnerName ?? "";
-  const transliteratedOwner = ownershipReasoner?.transliteratedOwnerName
-    ?? (officialOdia && containsOdia(officialOdia)
-      ? transliterateOdia(officialOdia)
-      : officialOdia);
-
-  const ownerClaimState = bhulekhUsable ? ownershipReasoner?.claimState ?? null : null;
-  // When no seller name was provided, skip the comparison — show Bhulekh owners directly
-  const nameMatch = !ownershipReasoner
-    ? "not_requested"
-    : bhulekhUsable
-      ? ownerClaimState === "ambiguous"
-        ? "ambiguous"
-        : ownershipReasoner?.nameMatch ?? "unknown"
-      : "unknown";
-  const discrepancyExplanation = ownershipReasoner?.discrepancyExplanation ?? "";
-  const coOwners: string[] = ownershipReasoner?.coOwners ?? [];
-  const fatherOnRecord = ownershipReasoner?.fatherNameOnRecord ?? "";
+  const ownerRecords = buildOwnerDisplayRecords(revenueRecords, tenants);
+  const primaryOwner = ownerRecords[0] ?? null;
+  const primaryOwnerName = primaryOwner?.latin || primaryOwner?.odia || "—";
+  const coOwners = ownerRecords.slice(1).map((owner) => owner.latin || owner.odia).filter(Boolean);
+  const nameMatch = bhulekhUsable ? "ror_available" : "unknown";
 
   // ── Derive land classification ──────────────────────────────────────────────────
   const primaryTenant = targetPlotNo ? targetTenant : revenueRecords?.tenants?.[0];
-  const landClassOdia = primaryTenant?.landClass ?? "";
-  const landClassEnglish = translateLandClass(landClassOdia);
+  const landClassOdia = primaryTenant?.landClassOdia ?? targetPlotRow?.landTypeOdia ?? primaryTenant?.landClass ?? "";
+  const landClassEnglish = primaryTenant?.landClassEnglish
+    ?? (landClassOdia ? translateLandClass(landClassOdia) : "");
 
   const classification = bhulekhUsable
-    ? landClassifier?.currentClassification
-      ?? (landClassEnglish !== "Unknown" ? landClassEnglish : "Not verified")
+    ? formatLandClassDisplay(landClassEnglish, landClassOdia, primaryTenant?.landClass)
     : "Not verified";
-  const conversionRequired = bhulekhUsable ? landClassifier?.conversionRequired ?? null : null;
+  const conversionRequired = bhulekhUsable
+    ? primaryTenant?.conversionRequired ?? landClassifier?.conversionRequired ?? null
+    : null;
   const conversionUnknown = bhulekhUsable && conversionRequired == null;
   const classificationUnknown =
     !bhulekhUsable ||
-    (!landClassifier?.currentClassification &&
-      (!landClassEnglish || landClassEnglish === "Unknown" || landClassEnglish === landClassOdia));
+    (!landClassEnglish || landClassEnglish === "Unknown") && !landClassOdia;
   const bhulekhUnavailableReason = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
   const landClassSourceStatus = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
   const classificationBasisText = bhulekhUsable
-    ? `Based on the Bhulekh land record (${landClassOdia || "—"})`
+    ? `Based on the selected plot row in the Bhulekh RoR (${landClassOdia || "—"})`
     : "Not verified from Bhulekh in this run";
   const landRestrictions = (landClassifier?.restrictions ?? []).map((restriction: any) => ({
     flag: titleFromSnakeCase(restriction.type ?? "Restriction"),
@@ -152,6 +150,33 @@ export function generateConsumerReport(
   const mutationReferencePanel = buildMutationReferencePanel(
     revenueRecords?.mutationReferences ?? []
   );
+  const rorInsights = buildRoRInsightGroups({
+    bhulekhUsable,
+    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
+    selectedPlotNo: plotNo,
+    ownerRecords,
+    plotRows: revenueRecords?.plotRows ?? [],
+    selectedPlotRow: targetPlotRow,
+    plotArea,
+    landClass: {
+      rawKisam: landClassOdia,
+      standardizedKisam: primaryTenant?.landClass ?? null,
+      displayKisam: landClassEnglish,
+      conversionRequired,
+      prohibited: primaryTenant?.prohibited ?? null,
+      buildable: primaryTenant?.buildable ?? null,
+    },
+    dues: revenueRecords?.dues ?? null,
+    remarks: revenueRecords?.remarks ?? null,
+    backPage: revenueRecords?.backPage ?? null,
+  });
+  const rorCompletenessPanel = buildRoRCompletenessPanel(revenueRecords, {
+    bhulekhUsable,
+    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
+    selectedPlotNo: plotNo,
+  }, rorInsights.plot, rorInsights.dues);
+  const rorPlotTablePanel = buildRoRPlotTablePanel(revenueRecords?.plotRows ?? [], plotNo, rorInsights.plotTable);
+  const rorBackPagePanel = buildRoRBackPagePanel(revenueRecords?.backPage, rorInsights.backPage);
 
   // ── Derive regulatory flags ────────────────────────────────────────────────────
   const regFlags = (regulatoryScreener?.flags ?? []).filter((flag: any) =>
@@ -173,8 +198,7 @@ export function generateConsumerReport(
 
   // ── Build HTML ────────────────────────────────────────────────────────────────────
   const safeDislcaimer = escapeHtml(data.disclaimerText);
-  const safeClaimed = escapeHtml(data.claimedOwnerName);
-  const safeTransliterated = escapeHtml(transliteratedOwner);
+  const safeTransliterated = escapeHtml(primaryOwnerName);
   const safeVillage = escapeHtml(plotVillage);
   const safeDistrict = escapeHtml(plotDistrict);
   const safeTahasil = escapeHtml(plotTahasil);
@@ -203,51 +227,43 @@ export function generateConsumerReport(
   const tenantRows = tenants.length > 0
     ? tenants.map((t, i) => {
         const nameOdia = escapeHtml(t.tenantName ?? "—");
-        const nameLatin = containsOdia(t.tenantName ?? "")
-          ? escapeHtml(transliterateOdia(t.tenantName))
-          : nameOdia;
-        const areaStr = formatArea(t.area ?? null, t.unit ?? null);
-        const lc = translateLandClass(t.landClass ?? "");
-        const father = t.fatherName
-          ? containsOdia(t.fatherName)
-            ? escapeHtml(transliterateOdia(t.fatherName))
-            : escapeHtml(t.fatherName)
+        const nameReading = englishNameReading(t.tenantName);
+        const owner = ownerRecords.find((record) => record.odia === t.tenantName);
+        const areaStr = formatPlotAreaSummary(buildPlotAreaDetails(t, findTargetPlotRow(revenueRecords, t.surveyNo)));
+        const rawClass = t.landClassOdia ?? t.landClass ?? "";
+        const lc = formatLandClassDisplay(t.landClassEnglish, rawClass, t.landClass);
+        const guardianReading = owner?.guardianReading ?? ((owner?.guardianOdia ?? t.fatherName) ? englishNameReading(owner?.guardianOdia ?? t.fatherName) : null);
+        const father = guardianReading?.english
+          ? `${escapeHtml(guardianReading.english)} ${buildNameReadingBadge(guardianReading)}`
           : "—";
+        const caste = owner?.casteOdia ? escapeHtml(owner.casteOdia) : "—";
+        const residence = owner?.residenceOdia ? escapeHtml(owner.residenceOdia) : "—";
         return `<tr>
           <td class="num">${i + 1}</td>
           <td class="odia">${nameOdia}</td>
-          <td class="latin">${nameLatin}</td>
+          <td class="latin">${escapeHtml(nameReading.english || "—")} ${buildNameReadingBadge(nameReading)}</td>
           <td class="num">${escapeHtml(t.surveyNo ?? "—")}</td>
           <td class="num">${areaStr}</td>
           <td>${escapeHtml(lc)}</td>
           <td>${father}</td>
+          <td class="odia">${caste}</td>
+          <td class="odia">${residence}</td>
         </tr>`;
       }).join("\n")
-    : `<tr><td colspan="7" class="empty">No tenant records returned from Bhulekh.</td></tr>`;
+    : `<tr><td colspan="9" class="empty">No tenant records returned from Bhulekh.</td></tr>`;
 
   // Build co-owner note
   const coOwnerNote = coOwners.length > 0
     ? `<div class="caution-box">
         <span class="caution-label">&#9888; Multiple owners recorded</span>
-        <p>The Bhulekh RoR owner block lists <strong>${coOwners.length} other owner(s)</strong> in addition to ${escapeHtml(transliteratedOwner)}: ${coOwners.map(c => escapeHtml(c)).join(", ")}. Ask a property lawyer to confirm every recorded owner's consent, legal-heir status, and authority before any sale or transfer.</p>
+        <p>The Bhulekh RoR owner block lists <strong>${coOwners.length} other owner(s)</strong> in addition to ${escapeHtml(primaryOwnerName)}: ${coOwners.map(c => escapeHtml(c)).join(", ")}. Ask a property lawyer to confirm every recorded owner's consent, legal-heir status, and authority before any sale or transfer.</p>
       </div>`
     : "";
 
-  // Build name match section
-  const nameMatchSection = buildNameMatchSection({
-    claimed: safeClaimed,
-    official: safeTransliterated,
-    nameMatch,
-    explanation: discrepancyExplanation,
+  const ownerDetailsSection = buildOwnerDetailsSection({
+    ownerRecords,
     bhulekhUsable,
     bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
-    claimedNameQualityWarning,
-    confidenceBasis: ownershipReasoner?.confidenceBasis ?? "",
-    confidenceMethod: ownershipReasoner?.nameMatchConfidence?.method ?? null,
-    readiness: ownershipReasoner?.readiness ?? null,
-    fatherHusbandMatch: ownershipReasoner?.fatherHusbandMatch ?? null,
-    matchReasons: ownershipReasoner?.matchReasons ?? [],
-    blockingWarnings: ownershipReasoner?.blockingWarnings ?? [],
   });
 
   // Build court case section
@@ -266,7 +282,7 @@ export function generateConsumerReport(
   const larrHtml = buildLarrSection(data.larrRiskAssessment);
 
   // Build Encumbrance section
-  const ecSection = buildEcSection(encumbranceReasoner, safeRegUrl, safeDistrict, safeSro, safePlotNo, safeTransliterated || safeClaimed);
+  const ecSection = buildEcSection(encumbranceReasoner, safeRegUrl, safeDistrict, safeSro, safePlotNo, safeTransliterated || escapeHtml(data.claimedOwnerName));
   const actionItems = buildActionItems({
     nameMatch,
     bhulekhUsable,
@@ -343,8 +359,10 @@ ${buildBuyerSummary({
     bhulekhUsable,
     plotNo: safePlotNo,
     plotVillage: safeVillage,
+    plotRecordSummary,
+    plotAreaSummary: formatPlotAreaSummary(plotArea),
+    ownerName: primaryOwnerName,
     nameMatch,
-    claimedNameQualityWarning,
     courtStatuses: courtSourceStatuses,
     totalCases,
     courtSearchMetadata: courtCases?.searchMetadata ?? null,
@@ -388,6 +406,8 @@ ${buildSourceAuditPanel(sourceDetails)}
       <span>Revenue map source: Bhunaksha (${escapeHtml(bhunakshaSourceStatus)}) — GeoServer WFS (mapserver.odisha4kgeo.in)</span>
       <span>Land-record source: Bhulekh RoR (${escapeHtml(bhulekhSourceStatus)}) — bhulekh.ori.nic.in</span>
     </div>
+    ${rorCompletenessPanel}
+    ${rorPlotTablePanel}
   </div>
 </section>
 
@@ -399,21 +419,22 @@ ${buildSourceAuditPanel(sourceDetails)}
     </div>
     <div class="section-title-group">
       <div class="section-title">The Owner</div>
-      <div class="section-sub">Who the government record shows as the owner — and how that compares to what the seller told you</div>
+      <div class="section-sub">Owner and family details recorded in the Bhulekh RoR</div>
     </div>
     <div class="status-badge status-${ownerBadge(nameMatch).status}">
       ${ownerBadge(nameMatch).label}
     </div>
   </div>
   <div class="section-body">
-    ${nameMatchSection}
+    ${buildInsightHighlights(rorInsights.owner)}
+    ${ownerDetailsSection}
     ${coOwnerNote}
     <details class="tenant-table-details">
       <summary>View ${tenants.length} Bhulekh owner/plot row${tenants.length === 1 ? "" : "s"} (Khatiyan #${safeKhataNo})</summary>
       <p class="table-note">These rows are source-limited Bhulekh RoR owner records joined with the selected plot/khata fields. Treat them as land-record rows, not a title-chain or sale-authority certificate.</p>
       <table class="data-table tenant-table">
         <thead>
-          <tr><th>#</th><th>RoR Name (Odia)</th><th>RoR Name (English)</th><th>Survey No.</th><th>Area</th><th>Land Class</th><th>Guardian/Father</th></tr>
+          <tr><th>#</th><th>RoR Name (Odia)</th><th>English reading</th><th>Survey No.</th><th>Area</th><th>Land Class</th><th>Guardian/Father</th><th>Caste</th><th>Residence</th></tr>
         </thead>
         <tbody>${tenantRows}</tbody>
       </table>
@@ -440,6 +461,17 @@ ${buildSourceAuditPanel(sourceDetails)}
       <div class="classification-type">${safeClassification}</div>
       <div class="classification-sub">${escapeHtml(classificationBasisText)}</div>
     </div>
+    ${buildInsightHighlights(rorInsights.land)}
+    ${buildLandClassificationDetails({
+      rawKisam: landClassOdia,
+      standardizedKisam: primaryTenant?.landClass ?? null,
+      displayKisam: landClassEnglish,
+      conversionRequired,
+      prohibited: primaryTenant?.prohibited ?? null,
+      buildable: primaryTenant?.buildable ?? null,
+      plotNo,
+      khataNo: revenueRecords?.khataNo ?? null,
+    })}
     ${conversionRequired ? `
     <div class="caution-box">
       <span class="caution-label">&#9888; Land use conversion required</span>
@@ -476,7 +508,7 @@ ${buildSourceAuditPanel(sourceDetails)}
     </div>
   </div>
   <div class="section-body">
-    ${courtSection} ${mutationReferencePanel} ${ecSection}
+    ${courtSection} ${rorBackPagePanel} ${mutationReferencePanel} ${ecSection}
     <div class="source-line">
       <span>Court cases: services.ecourts.gov.in, rccms.odisha.gov.in &mdash; Encumbrance Certificate: igrodisha.gov.in</span>
     </div>
@@ -585,6 +617,25 @@ ${buildSourceAuditPanel(sourceDetails)}
 
 // ─── Section builders ─────────────────────────────────────────────────────────
 
+function buildInsightHighlights(insights: RoRInsight[]): string {
+  if (!Array.isArray(insights) || insights.length === 0) return "";
+  const cards = insights.slice(0, 4).map((item) => {
+    const icon = item.tone === "positive" ? "&#10003;" : "&#9888;";
+    const typeLabel = item.tone === "positive" ? "Positive signal" : "Watch-out";
+    return `<div class="insight-card insight-card-${item.tone}">
+      <div class="insight-head">
+        <span class="insight-icon">${icon}</span>
+        <span class="insight-type">${typeLabel}</span>
+      </div>
+      <div class="insight-label">${escapeHtml(item.label)}</div>
+      <p>${escapeHtml(item.body)}</p>
+      <div class="insight-source">Source: ${escapeHtml(item.source)}</div>
+    </div>`;
+  }).join("");
+
+  return `<div class="insight-highlights">${cards}</div>`;
+}
+
 function buildEcSection(
   encumbranceResult: EncumbranceResult | null,
   safeRegUrl: string,
@@ -655,23 +706,7 @@ function buildActionItems(input: {
 
   if (!input.bhulekhUsable) {
     items.push(
-      `<li><strong>Owner match is unavailable.</strong> Bhulekh owner records were not usable in this run (status: ${escapeHtml(input.bhulekhStatus)}). Ask the seller for the current Bhulekh Khatiyan, photo ID, and legal heir or mutation papers, then have a lawyer match every recorded owner to the seller before paying any advance.</li>`
-    );
-  } else if (input.nameMatch === "unknown") {
-    items.push(
-      `<li><strong>Owner match is unknown.</strong> The claim could not be compared with confidence. Ask the seller for the current Bhulekh Khatiyan, photo ID, and title documents, and ask your lawyer to write down whether the seller is the same person as the recorded owner.</li>`
-    );
-  } else if (input.nameMatch === "exact") {
-    items.push(
-      `<li><strong>Bhulekh RoR name match found.</strong> Ask to see the original Khatiyan document and verify the seller's ID and sale documents use the same full legal name.</li>`
-    );
-  } else if (input.nameMatch === "ambiguous") {
-    items.push(
-      `<li><strong>Owner identity is not confirmed.</strong> The entered name is only a surname or single word. Ask for the seller's full legal name, photo ID, and title documents, then have a lawyer compare them with the Bhulekh RoR.</li>`
-    );
-  } else if (input.nameMatch === "mismatch" || input.nameMatch === "partial") {
-    items.push(
-      `<li><strong>The seller's name does not match the government record.</strong> Ask the seller to explain exactly why. Ask for the original title documents — registered sale deeds going back at least 30 years — that connect their name to this plot. Do not proceed without this.</li>`
+      `<li><strong>RoR owner details are unavailable.</strong> Bhulekh owner records were not usable in this run (status: ${escapeHtml(input.bhulekhStatus)}). Ask for the current Bhulekh Khatiyan, photo ID, legal heir papers where relevant, and mutation papers before paying any advance.</li>`
     );
   }
 
@@ -795,8 +830,10 @@ function buildBuyerSummary(input: {
   bhulekhUsable: boolean;
   plotNo: string;
   plotVillage: string;
+  plotRecordSummary: string;
+  plotAreaSummary: string;
+  ownerName: string;
   nameMatch: string;
-  claimedNameQualityWarning: boolean;
   courtStatuses: Record<string, string>;
   totalCases: number;
   courtSearchMetadata: {
@@ -841,8 +878,10 @@ function buildSummaryGridItems(input: {
   bhulekhUsable: boolean;
   plotNo: string;
   plotVillage: string;
+  plotRecordSummary: string;
+  plotAreaSummary: string;
+  ownerName: string;
   nameMatch: string;
-  claimedNameQualityWarning: boolean;
   courtStatuses: Record<string, string>;
   totalCases: number;
   courtSearchMetadata: {
@@ -872,7 +911,7 @@ function buildSummaryGridItems(input: {
     items.push({
       icon: "&#8505;",
       label: "Plot record",
-      finding: `Plot ${input.plotNo} found in Bhulekh for ${input.plotVillage || "the selected village"}; map overlay was not checked in this run.`,
+      finding: input.plotRecordSummary,
       cls: "status-unknown",
     });
   } else {
@@ -886,47 +925,30 @@ function buildSummaryGridItems(input: {
 
   // 2. Owner — Bhulekh
   if (input.bhulekhUsable) {
-    if (input.nameMatch === "exact" || input.nameMatch === "matched") {
-      items.push({
-        icon: "&#10003;",
-        label: "Owner match",
-        finding: "RoR owner name matches the seller-provided name.",
-        cls: "status-ok",
-      });
-    } else if (input.nameMatch === "ambiguous") {
-      items.push({
-        icon: "&#9888;",
-        label: "Owner match",
-        finding: "Only a surname given — identity not confirmed.",
-        cls: "status-warn",
-      });
-    } else if (input.nameMatch === "partial" || input.nameMatch === "mismatch") {
-      items.push({
-        icon: "&#10007;",
-        label: "Owner match",
-        finding: input.nameMatch === "mismatch"
-          ? "Seller name does not match government records."
-          : "Seller name only partially matches government records.",
-        cls: "status-fail",
-      });
-    } else {
-      items.push({
-        icon: "&#8505;",
-        label: "Owner match",
-        finding: "Bhulekh found but manual review needed.",
-        cls: "status-warn",
-      });
-    }
+    items.push({
+      icon: "&#8505;",
+      label: "Owner name",
+      finding: input.ownerName || "Owner name fetched from RoR.",
+      cls: "status-unknown",
+    });
   } else {
     items.push({
       icon: "&#10007;",
-      label: "Owner match",
+      label: "Owner name",
       finding: "Bhulekh owner records not available.",
       cls: "status-fail",
     });
   }
 
-  // 3. Court cases
+  // 3. Plot area — Bhulekh
+  items.push({
+    icon: "&#8505;",
+    label: "Plot area",
+    finding: input.plotAreaSummary || "Plot area not available from RoR.",
+    cls: input.bhulekhUsable && input.plotAreaSummary ? "status-unknown" : "status-warn",
+  });
+
+  // 4. Court cases
   const ecourtsOk = input.courtStatuses.ecourts === "success";
   const rccmsOk = input.courtStatuses.rccms === "success";
   const ecourtsAccepted = Number(input.courtSearchMetadata?.ecourts?.captchaAcceptedCount ?? 0) > 0;
@@ -960,7 +982,7 @@ function buildSummaryGridItems(input: {
     });
   }
 
-  // 4. Encumbrance Certificate
+  // 5. Encumbrance Certificate
   if (input.encumbranceStatus === "clear") {
     items.push({
       icon: "&#10003;",
@@ -986,7 +1008,7 @@ function buildSummaryGridItems(input: {
     });
   }
 
-  // 5. Land classification
+  // 6. Land classification
   if (input.bhulekhUsable) {
     if (input.conversionRequired === true) {
       items.push({
@@ -1023,7 +1045,7 @@ function buildSummaryGridItems(input: {
     });
   }
 
-  // 6. Regulatory flags
+  // 7. Regulatory flags
   if (input.redFlags.length > 0 || input.regFlags.length > 0) {
     const flagCount = input.redFlags.length + input.regFlags.length;
     items.push({
@@ -1062,7 +1084,6 @@ function buildExecutiveSummary(input: {
   bhunakshaUsable: boolean;
   bhulekhUsable: boolean;
   nameMatch: string;
-  claimedNameQualityWarning: boolean;
   courtStatuses: Record<string, string>;
   totalCases: number;
   courtSearchMetadata: {
@@ -1080,7 +1101,6 @@ function buildExecutiveSummary(input: {
   const rccmsOk = input.courtStatuses.rccms === "success";
   const ecourtsAccepted = Number(input.courtSearchMetadata?.ecourts?.captchaAcceptedCount ?? 0) > 0;
   const allClean = input.bhunakshaUsable && input.bhulekhUsable
-    && (input.nameMatch === "exact" || input.nameMatch === "matched")
     && (ecourtsOk && rccmsOk && ecourtsAccepted)
     && input.totalCases === 0
     && input.conversionRequired !== true
@@ -1091,7 +1111,7 @@ function buildExecutiveSummary(input: {
     && input.encumbranceStatus === "clear";
 
   if (allClean) {
-    return "The property records checked in this run are consistent: the plot is confirmed in the revenue map, Bhulekh shows the owner name you provided, no court cases were found in the checked databases, and no immediate regulatory flags were raised. However, a lawyer should still review the title chain and EC before you sign or pay anything.";
+    return "The property records checked in this run are consistent at source level: the plot is confirmed, Bhulekh returned owner and plot details, no court cases were found in the checked databases, and no immediate regulatory flags were raised. However, a lawyer should still review the title chain and EC before you sign or pay anything.";
   }
 
   const allFailed = !input.bhunakshaUsable && !input.bhulekhUsable
@@ -1102,15 +1122,11 @@ function buildExecutiveSummary(input: {
     return "We could not verify this plot online in this run. The government portals that power ClearDeed may be temporarily unavailable or the plot may not be in the digital records yet. Ask the seller for the current Bhulekh Khatiyan and pull Bhunaksha and Bhulekh records directly from the tehsil office before making any payment.";
   }
 
-  const bhulekhOk = input.bhulekhUsable && input.nameMatch !== "mismatch";
+  const bhulekhOk = input.bhulekhUsable;
   const courtIncomplete = !ecourtsOk || !rccmsOk || !ecourtsAccepted;
 
   if (bhulekhOk && courtIncomplete) {
     return "Bhulekh land records were successfully retrieved and show an owner record, but the court and revenue-case search was not fully completed. Records match so far. Before transacting, ask your lawyer to manually search eCourts and RCCMS, and to pull the EC to confirm no prior transfers or encumbrances.";
-  }
-
-  if (input.nameMatch === "mismatch" || input.nameMatch === "partial") {
-    return "The name you provided does not match the government land record for this plot. This is a significant red flag — ask the seller to explain the discrepancy with original title documents before going further. Do not pay any money or sign anything until this is resolved.";
   }
 
   if (input.conversionRequired === true || input.redFlags.length > 0 || input.regFlags.length > 0) {
@@ -1124,7 +1140,6 @@ function buildExecutiveSummary(input: {
 function buildKeyQuestions(input: {
   bhulekhUsable: boolean;
   nameMatch: string;
-  claimedNameQualityWarning: boolean;
   courtStatuses: Record<string, string>;
   conversionRequired: boolean | null;
   redFlags: Array<any>;
@@ -1145,12 +1160,8 @@ function buildKeyQuestions(input: {
 
   if (!input.bhulekhUsable) {
     questions.push("Can you show me the original Bhulekh Khatiyan for this plot?");
-  } else if (input.nameMatch === "exact" || input.nameMatch === "matched") {
-    questions.push("Can you show me the original Bhulekh Khatiyan and confirm your name is listed exactly as shown there?");
-  } else if (input.nameMatch === "mismatch" || input.nameMatch === "partial") {
-    questions.push("Why does your name not match the Bhulekh record? Can you show the title documents connecting you to this plot?");
-  } else if (input.claimedNameQualityWarning || input.nameMatch === "ambiguous") {
-    questions.push("What is your full legal name as it appears on your photo ID and sale documents?");
+  } else {
+    questions.push("Can you show me the original Bhulekh Khatiyan and confirm every RoR owner or legal heir is part of the sale documentation?");
   }
 
   const courtIncomplete = input.courtStatuses.ecourts !== "success" || input.courtStatuses.rccms !== "success";
@@ -1211,6 +1222,466 @@ function buildSourceAuditPanel(sourceDetails: Record<string, any>): string {
       </table>
     </details>
   </section>`;
+}
+
+type OwnerDisplayRecord = {
+  odia: string;
+  latin: string;
+  nameReading: OdiaNameReading;
+  guardianOdia: string | null;
+  guardianLatin: string | null;
+  guardianReading: OdiaNameReading | null;
+  guardianRelation: string | null;
+  casteOdia: string | null;
+  residenceOdia: string | null;
+  rawOdia: string | null;
+};
+
+type PlotAreaDetails = {
+  acres: number | null;
+  sqft: number | null;
+  acreRaw: string | null;
+  decimalRaw: string | null;
+  hectareRaw: string | null;
+  computation: string | null;
+};
+
+function buildOwnerDisplayRecords(revenueRecords: any, tenants: any[]): OwnerDisplayRecord[] {
+  const ownerBlocks = Array.isArray(revenueRecords?.ownerBlocks) ? revenueRecords.ownerBlocks : [];
+  const fromBlocks = ownerBlocks
+    .map((owner: any) => buildOwnerDisplayRecord(owner?.tenantNameOdia, {
+      guardianOdia: owner?.guardianNameOdia ?? null,
+      guardianRelation: owner?.guardianRelationOdia ?? null,
+      casteOdia: owner?.casteOdia ?? null,
+      residenceOdia: owner?.residenceOdia ?? null,
+      rawOdia: owner?.rawOdia ?? null,
+    }))
+    .filter((owner: OwnerDisplayRecord | null): owner is OwnerDisplayRecord => Boolean(owner));
+
+  if (fromBlocks.length > 0) return dedupeOwners(fromBlocks);
+
+  const fromTenants = tenants
+    .map((tenant) => buildOwnerDisplayRecord(tenant?.tenantName, {
+      guardianOdia: tenant?.fatherName ?? tenant?.fatherHusbandName ?? null,
+      guardianRelation: null,
+      casteOdia: null,
+      residenceOdia: null,
+      rawOdia: null,
+    }))
+    .filter((owner: OwnerDisplayRecord | null): owner is OwnerDisplayRecord => Boolean(owner));
+
+  return dedupeOwners(fromTenants);
+}
+
+function buildOwnerDisplayRecord(
+  name: unknown,
+  details: {
+    guardianOdia: string | null;
+    guardianRelation: string | null;
+    casteOdia: string | null;
+    residenceOdia: string | null;
+    rawOdia: string | null;
+  }
+): OwnerDisplayRecord | null {
+  const odia = String(name ?? "").trim();
+  if (!odia || odia === "—") return null;
+  const nameReading = transliterateOdiaWithConfidence(odia);
+  const latin = nameReading.english;
+  const guardianOdia = details.guardianOdia?.trim() || null;
+  const guardianReading = guardianOdia ? transliterateOdiaWithConfidence(guardianOdia) : null;
+  const guardianLatin = guardianReading?.english ?? null;
+  return {
+    odia,
+    latin,
+    nameReading,
+    guardianOdia,
+    guardianLatin,
+    guardianReading,
+    guardianRelation: details.guardianRelation,
+    casteOdia: details.casteOdia,
+    residenceOdia: details.residenceOdia,
+    rawOdia: details.rawOdia,
+  };
+}
+
+function englishNameReading(value: unknown): OdiaNameReading {
+  return transliterateOdiaWithConfidence(String(value ?? ""));
+}
+
+function buildNameReadingBadge(reading: OdiaNameReading): string {
+  if (reading.quality === "empty") return "";
+  const label =
+    reading.quality === "verified_exact" ? "Verified English"
+    : reading.quality === "lexicon_all_tokens" ? "High-confidence reading"
+    : reading.quality === "latin_passthrough" ? "Source English"
+    : "Machine reading - review";
+  return `<span class="name-reading-badge name-reading-${reading.quality}">${escapeHtml(label)} · ${Math.round(reading.confidence * 100)}%</span>`;
+}
+
+function dedupeOwners(records: OwnerDisplayRecord[]): OwnerDisplayRecord[] {
+  const seen = new Set<string>();
+  return records.filter((record) => {
+    const key = normalizeOwnerKey(record.odia);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function normalizeOwnerKey(name: string): string {
+  return name.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function buildOwnerDetailsSection(input: {
+  ownerRecords: OwnerDisplayRecord[];
+  bhulekhUsable: boolean;
+  bhulekhStatus: string;
+}): string {
+  if (!input.bhulekhUsable) {
+    return `<div class="error-notice">
+      <p>Bhulekh did not return usable owner records in this run. Source status: <strong>${escapeHtml(input.bhulekhStatus)}</strong>.</p>
+      <p><strong>What to do:</strong> Ask for the current Bhulekh Khatiyan and have a lawyer verify every recorded owner, legal heir, and mutation paper before paying any advance.</p>
+    </div>`;
+  }
+
+  if (input.ownerRecords.length === 0) {
+    return `<div class="warning-notice">
+      <p>Bhulekh returned the RoR, but ClearDeed could not parse a usable owner block from the source document.</p>
+      <p><strong>What to do:</strong> Open the original Khatiyan and verify the owner block manually.</p>
+    </div>`;
+  }
+
+  const cards = input.ownerRecords.map((owner, index) => {
+    const ownerPrimary = owner.latin || owner.odia;
+    const ownerSecondary = owner.latin && owner.odia !== owner.latin ? owner.odia : null;
+    const guardianPrimary = owner.guardianLatin || owner.guardianOdia;
+    const guardianSecondary =
+      owner.guardianLatin && owner.guardianOdia && owner.guardianLatin !== owner.guardianOdia
+        ? owner.guardianOdia
+        : null;
+    const details = [
+      `<tr><td class="key">English reading status</td><td>${buildNameReadingBadge(owner.nameReading)}</td></tr>`,
+      guardianPrimary
+        ? `<tr><td class="key">${owner.guardianRelation === "spouse" ? "Spouse" : "Father/Guardian"}</td><td>${escapeHtml(guardianPrimary)}${guardianSecondary ? ` <span class="odia-muted">(${escapeHtml(guardianSecondary)})</span>` : ""}${owner.guardianReading ? ` ${buildNameReadingBadge(owner.guardianReading)}` : ""}</td></tr>`
+        : "",
+      owner.casteOdia ? `<tr><td class="key">Caste/community field</td><td class="odia">${escapeHtml(owner.casteOdia)}</td></tr>` : "",
+      owner.residenceOdia ? `<tr><td class="key">Residence</td><td class="odia">${escapeHtml(owner.residenceOdia)}</td></tr>` : "",
+    ].filter(Boolean).join("");
+
+    return `<div class="owner-card">
+      <div class="owner-card-title">RoR owner ${index + 1}</div>
+      <div class="owner-name">${escapeHtml(ownerPrimary)}</div>
+      <div class="name-reading-line">${buildNameReadingBadge(owner.nameReading)}</div>
+      ${ownerSecondary ? `<div class="owner-name-odia">${escapeHtml(ownerSecondary)}</div>` : ""}
+      ${details ? `<table class="data-table owner-detail-table"><tbody>${details}</tbody></table>` : ""}
+    </div>`;
+  }).join("");
+
+  return `<div class="owner-card-grid">${cards}</div>`;
+}
+
+function findTargetPlotRow(revenueRecords: any, plotNo: unknown): any | null {
+  const rows = Array.isArray(revenueRecords?.plotRows) ? revenueRecords.plotRows : [];
+  if (typeof plotNo === "string") {
+    const matched = rows.find((row: any) => plotNosMatch(row?.plotNo, plotNo));
+    if (matched) return matched;
+  }
+  return rows[0] ?? null;
+}
+
+function buildPlotAreaDetails(tenant: any, plotRow: any): PlotAreaDetails {
+  const acreRaw = plotRow?.areaAcres ?? tenant?.areaAcresRaw ?? null;
+  const decimalRaw = plotRow?.areaDecimals ?? tenant?.areaDecimalsRaw ?? null;
+  const hectareRaw = plotRow?.areaHectares ?? tenant?.areaHectaresRaw ?? null;
+  const computedFromRaw = computeRoRAreaAcres(acreRaw, decimalRaw);
+  const acres = computedFromRaw ?? numberOrNull(tenant?.area);
+  return {
+    acres,
+    sqft: acres == null ? null : Math.round(acres * 43_560),
+    acreRaw,
+    decimalRaw,
+    hectareRaw,
+    computation: plotRow?.areaComputation ?? tenant?.areaComputation ?? null,
+  };
+}
+
+function computeRoRAreaAcres(acreRaw: unknown, decimalRaw: unknown): number | null {
+  const acres = parseAreaNumber(acreRaw);
+  const decimalColumn = parseAreaNumber(decimalRaw);
+  if (acres == null && decimalColumn == null) return null;
+  return roundArea((acres ?? 0) + (decimalColumn ?? 0) / 10_000);
+}
+
+function parseAreaNumber(value: unknown): number | null {
+  const text = String(value ?? "").replace(/[^\d.]/g, "").trim();
+  if (!text) return null;
+  const parsed = Number.parseFloat(text);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function numberOrNull(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number.parseFloat(String(value ?? ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function roundArea(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+function formatPlotAreaSummary(area: PlotAreaDetails): string {
+  if (area.acres == null) return "";
+  const acres = area.acres.toLocaleString("en-IN", {
+    minimumFractionDigits: area.acres % 1 === 0 ? 0 : 4,
+    maximumFractionDigits: 4,
+  });
+  const sqft = area.sqft == null ? null : area.sqft.toLocaleString("en-IN");
+  return sqft ? `${acres} acres (${sqft} sq ft)` : `${acres} acres`;
+}
+
+function buildPlotRecordSummary(input: {
+  plotNo: unknown;
+  khataNo: unknown;
+  area: PlotAreaDetails;
+  landClassOdia: unknown;
+  landClassEnglish: unknown;
+}): string {
+  const parts = [
+    `Plot ${String(input.plotNo || "—")}`,
+    `Khata ${String(input.khataNo || "—")}`,
+    formatPlotAreaSummary(input.area),
+    formatLandClassDisplay(input.landClassEnglish, input.landClassOdia, null),
+  ].filter(Boolean);
+  return parts.join("; ");
+}
+
+function formatLandClassDisplay(displayEnglish: unknown, rawOdia: unknown, standardized: unknown): string {
+  const english = String(displayEnglish ?? "").trim();
+  const raw = String(rawOdia ?? "").trim();
+  const std = String(standardized ?? "").trim();
+  if (english && english !== "Unknown" && english !== raw) return raw ? `${english} (${raw})` : english;
+  if (raw) return raw;
+  if (std) return titleFromSnakeCase(std);
+  return "Not verified";
+}
+
+function buildLandClassificationDetails(input: {
+  rawKisam: unknown;
+  standardizedKisam: unknown;
+  displayKisam: unknown;
+  conversionRequired: boolean | null;
+  prohibited: boolean | null;
+  buildable: boolean | null;
+  plotNo: unknown;
+  khataNo: unknown;
+}): string {
+  const conversion =
+    input.conversionRequired === true ? "Likely required for non-agricultural use"
+    : input.conversionRequired === false ? "Not indicated by the parsed kisam"
+    : "Not confirmed";
+  const prohibited =
+    input.prohibited === true ? "Restricted category flagged"
+    : input.prohibited === false ? "No prohibited-category flag from parsed kisam"
+    : "Not confirmed";
+  const buildable =
+    input.buildable === true ? "Parsed as buildable/developed category"
+    : input.buildable === false ? "Not parsed as already buildable"
+    : "Not confirmed";
+
+  return `<table class="data-table classification-detail-table">
+    <tbody>
+      <tr><td class="key">RoR plot / khata</td><td>Plot ${escapeHtml(input.plotNo || "—")} / Khata ${escapeHtml(input.khataNo || "—")}</td></tr>
+      <tr><td class="key">RoR kisam</td><td>${escapeHtml(formatLandClassDisplay(input.displayKisam, input.rawKisam, input.standardizedKisam))}</td></tr>
+      <tr><td class="key">Standardized class</td><td>${escapeHtml(titleFromSnakeCase(String(input.standardizedKisam || "not_verified")))}</td></tr>
+      <tr><td class="key">Conversion signal</td><td>${escapeHtml(conversion)}</td></tr>
+      <tr><td class="key">Restriction signal</td><td>${escapeHtml(prohibited)}</td></tr>
+      <tr><td class="key">Buildability signal</td><td>${escapeHtml(buildable)}</td></tr>
+    </tbody>
+  </table>`;
+}
+
+function buildRoRCompletenessPanel(
+  revenueRecords: any,
+  input: {
+    bhulekhUsable: boolean;
+    bhulekhStatus: string;
+    selectedPlotNo: unknown;
+  },
+  insights: RoRInsight[] = [],
+  duesInsights: RoRInsight[] = []
+): string {
+  if (!input.bhulekhUsable || !revenueRecords) {
+    return `<div class="warning-box ror-completeness">
+      <span class="warning-label">&#9888; RoR completeness not verified</span>
+      ${buildInsightHighlights(insights)}
+      <p>ClearDeed could not build the full RoR audit because Bhulekh did not return a usable RoR in this run. Source status: ${escapeHtml(input.bhulekhStatus)}.</p>
+    </div>`;
+  }
+
+  const plotRows = Array.isArray(revenueRecords.plotRows) ? revenueRecords.plotRows : [];
+  const ownerBlocks = Array.isArray(revenueRecords.ownerBlocks) ? revenueRecords.ownerBlocks : [];
+  const backPage = revenueRecords.backPage ?? null;
+  const mutationCount = Array.isArray(backPage?.mutationHistory) ? backPage.mutationHistory.length : 0;
+  const encumbranceCount = Array.isArray(backPage?.encumbranceEntries) ? backPage.encumbranceEntries.length : 0;
+  const remarkCount = Array.isArray(backPage?.backPageRemarks) ? backPage.backPageRemarks.length : 0;
+  const screenshots = revenueRecords.screenshots ?? null;
+  const frontPageImage = buildRoRScreenshotFigure("Front Page", screenshots?.frontPage);
+  const backPageImage = buildRoRScreenshotFigure("Back Page", screenshots?.backPage);
+  const sourceMeta = revenueRecords.sourceMeta ?? revenueRecords.rorDocument?.source ?? null;
+  const remarks = revenueRecords.remarks ?? {};
+  const duesPanel = buildRoRDuesPanel(revenueRecords.dues, duesInsights);
+
+  return `<div class="ror-completeness">
+    <div class="mini-section-title">Complete RoR audit</div>
+    <p class="table-note">This panel is a source audit of the Bhulekh Record of Rights. It shows what was actually parsed from the Front Page and Back Page, without treating remarks as verified title history.</p>
+    ${buildInsightHighlights(insights)}
+    <div class="ror-fact-grid">
+      <div><span>Khatiyan</span><strong>${escapeHtml(revenueRecords.khataNo ?? "—")}</strong></div>
+      <div><span>Selected plot</span><strong>${escapeHtml(input.selectedPlotNo || "—")}</strong></div>
+      <div><span>Owners parsed</span><strong>${ownerBlocks.length || (revenueRecords.tenants?.length ?? 0)}</strong></div>
+      <div><span>Plot rows parsed</span><strong>${plotRows.length}</strong></div>
+      <div><span>Back-page mutations</span><strong>${mutationCount}</strong></div>
+      <div><span>Back-page EC-style entries</span><strong>${encumbranceCount}</strong></div>
+      <div><span>Back-page remarks</span><strong>${remarkCount}</strong></div>
+      <div><span>RoR status</span><strong>${escapeHtml(input.bhulekhStatus)}</strong></div>
+    </div>
+    <table class="data-table compact-table">
+      <tbody>
+        <tr><td class="key">Final publication date</td><td>${escapeHtml(remarks.finalPublicationDate ?? revenueRecords.lastUpdated ?? "—")}</td></tr>
+        <tr><td class="key">Revenue assessment date</td><td>${escapeHtml(remarks.revenueAssessmentDate ?? "—")}</td></tr>
+        <tr><td class="key">Generated/current RoR timestamp</td><td>${escapeHtml(remarks.generatedAtRaw ?? sourceMeta?.fetchedAt ?? "—")}</td></tr>
+        <tr><td class="key">Raw artifact</td><td>${escapeHtml(sourceMeta?.rawArtifactRef ?? "—")}</td></tr>
+        <tr><td class="key">Special remarks</td><td class="odia">${escapeHtml(remarks.specialRemarksRawOdia ?? "—")}</td></tr>
+        <tr><td class="key">Progressive rent remarks</td><td class="odia">${escapeHtml(remarks.progressiveRentRawOdia ?? "—")}</td></tr>
+      </tbody>
+    </table>
+    ${duesPanel}
+    ${frontPageImage || backPageImage ? `<details class="source-image-details"><summary>View Bhulekh source screenshots</summary><div class="ror-screenshot-grid">${frontPageImage}${backPageImage}</div></details>` : `<p class="table-note">Source screenshots were not attached to this report payload. Raw artifact hash is retained above where available.</p>`}
+  </div>`;
+}
+
+function buildRoRDuesPanel(dues: any, insights: RoRInsight[] = []): string {
+  if (!dues && insights.length === 0) return "";
+  const fields = [
+    ["Khajana / rent", dues?.khajana],
+    ["Cess", dues?.cess],
+    ["Other cess", dues?.otherCess],
+    ["Jalkar / water tax", dues?.jalkar],
+    ["Total", dues?.total],
+  ];
+  const hasAny = fields.some(([, value]) => isVerifiedDisplayValue(String(value ?? "")));
+  if (!hasAny && insights.length === 0) return "";
+  const rows = fields.map(([label, value]) =>
+    `<tr><td class="key">${escapeHtml(label)}</td><td>${escapeHtml(value ?? "—")}</td></tr>`
+  ).join("");
+  return `<details class="tenant-table-details ror-dues-details" open>
+    <summary>RoR dues and revenue demand</summary>
+    <p class="table-note">These are revenue-demand fields from the RoR. Treat them as small inherited-cost checks and ask the seller to clear/produce receipts before registration.</p>
+    ${buildInsightHighlights(insights)}
+    ${hasAny ? `<table class="data-table compact-table"><tbody>${rows}</tbody></table>` : `<p class="table-note">No usable dues fields were parsed in this run.</p>`}
+  </details>`;
+}
+
+function buildRoRScreenshotFigure(label: string, image: unknown): string {
+  const raw = String(image ?? "").trim();
+  if (!raw) return "";
+  const src = raw.startsWith("data:image/") ? raw : `data:image/png;base64,${raw}`;
+  if (src.length > 1_200_000) {
+    return `<div class="ror-screenshot-too-large"><strong>${escapeHtml(label)}</strong><span>Screenshot captured but too large to embed in the inline report.</span></div>`;
+  }
+  return `<figure class="ror-screenshot">
+    <img src="${escapeHtml(src)}" alt="Bhulekh RoR ${escapeHtml(label)} screenshot" loading="lazy" />
+    <figcaption>${escapeHtml(label)}</figcaption>
+  </figure>`;
+}
+
+function buildRoRPlotTablePanel(plotRows: any[], selectedPlotNo: unknown, insights: RoRInsight[] = []): string {
+  if (!Array.isArray(plotRows) || plotRows.length === 0) {
+    if (insights.length === 0) return "";
+    return `<details class="tenant-table-details ror-plot-table-details" open>
+      <summary>Full RoR plot table</summary>
+      ${buildInsightHighlights(insights)}
+      <p class="table-note">No usable RoR plot-table rows were parsed in this run.</p>
+    </details>`;
+  }
+  const rows = plotRows.map((row) => {
+    const area = buildPlotAreaDetails(null, row);
+    const isSelected = plotNosMatch(row?.plotNo, selectedPlotNo);
+    const boundaries = [
+      row?.northBoundaryOdia ? `N: ${row.northBoundaryOdia}` : null,
+      row?.southBoundaryOdia ? `S: ${row.southBoundaryOdia}` : null,
+      row?.eastBoundaryOdia ? `E: ${row.eastBoundaryOdia}` : null,
+      row?.westBoundaryOdia ? `W: ${row.westBoundaryOdia}` : null,
+    ].filter(Boolean).join("; ");
+    return `<tr class="${isSelected ? "selected-source-row" : ""}">
+      <td class="mono">${escapeHtml(row?.plotNo ?? "—")}${isSelected ? ` <span class="badge-info">selected</span>` : ""}</td>
+      <td class="odia">${escapeHtml(row?.landTypeOdia ?? "—")}</td>
+      <td>${escapeHtml(formatPlotAreaSummary(area) || "—")}</td>
+      <td class="odia">${escapeHtml(boundaries || "—")}</td>
+      <td class="odia">${escapeHtml(row?.remarksOdia ?? "—")}</td>
+    </tr>`;
+  }).join("\n");
+
+  return `<details class="tenant-table-details ror-plot-table-details">
+    <summary>View full RoR plot table (${plotRows.length} row${plotRows.length === 1 ? "" : "s"})</summary>
+    <p class="table-note">This is the full parsed plot table from the selected Khatiyan. The selected row is highlighted; other rows are included for context and should not be confused with the specific plot being checked.</p>
+    ${buildInsightHighlights(insights)}
+    <table class="data-table tenant-table">
+      <thead><tr><th>Plot</th><th>Kisam</th><th>Area</th><th>Boundaries / occupiers</th><th>Remarks</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </details>`;
+}
+
+function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): string {
+  if (!backPage) {
+    if (insights.length === 0) return "";
+    return `<div class="info-box ror-back-page-panel">
+      <span class="info-label">&#8505; Bhulekh Back Page</span>
+      ${buildInsightHighlights(insights)}
+    </div>`;
+  }
+  const mutations = Array.isArray(backPage.mutationHistory) ? backPage.mutationHistory : [];
+  const encumbrances = Array.isArray(backPage.encumbranceEntries) ? backPage.encumbranceEntries : [];
+  const remarks = Array.isArray(backPage.backPageRemarks) ? backPage.backPageRemarks : [];
+  if (mutations.length === 0 && encumbrances.length === 0 && remarks.length === 0) {
+    return `<div class="info-box ror-back-page-panel">
+      <span class="info-label">&#8505; Bhulekh Back Page checked</span>
+      ${buildInsightHighlights(insights)}
+      <p>The Back Page did not return parsed mutation, encumbrance-style, or remark entries in this run. Treat this as a source observation, not proof that no entries exist.</p>
+    </div>`;
+  }
+
+  const mutationRows = mutations.slice(0, 25).map((entry: any) => `
+    <tr>
+      <td class="mono">${escapeHtml(entry.mutationNumber ?? "—")}</td>
+      <td>${escapeHtml(entry.mutationDate ?? "—")}</td>
+      <td class="mono">${escapeHtml(entry.plotNo ?? "—")}</td>
+      <td>${escapeHtml(entry.fromKhatiyan ?? "—")}</td>
+      <td>${escapeHtml(entry.toKhatiyan ?? "—")}</td>
+    </tr>`).join("");
+  const encumbranceRows = encumbrances.slice(0, 25).map((entry: any) => `
+    <tr>
+      <td>${escapeHtml(entry.type ?? "—")}</td>
+      <td>${escapeHtml(entry.partyName ?? "—")}</td>
+      <td class="mono">${escapeHtml(entry.docNo ?? "—")}</td>
+      <td>${escapeHtml(entry.date ?? "—")}</td>
+      <td>${escapeHtml(entry.amount ?? "—")}</td>
+    </tr>`).join("");
+  const remarkRows = remarks.slice(0, 20).map((remark: any) => `
+    <tr>
+      <td>${escapeHtml(titleFromSnakeCase(String(remark.category ?? "other")))}</td>
+      <td>${escapeHtml(remark.extractedCaseNo ?? remark.extractedBankName ?? "—")}</td>
+      <td>${escapeHtml(remark.rawText ?? "—")}</td>
+    </tr>`).join("");
+
+  return `<div class="info-box ror-back-page-panel">
+    <span class="info-label">&#8505; Bhulekh Back Page timeline</span>
+    <p>Back Page entries are source anchors from Bhulekh. They can indicate mutation, charge, restriction, or case-reference activity, but they are not a substitute for IGR EC, mutation-status, or lawyer review.</p>
+    ${buildInsightHighlights(insights)}
+    ${mutationRows ? `<details class="tenant-table-details" open><summary>Mutation history (${mutations.length})</summary><table class="data-table compact-table"><thead><tr><th>Mutation no.</th><th>Date</th><th>Plot</th><th>From khata</th><th>To khata</th></tr></thead><tbody>${mutationRows}</tbody></table></details>` : ""}
+    ${encumbranceRows ? `<details class="tenant-table-details" open><summary>Encumbrance-style entries (${encumbrances.length})</summary><table class="data-table compact-table"><thead><tr><th>Type</th><th>Party</th><th>Doc no.</th><th>Date</th><th>Amount</th></tr></thead><tbody>${encumbranceRows}</tbody></table></details>` : ""}
+    ${remarkRows ? `<details class="tenant-table-details"><summary>Back Page remarks (${remarks.length})</summary><table class="data-table compact-table"><thead><tr><th>Category</th><th>Extracted anchor</th><th>Raw remark</th></tr></thead><tbody>${remarkRows}</tbody></table></details>` : ""}
+  </div>`;
 }
 
 function buildNameMatchSection(input: {
@@ -1296,6 +1767,7 @@ function buildNameMatchSection(input: {
 }
 
 function ownerBadge(nameMatch: string): { status: "green" | "amber" | "red" | "gray"; label: string } {
+  if (nameMatch === "ror_available") return { status: "gray", label: "&#8505; RoR owner fetched" };
   if (nameMatch === "exact") return { status: "green", label: "&#10003; Full-name match" };
   if (nameMatch === "ambiguous") return { status: "amber", label: "&#9888; Needs identity proof" };
   if (nameMatch === "partial") return { status: "amber", label: "&#9888; Partial match" };
@@ -1961,6 +2433,155 @@ body {
   font-size: 11px;
   line-height: 1.5;
 }
+.mini-section-title {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--black);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ror-completeness,
+.ror-back-page-panel {
+  margin-top: 14px;
+}
+.ror-fact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.ror-fact-grid div {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 8px;
+  background: var(--gray-50);
+}
+.ror-fact-grid span {
+  display: block;
+  color: var(--gray-500);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ror-fact-grid strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--black);
+  font-size: 13px;
+}
+.source-image-details {
+  margin-top: 10px;
+}
+.ror-screenshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.ror-screenshot {
+  margin: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
+}
+.ror-screenshot img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--gray-50);
+}
+.ror-screenshot figcaption,
+.ror-screenshot-too-large span {
+  display: block;
+  padding: 6px 8px;
+  color: var(--gray-500);
+  font-size: 11px;
+}
+.ror-screenshot-too-large {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 8px;
+  background: var(--gray-50);
+}
+.selected-source-row {
+  background: var(--blue-50);
+}
+.insight-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+.insight-card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--white);
+  color: var(--gray-800);
+}
+.insight-card-positive {
+  border-color: var(--green-200);
+  background: var(--green-50);
+}
+.insight-card-watchout {
+  border-color: var(--amber-200);
+  background: var(--amber-50);
+}
+.insight-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.insight-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+}
+.insight-card-positive .insight-icon {
+  background: var(--green-700);
+  color: var(--white);
+}
+.insight-card-watchout .insight-icon {
+  background: var(--amber-700);
+  color: var(--white);
+}
+.insight-type {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.insight-card-positive .insight-type { color: var(--green-700); }
+.insight-card-watchout .insight-type { color: var(--amber-700); }
+.insight-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--black);
+  margin-bottom: 3px;
+}
+.insight-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.insight-source {
+  margin-top: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .tenant-table { margin-top: 8px; }
 .tenant-table th {
   text-align: left;
@@ -1974,6 +2595,70 @@ body {
 }
 .tenant-table td { padding: 6px 8px; font-size: 12px; color: var(--gray-800); border-bottom: 1px solid var(--gray-100); }
 .tenant-table td:first-child { width: 28px; }
+
+/* Owner details */
+.owner-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.owner-card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--white);
+}
+.owner-card-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.owner-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--black);
+}
+.owner-name-odia {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-top: 2px;
+}
+.name-reading-line {
+  margin-top: 4px;
+}
+.name-reading-badge {
+  display: inline-block;
+  margin-left: 4px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+.name-reading-verified_exact,
+.name-reading-lexicon_all_tokens,
+.name-reading-latin_passthrough {
+  background: var(--green-50);
+  color: var(--green-700);
+  border: 1px solid var(--green-200);
+}
+.name-reading-machine_reading {
+  background: var(--yellow-50);
+  color: var(--yellow-700);
+  border: 1px solid var(--yellow-200);
+}
+.owner-detail-table {
+  margin-top: 8px;
+}
+.odia-muted {
+  color: var(--gray-400);
+  font-size: 12px;
+}
 
 /* Notices */
 .success-notice, .error-notice, .warning-notice, .info-notice {
@@ -2202,5 +2887,6 @@ body {
   .section-hdr { flex-wrap: wrap; }
   .data-table td.key { width: 40%; }
   .summary-grid { grid-template-columns: 1fr; }
+  .insight-highlights { grid-template-columns: 1fr; }
 }
 `;

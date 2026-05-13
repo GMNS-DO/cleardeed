@@ -1,0 +1,25 @@
+{
+  "name": "@cleardeed/fetcher-high-court",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "healthcheck": "node --input-type=module -e \"import('./src/index.js').then(m => m.healthCheck().then(r => { console.log(r.ok ? 'OK' : 'FAIL: ' + r.reason); process.exit(r.ok ? 0 : 1); }))\""
+  },
+  "dependencies": {
+    "playwright": "^1.52.0",
+    "tesseract.js": "^5.1.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^3.1.0"
+  }
+}

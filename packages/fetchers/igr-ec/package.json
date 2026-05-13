@@ -1,0 +1,21 @@
+{
+  "name": "@cleardeed/fetcher-igr-ec",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@cleardeed/schema": "workspace:*",
+    "zod": "^3.0.0",
+    "playwright": "^1.50.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "healthcheck": "node --input-type=module -e \"import { healthCheck } from './src/index.js'; healthCheck().then(r => { console.log(r ? 'OK' : 'FAIL'); process.exit(r ? 0 : 1); })\""
+  }
+}

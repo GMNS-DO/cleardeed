@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-17T12:54:25.581Z",
+  "timestamp": "2026-04-19T21:03:53.638Z",
   "coordinates": {
     "lat": 20.272688,
     "lon": 85.701271
@@ -13,13 +13,19 @@
     },
     "bhunaksha": {
       "status": "partial",
-      "plot_number": "128",
-      "village": "Mendhasala"
+      "plot_number": "415",
+      "village": "Haripur"
     },
     "bhulekh": {
-      "status": "failed",
-      "owners": [],
-      "error": "Village \"Mendhasala\" not found in Khordha village dictionary. Add it to villages.ts first."
+      "status": "success",
+      "owners": [
+        "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ",
+        "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ",
+        "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ",
+        "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ",
+        "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ"
+      ],
+      "error": null
     },
     "ecourts": {
       "status": "partial",

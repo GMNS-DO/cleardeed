@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@cleardeed/schema": "workspace:*",
-    "tesseract.js": "^5.1.1"
+    "tesseract.js": "^5.1.1",
+    "zod": "^3.0.0"
   },
   "scripts": {
     "test": "vitest run",

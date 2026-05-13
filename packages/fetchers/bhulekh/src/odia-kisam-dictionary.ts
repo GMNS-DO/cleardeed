@@ -51,6 +51,10 @@ export const ODIA_KISAM_MAP: Record<string, string> = {
   "ଦ୍ଵା ଦଣ୍ଡା": "jalasechita_single",       // Double crop irrigated
   "ଦ୍ଵା ଚାଷ": "jalasechita_double",         // Irrigated (two crops)
   "ଚାଷ": "jalasechita_single",             // Crop / Cultivation
+  "ଶାରଦ": "agricultural",                  // Sarad agricultural class
+  "ଶାରଦ ଏକ": "agricultural",              // Sarad I
+  "ଶାରଦ ଦୁଇ": "agricultural",             // Sarad II
+  "ଶାରଦ ତିନି": "agricultural",            // Sarad III
 
   // Rainfed / upland
   "ଅନାବାଧୀ": "anajalasechita",            // Unirrigated / Rainfed

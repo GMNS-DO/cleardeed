@@ -658,11 +658,56 @@ Decision: `PRODUCT.md` is the source of truth for V1 agent definitions. `COUNCIL
 Alternatives considered: Rename all existing agents to match `COUNCIL.md` (high effort, breaks existing logs); merge both documents (loses the clear V1 vs. future-state separation).
 Consequences: The two documents can coexist without contradiction. Developers building for V1 should refer to `PRODUCT.md`'s agent list.
 
+ADR-015: V1.1 Consumer Report Uses RoR Facts Directly, Not Seller-Name Matching
+
+Date: 2026-05-13
+Status: ACCEPTED
+Context: Live V1.1 report feedback showed that the "Owner match" framing was misleading for the current paid report. The user wants the report to show what the RoR says: owner name, guardian/family fields, plot number, khata number, plot area, kisam/land classification, dues, remarks, publication date, and mutation/case anchors. Seller-name matching is not needed in the report at this stage and creates false "pending" or "mismatch" signals.
+Decision: The consumer report's top status panel and Owner section will be RoR-first. Replace "Owner match" with "Owner name"; show fetched RoR owner(s) directly; show guardian/father/spouse, caste/community, and residence where parsed; do not compare against the input seller name. Add a separate "Plot Area" status block sourced from the selected RoR plot row. Land classification must prefer per-plot RoR kisam fields over generic khata status.
+Alternatives considered: Keep seller-name matching as a warning layer; hide owner details until a full seller name is provided; keep area/classification only in the detailed table. Rejected because the paid report's immediate value is making the RoR legible and defensible, and because single-token seller inputs produce noisy identity warnings.
+Consequences: A5 ownership matching can remain an internal/future feature, but A10 report language must not show "Pending - no seller name" or seller-name mismatch copy. Data reliability focus shifts to exact RoR extraction: owner block, family fields, selected plot row, area math, kisam, dues, remarks, publication date, and mutation anchors.
+
+ADR-016: MVP1 Report Must Not Guess Odia Owner Transliteration
+
+Date: 2026-05-13
+Status: ACCEPTED
+Context: Live report review showed Odia-to-English owner names were "wayward" when the renderer used character-by-character transliteration. A bad English name is worse than showing the original RoR Odia because it can mislead buyers, lawyers, and sellers.
+Decision: For MVP1, the consumer report treats Odia RoR text as authoritative. Show an English owner/guardian name only when it comes from an exact verified dictionary match or non-Odia source text. If no exact verified English mapping exists, show the original Odia in the primary field and leave the English table cell blank/dash. Do not run fallback character-by-character transliteration inside the paid report.
+Alternatives considered: Keep phonetic fallback with a confidence label; hide Odia-only names; rely on browser/LLM translation. Rejected because owner identity is high-stakes and an approximate transliteration can create false confidence.
+Consequences: The report remains legally safer and more faithful to the RoR. English coverage must improve through verified name dictionaries, OCR/source improvements, and manual review, not through guessed transliteration.
+
+ADR-017: Owner English Names Use Confidence-Tiered Readings
+
+Date: 2026-05-13
+Status: ACCEPTED
+Context: The report still needs English owner names for buyer usability. Removing English entirely is not acceptable, but a single unlabelled transliteration is also unsafe because Odia names have multiple valid English spellings and RoR does not always provide an English source.
+Decision: A10 will embed an English-name reading pipeline with visible confidence tiers: `Verified English` for exact full-name dictionary matches, `High-confidence reading` when every Odia token maps through the verified name lexicon, `Source English` for non-Odia source text, and `Machine reading - review` for algorithmic fallback. The original Odia remains visible as the source-of-truth, and machine readings are explicitly routed to manual review.
+Alternatives considered: Remove English names; use only character transliteration; rely on LLM/browser translation; call a paid transliteration API directly in the report path. Rejected for MVP1 because owner identity is high-stakes, external APIs need operational controls, and confidence should be visible to the buyer/lawyer.
+Consequences: ClearDeed can show useful English names without pretending every reading is final. Accuracy improves incrementally through exact dictionaries, token lexicons, manual-review feedback, and later source/API enrichment.
+
+ADR-018: MVP1 Completes RoR Before Adding New Sources
+
+Date: 2026-05-13
+Status: ACCEPTED
+Context: The product already has a live Bhulekh RoR fetcher that retrieves Front Page, Back Page, owner blocks, plot table, dues, remarks, mutation references, and source screenshots. Adding EC/court/RERA before making this RoR output complete would broaden the product while the core source still feels underused.
+Decision: The next MVP1 feature is "Complete RoR Audit" inside the consumer report. A10 must surface a source-backed RoR audit panel, full parsed plot table, dues/revenue demand, publication/generated dates, raw artifact provenance, source screenshot availability, Back Page mutation timeline, Back Page encumbrance-style entries, and Back Page remarks. All Back Page entries remain source anchors only; they are not verified ownership history, EC clearance, or title-chain proof.
+Alternatives considered: Build IGR EC first; build RCCMS/eCourts next; build RERA/regulatory overlays. Rejected for this sprint because RoR is the trust spine of the product and already contains enough underused value to improve the paid report immediately.
+Consequences: MVP1 report quality improves without expanding source risk. EC and registry remain the next monetizable add-on after the RoR report feels complete and manually reviewable.
+
+ADR-019: RoR Facts Must Become Rule-Based Consumer Highlights Before AI Summaries
+
+Date: 2026-05-13
+Status: ACCEPTED
+Context: The Complete RoR Audit now exposes many source facts, but a buyer still needs simple meaning at panel level: what deserves attention, what was successfully parsed, and which manual checks follow. Live LLM summarization in a consumer report can hallucinate, overstate legal conclusions, or create inconsistent copy.
+Decision: MVP1 uses a deterministic RoR Insight Engine inside A10. Parsed RoR facts are converted into source-scoped highlights with `tone`, `label`, `body`, `source`, `priority`, and `panelId`. Highlights render as "Positive signal" or "Watch-out", max four per panel, with watch-outs prioritized. They are allowed in Plot/Complete RoR Audit, Owner, Land Classification, Full RoR Plot Table, Dues/Revenue Demand, and Back Page panels. Live consumer output must not use LLM summaries, confidence percentages, title-clearance language, or buy/sell verdicts. AI-assisted drafting may be added later only in an admin/manual-review flow requiring human approval.
+Alternatives considered: Add a live LLM summary per panel; force two green and two yellow bullets per panel; leave RoR facts unsynthesized. Rejected because deterministic rules are safer for MVP1 and because positive signals must exist only when source-backed facts exist.
+Consequences: The report now explains RoR facts in simple language while keeping liability boundaries intact. Future AI work should sit behind manual review and feed approved language/rules back into this deterministic layer.
+
 
 Section 6: Current State Snapshot
 Updated at the end of every session. Single source of truth for "where are we right now."
 Last updated: 2026-05-13
-Last session: Session 050
+Last session: Session 055
 
 V1.1 Sprint (2026-05-12 to 2026-05-21): Bhulekh-only. All other fetchers dormant.
 
@@ -673,6 +718,11 @@ Built:
   - T-003: KYL auth probe — BLOCKED (browser session required, no bearer token). MITIGATED via GeoServer WFS for GPS→plot.
   - T-004: Bhunaksha fetcher — LIVE: plot #128/#415, Mendhasala, Bhubaneswar tahasil (8 tests passing). Area fix (Session 012): Turf.js geodesic area replaces crude deg²×12300 formula.
   - T-015: Bhulekh V1.1 LIVE-VALIDATED (Session 050): Mendhasala Plot 1 — 1 owner (ପୂର୍ତ୍ତ ବିଭାଗ), 20.5 acres, ନୟନଯୋରୀ (Neyanjori/govt notified), 13 plot rows, Back Page: 17 mutations + 17 encumbrances, screenshots captured. BhulekhSession architecture: Playwright bootstrap + HTTP cascade + Playwright screenshot capture. PARSER_VERSION v3.
+  - Session 051 report/RoR usability fix: A10 now treats RoR as the source of truth in the paid report. Property record status has Plot Record, Owner Name, and Plot Area blocks; Owner section shows RoR owner/family details directly; Land Classification shows selected-plot kisam and standardized signals. Bhulekh area math corrected: `A=1`, `D=0750` = `1.0750 acres` (decimal column / 10000), not 8.5 acres. Mendhasala Plot 415 live check: Khata 94, owner କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା, guardian ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା, caste ମହାଲାଏକ, residence ନିଜଗାଁ, kisam ଶାରଦ ଦୁଇ -> Agricultural.
+  - Session 052 quality fix: A10 now suppresses guessed Odia transliteration in the paid report and uses exact verified English names only. Owner cards no longer render blank English names or duplicate Odia guardian values. A6 land-classifier now recognizes standardized fetcher outputs such as `nagariya_jogya`, report labels such as `Homestead / Residential`, and Sarad kisam variants, preventing the RoR plot row and Land Classification block from disagreeing as `Unknown/Other`.
+  - Session 053 owner-name accuracy upgrade: A10 embeds a confidence-tiered English-name reading pipeline. Exact full-name dictionary matches show `Verified English`; all-token lexicon matches show `High-confidence reading`; non-Odia source values show `Source English`; fallback algorithmic readings show `Machine reading - review`. The Odia RoR value remains visible.
+  - Session 054 RoR-complete upgrade: A10 now renders a Complete RoR Audit panel with source metadata, publication/generated dates, dues/revenue demand, raw artifact reference, screenshot availability, full parsed plot table, and Back Page mutation/encumbrance/remark timeline. Back Page content is explicitly labelled as source anchors, not verified title or EC history.
+  - Session 055 RoR insight synthesis: A10 now runs a deterministic RoR Insight Engine over parsed RoR facts and renders panel-level "Positive signal" / "Watch-out" highlights for Plot/Complete RoR Audit, Owner, Land Classification, Full RoR Plot Table, Dues/Revenue Demand, and Back Page. No live LLM summaries in consumer output; AI-assisted drafting is admin/manual-review only.
   - T-007: Orchestrator MVP — Bhulekh-only input (tehsil + village + searchMode + identifier). 10 other sources V1.1-DORMANT.
   - T-017: Demo-mode — apps/web/src/lib/demo-fixture.ts with full golden-path result (GPS 20.272688,85.701271). /report/demo serves instantly. /report/CLD-001?demo=false triggers live fetch.
   - T-018: scripts/golden-path.ts — all 4 fetchers run serially. Bhulekh ✅ (plot #415, 5 tenants, 75.6 acres total).
@@ -3650,3 +3700,160 @@ Notes for founder:
   - Back page confirmed: 17 mutation entries and 17 encumbrance entries for this plot. These need to flow into Sections 3 (Encumbrances) and the mutation reference panel in the report.
   - Screenshots (base64 PNG) are being captured — the rawResponse.screenshots field contains them. They need to be uploaded to Supabase storage and the URLs stored in the reports table per migration 003_screenshot_storage.sql.
   - Neyanjori classification: marked as prohibited in the land classifier (no construction without government permission). This should surface as an explicit red flag in Section 4 (Land Classification) of the report.
+
+### Session 051 — 2026-05-13
+
+Mode: execution
+Duration: ~2 hours
+Focus: RoR-first report usability fixes for live website feedback
+
+Highest-leverage step identified: The report must make the fetched RoR legible and useful. The current "Owner match" framing and old area computation obscured the actual source facts.
+
+Tasks worked:
+  - [A10] DONE — Property record status changed from match-oriented cards to RoR facts: Plot Record, Owner Name, Plot Area.
+  - [A10] DONE — The Owner section now lists owner/family fields from RoR directly: owner name, guardian/father/spouse, caste/community, residence.
+  - [A10] DONE — Land Classification tightened to prefer selected-plot RoR kisam, raw Odia value, standardized class, conversion signal, restriction signal, and buildability signal.
+  - [Bhulekh parser] DONE — Corrected RoR area computation: `A` + `D` where `D` is divided by 10000.
+  - [Docs] DONE — ADR-015 added; docs/sources/bhulekh.md area note updated.
+
+Decisions made:
+  - [ADR-015] A10 consumer report uses RoR facts directly, not seller-name matching.
+
+Code changes (high-level):
+  - packages/fetchers/bhulekh/src/index.ts: area computation changed from decimal column / 100 to / 10000; tenant and khata totals now preserve four decimal precision.
+  - packages/fetchers/bhulekh/src/odia-kisam-dictionary.ts: added Sarad kisam variants (`ଶାରଦ`, `ଶାରଦ ଏକ`, `ଶାରଦ ଦୁଇ`, `ଶାରଦ ତିନି`) as agricultural.
+  - agents/consumer-report-writer/src/mapper.ts: passes RoR raw document fields into A10: ownerBlocks, plotRows, plotTableTotals, recordMeta, dues, remarks, area raw components.
+  - agents/consumer-report-writer/src/index.ts: report renders RoR owner records, plot area summary, plot record summary, and land-classification detail table.
+
+Live check:
+  - Mendhasala Plot 415 returned status success.
+  - Khata 94; owner କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା; guardian ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା; caste ମହାଲାଏକ; residence ନିଜଗାଁ.
+  - Area raw fields: A=1, D=0750 => 1.075 acres.
+  - Kisam: ଶାରଦ ଦୁଇ -> Agricultural.
+
+Verification:
+  - npm run typecheck passed.
+  - Focused tests passed: agents/consumer-report-writer/src/index.test.ts and packages/fetchers/bhulekh/src/index.test.ts.
+  - npm run build passed locally; Next reported a local webpack cache ENOSPC warning but completed successfully.
+  - Production deployment succeeded: dpl_Gfy86BVBZKmWE9pomBkwSkjqgHAT, aliased to https://v0-cleardeed.vercel.app.
+  - Live `/api/report/create` verification for Mendhasala Plot 415 passed: Owner name card present, Owner match absent, Plot area card present, 1.075 acres / 46,827 sq ft present, old 8.5-acre bug absent, guardian/caste/residence/kisam present, raw runtime leakage absent.
+
+What is pending:
+  - Supabase persistence still needs environment/network repair before every inline report can expose durable saved report/PDF links.
+
+### Session 052 — 2026-05-13
+
+Mode: execution
+Duration: ~45 minutes
+Focus: MVP1 RoR report completeness and correctness after live UI review
+
+Highest-leverage step identified: Make the RoR report faithful before adding more interpretation. Owner names and land class are high-trust fields; they should never be guessed or internally inconsistent.
+
+Tasks worked:
+  - [A10] DONE — Removed guessed Odia-to-English fallback transliteration from consumer report owner/guardian display.
+  - [A10] DONE — Owner cards now show original Odia as the primary value when no exact verified English name exists; no blank owner-name rows and no duplicated Odia guardian parentheticals.
+  - [Web UI] DONE — Seller-name form helper copy now says "for manual review" instead of implying owner matching in the report.
+  - [A6] DONE — Land-classifier now maps standardized Bhulekh fetcher values (`nagariya_jogya`, `agricultural`, etc.) and report display labels (`Homestead / Residential`) back to canonical kisam values.
+  - [A10/A6] DONE — Added focused regression tests for the exact `Homestead / Residential` vs `Unknown/Other` class of mismatch.
+  - [Docs] DONE — ADR-016 added: MVP1 report must not guess Odia owner transliteration.
+
+Decisions made:
+  - [ADR-016] Exact verified English owner names only. If the source is Odia and no exact verified mapping exists, the report should show the original Odia, not a phonetic guess.
+
+Verification:
+  - npm run typecheck passed.
+  - Focused tests passed: agents/consumer-report-writer/src/index.test.ts, agents/land-classifier/index.test.ts, packages/fetchers/bhulekh/src/index.test.ts (70 tests).
+
+What is pending:
+  - Run production build and deploy this Session 052 fix.
+  - Live `/api/report/create` check after deploy should confirm: no Owner match block, no blank owner card, no raw Playwright/runtime leakage, and no `Dominant Kisam: Unknown/Other` when the RoR plot row has a known kisam.
+
+### Session 053 — 2026-05-13
+
+Mode: execution
+Duration: ~45 minutes
+Focus: Odia-to-English owner-name accuracy without hiding English names
+
+Highest-leverage step identified: The report needs English owner names, but it must reveal how each English reading was produced. Accuracy is a workflow, not a single transliteration function.
+
+Tasks worked:
+  - [A10] DONE — Added `transliterateOdiaWithConfidence()` with confidence tiers: exact full-name dictionary, all-token name lexicon, Latin passthrough, and machine fallback.
+  - [A10] DONE — Corrected the broken Odia consonant map that was producing wayward readings.
+  - [A10] DONE — Expanded the Odia name/token lexicon with common Odisha given names and surnames so more owner/guardian names are high-confidence instead of machine-only.
+  - [A10] DONE — Owner cards and the owner/plot table now display English readings with visible confidence badges.
+  - [Docs] DONE — ADR-017 added: owner English names use confidence-tiered readings.
+
+Decisions made:
+  - [ADR-017] Do not choose between "no English" and "unsafe English." Show English with source/confidence tier, keep Odia visible, and require manual review for machine-only readings.
+
+Verification:
+  - npm run typecheck passed.
+  - Focused tests passed: agents/consumer-report-writer/src/index.test.ts, agents/land-classifier/index.test.ts, packages/fetchers/bhulekh/src/index.test.ts (71 tests).
+  - npm run build passed.
+  - Production deployment succeeded: dpl_7oD1J4aNgMhagrLtckTrtkZphtnN, aliased to https://v0-cleardeed.vercel.app.
+  - Live `/api/report/create` verification for Mendhasala Plot 415 passed: English reading labels present, Verified English badge present, Krushnachandra/Bauribandhu English readings present, Odia owner still present, Owner match absent, Unknown/Other absent, raw runtime leakage absent.
+
+What is pending:
+  - Add a manual-review correction workflow so reviewers can approve/correct English readings and feed them back into the dictionary.
+
+### Session 054 — 2026-05-13
+
+Mode: execution
+Duration: ~1 hour
+Focus: Complete RoR Audit for MVP1
+
+Highest-leverage step identified: Complete the Bhulekh/RoR report before adding a new source. RoR already contains underused buyer value: dues, source dates, plot table, Back Page entries, screenshots, and raw provenance.
+
+Tasks worked:
+  - [A10] DONE — Added Complete RoR Audit panel with khatiyan, selected plot, owner/plot counts, Back Page counts, Bhulekh status, publication date, revenue assessment date, generated/current RoR timestamp, raw artifact reference, special remarks, and progressive-rent remarks.
+  - [A10] DONE — Added RoR dues/revenue demand panel for khajana/rent, cess, other cess, jalkar, and total.
+  - [A10] DONE — Added source screenshot drawer for Bhulekh Front Page and Back Page when screenshots are present in the raw payload, with inline-size guardrails.
+  - [A10] DONE — Added full RoR plot-table drawer with selected-row highlighting, kisam, area, boundaries/occupiers, and remarks.
+  - [A10] DONE — Added Bhulekh Back Page timeline panel for mutation history, encumbrance-style entries, and Back Page remarks, with source-anchor-only caveat.
+  - [Mapper] DONE — Passes `sourceMeta` and `screenshots` from raw Bhulekh document into `revenueRecords`.
+  - [Docs] DONE — ADR-018 added: MVP1 completes RoR before adding new sources.
+
+Decisions made:
+  - [ADR-018] EC/court/RERA expansion waits until the RoR report is complete and defensible. Back Page content is useful, but it is not treated as verified ownership history or EC clearance.
+
+Verification:
+  - npm run typecheck passed.
+  - Focused tests passed: agents/consumer-report-writer/src/index.test.ts and packages/fetchers/bhulekh/src/index.test.ts (29 tests).
+  - Broader focused tests passed: agents/consumer-report-writer/src/index.test.ts, agents/land-classifier/index.test.ts, packages/fetchers/bhulekh/src/index.test.ts (72 tests).
+  - npm run build passed.
+  - Production deployment succeeded: dpl_6PT4eMyjGxuG4VdyQwTWbgAeEQ1g, aliased to https://v0-cleardeed.vercel.app.
+  - Live `/api/report/create` verification for Mendhasala Plot 415 passed: Complete RoR audit present, dues panel present, full RoR plot table present, screenshot drawer/source-screenshot fallback present, Back Page timeline present, mutation history present, encumbrance-style entries present, Back Page remarks present, Owner match absent, Unknown/Other absent, raw runtime leakage absent.
+
+What is pending:
+  - Next high-value feature after this: admin/manual-review correction workflow for English readings, mutation summaries, and final buyer-facing action copy.
+
+### Session 055 — 2026-05-13
+
+Mode: execution
+Duration: ~1 hour
+Focus: RoR panel-level insight synthesis
+
+Highest-leverage step identified: The report should not only expose RoR facts; it should translate them into source-scoped buyer meaning without crossing into legal advice.
+
+Tasks worked:
+  - [A10] DONE — Added deterministic `RoRInsightEngine` that converts parsed RoR facts into highlight objects with tone, label, body, source, priority, and panel id.
+  - [A10] DONE — Rendered reusable "Positive signal" / "Watch-out" highlights in Plot/Complete RoR Audit, Owner, Land Classification, Full RoR Plot Table, RoR dues/revenue demand, and Bhulekh Back Page panels.
+  - [A10] DONE — Implemented adaptive output: max four highlights per panel, watch-outs ranked first, and no positive signal when source facts are missing.
+  - [A10] DONE — Added deterministic rules for multiple owners, owner family/residence anchors, selected plot found/missing, raw area components, agricultural/conversion-sensitive kisam, buildable kisam, non-zero/blank dues, and Back Page mutation/charge/remark anchors.
+  - [Tests] DONE — Added unit tests for insight ranking, missing-data behavior, source-backed synthesis, and prohibited highlight language/percentages. Report test now audits generated insight output through A11.
+  - [Docs] DONE — ADR-019 added: RoR facts must be synthesized through deterministic rules before considering AI summaries.
+
+Decisions made:
+  - [ADR-019] MVP1 consumer reports use rule-based RoR highlights only. Live LLM summaries are not used in consumer output; AI-assisted drafting belongs only in future admin/manual-review flows.
+
+Verification:
+  - npm test -- --run agents/consumer-report-writer/src/ror-insights.test.ts agents/consumer-report-writer/src/index.test.ts passed.
+  - npm test -- --run agents/output-auditor/src/index.test.ts passed.
+  - npm run typecheck passed.
+  - npm run build passed.
+  - Production deployment succeeded: dpl_4vHE9myj7KNrP5PiRTiSwAeA3ijP, aliased to https://v0-cleardeed.vercel.app.
+  - Live `/api/report/create` verification for Mendhasala Plot 415 passed: Positive signal present, Watch-out present, Complete RoR Audit present, selected-plot insight present, area insight present, owner insight present, land/dues/Back Page insights present, Owner match absent, raw runtime leakage absent.
+  - Live browser form verification passed on production: request payload Bhubaneswar/Mendhasala/Plot 415, Bhulekh success, DOM contained Positive signal, Watch-out, Complete RoR Audit, selected-plot insight, owner insight, and no raw runtime leakage.
+
+What is pending:
+  - Stabilize report persistence so `/report/{id}` always loads the saved report after inline generation instead of relying on the immediate API response.

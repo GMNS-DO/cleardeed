@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["ES2017"],
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "bundler",
+    "module": "ESNext",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "noEmit": true,
     "paths": {
-      "@cleardeed/schema": ["../../packages/schema/src/index.ts"]
+      "@cleardeed/schema": ["../../schema/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.json"],

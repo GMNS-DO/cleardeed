@@ -2,12 +2,5 @@
   "name": "@cleardeed/fetchers",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "nominatim",
-    "orsac-kyl",
-    "bhulekh",
-    "bhunaksha",
-    "ecourts",
-    "rccms"
-  ]
+  "//": "This is a directory marker only. Sub-packages are workspace roots discovered by pnpm-workspace.yaml via packages/*"
 }

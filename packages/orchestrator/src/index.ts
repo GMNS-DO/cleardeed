@@ -15,7 +15,7 @@
  * Supports both V1.1 dropdown mode (tehsil+village) and legacy GPS mode.
  * In V1.1, only the dropdown path is active.
  *
- * Timeout: 30 seconds total.
+ * Timeout: 55 seconds total.
  * Report status: pending_review (founder must approve before delivery).
  */
 
@@ -25,18 +25,22 @@ import { fetch as bhulekhFetch } from "@cleardeed/fetcher-bhulekh";
 // Re-export schema types for consumers
 export type { SourceResult } from "@cleardeed/schema";
 
-const OVERALL_TIMEOUT_MS = 30_000;
+const OVERALL_TIMEOUT_MS = 55_000;
 
 export interface RunReportInput {
-  /** GPS-based input (legacy): lat/lon for GPS→village lookup */
+  /** GPS-based input (legacy) — deprecated in V1.1 */
   gps?: { lat: number; lon: number };
   /** Legacy: claimed owner name for owner-match */
   claimedOwnerName?: string;
   fatherHusbandName?: string;
-  /** V1.1: Bhulekh tehsil name (e.g. "Bhubaneswar", "Kordha") — from dropdown */
+  /** V1.1: Bhulekh tehsil name (e.g. "Bhubaneswar", "Khordha") */
   tehsil?: string;
+  /** V1.1: Bhulekh tehsil code from location graph (e.g. "2" for Bhubaneswar) */
+  tehsilCode?: string;
   /** V1.1: Bhulekh village name — from dropdown, scoped to tehsil */
   village?: string;
+  /** V1.1: Bhulekh village code from location graph */
+  villageCode?: string;
   /** V1.1: Search mode */
   searchMode?: "Plot" | "Khatiyan" | "Tenant";
   /** V1.1: User-selected identifier value from ranked picker dropdown */
@@ -71,7 +75,13 @@ export async function runReport(input: RunReportInput): Promise<RunReportOutput>
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<SourceResult[]>((resolve) => {
     timeoutId = setTimeout(() => {
-      console.error("[orchestrator] runReport timed out after 30s; returning completed sources");
+      console.error(`[orchestrator] runReport timed out after ${OVERALL_TIMEOUT_MS / 1000}s; returning completed sources`);
+      if (completedSources.size === 0 && input.tehsil && input.village) {
+        recordResult(failedResult(
+          "bhulekh",
+          `Bhulekh fetch timed out after ${OVERALL_TIMEOUT_MS / 1000}s before returning a usable record. Please retry this report.`
+        ));
+      }
       resolve(Array.from(completedSources.values()));
     }, OVERALL_TIMEOUT_MS);
   });
@@ -103,11 +113,13 @@ async function runAllFetchers(
     const bhulekhResult = await runFetcher("bhulekh", () =>
       bhulekhFetch({
         tehsil: input.tehsil,
-        village: input.village as string,  // always string when tehsil+village path is taken
+        tehsilCode: input.tehsilCode ?? "",  // Bhulekh tehsil code (e.g. "2" for Bhubaneswar)
+        village: input.village,
+        villageCode: input.villageCode ?? "", // Bhulekh village code from location graph
         searchMode: input.searchMode ?? "Khatiyan",
         identifierValue: identifierVal,
         identifierLabel: input.identifierLabel ?? "",
-        ownerName: input.claimedOwnerName,
+        claimedOwnerName: input.claimedOwnerName,
       })
     );
     recordResult(bhulekhResult);
