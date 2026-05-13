@@ -536,6 +536,18 @@ ${buildFinancialExposureSummary({
 
 ${buildSourceAuditPanel(sourceDetails)}
 
+<!-- ── Provenance Strip ──────────────────────────────────────────────── -->
+${buildProvenanceStrip({
+    bhulekhUsable,
+    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
+    plotNo: safePlotNo,
+    village: safeVillage,
+    tahasil: safeTahasil,
+    district: safeDistrict,
+    courtStatuses: courtSourceStatuses,
+    totalCases,
+  })}
+
 <!-- ── Section 1: The Plot ─────────────────────────────────────────── -->
 <section class="section" id="section-plot">
   <div class="section-hdr">
@@ -1488,6 +1500,19 @@ function buildFinancialExposureSummary(input: {
 </section>`;
 }
 
+// ─── Provenance Strip ─────────────────────────────────────────────────────────
+
+interface ProvenanceInput {
+  bhulekhUsable: boolean;
+  bhulekhStatus: string;
+  plotNo: string;
+  village: string;
+  tahasil: string;
+  district: string;
+  courtStatuses: Record<string, string>;
+  totalCases: number;
+}
+
 // ─── Six Buyer Questions ────────────────────────────────────────────────────────
 
 interface SixBuyerQuestionsInput {
@@ -1616,6 +1641,57 @@ function buildSixBuyerQuestions(input: SixBuyerQuestionsInput): string {
     ${rows}
   </div>
 </section>`;
+}
+
+// ─── Provenance Strip ─────────────────────────────────────────────────────────
+
+function buildProvenanceStrip(input: ProvenanceInput): string {
+  const links: string[] = [];
+
+  if (input.bhulekhUsable) {
+    links.push(`<a href="https://bhulekh.ori.nic.in/" target="_blank" rel="noopener" class="prov-link prov-ok">
+        <span class="prov-icon">&#10003;</span>
+        <span class="prov-label">Bhulekh RoR</span>
+        <span class="prov-action">Verify yourself &rarr;</span>
+      </a>`);
+  } else {
+    links.push(`<a href="https://bhulekh.ori.nic.in/" target="_blank" rel="noopener" class="prov-link prov-warn">
+        <span class="prov-icon">&#9888;</span>
+        <span class="prov-label">Bhulekh RoR</span>
+        <span class="prov-action">Not available — visit Bhulekh &rarr;</span>
+      </a>`);
+  }
+
+  if (input.courtStatuses.ecourts === "success" || input.courtStatuses.rccms === "success") {
+    links.push(`<a href="https://services.ecourts.gov.in/" target="_blank" rel="noopener" class="prov-link prov-ok">
+        <span class="prov-icon">&#10003;</span>
+        <span class="prov-label">eCourts / RCCMS</span>
+        <span class="prov-action">Verify court cases &rarr;</span>
+      </a>`);
+  } else {
+    links.push(`<a href="https://services.ecourts.gov.in/" target="_blank" rel="noopener" class="prov-link prov-warn">
+        <span class="prov-icon">&#8505;</span>
+        <span class="prov-label">eCourts / RCCMS</span>
+        <span class="prov-action">Incomplete — verify at eCourts &rarr;</span>
+      </a>`);
+  }
+
+  links.push(`<a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener" class="prov-link prov-neutral">
+        <span class="prov-icon">&#8594;</span>
+        <span class="prov-label">IGR Circle Rate</span>
+        <span class="prov-action">Check benchmark &rarr;</span>
+      </a>`);
+
+  links.push(`<a href="https://www.bda.gov.in/" target="_blank" rel="noopener" class="prov-link prov-neutral">
+        <span class="prov-icon">&#8594;</span>
+        <span class="prov-label">BDA Master Plan</span>
+        <span class="prov-action">Verify zoning &rarr;</span>
+      </a>`);
+
+  return `<div class="prov-strip">
+    <div class="prov-label-row">Verify each claim at its source</div>
+    <div class="prov-links">${links.join("\n")}</div>
+  </div>`;
 }
 
 function buildExecutiveSummary(input: {
@@ -2838,6 +2914,44 @@ body {
   .bq-item:nth-child(3n) { border-right: 1px solid var(--amber-200); }
   .bq-item:nth-child(2n) { border-right: none; }
 }
+
+/* Provenance Strip */
+.prov-strip {
+  margin-bottom: 22px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.prov-label-row {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.prov-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.prov-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid;
+}
+.prov-ok { background: var(--green-50); color: var(--green-700); border-color: var(--green-200); }
+.prov-warn { background: var(--amber-50); color: var(--amber-700); border-color: var(--amber-200); }
+.prov-neutral { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-200); }
+.prov-icon { font-size: 13px; }
+.prov-action { font-size: 11px; opacity: 0.8; }
 
 /* Financial Exposure Summary */
 .fin-summary {
