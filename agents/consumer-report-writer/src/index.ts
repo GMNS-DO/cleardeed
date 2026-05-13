@@ -19,6 +19,7 @@ import { z } from "zod";
 import { translateLandClass } from "./types";
 import {
   transliterateOdiaWithConfidence,
+  containsOdia,
   type OdiaNameReading,
 } from "./lib";
 import {
@@ -175,7 +176,7 @@ export function generateConsumerReport(
     bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
     selectedPlotNo: plotNo,
   }, rorInsights.plot, rorInsights.dues);
-  const rorPlotTablePanel = buildRoRPlotTablePanel(revenueRecords?.plotRows ?? [], plotNo, rorInsights.plotTable);
+  const rorPlotTablePanel = buildRoRPlotTablePanel(revenueRecords?.plotRows ?? [], plotNo);
   const rorBackPagePanel = buildRoRBackPagePanel(revenueRecords?.backPage, rorInsights.backPage);
 
   // ── Derive regulatory flags ────────────────────────────────────────────────────
@@ -223,34 +224,26 @@ export function generateConsumerReport(
     minute: "2-digit",
   });
 
-  // Build tenant table HTML
+  // Build tenant table HTML — English only, no Odia in main body
   const tenantRows = tenants.length > 0
     ? tenants.map((t, i) => {
-        const nameOdia = escapeHtml(t.tenantName ?? "—");
         const nameReading = englishNameReading(t.tenantName);
-        const owner = ownerRecords.find((record) => record.odia === t.tenantName);
         const areaStr = formatPlotAreaSummary(buildPlotAreaDetails(t, findTargetPlotRow(revenueRecords, t.surveyNo)));
-        const rawClass = t.landClassOdia ?? t.landClass ?? "";
-        const lc = formatLandClassDisplay(t.landClassEnglish, rawClass, t.landClass);
-        const guardianReading = owner?.guardianReading ?? ((owner?.guardianOdia ?? t.fatherName) ? englishNameReading(owner?.guardianOdia ?? t.fatherName) : null);
+        const lc = t.landClassEnglish || t.landClass || "—";
+        const guardianReading = t.fatherName ? englishNameReading(t.fatherName) : null;
         const father = guardianReading?.english
-          ? `${escapeHtml(guardianReading.english)} ${buildNameReadingBadge(guardianReading)}`
+          ? escapeHtml(guardianReading.english)
           : "—";
-        const caste = owner?.casteOdia ? escapeHtml(owner.casteOdia) : "—";
-        const residence = owner?.residenceOdia ? escapeHtml(owner.residenceOdia) : "—";
         return `<tr>
           <td class="num">${i + 1}</td>
-          <td class="odia">${nameOdia}</td>
-          <td class="latin">${escapeHtml(nameReading.english || "—")} ${buildNameReadingBadge(nameReading)}</td>
+          <td class="latin">${escapeHtml(nameReading.english || "—")}</td>
           <td class="num">${escapeHtml(t.surveyNo ?? "—")}</td>
           <td class="num">${areaStr}</td>
           <td>${escapeHtml(lc)}</td>
           <td>${father}</td>
-          <td class="odia">${caste}</td>
-          <td class="odia">${residence}</td>
         </tr>`;
       }).join("\n")
-    : `<tr><td colspan="9" class="empty">No tenant records returned from Bhulekh.</td></tr>`;
+    : `<tr><td colspan="6" class="empty">No tenant records returned from Bhulekh.</td></tr>`;
 
   // Build co-owner note
   const coOwnerNote = coOwners.length > 0
@@ -1339,41 +1332,35 @@ function buildOwnerDetailsSection(input: {
 }): string {
   if (!input.bhulekhUsable) {
     return `<div class="error-notice">
-      <p>Bhulekh did not return usable owner records in this run. Source status: <strong>${escapeHtml(input.bhulekhStatus)}</strong>.</p>
-      <p><strong>What to do:</strong> Ask for the current Bhulekh Khatiyan and have a lawyer verify every recorded owner, legal heir, and mutation paper before paying any advance.</p>
+      <p>Bhulekh did not return usable owner records in this run. Ask for the current Bhulekh Khatiyan and have a property lawyer verify every recorded owner and legal heir before paying any advance.</p>
     </div>`;
   }
 
   if (input.ownerRecords.length === 0) {
     return `<div class="warning-notice">
-      <p>Bhulekh returned the RoR, but ClearDeed could not parse a usable owner block from the source document.</p>
-      <p><strong>What to do:</strong> Open the original Khatiyan and verify the owner block manually.</p>
+      <p>Bhulekh returned the land record, but the owner block could not be read in this run. Ask the seller to show the original Khatiyan document.</p>
     </div>`;
   }
 
   const cards = input.ownerRecords.map((owner, index) => {
-    const ownerPrimary = owner.latin || owner.odia;
-    const ownerSecondary = owner.latin && owner.odia !== owner.latin ? owner.odia : null;
-    const guardianPrimary = owner.guardianLatin || owner.guardianOdia;
-    const guardianSecondary =
-      owner.guardianLatin && owner.guardianOdia && owner.guardianLatin !== owner.guardianOdia
-        ? owner.guardianOdia
-        : null;
-    const details = [
-      `<tr><td class="key">English reading status</td><td>${buildNameReadingBadge(owner.nameReading)}</td></tr>`,
-      guardianPrimary
-        ? `<tr><td class="key">${owner.guardianRelation === "spouse" ? "Spouse" : "Father/Guardian"}</td><td>${escapeHtml(guardianPrimary)}${guardianSecondary ? ` <span class="odia-muted">(${escapeHtml(guardianSecondary)})</span>` : ""}${owner.guardianReading ? ` ${buildNameReadingBadge(owner.guardianReading)}` : ""}</td></tr>`
-        : "",
-      owner.casteOdia ? `<tr><td class="key">Caste/community field</td><td class="odia">${escapeHtml(owner.casteOdia)}</td></tr>` : "",
-      owner.residenceOdia ? `<tr><td class="key">Residence</td><td class="odia">${escapeHtml(owner.residenceOdia)}</td></tr>` : "",
-    ].filter(Boolean).join("");
+    const latinName = owner.latin;
+    const odiaName = owner.odia;
+    const guardianLatin = owner.guardianLatin;
+    const hasOdia = containsOdia(odiaName ?? "");
+
+    const guardianLine = guardianLatin
+      ? `<div class="owner-guardian"><span class="key-label">${owner.guardianRelation === "spouse" ? "Spouse" : "Father/Guardian"}:</span> ${escapeHtml(guardianLatin)}</div>`
+      : "";
+
+    const odiaToggle = hasOdia
+      ? `<details class="odia-toggle"><summary>View original name in Odia script</summary><div class="odia-original">${escapeHtml(odiaName ?? "")}</div></details>`
+      : "";
 
     return `<div class="owner-card">
-      <div class="owner-card-title">RoR owner ${index + 1}</div>
-      <div class="owner-name">${escapeHtml(ownerPrimary)}</div>
-      <div class="name-reading-line">${buildNameReadingBadge(owner.nameReading)}</div>
-      ${ownerSecondary ? `<div class="owner-name-odia">${escapeHtml(ownerSecondary)}</div>` : ""}
-      ${details ? `<table class="data-table owner-detail-table"><tbody>${details}</tbody></table>` : ""}
+      <div class="owner-card-title">Recorded owner ${index + 1}</div>
+      <div class="owner-name">${escapeHtml(latinName || odiaName || "—")}</div>
+      ${guardianLine}
+      ${odiaToggle}
     </div>`;
   }).join("");
 
@@ -1474,29 +1461,31 @@ function buildLandClassificationDetails(input: {
   plotNo: unknown;
   khataNo: unknown;
 }): string {
-  const conversion =
-    input.conversionRequired === true ? "Likely required for non-agricultural use"
-    : input.conversionRequired === false ? "Not indicated by the parsed kisam"
-    : "Not confirmed";
-  const prohibited =
-    input.prohibited === true ? "Restricted category flagged"
-    : input.prohibited === false ? "No prohibited-category flag from parsed kisam"
-    : "Not confirmed";
-  const buildable =
-    input.buildable === true ? "Parsed as buildable/developed category"
-    : input.buildable === false ? "Not parsed as already buildable"
-    : "Not confirmed";
+  const std = String(input.standardizedKisam ?? "").trim();
+  const display = String(input.displayKisam ?? "").trim();
+  const englishClass = display || std ? titleFromSnakeCase(display || std) : null;
 
-  return `<table class="data-table classification-detail-table">
-    <tbody>
-      <tr><td class="key">RoR plot / khata</td><td>Plot ${escapeHtml(input.plotNo || "—")} / Khata ${escapeHtml(input.khataNo || "—")}</td></tr>
-      <tr><td class="key">RoR kisam</td><td>${escapeHtml(formatLandClassDisplay(input.displayKisam, input.rawKisam, input.standardizedKisam))}</td></tr>
-      <tr><td class="key">Standardized class</td><td>${escapeHtml(titleFromSnakeCase(String(input.standardizedKisam || "not_verified")))}</td></tr>
-      <tr><td class="key">Conversion signal</td><td>${escapeHtml(conversion)}</td></tr>
-      <tr><td class="key">Restriction signal</td><td>${escapeHtml(prohibited)}</td></tr>
-      <tr><td class="key">Buildability signal</td><td>${escapeHtml(buildable)}</td></tr>
-    </tbody>
-  </table>`;
+  const parts: string[] = [];
+  if (englishClass && englishClass !== "Not verified" && englishClass !== "Unknown") {
+    parts.push(englishClass);
+  }
+
+  if (input.prohibited === true) {
+    parts.push("Construction prohibited without prior government approval");
+  } else if (input.buildable === true) {
+    parts.push("Buildable category — may still require conversion for non-agricultural use");
+  } else if (input.conversionRequired === true) {
+    parts.push("Land-use conversion likely required for residential or commercial use");
+  }
+
+  const detailText = parts.length > 0
+    ? `<p>${parts.map(p => escapeHtml(p)).join("</p><p>")}</p>`
+    : `<p>Ask the tehsil office to confirm the official land class and conversion requirements for this plot.</p>`;
+
+  return `<div class="land-classification-detail">
+    ${detailText}
+    <p class="table-note">Verify with the local tehsil office before making any decision about land use or development.</p>
+  </div>`;
 }
 
 function buildRoRCompletenessPanel(
@@ -1511,9 +1500,8 @@ function buildRoRCompletenessPanel(
 ): string {
   if (!input.bhulekhUsable || !revenueRecords) {
     return `<div class="warning-box ror-completeness">
-      <span class="warning-label">&#9888; RoR completeness not verified</span>
-      ${buildInsightHighlights(insights)}
-      <p>ClearDeed could not build the full RoR audit because Bhulekh did not return a usable RoR in this run. Source status: ${escapeHtml(input.bhulekhStatus)}.</p>
+      <span class="warning-label">&#9888; RoR data needs manual check</span>
+      <p>Bhulekh did not return usable land records in this run. Ask for the current Bhulekh Khatiyan and confirm plot details with a property lawyer before paying any advance.</p>
     </div>`;
   }
 
@@ -1522,63 +1510,69 @@ function buildRoRCompletenessPanel(
   const backPage = revenueRecords.backPage ?? null;
   const mutationCount = Array.isArray(backPage?.mutationHistory) ? backPage.mutationHistory.length : 0;
   const encumbranceCount = Array.isArray(backPage?.encumbranceEntries) ? backPage.encumbranceEntries.length : 0;
-  const remarkCount = Array.isArray(backPage?.backPageRemarks) ? backPage.backPageRemarks.length : 0;
   const screenshots = revenueRecords.screenshots ?? null;
-  const frontPageImage = buildRoRScreenshotFigure("Front Page", screenshots?.frontPage);
-  const backPageImage = buildRoRScreenshotFigure("Back Page", screenshots?.backPage);
+  const frontPageImage = buildRoRScreenshotFigure("Front Page (Bhulekh)", screenshots?.frontPage);
+  const backPageImage = buildRoRScreenshotFigure("Back Page (Khatiyan)", screenshots?.backPage);
+
+  // Build risk-intelligence insight from back page
+  const backPageInsight = buildBackPageRiskInsight(mutationCount, encumbranceCount, ownerBlocks.length);
   const sourceMeta = revenueRecords.sourceMeta ?? revenueRecords.rorDocument?.source ?? null;
-  const remarks = revenueRecords.remarks ?? {};
-  const duesPanel = buildRoRDuesPanel(revenueRecords.dues, duesInsights);
 
   return `<div class="ror-completeness">
-    <div class="mini-section-title">Complete RoR audit</div>
-    <p class="table-note">This panel is a source audit of the Bhulekh Record of Rights. It shows what was actually parsed from the Front Page and Back Page, without treating remarks as verified title history.</p>
-    ${buildInsightHighlights(insights)}
+    ${backPageInsight}
     <div class="ror-fact-grid">
       <div><span>Khatiyan</span><strong>${escapeHtml(revenueRecords.khataNo ?? "—")}</strong></div>
-      <div><span>Selected plot</span><strong>${escapeHtml(input.selectedPlotNo || "—")}</strong></div>
-      <div><span>Owners parsed</span><strong>${ownerBlocks.length || (revenueRecords.tenants?.length ?? 0)}</strong></div>
-      <div><span>Plot rows parsed</span><strong>${plotRows.length}</strong></div>
-      <div><span>Back-page mutations</span><strong>${mutationCount}</strong></div>
-      <div><span>Back-page EC-style entries</span><strong>${encumbranceCount}</strong></div>
-      <div><span>Back-page remarks</span><strong>${remarkCount}</strong></div>
-      <div><span>RoR status</span><strong>${escapeHtml(input.bhulekhStatus)}</strong></div>
+      <div><span>Plot numbers</span><strong>${plotRows.length}</strong></div>
+      <div><span>Recorded owners</span><strong>${ownerBlocks.length || (revenueRecords.tenants?.length ?? 0)}</strong></div>
+      <div><span>Mutation entries</span><strong>${mutationCount}</strong></div>
+      <div><span>Encumbrance entries</span><strong>${encumbranceCount}</strong></div>
     </div>
-    <table class="data-table compact-table">
-      <tbody>
-        <tr><td class="key">Final publication date</td><td>${escapeHtml(remarks.finalPublicationDate ?? revenueRecords.lastUpdated ?? "—")}</td></tr>
-        <tr><td class="key">Revenue assessment date</td><td>${escapeHtml(remarks.revenueAssessmentDate ?? "—")}</td></tr>
-        <tr><td class="key">Generated/current RoR timestamp</td><td>${escapeHtml(remarks.generatedAtRaw ?? sourceMeta?.fetchedAt ?? "—")}</td></tr>
-        <tr><td class="key">Raw artifact</td><td>${escapeHtml(sourceMeta?.rawArtifactRef ?? "—")}</td></tr>
-        <tr><td class="key">Special remarks</td><td class="odia">${escapeHtml(remarks.specialRemarksRawOdia ?? "—")}</td></tr>
-        <tr><td class="key">Progressive rent remarks</td><td class="odia">${escapeHtml(remarks.progressiveRentRawOdia ?? "—")}</td></tr>
-      </tbody>
-    </table>
-    ${duesPanel}
-    ${frontPageImage || backPageImage ? `<details class="source-image-details"><summary>View Bhulekh source screenshots</summary><div class="ror-screenshot-grid">${frontPageImage}${backPageImage}</div></details>` : `<p class="table-note">Source screenshots were not attached to this report payload. Raw artifact hash is retained above where available.</p>`}
+    <details class="source-image-details"><summary>View Bhulekh source screenshots</summary>
+      ${frontPageImage || backPageImage
+        ? `<div class="ror-screenshot-grid">${frontPageImage}${backPageImage}</div>`
+        : `<p class="table-note">Source screenshots were not attached to this report payload.</p>`}
+    </details>
   </div>`;
 }
 
-function buildRoRDuesPanel(dues: any, insights: RoRInsight[] = []): string {
-  if (!dues && insights.length === 0) return "";
-  const fields = [
-    ["Khajana / rent", dues?.khajana],
-    ["Cess", dues?.cess],
-    ["Other cess", dues?.otherCess],
-    ["Jalkar / water tax", dues?.jalkar],
-    ["Total", dues?.total],
-  ];
-  const hasAny = fields.some(([, value]) => isVerifiedDisplayValue(String(value ?? "")));
-  if (!hasAny && insights.length === 0) return "";
-  const rows = fields.map(([label, value]) =>
-    `<tr><td class="key">${escapeHtml(label)}</td><td>${escapeHtml(value ?? "—")}</td></tr>`
-  ).join("");
-  return `<details class="tenant-table-details ror-dues-details" open>
-    <summary>RoR dues and revenue demand</summary>
-    <p class="table-note">These are revenue-demand fields from the RoR. Treat them as small inherited-cost checks and ask the seller to clear/produce receipts before registration.</p>
-    ${buildInsightHighlights(insights)}
-    ${hasAny ? `<table class="data-table compact-table"><tbody>${rows}</tbody></table>` : `<p class="table-note">No usable dues fields were parsed in this run.</p>`}
-  </details>`;
+function buildBackPageRiskInsight(mutationCount: number, encumbranceCount: number, ownerCount: number): string {
+  if (ownerCount > 1) {
+    return `<div class="insight-card insight-card-watchout">
+      <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
+      <div class="insight-label">Multiple owners recorded in this khatiyan</div>
+      <p>This khatiyan has ${ownerCount} recorded owners. Every owner — or their legal heirs if deceased — must give written consent before any sale or transfer. Ask your lawyer to confirm every owner's current status.</p>
+    </div>`;
+  }
+
+  if (encumbranceCount > 10) {
+    return `<div class="insight-card insight-card-watchout">
+      <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
+      <div class="insight-label">High number of encumbrance entries (${encumbranceCount})</div>
+      <p>The Back Page of this khatiyan shows ${encumbranceCount} encumbrance-style entries. This is common for government land or land with historical leases/loans. Ask the seller to produce the original EC and clear all charge entries before registration.</p>
+    </div>`;
+  }
+
+  if (mutationCount > 15) {
+    return `<div class="insight-card insight-card-watchout">
+      <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
+      <div class="insight-label">High transaction history (${mutationCount} entries)</div>
+      <p>This khatiyan has been transacted ${mutationCount} times — typical for government notified land or frequently transferred plots. Confirm the title chain is complete and every prior sale deed is registered.</p>
+    </div>`;
+  }
+
+  if (encumbranceCount > 0 || mutationCount > 0) {
+    return `<div class="insight-card insight-card-watchout">
+      <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
+      <div class="insight-label">Back Page entries found — ${mutationCount} mutations, ${encumbranceCount} encumbrance entries</div>
+      <p>The khatiyan Back Page shows prior transaction and encumbrance activity. These are entry points for your lawyer to trace the title chain. Get the Encumbrance Certificate (EC) from IGR Odisha and review all entries carefully.</p>
+    </div>`;
+  }
+
+  return `<div class="insight-card insight-card-positive">
+    <div class="insight-head"><span class="insight-icon">&#10003;</span><span class="insight-type">Positive signal</span></div>
+    <div class="insight-label">Back Page returned without major encumbrance or mutation entries</div>
+    <p>No significant mutation or charge entries were found on the Back Page of this khatiyan. This is a neutral signal, not proof of clear title. Confirm with the full title chain and EC before relying on this.</p>
+  </div>`;
 }
 
 function buildRoRScreenshotFigure(label: string, image: unknown): string {
@@ -1594,39 +1588,27 @@ function buildRoRScreenshotFigure(label: string, image: unknown): string {
   </figure>`;
 }
 
-function buildRoRPlotTablePanel(plotRows: any[], selectedPlotNo: unknown, insights: RoRInsight[] = []): string {
-  if (!Array.isArray(plotRows) || plotRows.length === 0) {
-    if (insights.length === 0) return "";
-    return `<details class="tenant-table-details ror-plot-table-details" open>
-      <summary>Full RoR plot table</summary>
-      ${buildInsightHighlights(insights)}
-      <p class="table-note">No usable RoR plot-table rows were parsed in this run.</p>
-    </details>`;
-  }
+function buildRoRPlotTablePanel(plotRows: any[], selectedPlotNo: unknown): string {
+  if (!Array.isArray(plotRows) || plotRows.length === 0) return "";
+
   const rows = plotRows.map((row) => {
     const area = buildPlotAreaDetails(null, row);
     const isSelected = plotNosMatch(row?.plotNo, selectedPlotNo);
-    const boundaries = [
-      row?.northBoundaryOdia ? `N: ${row.northBoundaryOdia}` : null,
-      row?.southBoundaryOdia ? `S: ${row.southBoundaryOdia}` : null,
-      row?.eastBoundaryOdia ? `E: ${row.eastBoundaryOdia}` : null,
-      row?.westBoundaryOdia ? `W: ${row.westBoundaryOdia}` : null,
-    ].filter(Boolean).join("; ");
+    const landClassOdia = row?.landTypeOdia ?? null;
+    // Translate land class to English for display
+    const landClassEnglish = landClassOdia ? translateLandClass(landClassOdia) : "—";
     return `<tr class="${isSelected ? "selected-source-row" : ""}">
       <td class="mono">${escapeHtml(row?.plotNo ?? "—")}${isSelected ? ` <span class="badge-info">selected</span>` : ""}</td>
-      <td class="odia">${escapeHtml(row?.landTypeOdia ?? "—")}</td>
+      <td>${escapeHtml(landClassEnglish)}</td>
       <td>${escapeHtml(formatPlotAreaSummary(area) || "—")}</td>
-      <td class="odia">${escapeHtml(boundaries || "—")}</td>
-      <td class="odia">${escapeHtml(row?.remarksOdia ?? "—")}</td>
     </tr>`;
   }).join("\n");
 
   return `<details class="tenant-table-details ror-plot-table-details">
-    <summary>View full RoR plot table (${plotRows.length} row${plotRows.length === 1 ? "" : "s"})</summary>
-    <p class="table-note">This is the full parsed plot table from the selected Khatiyan. The selected row is highlighted; other rows are included for context and should not be confused with the specific plot being checked.</p>
-    ${buildInsightHighlights(insights)}
+    <summary>View all ${plotRows.length} plots in this khatiyan</summary>
+    <p class="table-note">All plots recorded under Khatiyan ${escapeHtml(selectedPlotNo ?? "—")}. The highlighted row is the one being checked in this report.</p>
     <table class="data-table tenant-table">
-      <thead><tr><th>Plot</th><th>Kisam</th><th>Area</th><th>Boundaries / occupiers</th><th>Remarks</th></tr></thead>
+      <thead><tr><th>Plot No.</th><th>Land Class</th><th>Area</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </details>`;

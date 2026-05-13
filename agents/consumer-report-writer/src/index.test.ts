@@ -67,11 +67,10 @@ describe("A10 ConsumerReportWriter", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { html } = generateConsumerReport(input as any);
 
-    // Should contain transliterated name
+    // Should contain transliterated name (English only, no Odia badge in tenant table)
     expect(html).toContain("Barajena");
     expect(html).toContain("Krushnachandra");
-    expect(html).toContain("Verified English");
-    expect(html).toContain("English reading");
+    // Name reading quality badge removed from tenant table — names shown directly in English
   });
 
   it("scores Odia name readings by source quality", () => {
@@ -310,30 +309,36 @@ describe("A10 ConsumerReportWriter", () => {
 
     const { html } = generateConsumerReport(input as any);
 
-    expect(html).toContain("Complete RoR audit");
-    expect(html).toContain("RoR dues and revenue demand");
-    expect(html).toContain("Khajana / rent");
-    expect(html).toContain("16.00");
-    expect(html).toContain("sha256:test-ror");
+    // New risk-intelligence format: insight-first, no audit artifacts, English land class
+    expect(html).not.toContain("Complete RoR audit");
+    expect(html).not.toContain("RoR dues and revenue demand");
+    expect(html).not.toContain("Khajana / rent");
+    expect(html).not.toContain("sha256:test-ror");
+    expect(html).not.toContain("Revenue assessment date");
+    expect(html).not.toContain("Special remarks");
+    expect(html).not.toContain("Progressive rent remarks");
+    expect(html).not.toContain("Raw artifact");
+    expect(html).not.toContain("Generated/current RoR timestamp");
+    expect(html).not.toContain("Final publication date");
+
+    // Positive signals and watch-out insights
     expect(html).toContain("View Bhulekh source screenshots");
-    expect(html).toContain("View full RoR plot table (2 rows)");
-    expect(html).toContain("selected");
-    expect(html).toContain("Bhulekh Back Page timeline");
-    expect(html).toContain("Mutation history (1)");
-    expect(html).toContain("Encumbrance-style entries (1)");
-    expect(html).toContain("DOC-9");
-    expect(html).toContain("Back Page remarks (1)");
-    expect(html).toContain("Positive signal");
     expect(html).toContain("Watch-out");
-    expect(html).toContain("Selected plot found in RoR");
-    expect(html).toContain("Area components parsed");
+    expect(html).toContain("Positive signal");
     expect(html).toContain("Multiple owners recorded");
-    expect(html).toContain("Family or residence fields present");
-    expect(html).toContain("Conversion may be required");
-    expect(html).toContain("Revenue demand shown");
     expect(html).toContain("Mutation entries found");
-    expect(html).toContain("Charge-style entries found");
-    expect(html).toContain("Back Page remarks found");
+    expect(html).toContain("Encumbrance-style entries");
+    expect(html).toContain("Khatiyan");
+    expect(html).toContain("Recorded owners");
+
+    // English-only tenant table (no Odia columns in main body)
+    expect(html).toContain("Guardian/Father");
+    // Odia appears only inside collapsible "View original" toggles (not in main body rows)
+    expect(html).toContain("View original name in Odia script");
+    // No audit artifacts or parsing metadata visible
+    expect(html).not.toContain("parsing status");
+    expect(html).not.toContain("mutation number extracted");
+    expect(html).not.toContain("case type parsed");
 
     const audit = auditReport(html);
     expect(audit.passed).toBe(true);
