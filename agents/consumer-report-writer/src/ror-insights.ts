@@ -1,4 +1,562 @@
+import type { RiskInsight, RiskInsightInput, RiskDimension, RiskSeverity } from "./types";
+export type { RiskDimension, RiskSeverity };
+export type { RiskInsight };
 export type RoRInsightTone = "positive" | "watchout";
+
+// ---------------------------------------------------------------------------
+// Source labels
+// ---------------------------------------------------------------------------
+const SRC_FRONT = "Bhulekh RoR Front Page";
+const SRC_PLOT  = "Bhulekh RoR plot table";
+const SRC_OWNER = "Bhulekh RoR owner block";
+const SRC_DUES  = "Bhulekh RoR dues fields";
+const SRC_BACK  = "Bhulekh RoR Back Page";
+const SRC_REG   = "Bhulekh RoR remarks";
+
+// ---------------------------------------------------------------------------
+// Entry point
+// ---------------------------------------------------------------------------
+
+export type InsightGroups = Record<string, RiskInsight[]>;
+
+export function buildRiskInsights(input: RiskInsightInput): InsightGroups {
+  return {
+    transferability: buildTransferabilityInsights(input),
+    title:           buildTitleInsights(input),
+    financial:       buildFinancialInsights(input),
+    positive:        buildPositiveInsights(input),
+    redFlag:         buildRedFlagInsights(input),
+  };
+}
+
+export function selectTopInsights(insights: RiskInsight[], max = 4): RiskInsight[] {
+  const SEVERITY_ORDER: Record<RiskSeverity, number> = {
+    redFlag: 0,
+    watchout: 1,
+    positive: 2,
+  };
+  return [...insights]
+    .sort((a, b) => {
+      const sevDiff = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
+      if (sevDiff !== 0) return sevDiff;
+      return a.priority - b.priority;
+    })
+    .slice(0, max);
+}
+
+// ---------------------------------------------------------------------------
+// DIMENSION 1 — TRANSFERABILITY
+// ---------------------------------------------------------------------------
+
+function buildTransferabilityInsights(input: RiskInsightInput): RiskInsight[] {
+  const insights: RiskInsight[] = [];
+  const owners = input.ownerRecords ?? [];
+  const land   = input.landClass ?? {};
+  const norm   = normalize(land.rawKisam, land.displayKisam, land.standardizedKisam);
+
+  if (!input.bhulekhUsable) {
+    insights.push(make("transferability", "watchout", "RoR not available — manual verification required",
+      "Bhulekh RoR could not be fetched in this run. Before any transaction, obtain the current Khatiyan and verify ownership, land class, and any restrictions with the Tehsildar.",
+      SRC_FRONT, 50));
+    return insights;
+  }
+
+  // Government ownership
+  const hasGovtOwner = owners.some(o => isGovtOwner(o.odia ?? o.latin ?? ""));
+  if (hasGovtOwner) {
+    insights.push(make("transferability", "redFlag", "Government-owned land",
+      "The recorded owner is a government department. Government-owned land cannot be transferred through a private sale without prior government regularization. Do not proceed without verified government consent and a regularization order.",
+      SRC_OWNER, 1));
+  }
+
+  // Government land classification (Neyanjori, Gair Khalsa, etc.)
+  if (norm.includes("neyanjori") || norm.includes("neya_niyogita") ||
+      norm.includes("khalsa") || norm.includes("govt_notified")) {
+    insights.push(make("transferability", "redFlag", "Government notified land",
+      "This land is classified as government notified (Neyanjori / Gair Khalsa). Construction and private sale are prohibited without state government approval. Check for ongoing regularization schemes with the Revenue Department.",
+      SRC_PLOT, 1));
+  }
+
+  // Pond / Jalasaya
+  if (norm.includes("jalasaya") || norm.includes("pond") || norm.includes("jalkar")) {
+    insights.push(make("transferability", "redFlag", "Water body — cannot be sold or built upon",
+      "The land is classified as Jalasaya (pond / water body). Wetland cannot be converted to private non-agricultural use without central government approval under the Wetland Rules, 2017. A private sale of a pond for construction is not legally valid.",
+      SRC_PLOT, 1));
+  }
+
+  // Forest / Jungle
+  if (norm.includes("jungle") || norm.includes("banjara") || norm.includes("forest")) {
+    insights.push(make("transferability", "redFlag", "Forest land — conversion prohibited",
+      "This land is classified as forest / jungle. Conversion requires central government approval under the Forest Conservation Act, 1980. A private sale of forest land is void. Verify with the Forest Department before any action.",
+      SRC_PLOT, 1));
+  }
+
+  // Gochar (grazing common)
+  if (norm.includes("gochar")) {
+    insights.push(make("transferability", "redFlag", "Grazing land — community land not saleable",
+      "This land is Gochar — common grazing land held for community use. Grazing land cannot be converted to private non-agricultural use without government approval. A private sale of Gochar land is not legally valid.",
+      SRC_PLOT, 1));
+  }
+
+  // Nadi (river / waterway)
+  if (norm.includes("nadi")) {
+    insights.push(make("transferability", "redFlag", "River / waterway — government property",
+      "This plot is classified as Nadi (river or waterway). Riverbed land belongs to the government. Construction is prohibited. Verify with the Revenue Department whether this plot has been officially registered.",
+      SRC_PLOT, 1));
+  }
+
+  // Smasana (cremation / burial ground)
+  if (norm.includes("smasana") || norm.includes("cremation") || norm.includes("burial")) {
+    insights.push(make("transferability", "redFlag", "Cremation / burial ground — community land not saleable",
+      "This land is a Smasana (cremation or burial ground). Such community land cannot be commercially sold or built upon. Confirm with the Gram Panchayat and Tehsildar before taking any action.",
+      SRC_PLOT, 1));
+  }
+
+  // Double-crop irrigated
+  if (norm.includes("do-fasali") || norm.includes("double_crop") || norm.includes("irrigated_two")) {
+    insights.push(make("transferability", "redFlag", "Double-crop irrigated land — conversion extremely difficult",
+      "This land is double-crop irrigated agricultural land under food security protection. Conversion to non-agricultural use requires state-level approval and is extremely difficult. Budget 2–3 years if conversion is possible at all.",
+      SRC_PLOT, 2));
+  }
+
+  // Agricultural (Sarad, single/double fallow, etc.)
+  if (norm.includes("agricultur") || norm.includes("sarad") || norm.includes("fallow") ||
+      norm.includes("nigar") || norm.includes("garden")) {
+    insights.push(make("transferability", "watchout", "Agricultural land — CLU required for non-farm use",
+      "This land is classified as agricultural on the official record. If you intend to build or use it for residential or commercial purposes, you need a Change of Land Use (CLU) certificate from the Tehsildar. Budget 6–18 months and ₹30,000–3,00,000 per acre in fees.",
+      SRC_PLOT, 2));
+  }
+
+  // Homestead / residential / commercial — no conversion needed
+  if ((norm.includes("homestead") || norm.includes("gharabari") || norm.includes("byabasaika") ||
+       norm.includes("unnayana") || norm.includes("buildable") || norm.includes("residential")) &&
+      land.prohibited !== true && land.conversionRequired !== true) {
+    insights.push(make("transferability", "positive", "Buildable land — no land-use conversion needed",
+      "This land is classified for residential or commercial use on the Bhulekh record. No CLU certificate is required for construction, subject to building permission from the local authority.",
+      SRC_PLOT, 3));
+  }
+
+  return insights;
+}
+
+// ---------------------------------------------------------------------------
+// DIMENSION 2 — TITLE
+// ---------------------------------------------------------------------------
+
+function buildTitleInsights(input: RiskInsightInput): RiskInsight[] {
+  const insights: RiskInsight[] = [];
+  const owners = input.ownerRecords ?? [];
+  const back   = input.backPage ?? {};
+  const mutations = Array.isArray(back.mutationHistory) ? back.mutationHistory : [];
+  const remarks   = Array.isArray(back.backPageRemarks)  ? back.backPageRemarks  : [];
+  const encumbrances = Array.isArray(back.encumbranceEntries) ? back.encumbranceEntries : [];
+
+  if (!input.bhulekhUsable) {
+    insights.push(make("title", "watchout", "Owner data needs manual verification",
+      "Bhulekh RoR could not be fetched. Obtain the current Khatiyan and verify every recorded owner with ID proof and title documents before any transaction.",
+      SRC_OWNER, 50));
+    return insights;
+  }
+
+  if (owners.length === 0) {
+    insights.push(make("title", "watchout", "No owner records found in RoR",
+      "The RoR was fetched but no owner block was parsed. Obtain the original Khatiyan and verify the ownership directly from the Tehsil office.",
+      SRC_OWNER, 40));
+    return insights;
+  }
+
+  // Single owner
+  if (owners.length === 1) {
+    insights.push(make("title", "positive", "Single owner recorded",
+      `The Bhulekh record shows a single owner — ${displayName(owners[0])}. Any transaction requires only one person's consent, making the process straightforward.`,
+      SRC_OWNER, 3));
+  }
+
+  // Multiple owners
+  if (owners.length > 1) {
+    insights.push(make("title", "watchout", `${owners.length} owners recorded`,
+      `The Bhulekh record shows ${owners.length} owners. All must sign the sale deed. If any owner is deceased, their legal heir documentation is required. If any owner is outside Khordha, their consent may need to be notarized.`,
+      SRC_OWNER, 3));
+  }
+
+  // Female owner (widow indicator)
+  const hasFemaleOwner = owners.some(o => {
+    const name = (o.odia ?? "").toLowerCase();
+    return name.includes("vidhva") || name.includes("vidhava") || name.includes("swa:");
+  });
+  if (hasFemaleOwner) {
+    insights.push(make("title", "watchout", "Female owner (widow) recorded",
+      "The record shows a female owner who appears to be a widow. Widow-owned land can be sold, but the seller's marital history and whether she received her legal share from the estate should be confirmed by a lawyer before proceeding.",
+      SRC_OWNER, 4));
+  }
+
+  // Name reading needs review
+  const needsReview = owners.some(o => o.nameReading?.needsManualReview || o.guardianReading?.needsManualReview);
+  if (needsReview) {
+    insights.push(make("title", "watchout", "Owner name needs manual review",
+      "One or more owner or guardian names in the record could not be read with confidence from the Odia text. Compare the Odia RoR spelling with the seller's ID and title documents to confirm the name.",
+      SRC_OWNER, 5));
+  }
+
+  // Court case in remarks
+  const courtCaseRemark = remarks.find(r => {
+    const cat = (r.category ?? "").toLowerCase();
+    const text = (r.text ?? r.remarkText ?? "").toLowerCase();
+    return cat === "court_case" || text.includes("case") || text.includes("court") ||
+           text.includes("injunction") || text.includes("attachment");
+  });
+  if (courtCaseRemark) {
+    const caseText = courtCaseRemark.text ?? courtCaseRemark.remarkText ?? "";
+    insights.push(make("title", "redFlag", "Court case mentioned in land records",
+      `The Back Page records a court case reference: "${trunc(caseText, 100)}". Court cases can result in attachments or injunctions that block land transfer. Confirm the current case status at the concerned court and verify the land is not under any order before registration.`,
+      SRC_BACK, 1));
+  }
+
+  // Bank charge in remarks
+  const bankRemark = remarks.find(r => {
+    const cat = (r.category ?? "").toLowerCase();
+    return cat === "bank_charge" || (r.text ?? "").toLowerCase().includes("bank");
+  });
+  if (bankRemark) {
+    insights.push(make("title", "redFlag", "Bank charge recorded in land records",
+      "The Back Page records a bank charge on this land. Bank charges typically represent loans against the property. Ask the seller for the loan closure documents and a no-objection certificate from the bank before registration.",
+      SRC_BACK, 1));
+  }
+
+  // Govt restriction in remarks
+  const govtRestriction = remarks.find(r => {
+    const cat = (r.category ?? "").toLowerCase();
+    return cat === "govt_restriction" || (r.text ?? "").toLowerCase().includes("government") && (r.text ?? "").toLowerCase().includes("restriction");
+  });
+  if (govtRestriction) {
+    insights.push(make("title", "watchout", "Government restriction noted in records",
+      `The Back Page records a government restriction: "${trunc(govtRestriction.text ?? govtRestriction.remarkText ?? "", 100)}". Confirm with the Tehsildar whether the restriction is still active and what process applies to lift it.`,
+      SRC_BACK, 3));
+  }
+
+  // Active encumbrance (mortgage / charge)
+  const activeCharge = encumbrances.find(e => {
+    const type = (e.type ?? "").toLowerCase();
+    return type.includes("mortgage") || type.includes("charge") || type.includes("lien") || type.includes("hypothecation");
+  });
+  if (activeCharge) {
+    const amount = activeCharge.amount ?? activeCharge.amountOdia ?? "";
+    insights.push(make("title", "redFlag", "Registered mortgage or charge on land",
+      `The Back Page records an active mortgage or charge${amount ? ` of approximately ₹${amount}` : ""}. A buyer takes the property subject to this encumbrance unless it has been formally discharged. Ask the seller for a bank no-objection certificate before registration.`,
+      SRC_BACK, 1));
+  }
+
+  // Mutation count pattern
+  if (mutations.length > 0) {
+    if (mutations.length >= 15) {
+      insights.push(make("title", "watchout", "High mutation count — request order copies",
+        `${mutations.length} mutation entries are recorded in the Back Page. High volume may indicate frequent transfers, family disputes, or ongoing legal proceedings. Ask the seller for copies of each mutation order and confirm all have been formally finalized.`,
+        SRC_BACK, 3));
+    } else if (mutations.length <= 5) {
+      insights.push(make("title", "positive", "Low mutation count — stable title",
+        `Only ${mutations.length} mutation ${mutations.length === 1 ? "entry" : "entries"} recorded in the Back Page. A low mutation count is a positive indicator of title stability.`,
+        SRC_BACK, 4));
+    } else {
+      insights.push(make("title", "watchout", `${mutations.length} mutation entries — request order copies`,
+        `The Back Page records ${mutations.length} mutations. Verify with the seller that all mutation orders are formally finalized and that the title chain is complete.`,
+        SRC_BACK, 4));
+    }
+  } else {
+    // Back page fetched but no mutations = clean
+    if (back.mutationHistory) {
+      insights.push(make("title", "positive", "No mutation entries — clean title record",
+        "The Back Page shows no recorded mutations. This is a positive indicator, but note that Bhulekh may not reflect all historical transfers. An EC from the Sub-Registrar office is still required for a complete picture.",
+        SRC_BACK, 5));
+    }
+  }
+
+  // Check encumbrance count
+  if (encumbrances.length === 0 && (back.encumbranceEntries ?? []).length === 0 && back.backPageRemarks) {
+    insights.push(make("title", "positive", "No encumbrance entries in Bhulekh",
+      "The Back Page shows no recorded encumbrances in Bhulekh. This is a positive signal, but EC from the Sub-Registrar office — which covers all registered transactions — is still required for a complete picture.",
+      SRC_BACK, 5));
+  }
+
+  return insights;
+}
+
+// ---------------------------------------------------------------------------
+// DIMENSION 3 — FINANCIAL EXPOSURE
+// ---------------------------------------------------------------------------
+
+function buildFinancialInsights(input: RiskInsightInput): RiskInsight[] {
+  const insights: RiskInsight[] = [];
+  const dues = input.dues ?? {};
+  const back = input.backPage ?? {};
+  const totalNum = newNumberFromValue(dues.total);
+  const encumbrances = Array.isArray(back.encumbranceEntries) ? back.encumbranceEntries : [];
+
+  if (!input.bhulekhUsable) {
+    insights.push(make("financial", "watchout", "Dues and encumbrance status needs manual verification",
+      "Bhulekh RoR could not be fetched. Ask for current revenue clearance receipts and an Encumbrance Certificate from IGR Odisha before registration.",
+      SRC_DUES, 50));
+    return insights;
+  }
+
+  // Pending dues
+  if (totalNum != null && totalNum > 0) {
+    const formatted = formatNumber(totalNum);
+    insights.push(make("financial", "watchout", `₹${formatted} revenue demand shown`,
+      `The RoR shows a total revenue demand of ₹${formatted}. This amount is typically payable before registration. Ask the seller for payment receipts or a clearance certificate from the Tehsil office.`,
+      SRC_DUES, 4));
+  } else if (totalNum === 0) {
+    insights.push(make("financial", "positive", "Zero revenue demand shown",
+      "The RoR total demand field is explicitly zero. A positive indicator, but verify with the latest payment receipt from the Tehsil office before registration.",
+      SRC_DUES, 6));
+  }
+
+  // Total not readable
+  if (dues.total == null && (dues.khajana || dues.cess || dues.jalkar)) {
+    insights.push(make("financial", "watchout", "Revenue demand fields not fully readable",
+      "Some revenue demand fields were parsed, but the total demand could not be read. Ask the seller for current land tax and cess clearance receipts from the Tehsil office.",
+      SRC_DUES, 5));
+  }
+
+  // Total completely missing
+  if (dues.total == null && !dues.khajana && !dues.cess && !dues.jalkar && !dues.otherCess) {
+    insights.push(make("financial", "watchout", "Revenue demand status unknown",
+      "The RoR did not return readable revenue demand fields. Ask the seller for a revenue clearance certificate confirming no pending land tax, cess, or water tax before registration.",
+      SRC_DUES, 6));
+  }
+
+  // Encumbrance amounts
+  if (encumbrances.length > 0) {
+    const amounts = encumbrances
+      .map(e => newNumberFromValue(e.amount ?? e.amountOdia))
+      .filter((n): n is number => n != null && n > 0);
+    const totalAmount = amounts.reduce((sum, n) => sum + n, 0);
+    const entryCount = amounts.length;
+
+    insights.push(make("financial", "watchout", `${entryCount} encumbrance ${entryCount === 1 ? "entry" : "entries"} in Bhulekh`,
+      `${entryCount} encumbrance ${entryCount === 1 ? "entry is" : "entries are"} recorded in the Back Page${totalAmount > 0 ? ` totaling approximately ₹${formatNumber(totalAmount)}` : ""}. Encumbrances may include mortgages, charges, or court attachments. A buyer typically takes the property subject to existing encumbrances unless they are formally discharged. Request certified copies of all encumbrance entries and confirm which are still active.`,
+      SRC_BACK, 3));
+  }
+
+  // Old publication date
+  const pubDate = displayValue(input.remarks?.finalPublicationDate);
+  const yearNum = pubDate ? yearFromDate(pubDate) : null;
+  if (yearNum != null && yearNum < 2006) {
+    insights.push(make("financial", "watchout", "Old RoR publication date — verify currency",
+      `The RoR was last published in ${yearNum}. Old publication dates may mean the record does not reflect recent transactions. Ask the seller for a current RoR (updated within the last 12 months) and verify the title chain going back 30 years.`,
+      SRC_REG, 4));
+  }
+
+  // No encumbrances
+  if (encumbrances.length === 0 && back.encumbranceEntries) {
+    insights.push(make("financial", "positive", "No encumbrances in Bhulekh record",
+      "The Back Page shows no recorded encumbrances in Bhulekh. This is a positive signal, but note that Bhulekh reflects only what has been entered in the digital record. Many transactions are registered at the Sub-Registrar without updating Bhulekh. Obtain an EC from IGR Odisha for a complete picture.",
+      SRC_BACK, 5));
+  }
+
+  return insights;
+}
+
+// ---------------------------------------------------------------------------
+// DIMENSION 4 — POSITIVE SIGNALS
+// ---------------------------------------------------------------------------
+
+function buildPositiveInsights(input: RiskInsightInput): RiskInsight[] {
+  const insights: RiskInsight[] = [];
+  const owners = input.ownerRecords ?? [];
+  const land   = input.landClass ?? {};
+  const back   = input.backPage ?? {};
+  const norm   = normalize(land.rawKisam, land.displayKisam, land.standardizedKisam);
+
+  if (!input.bhulekhUsable) return insights;
+
+  // Clean scenario: single owner, no encumbrances, no court cases, buildable
+  const encumbrances = Array.isArray(back.encumbranceEntries) ? back.encumbranceEntries : [];
+  const remarks = Array.isArray(back.backPageRemarks) ? back.backPageRemarks : [];
+  const noCourt = !remarks.some(r => (r.category ?? "").toLowerCase() === "court_case" || (r.text ?? "").toLowerCase().includes("case"));
+  const noBank  = !remarks.some(r => (r.category ?? "").toLowerCase() === "bank_charge");
+  const noBankEnc = !encumbrances.some(e => (e.type ?? "").toLowerCase().includes("mortgage") || (e.type ?? "").toLowerCase().includes("charge"));
+  const isBuildable = land.buildable === true && land.conversionRequired !== true &&
+    (norm.includes("homestead") || norm.includes("gharabari") || norm.includes("byabasaika") || norm.includes("buildable"));
+
+  if (owners.length === 1 && encumbrances.length === 0 && noCourt && noBank && noBankEnc) {
+    const ownerName = displayName(owners[0]);
+    insights.push(make("positive", "positive", "Appears clean — single owner, no charges",
+      `This plot appears clean: a single owner (${ownerName}) on record, no registered charges in Bhulekh, and no court case or bank charge mentions in the Back Page. This is the highest-confidence scenario, but EC from IGR Odisha and a lawyer's title verification are still required before any transaction.`,
+      SRC_OWNER, 2));
+  }
+
+  // Buildable land
+  if (isBuildable) {
+    const category = norm.includes("homestead") ? "homestead" :
+                     norm.includes("byabasaika") ? "commercial" : "residential";
+    insights.push(make("positive", "positive", "Buildable land — no land-use conversion needed",
+      `This land is classified as ${category} on the Bhulekh record. No Change of Land Use certificate is required for ${category} use. Obtain building permission from the local authority before construction.`,
+      SRC_PLOT, 3));
+  }
+
+  // No court cases found (eCourts)
+  if (input.courtCases && input.courtCases.total === 0 && input.courtCases.status === "success") {
+    insights.push(make("positive", "positive", "No active court cases found (Khordha courts)",
+      "Our search of eCourts services (civil and criminal cases in Khordha courts) found no registered cases against the recorded owner. Note: this covers Khordha courts only and is not a nationwide search. For complete peace of mind, ask the seller for a self-declaration of no pending litigation.",
+      SRC_OWNER, 4));
+  }
+
+  // No restrictions in remarks
+  const noRestrictions = remarks.length === 0;
+  const hasNoRemarks = noRestrictions && back.mutationHistory && back.encumbranceEntries;
+  if (hasNoRemarks) {
+    insights.push(make("positive", "positive", "No remarks recorded — clean Back Page",
+      "The Back Page returned no remark entries (court cases, bank charges, or government restrictions). This is a positive signal. An EC from IGR Odisha is still required for a complete picture.",
+      SRC_BACK, 5));
+  }
+
+  // Multiple positive signals present
+  const posCount = insights.filter(i => i.severity === "positive").length;
+  if (posCount >= 2) {
+    insights.push(make("positive", "positive", `${posCount} positive signals across data`,
+      `The record shows ${posCount} positive indicators — ${insights.filter(i => i.severity === "positive").map(i => i.label).join(", ")}. These are reassuring, but not a substitute for EC from IGR Odisha and a lawyer's verification.`,
+      SRC_FRONT, 4));
+  }
+
+  return insights;
+}
+
+// ---------------------------------------------------------------------------
+// DIMENSION 5 — RED FLAGS
+// ---------------------------------------------------------------------------
+
+function buildRedFlagInsights(input: RiskInsightInput): RiskInsight[] {
+  const insights: RiskInsight[] = [];
+  const owners = input.ownerRecords ?? [];
+  const land   = input.landClass ?? {};
+  const back   = input.backPage ?? {};
+  const norm   = normalize(land.rawKisam, land.displayKisam, land.standardizedKisam);
+  const remarks = Array.isArray(back.backPageRemarks) ? back.backPageRemarks : [];
+  const encumbrances = Array.isArray(back.encumbranceEntries) ? back.encumbranceEntries : [];
+
+  if (!input.bhulekhUsable) return insights;
+
+  // Government ownership (critical)
+  const hasGovtOwner = owners.some(o => isGovtOwner(o.odia ?? o.latin ?? ""));
+  if (hasGovtOwner) {
+    insights.push(make("redFlag", "redFlag", "Government owner recorded — private sale not possible",
+      "The Bhulekh record shows a government department as owner. Government-owned land cannot be transferred through a private sale. Any transaction without verified government consent and regularization is void.",
+      SRC_OWNER, 1,
+      "Do not proceed. Ask the seller to show government regularization or a valid land transfer order from the Revenue Department."));
+  }
+
+  // Neyanjori / government notified (critical)
+  if (norm.includes("neyanjori") || norm.includes("neya_niyogita") || norm.includes("khalsa")) {
+    insights.push(make("redFlag", "redFlag", "Government notified land — sale and construction prohibited",
+      "This land is classified as Neyanjori (government notified / Gair Khalsa). Construction and private sale are prohibited without state government approval. Check for ongoing regularization schemes with the Revenue Department before any action.",
+      SRC_PLOT, 1,
+      "Ask the seller whether this plot falls under any government regularization scheme. If not, do not proceed."));
+  }
+
+  // Court case in remarks
+  const courtRemark = remarks.find(r => (r.category ?? "").toLowerCase() === "court_case");
+  if (courtRemark) {
+    insights.push(make("redFlag", "redFlag", "Court case mentioned in Back Page",
+      `The Back Page records a court case: "${trunc(courtRemark.text ?? courtRemark.remarkText ?? "", 100)}". Land under a court order or attachment cannot be transacted until the stay is vacated. Confirm the current status at the concerned court before any action.`,
+      SRC_BACK, 1,
+      "Ask the seller for the full case details, current status, and a court clearance order before proceeding."));
+  }
+
+  // Bank charge / mortgage
+  const bankRemark = remarks.find(r => (r.category ?? "").toLowerCase() === "bank_charge");
+  const activeMortgage = encumbrances.find(e => (e.type ?? "").toLowerCase().includes("mortgage"));
+  if (bankRemark || activeMortgage) {
+    insights.push(make("redFlag", "redFlag", "Registered mortgage or bank charge on land",
+      "The Back Page records a bank charge or mortgage on this land. A buyer who purchases encumbered land may inherit the debt. Ask the seller for the bank's no-objection certificate confirming the charge has been released before registration.",
+      SRC_BACK, 1,
+      "Ask the seller for a no-objection certificate from the bank. Do not proceed without it."));
+  }
+
+  // Government restriction
+  const govtRestr = remarks.find(r => (r.category ?? "").toLowerCase() === "govt_restriction");
+  if (govtRestr) {
+    insights.push(make("redFlag", "redFlag", "Government restriction in records",
+      `The Back Page records a government restriction: "${trunc(govtRestr.text ?? govtRestr.remarkText ?? "", 100)}". Government restrictions can include acquisition notices, ceiling limits, or conversion bans. Confirm with the Tehsildar whether the restriction is still active and what process applies.`,
+      SRC_BACK, 2,
+      "Ask the Tehsildar to confirm whether the restriction is still active and what steps are required."));
+  }
+
+  // Prohibited land class
+  if (land.prohibited === true && !norm.includes("neyanjori")) {
+    insights.push(make("redFlag", "redFlag", "Prohibited land class — verify what this means",
+      `The land is flagged as prohibited for the intended use. Land class: ${land.rawKisam ?? land.standardizedKisam ?? "unknown"}. Verify with the Tehsildar what restriction applies and whether any exception or conversion path exists.`,
+      SRC_PLOT, 2,
+      "Ask a lawyer or the Tehsildar what specific restriction applies to this land class."));
+  }
+
+  // Name mismatch
+  if (input.nameMatch && input.nameMatch.state === "mismatch") {
+    insights.push(make("redFlag", "redFlag", "Seller name does not match Bhulekh record",
+      `The name you provided ("${input.nameMatch.claimedName}") does not match the Bhulekh record ("${input.nameMatch.officialName ?? "the recorded owner"}"). This requires immediate clarification. Ask the seller for the complete title chain — all sale deeds, inheritance certificates, and family settlement documents going back at least 30 years.`,
+      SRC_OWNER, 1,
+      "Do not proceed until the seller explains this discrepancy with documented proof."));
+  }
+
+  return insights;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function make(
+  dimension: string,
+  severity: RiskSeverity,
+  label: string,
+  body: string,
+  source: string,
+  priority: number,
+  actionItem?: string
+): RiskInsight {
+  return { dimension: dimension as RiskDimension, severity, label, body, source, priority, panelId: dimension, actionItem };
+}
+
+function normalize(...values: unknown[]): string {
+  return values.map(v => String(v ?? "").toLowerCase()).join(" ");
+}
+
+function displayName(owner: { odia?: string | null; latin?: string | null } | undefined | null): string {
+  if (!owner) return "the owner";
+  return owner.latin ?? owner.odia ?? "the owner";
+}
+
+function trunc(text: string, max: number): string {
+  if (!text) return "";
+  const t = text.trim();
+  return t.length > max ? t.slice(0, max) + "…" : t;
+}
+
+function newNumberFromValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const normalized = String(value ?? "").replace(/[,₹]/g, "").match(/-?\d+(?:\.\d+)?/);
+  if (!normalized) return null;
+  const parsed = Number.parseFloat(normalized[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatNumber(n: number): string {
+  return n.toLocaleString("en-IN");
+}
+
+function yearFromDate(text: string): number | null {
+  const match = String(text).match(/\d{4}/);
+  return match ? Number.parseInt(match[0], 10) : null;
+}
+
+function isGovtOwner(name: string): boolean {
+  const n = name.toLowerCase();
+  return n.includes("purti bibhag") || n.includes("ପୂର୍ତ୍ତ ବିଭାଗ") ||
+         n.includes("government") || n.includes("sarkar") || n.includes("ସରକାର") ||
+         n.includes("state government") || n.includes("ରାଜ୍ୟ ସରକାର") ||
+         n.includes("odisha government") || n.includes("ଓଡ଼ିଶା ସରକାର") ||
+         n.includes("corporation") || n.includes("board") ||
+         n.includes("department") || n.includes("ବିଭାଗ");
+}
 
 export type RoRInsightPanelId =
   | "plot"

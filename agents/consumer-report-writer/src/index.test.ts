@@ -4,7 +4,7 @@
  * Verifies that generateConsumerReport() produces valid HTML with all 6 sections.
  */
 import { describe, it, expect } from "vitest";
-import { generateConsumerReport, mapToReportInput } from "./index";
+import { generateConsumerReport, generateWhatsAppForward, mapToReportInput } from "./index";
 import { transliterateOdiaWithConfidence } from "./lib";
 import { CONSUMER_REPORT_FIXTURE } from "../fixtures/golden-path";
 import { auditReport } from "../../output-auditor/src/index";
@@ -321,13 +321,14 @@ describe("A10 ConsumerReportWriter", () => {
     expect(html).not.toContain("Generated/current RoR timestamp");
     expect(html).not.toContain("Final publication date");
 
-    // Positive signals and watch-out insights
+    // Positive signals and watch-out insights from risk intelligence engine
     expect(html).toContain("View Bhulekh source screenshots");
     expect(html).toContain("Watch-out");
     expect(html).toContain("Positive signal");
-    expect(html).toContain("Multiple owners recorded");
-    expect(html).toContain("Mutation entries found");
-    expect(html).toContain("Encumbrance-style entries");
+    // Risk intelligence: court case in Back Page remarks → title red flag
+    expect(html).toContain("Court case");
+    // Risk intelligence: mortgage → title red flag
+    expect(html).toContain("Registered mortgage");
     expect(html).toContain("Khatiyan");
     expect(html).toContain("Recorded owners");
 
@@ -773,36 +774,42 @@ describe("A10 ConsumerReportWriter", () => {
     const input = {
       ...CONSUMER_REPORT_FIXTURE,
       claimedOwnerName: "Mohapatra",
-      ownershipReasoner: {
-        ...CONSUMER_REPORT_FIXTURE.ownershipReasoner,
-        officialOwnerName: "ବିକାଶ ଚନ୍ଦ୍ର ମୋହାପାତ୍ର",
-        transliteratedOwnerName: "Bikash Chandra Mohapatra",
-        nameMatch: "partial",
-        discrepancyExplanation:
-          "The provided name is only a surname or single word and cannot confirm identity.",
-        confidenceBasis:
-          "odia_surname_map matching, confidence 55%. Claim state: ambiguous; readiness: L2.",
-        claimState: "ambiguous",
-        readiness: "L2",
-        inputQuality: "single_token",
-        fatherHusbandMatch: "not_provided",
-        nameMatchConfidence: { score: 0.55, method: "odia_surname_map" },
-        blockingWarnings: [
-          "Only a surname or single-word owner name was provided; this is not enough to confirm identity.",
-        ],
-        matchReasons: [
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        tenants: [
           {
-            code: "odia_surname_map",
-            label: "Surname appears in the Odia RoR name.",
-            weight: 0.55,
+            tenantName: "Sita Patnaik",
+            surveyNo: "309",
+            area: 1,
+            unit: "acre",
+            landClass: "homestead",
           },
         ],
       },
+      ownershipReasoner: {
+        ...CONSUMER_REPORT_FIXTURE.ownershipReasoner,
+        officialOwnerName: "Sita Patnaik",
+        transliteratedOwnerName: "Sita Patnaik",
+        nameMatch: "exact",
+        claimState: "ror_available",
+        readiness: "L3",
+        inputQuality: "full_name",
+        fatherHusbandMatch: "not_provided",
+        nameMatchConfidence: { score: 1.0, method: "exact_match" },
+        blockingWarnings: [],
+        matchReasons: [{ code: "exact_full_name", label: "Exact Bhulekh RoR full name match", weight: 1.0 }],
+      },
+      landClassifier: { currentClassification: "Homestead" },
       sourceStatus: {
         bhunaksha: "success",
         bhulekh: "success",
         ecourts: "success",
         rccms: "success",
+      },
+      courtCases: {
+        total: 0,
+        cases: [],
+        sources: { ecourts: "success", rccms: "success" },
       },
       gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
     };
@@ -810,7 +817,8 @@ describe("A10 ConsumerReportWriter", () => {
     const { html } = generateConsumerReport(input as any);
 
     expect(html).toContain("Owner name");
-    expect(html).toContain("RoR owner fetched");
+    // Risk intelligence: single owner → positive signal in owner section
+    expect(html).toContain("Single owner recorded");
     expect(html).toContain("Owner and family details recorded in the Bhulekh RoR");
     expect(html).not.toContain("Only a surname given");
     expect(html).not.toContain("not enough to confirm the seller's identity");
@@ -1026,5 +1034,75 @@ describe("A10 ConsumerReportWriter", () => {
     expect(html).toContain("RoR Name (Odia)");
     expect(html).toContain("Guardian/Father");
     expect(html).not.toContain("View all 1 recorded owners");
+  });
+
+  it("generates WhatsApp Forward with top 3 risk insights and proper formatting", () => {
+    const input = {
+      plotVillage: "Mendhasala",
+      plotTahasil: "Bhubaneswar",
+      plotNo: "415",
+      ownerName: "Krushnachandra Barajena",
+      plotAreaSummary: "1.075 acres",
+      bhulekhUsable: true,
+      riskInsights: {
+        transferability: [
+          { label: "Agricultural land — CLU required for non-farm use", severity: "watchout", priority: 2 },
+        ],
+        title: [
+          { label: "Single owner recorded", severity: "positive", priority: 3 },
+          { label: "Registered mortgage or charge on land", severity: "redFlag", priority: 1 },
+        ],
+        financial: [
+          { label: "₹500 revenue demand shown", severity: "watchout", priority: 4 },
+        ],
+        positive: [],
+        redFlag: [
+          { label: "Court case mentioned in land records", severity: "redFlag", priority: 1 },
+        ],
+      },
+      reportId: "CLD-2026-001",
+      generatedAt: "2026-05-14T10:00:00.000Z",
+      atRiskAmount: "₹50,000",
+      reportUrl: "https://cleardeed.app/report/CLD-2026-001",
+    };
+
+    const forward = generateWhatsAppForward(input);
+
+    // Must contain key fields
+    expect(forward).toContain("📍 Mendhasala, Bhubaneswar (Plot 415)");
+    expect(forward).toContain("Owner: Krushnachandra Barajena");
+    expect(forward).toContain("1.075 acres");
+    expect(forward).toContain("⚠️ At-risk: ₹50,000");
+
+    // Top 3 risk insights — redFlag first, then watchout, then positive
+    expect(forward).toContain("🔴 Court case mentioned in land records");
+    expect(forward).toContain("🔴 Registered mortgage or charge on land");
+    expect(forward).toContain("🟡 Agricultural land — CLU required for non-farm use");
+
+    // No positive signal in top 3 when redFlag/watcout are present
+    expect(forward).not.toContain("Single owner recorded");
+
+    // Footer present
+    expect(forward).toContain("Generated by ClearDeed");
+    expect(forward).toContain("Full report");
+  });
+
+  it("WhatsApp Forward falls back gracefully when bhulekh is not usable", () => {
+    const input = {
+      plotVillage: "Mendhasala",
+      plotTahasil: "Bhubaneswar",
+      plotNo: "—",
+      ownerName: "—",
+      plotAreaSummary: "verify from Bhulekh",
+      bhulekhUsable: false,
+      riskInsights: {},
+      reportId: "CLD-2026-002",
+      generatedAt: "2026-05-14T10:00:00.000Z",
+    };
+
+    const forward = generateWhatsAppForward(input);
+
+    expect(forward).toContain("Owner: verify from Bhulekh");
+    expect(forward).toContain("Plot —");
   });
 });
