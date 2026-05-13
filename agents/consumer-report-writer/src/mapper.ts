@@ -62,6 +62,19 @@ export interface Tier2Input {
   } | null;
   /** Legal-approved consumer disclaimer text */
   disclaimerText: string;
+  /** V1.2: Adjacent plot analysis (ceiling plan T-056) */
+  adjacentPlots?: {
+    adjacentPlots: Array<{
+      plotNo: string;
+      village: string;
+      featureId: string;
+      geometryHash: string;
+      areaSqKm: number;
+    }>;
+    totalFound: number;
+    filteredFromTarget: number;
+    status: string;
+  } | null;
 }
 
 /** A5 OwnershipReasoner output (inlined to avoid cross-package import). */
@@ -111,6 +124,7 @@ export const ConsumerReportGenInputSchema = z.object({
   gpsCoordinates: z.object({ latitude: z.number(), longitude: z.number() }),
   claimedOwnerName: z.string(),
   plotDescription: z.string().nullish().optional(),
+  adjacentPlots: z.any().optional(),
 
   // Sub-objects: use z.any() to avoid field-level validation failures
   // The HTML renderer handles nulls gracefully with explicit null checks

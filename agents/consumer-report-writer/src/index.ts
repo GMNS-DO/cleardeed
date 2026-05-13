@@ -141,7 +141,7 @@ export function generateConsumerReport(
   const data = parsed.data;
   const { gpsCoordinates: gps, geoFetch, revenueRecords, courtCases, registryLinks,
           landClassifier, encumbranceReasoner,
-          regulatoryScreener, validationFindings } = data;
+          regulatoryScreener, validationFindings, adjacentPlots } = data;
   const sourceStatus = data.sourceStatus ?? {};
   const sourceDetails = data.sourceDetails ?? {};
   const tenants: any[] = revenueRecords?.tenants ?? [];
@@ -666,6 +666,8 @@ ${buildProvenanceStrip({
     </div>
   </div>
 </section>
+
+${buildAdjacentPlotsPanel(adjacentPlots)}
 
 <!-- ── Section 4: Encumbrances & Disputes ──────────────────────────── -->
 <section class="section" id="section-encumbrance">
@@ -2405,6 +2407,71 @@ function buildOwnerMatchBasis(input: {
   const basisText = [input.confidenceBasis, ...rows, ...reasons, ...warnings].filter(Boolean);
   if (basisText.length === 0) return "";
   return `<div class="match-basis"><strong>Match basis:</strong><ul>${basisText.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`;
+}
+
+// ─── Adjacent Plot Analysis Panel ─────────────────────────────────────────────
+
+interface AdjacentPlot {
+  plotNo: string;
+  village: string;
+  featureId: string;
+  geometryHash: string;
+  areaSqKm: number;
+}
+
+interface AdjacentPlotsData {
+  adjacentPlots: AdjacentPlot[];
+  totalFound: number;
+  filteredFromTarget: number;
+  status: string;
+}
+
+function buildAdjacentPlotsPanel(adjacentData: AdjacentPlotsData | null | undefined): string {
+  if (!adjacentData || !adjacentData.adjacentPlots || adjacentData.adjacentPlots.length === 0) {
+    return "";
+  }
+
+  const plots = adjacentData.adjacentPlots;
+
+  const rows = plots.map((p, i) => {
+    const areaDisplay = p.areaSqKm
+      ? `${(p.areaSqKm * 247.105).toFixed(2)} acres`
+      : "—";
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td>${escapeHtml(p.plotNo || "—")}</td>
+      <td>${escapeHtml(p.village || "—")}</td>
+      <td>${areaDisplay}</td>
+    </tr>`;
+  }).join("\n");
+
+  return `<section class="section" id="section-adjacent-plots">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Neighbouring Plots</div>
+      <div class="section-sub">What shares boundaries with this plot — helps spot corner encroachment or boundary uncertainty</div>
+    </div>
+    <div class="section-status-badge status-partial">${plots.length} nearby plots found</div>
+  </div>
+  <div class="section-body">
+    <table class="data-table">
+      <thead>
+        <tr><th>#</th><th>Plot No.</th><th>Village</th><th>Approx. Area</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="info-box">
+      <span class="info-label">&#8505; What this means</span>
+      <p>If neighbouring plots show an unusual number of government-classified boundaries (road, drain, water body), or if the target plot appears isolated with no recorded private neighbours on multiple sides, that can indicate a boundary issue or partial encroachment. A physical survey by a licensed surveyor is the definitive check for boundary disputes.</p>
+    </div>
+    <div class="source-line">
+      <span>Neighbour data: ORSAC GeoServer WFS (mapserver.odisha4kgeo.in) — revenue plot polygons, no authentication required</span>
+    </div>
+  </div>
+</section>`;
 }
 
 function buildCourtSection(

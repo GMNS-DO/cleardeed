@@ -49,6 +49,10 @@ const WFSResponseSchema = z.object({
 type WFSFeature = z.infer<typeof WFSFeatureSchema>;
 type WFSResponse = z.infer<typeof WFSResponseSchema>;
 
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 interface WFSQueryResult {
   data: WFSResponse;
   bbox: string;
@@ -56,8 +60,137 @@ interface WFSQueryResult {
   rawArtifactHash: string;
 }
 
-function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
+/**
+ * Fetch adjacent plots to a target polygon using the same GeoServer WFS.
+ *
+ * Algorithm:
+ * 1. Build a bounding box slightly larger than the target polygon (~300m buffer)
+ * 2. Query WFS with that expanded bbox
+ * 3. Filter out the target plot itself (by geometry hash match)
+ * 4. Return remaining polygons with their metadata
+ *
+ * Adjacent plot analysis (ceiling plan Section 4, Source 5):
+ * A plot whose adjacent plots are all government-classified (road, drain, water body)
+ * may be a corner encroachment or boundary-error case. Conversely, private neighbors
+ * across all sides indicate a normal, well-defined plot boundary.
+ */
+export async function fetchAdjacentPlots(input: {
+  lat: number;
+  lon: number;
+  targetPolygon: { type: "Polygon"; coordinates: number[][] };
+  targetGeometryHash: string;
+  layer?: string;
+}): Promise<AdjacentPlotsResult> {
+  const { lat, lon, targetPolygon, targetGeometryHash, layer = "khurda_bhubaneswar" } = input;
+  const fetchedAt = new Date().toISOString();
+  const PARSER_VERSION = "bhunaksha-adjacent/2026-05-14";
+
+  try {
+    // Buffer the bounding box by ~0.003 degrees (~330m) to capture neighbors
+    const bbox = buildBbox(lat, lon, 0.003);
+    const url = `${GEOSERVER_BASE}?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&TYPENAME=revenue:${layer}&BBOX=${bbox},EPSG:4326&MAXFEATURES=${MAX_FEATURES}&OUTPUTFORMAT=application/json`;
+
+    const res = await globalThis.fetch(url, {
+      headers: { "User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(WFS_TIMEOUT_MS),
+    });
+
+    if (!res.ok) {
+      throw new Error(`GeoServer WFS ${res.status} for adjacent query`);
+    }
+
+    const raw = typeof res.text === "function" ? await res.text() : JSON.stringify(await res.json());
+    const parsed = JSON.parse(raw) as unknown;
+    const validation = WFSResponseSchema.safeParse(parsed);
+    if (!validation.success) {
+      return {
+        source: "bhunaksha",
+        status: "partial",
+        fetchedAt,
+        adjacentPlots: [],
+        totalFound: 0,
+        filteredFromTarget: 0,
+        statusReason: "wfs_response_validation_failed",
+        verification: "manual_required",
+      };
+    }
+
+    const allFeatures = validation.data.features;
+
+    // Filter out the target plot itself
+    const candidates = allFeatures.filter((f) => {
+      const hash = polygonCentroidHash(f);
+      return hash !== targetGeometryHash;
+    });
+
+    const adjacent: AdjacentPlot[] = candidates.slice(0, 20).map((f) => {
+      const coords = f.geometry.coordinates[0];
+      const props = f.properties;
+      return {
+        plotNo: String(props.revenue_plot ?? ""),
+        village: String(props.revenue_village_name ?? ""),
+        featureId: String(f.id ?? ""),
+        geometryHash: polygonCentroidHash(f),
+        areaSqKm: areaSquareKm(coords),
+      };
+    });
+
+    return {
+      source: "bhunaksha",
+      status: candidates.length > 0 ? "success" : "partial",
+      fetchedAt,
+      adjacentPlots: adjacent,
+      totalFound: allFeatures.length,
+      filteredFromTarget: allFeatures.length - candidates.length,
+      statusReason: candidates.length > 0
+        ? `found_${candidates.length}_adjacent_candidates`
+        : "no_candidates_beyond_target",
+      verification: "verified",
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      source: "bhunaksha",
+      status: "failed",
+      fetchedAt,
+      adjacentPlots: [],
+      totalFound: 0,
+      filteredFromTarget: 0,
+      statusReason: `fetch_error: ${message}`,
+      verification: "manual_required",
+    };
+  }
+}
+
+export interface AdjacentPlotsResult {
+  source: "bhunaksha";
+  status: string;
+  fetchedAt: string;
+  adjacentPlots: AdjacentPlot[];
+  totalFound: number;
+  filteredFromTarget: number;
+  statusReason: string;
+  verification: string;
+}
+
+export interface AdjacentPlot {
+  plotNo: string;
+  village: string;
+  featureId: string;
+  geometryHash: string;
+  areaSqKm: number;
+}
+
+function polygonCentroidHash(feature: WFSFeature): string {
+  const coords = feature.geometry?.coordinates;
+  if (!coords) return "";
+  const first = coords[0];
+  if (!first) return "";
+  // Use centroid as stable-ish geometric proxy for the polygon
+  const n = first.length - 1;
+  let sumLon = 0, sumLat = 0;
+  for (let i = 0; i < n; i++) { sumLon += first[i][0]; sumLat += first[i][1]; }
+  return sha256(`${sumLon / n},${sumLat / n},${feature.id ?? ""}`);
 }
 
 function buildBbox(lat: number, lon: number, searchRadius: number): string {
