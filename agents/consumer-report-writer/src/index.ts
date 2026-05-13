@@ -488,6 +488,7 @@ ${demoBanner}
     <div class="source-time">Report generated: ${fetchedDate}</div>
     <div class="report-actions">
       <a href="/api/report/${escapeHtml(data.reportId)}/pdf" class="pdf-button" download>Download PDF</a>
+      <a href="/api/report/${escapeHtml(data.reportId)}/whatsapp" class="whatsapp-button" download>Share via WhatsApp</a>
     </div>
   </div>
 </header>
@@ -2685,7 +2686,7 @@ const CSS = `
   --radius:     6px;
 }
 
-.report-actions { margin-top: 8px; }
+.report-actions { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
 .pdf-button {
   display: inline-block;
   background: var(--black);
@@ -2698,6 +2699,18 @@ const CSS = `
   transition: background 0.2s;
 }
 .pdf-button:hover { background: var(--gray-800); }
+.whatsapp-button {
+  display: inline-block;
+  background: var(--green-600);
+  color: var(--white);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.whatsapp-button:hover { background: var(--green-700); }
 
 
 body {
