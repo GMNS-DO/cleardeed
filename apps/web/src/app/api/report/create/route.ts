@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateReport, generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults, upsertSourceResult } from "@/lib/db";
+import { sendReportEmail } from "@/lib/email";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import { validateKhordhaGPS } from "@cleardeed/schema";
 
@@ -46,7 +47,7 @@ type ReportInput = V10Input | V11Input;
 
 export async function POST(req: NextRequest) {
   try {
-    // Report creation is open for concierge launch (auth handled via WhatsApp confirmation)
+    // Report creation is open for concierge launch (no token gate in launch phase)
     // Admin token is only required for /admin routes.
 
     const body = await req.json() as ReportInput;
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
         throw pipelineError;
       }
 
-      // Persist results
+      // Persist results and auto-deliver
       let reportPersisted = false;
       if (persistenceEnabled && reportId) {
         try {
@@ -122,6 +123,20 @@ export async function POST(req: NextRequest) {
           console.warn("[api/report/create] V1.1 persistence failed:", dbError);
         }
       }
+
+      // Auto-send email on successful generation — no founder review gate
+      if (reportPersisted && reportId) {
+        sendReportOnDelivery({
+          reportId,
+          reportTitle: pipelineOutput.title,
+          reportHtml: pipelineOutput.html,
+          buyerEmail: v11.email,
+          buyerWhatsApp: v11.whatsapp,
+        }).catch((e) =>
+          console.warn("[api/report/create] Email delivery failed:", e)
+        );
+      }
+
       const responseHtml = reportPersisted
         ? pipelineOutput.html
         : removePdfDownloadAction(pipelineOutput.html);
@@ -335,4 +350,32 @@ function serializeSourceResult(source: SourceResult): Record<string, unknown> {
     rawResponseStoredSeparately: Boolean(_rawResponse),
     error: _error,
   };
+}
+
+async function sendReportOnDelivery(params: {
+  reportId: string;
+  reportTitle: string;
+  reportHtml: string;
+  buyerEmail?: string;
+  buyerWhatsApp?: string;
+}): Promise<void> {
+  const { reportId, reportTitle, reportHtml, buyerEmail } = params;
+
+  if (!buyerEmail) {
+    console.info(`[api/report/create] No buyer email for ${reportId} — skipping email delivery`);
+    return;
+  }
+
+  const result = await sendReportEmail({
+    to: buyerEmail,
+    reportId,
+    reportTitle,
+    reportHtml,
+  });
+
+  if (result.success) {
+    console.info(`[api/report/create] Report email sent to ${buyerEmail} (${result.messageId})`);
+  } else {
+    console.warn(`[api/report/create] Email delivery failed for ${reportId}: ${result.error}`);
+  }
 }
