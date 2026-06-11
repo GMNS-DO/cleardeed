@@ -3,7 +3,7 @@
  * Based on Odisha's 22 standardized Kisam categories (2024-2026)
  */
 import { describe, it, expect } from "vitest";
-import { classifyLand, translateOdiaToKisam, getKisamCategory } from "./index";
+import { classifyLand, translateOdiaToKisam, getKisamCategory, detectSubplot } from "./index";
 
 describe("translateOdiaToKisam", () => {
   it("maps Gharabari correctly", () => {
@@ -262,5 +262,73 @@ describe("classifyLand", () => {
     expect(result.hasCriticalRestriction).toBe(false);
     expect(result.conversionRequired).toBe(false);
     expect(result.prohibitedPlotCount).toBe(0);
+  });
+});
+
+describe("detectSubplot", () => {
+  it("matches D-prefix sub-plots", () => {
+    expect(detectSubplot("D/88")).toBe("d_prefix");
+    expect(detectSubplot("d / 12")).toBe("d_prefix");
+    expect(detectSubplot("D/ 4")).toBe("d_prefix");
+    expect(detectSubplot(" D/1 ")).toBe("d_prefix");
+  });
+
+  it("matches numeric sub-divisions", () => {
+    expect(detectSubplot("415/1")).toBe("numeric_subdiv");
+    expect(detectSubplot("1/940/3452")).toBe("numeric_subdiv");
+    expect(detectSubplot(" 182/3937 ")).toBe("numeric_subdiv");
+  });
+
+  it("returns null for whole plots", () => {
+    expect(detectSubplot("415")).toBe(null);
+    expect(detectSubplot("1")).toBe(null);
+    expect(detectSubplot("")).toBe(null);
+    expect(detectSubplot(null)).toBe(null);
+    expect(detectSubplot(undefined)).toBe(null);
+  });
+});
+
+describe("classifyLand — sub-plot detection", () => {
+  it("flags D/88 sub-plot with warning restriction", () => {
+    const result = classifyLand({
+      plots: [{ plotNo: "D/88", areaAcres: 0.1, landClassOdia: "gharabari" }],
+      gpsCoordinates: { lat: 20.27, lng: 85.70 },
+    });
+    const subplot = result.restrictions.find(r => r.type === "sub_plot");
+    expect(subplot).toBeDefined();
+    expect(subplot!.severity).toBe("warning");
+    expect(subplot!.description).toContain("D/88");
+    expect(subplot!.description).toContain("BDA");
+  });
+
+  it("flags numeric sub-division with warning restriction", () => {
+    const result = classifyLand({
+      plots: [{ plotNo: "415/1", areaAcres: 0.2, landClassOdia: "gharabari" }],
+      gpsCoordinates: { lat: 20.27, lng: 85.70 },
+    });
+    const subplot = result.restrictions.find(r => r.type === "sub_plot");
+    expect(subplot).toBeDefined();
+    expect(subplot!.severity).toBe("warning");
+    expect(subplot!.description).toContain("415/1");
+  });
+
+  it("does not flag whole plot numbers", () => {
+    const result = classifyLand({
+      plots: [{ plotNo: "415", areaAcres: 0.5, landClassOdia: "gharabari" }],
+      gpsCoordinates: { lat: 20.27, lng: 85.70 },
+    });
+    const subplot = result.restrictions.find(r => r.type === "sub_plot");
+    expect(subplot).toBeUndefined();
+  });
+
+  it("reports sub-plot restriction even on prohibited land", () => {
+    const result = classifyLand({
+      plots: [{ plotNo: "D/88", areaAcres: 1.5, landClassOdia: "jungle" }],
+      gpsCoordinates: { lat: 20.27, lng: 85.70 },
+    });
+    const forest = result.restrictions.find(r => r.type === "forest");
+    const subplot = result.restrictions.find(r => r.type === "sub_plot");
+    expect(forest).toBeDefined();
+    expect(subplot).toBeDefined(); // Both fire independently
   });
 });

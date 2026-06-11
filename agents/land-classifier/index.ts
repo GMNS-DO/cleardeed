@@ -127,6 +127,39 @@ export const KISAM_CATEGORY_LABEL: Record<string, string> = {
   unknown:             "UNKNOWN — Manual verification required",
 };
 
+// ─── Sub-plot detector (D/88 pattern) ──────────────────────────────────────────
+//
+// Bhulekh plot numbers encode structure: "415" is a whole plot; "415/1" or "D/88"
+// are sub-plots carved from a parent plot. A sub-plot sale is legal only if the
+// parent layout was BDA-approved; otherwise the buyer risks denial of building
+// permission. Surface this BEFORE the buyer pays.
+const SUBPLOT_D_PREFIX = /^\s*D\s*\/\s*\d+/i;          // "D/88", "d / 12"
+const SUBPLOT_NUMERIC  = /^\s*\d+\s*\/\s*\d+(?:\s*\/\s*\d+)?\s*$/; // "415/1", "1/940/3452"
+
+export type SubplotMatchKind = "d_prefix" | "numeric_subdiv" | null;
+
+export function detectSubplot(plotNo: string | undefined | null): SubplotMatchKind {
+  if (!plotNo) return null;
+  const t = plotNo.trim();
+  if (SUBPLOT_D_PREFIX.test(t)) return "d_prefix";
+  if (SUBPLOT_NUMERIC.test(t))  return "numeric_subdiv";
+  return null;
+}
+
+function buildSubplotRestriction(plotNo: string, kind: Exclude<SubplotMatchKind, null>, areaAcres?: number): LandRestriction {
+  const pattern = kind === "d_prefix"
+    ? `D-prefix sub-plot (“${plotNo}”)`
+    : `numeric sub-division (“${plotNo}”)`;
+  return {
+    type: "sub_plot",
+    severity: "warning",
+    description: `Plot number ${plotNo} matches the ${pattern} pattern. ${areaAcres !== undefined ? `Recorded area: ${areaAcres} acres. ` : ""}A sub-plot carved from a parent plot can only be sold if the parent layout holds BDA (or planning authority) layout approval. Without that approval, the Bhubaneswar Development Authority typically refuses building permission, BPAS clearances, and water/electricity connections.`,
+    citation: "Odisha Development Authorities Act, 1982; BDA Building Rules, 2020 (Layout Approval)",
+    action: "Ask the seller for the parent layout's BDA approval ID and a copy of the approved layout plan. Verify against the BDA BPAS-Online portal (bda.gov.in) before any payment. If no parent approval exists, the buyer's only exit is a private sub-plot — proceed with full awareness of the building-permission risk.",
+    source: "Bhulekh RoR plot number analysis",
+  };
+}
+
 // ─── GPS-based overlay checks ─────────────────────────────────────────────────
 
 const PESA_BLOCKS_KHORDHA = [
@@ -284,6 +317,12 @@ export function classifyLand(input: LandClassifierInput): LandClassifierResult {
         action: "Get NA certificate from Tehsildar before construction. Factor CLU fees into your decision.",
         source: "Bhulekh Kisam",
       });
+    }
+
+    // ── Sub-plot detection (D/88 pattern) ────────────────────────────────────
+    const subplotKind = detectSubplot(pc.plotNo);
+    if (subplotKind) {
+      restrictions.push(buildSubplotRestriction(pc.plotNo, subplotKind, pc.areaAcres));
     }
   }
 

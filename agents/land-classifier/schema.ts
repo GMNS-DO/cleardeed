@@ -54,6 +54,7 @@ export const RestrictionTypeSchema = z.enum([
   "clu_required",       // Change of Land Use certificate required
   "conversion_high_difficulty", // Double-crop land — food security protection
   "prohibited_construction",   // Construction strictly prohibited
+  "sub_plot",          // Sub-divided plot (D/88 pattern) — requires BDA layout approval
 ]);
 
 export const LandRestrictionSchema = z.object({
