@@ -1,0 +1,33 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: STALWART ATMOSPHERE",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 3,
+  "sample_records": [
+    {
+      "liscenceNo": "RTP/DTP (C.ER)-393/2022",
+      "represntativeName": "MANAS RANJAN MOHANTY",
+      "represntativeEmail": "manas96patkura@gmail.com",
+      "represntativeMobile": "9237304142",
+      "representiveType": 5
+    },
+    {
+      "liscenceNo": "CA/2011/51615",
+      "represntativeName": "AR.NIHAR RANJAN GARTIA",
+      "represntativeEmail": "nrgdesigns.09@gmail.com",
+      "represntativeMobile": "7008893951",
+      "representiveType": 6
+    },
+    {
+      "liscenceNo": "057611",
+      "represntativeName": "BINOD KUMAR PANDA",
+      "represntativeEmail": "ppbpkm@yahoo.co.in",
+      "represntativeMobile": "9237304145",
+      "representiveType": 1
+    }
+  ]
+}

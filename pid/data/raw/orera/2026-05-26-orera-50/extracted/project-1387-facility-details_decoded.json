@@ -1,0 +1,71 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: NILACHAL ENCLUSIVE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 27,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "27.420",
+        "completionDate": "2028-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 135586,
+        "areaSq": "10.000",
+        "completionDate": "2028-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 135587,
+        "areaSq": null,
+        "completionDate": "2028-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "224.770",
+        "completionDate": "2028-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "Our project access of 12.19mtr External Murum Road. The existing External road gifted by Suresh Chandra Nayak to PKDA on dated 03.04.2023.",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2025-06-30",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      }
+    ]
+  }
+}

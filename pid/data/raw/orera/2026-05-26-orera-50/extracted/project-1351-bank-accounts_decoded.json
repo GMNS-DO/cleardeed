@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: Madhuram Residency",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1273,
+      "masterAccHolder": "AK CONSTRUCTION/MADHURAM RESIDENCY/COLLECTION ACCOUNT",
+      "masterAccIFSC": "BARB0BOLANG",
+      "masterAccNo": "30980200000395",
+      "masterAccbank": "BANK OF BARODA",
+      "masterAccbranch": "BOLANGIR BRANCH",
+      "masterCancellCheque": "php3eIehw_1767817203.pdf",
+      "masterCancellChequeId": 227739,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "7752050830",
+      "reraAccHolder": "AK CONSTRUCTION/MADHURAM RESIDENCY/PROJECT ACCOUNT",
+      "reraAccIFSc": "BARB0BOLANG",
+      "reraAccNo": "30980200000396",
+      "reraAccbank": "BANK OF BARODA",
+      "reraAccbranch": "BOLANGIR BRANCH",
+      "reraCancellCheque": "phptMGUIw_1767817647.pdf",
+      "reraCancellChequeId": 227740,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "7752050830",
+      "transAccHolder": "AK CONSTRUCTION/MADHURAM RESIDENCY/TRANSACTION ACCOUNT",
+      "transAccIFSC": "BARB0BOLANG",
+      "transrAccNo": "30980200000428",
+      "transAccbank": "BANK OF BARODA",
+      "transAccbranch": "BOLANGIR BRANCH",
+      "transCancellCheque": "phpcmDf3q_1768507376.pdf",
+      "transCancellChequeId": 227741,
+      "transBranchTeleph": "",
+      "transBranchMobile": "7752050830"
+    },
+    "fundSourceQuery": {
+      "fundId": 1294,
+      "estematedCost": "777.76",
+      "allotteeInvestment": "600.00",
+      "promoterInvestment": "177.76",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 140382,
+      "estimationCopy": "phppfvDce_1750359290.pdf",
+      "expndLand": "2.04",
+      "expndBuilding": "775.72"
+    }
+  }
+}

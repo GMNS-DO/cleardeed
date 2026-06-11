@@ -1,0 +1,101 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: PRADHAN ROYAL PALACE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 161347,
+        "areaSq": null,
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "19.19 MTR WIDE RODE",
+        "documentId": 0,
+        "areaSq": "19.190",
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "4150.250",
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1057.200",
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "Ground Water",
+        "documentId": 197288,
+        "areaSq": null,
+        "completionDate": "2028-05-14",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      }
+    ]
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: VIP PRESTANCIA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 1,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "41.660",
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Club House",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 117621,
+        "areaSq": "9.000",
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "301.140",
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "128.000",
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 117622,
+        "areaSq": null,
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 6,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "41.660",
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Community Center",
+        "iconClass": "icon-Community-Hall"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "",
+        "documentId": 154843,
+        "areaSq": null,
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2025-01-12",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "60.950",
+        "completionDate": "2026-09-18",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      }
+    ]
+  }
+}

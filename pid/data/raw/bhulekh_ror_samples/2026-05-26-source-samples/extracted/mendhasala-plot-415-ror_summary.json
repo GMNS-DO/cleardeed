@@ -1,0 +1,75 @@
+{
+  "artifact_id": "mendhasala-plot-415-ror",
+  "label": "Mendhasala plot 415 RoR sample",
+  "source_url": "https://bhulekh.ori.nic.in/SRoRFront_Uni.aspx",
+  "status": "success",
+  "status_reason": "Parsed 1 owner block(s) and 1 plot row(s).",
+  "verification": "verified",
+  "fetched_at": "2026-05-25T22:34:03.672Z",
+  "parser_version": "bhulekh-ror-html-v3",
+  "location": {
+    "mouzaOdia": "ମେଣ୍ଢାଶାଳ",
+    "tehsilOdia": "ଭୁବନେଶ୍ଵର",
+    "thanaOdia": "ଚନ୍ଦକା",
+    "districtOdia": "ଖୋର୍ଦ୍ଧା",
+    "tehsilNo": "..",
+    "thanaNo": "22"
+  },
+  "khatiyan_no": "415",
+  "plot_rows": 1,
+  "owner_blocks": 1,
+  "plot_table_totals": {
+    "plotCount": "1",
+    "areaAcres": "0.05",
+    "areaDecimals": null,
+    "areaHectares": null,
+    "rawTotalRowOdia": null
+  },
+  "extracted_data": {
+    "plotNo": "415",
+    "khataNo": "415",
+    "village": "Mendhasala",
+    "tenants": [
+      {
+        "surveyNo": "415",
+        "area": 0.05,
+        "unit": "acre",
+        "areaUnitRaw": "acre+decimal",
+        "areaComputation": "sum_unique_plot_rows_acres_plus_decimal_column_over_10000",
+        "landClass": "ବାରି",
+        "landClassOdia": "ବାରି",
+        "landClassEnglish": "ବାରି",
+        "conversionRequired": false,
+        "prohibited": false,
+        "buildable": false,
+        "tenantName": "ଭ୍ରମର ବିଶ୍ଵାଳ",
+        "fatherHusbandName": "ମଦନ ବିଶ୍ଵାଳ"
+      }
+    ],
+    "lastUpdated": "06/03/1962",
+    "sourceDocument": "https://bhulekh.ori.nic.in/SRoRFront_Uni.aspx"
+  },
+  "inputs_tried": [
+    {
+      "label": "bhulekh_ror_lookup_v11",
+      "input": {
+        "tehsil": "Bhubaneswar",
+        "tehsilCode": "2",
+        "village": "Mendhasala",
+        "villageCode": "105",
+        "searchMode": "Plot",
+        "identifierValue": "415",
+        "identifierLabel": "415"
+      }
+    }
+  ],
+  "validators": [
+    {
+      "name": "attempts_recorded",
+      "status": "passed",
+      "raw": {
+        "attemptCount": 1
+      }
+    }
+  ]
+}

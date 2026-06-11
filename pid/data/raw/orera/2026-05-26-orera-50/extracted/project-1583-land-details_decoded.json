@@ -1,0 +1,49 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: LAVANYA-7",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "1086/1626/1713(p)",
+        "mouza": "Kuspangi",
+        "khataNo": "265/604",
+        "kisama": 6,
+        "plotArea": "6746.86",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 2,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 1,
+        "isPOA": 0,
+        "ownerShare": "0.00",
+        "titleFlow": "",
+        "titleHolder": 1,
+        "plotAreaIncuded": "5853.9600",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 240779,
+        "plotEc": "phpMHtWe3_1757105447.pdf",
+        "plotRorId": 222191,
+        "saleDeedId": 218503,
+        "poaId": 0,
+        "landDetailId": 6546,
+        "shareAlloc": "",
+        "shareAllocId": 0,
+        "saleDeedRegnNo": "10401701428",
+        "saleDeedRegnDate": "2017-11-10",
+        "saleDeedRegnAt": "Sub-Registrar, Athagarh",
+        "poaRegnNo": "",
+        "poaRegnDate": null,
+        "poaRegnAt": "",
+        "powerAttorney": "No",
+        "saleDeed": "Yes",
+        "encumbrance": "No",
+        "plotOccupied": "No",
+        "owners": [],
+        "kisamaName": "Homestead (Gharabari)"
+      }
+    ]
+  }
+}

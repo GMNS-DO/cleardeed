@@ -1,0 +1,41 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: EVOS ATMAN.",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "511635",
+        "represntativeName": "KRUSHNA CHANDRA JENA",
+        "represntativeEmail": "kcjena.fca@gmail.com",
+        "represntativeMobile": "9777094003",
+        "representiveType": 1
+      },
+      {
+        "liscenceNo": "AR/289/BDA",
+        "represntativeName": "SAMIR KUMAR PATEL",
+        "represntativeEmail": "samir8229@gmail.com",
+        "represntativeMobile": "9238490714",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "RTP/DTP/ST.ER.).012/2017",
+        "represntativeName": "Er. Sudhansu Sekhar Panda",
+        "represntativeEmail": "Sudhansu72_panda@yahoo.com",
+        "represntativeMobile": "9437092014",
+        "representiveType": 5
+      },
+      {
+        "liscenceNo": null,
+        "represntativeName": "PRASHANT NARAYAN",
+        "represntativeEmail": "prashant.n@evos.co.in",
+        "represntativeMobile": "9124660415",
+        "representiveType": 8
+      }
+    ],
+    "promoters": [],
+    "agents": []
+  }
+}

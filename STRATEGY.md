@@ -1,6 +1,6 @@
 # STRATEGY.md — ClearDeed Approved Strategy
 
-> **Status:** Approved 2026-05-14. Updated 2026-05-15 with price=₹1 and no-review-queue decisions.
+> **Status:** Approved 2026-05-14. Updated 2026-05-25 with Bhulekh Mirror (D-024) and PID (D-025) added to moat strategy.
 > This is the strategy ClearDeed is executing against. Any deviation requires explicit change to this file, dated and reasoned.
 > **Companion files:** `CLAUDE.md` (engineering constitution), `PRODUCT_SPEC.md` (product details), `ROADMAP.md` (sprint plan), `DECISIONS.md` (decisions log).
 
@@ -74,15 +74,15 @@ Six sections, ordered for buyer cognition not data taxonomy:
 
 Every fact links to its source. Positive signals first within each section, watch-outs second. Honest framing on market data: floor / directional / ceiling.
 
-## 7. The moat
+## 7. The operational moat — three layers, one build discipline
 
-Three layers of defensibility, ordered by durability:
+**The outcome dataset (durable).** Which buyers proceeded with which risk profiles, which flags mattered, which "verified clear" claims later proved wrong. Built only by operating at scale over years. Instrumented from day one via in-report feedback (Sprint 1) and 60-day survey (Sprint 5).
 
-1. **The outcome dataset (durable).** Which buyers proceeded with which risk profiles, which flags mattered, which "verified clear" claims later proved wrong. Built only by operating at scale over years. Must be instrumented from day one.
-2. **District-specific knowledge (medium-term).** Fraud patterns, local development authority quirks, lawyer network. Decays as competitors invest in regional teams.
-3. **Brand and buyer trust (long-term).** The trusted brand for Tier-2 India property diligence. Five years out, this is the real moat.
+**The data mirror (Bhulekh Mirror).** A bulk-crawled, continuously-updated mirror of Bhulekh ROR records for Khordha, then all 5 districts. Enables instant free preview, "seller's other properties" cross-reference, and change detection between buyer's query and their payment. Built in Sprint 11 (see `BHULEKH_MIRROR_TRACK.md`). Railway persistent process, writes to the same Supabase instance. High-priority plots (paid reports) get immediate re-fetch via `high_priority_recheck` table.
 
-Every other feature can be replicated in 6–9 months by a well-funded competitor (Landeed, AdvaRisk, LegiScore, NoBroker-adjacent). Build accordingly: do not over-invest in technical sophistication; do invest in feedback loops.
+**The pattern intelligence database (PID).** A structured, taxonomy-driven library of land dispute and fraud patterns, validated against scraped court cases. Produces predictive commentary in reports for patterns at VALIDATED or PROBABLE tier only. STUB and INDICATIVE tiers are internal tracking only. Enforces `features-not-places`: output links to plot attributes, never to place names. Built in Sprint 11 (see `PID_CLAUDE_CODE_INSTRUCTIONS.md` and `PID_TRACK.md`).
+
+Every other feature can be replicated in 6–9 months by a well-funded competitor. Build accordingly: do not over-invest in technical sophistication; do invest in the two data infrastructure tracks that produce durable moat.
 
 ## 8. B2B sequence (post-implementation)
 

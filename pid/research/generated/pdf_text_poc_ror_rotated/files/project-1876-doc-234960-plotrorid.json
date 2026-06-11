@@ -1,0 +1,183 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1876-doc-234960-plotrorid.pdf",
+    "file_name": "project-1876-doc-234960-plotrorid.pdf",
+    "file_id": "234960",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1876",
+        "project_name": "Welcome Village",
+        "promoter_name": "WELCOME BUILDERS",
+        "mouza": "Dengsargi",
+        "khata_no": "158/741",
+        "plot_no": "99",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 288155,
+  "detected": {
+    "dct_image_count": 2,
+    "crude_literal_text_chars": 8,
+    "crude_literal_text_quality": {
+      "chars": 8,
+      "printable_ratio": 1,
+      "alpha_ratio": 1,
+      "word_count": 1
+    },
+    "crude_literal_text_sample": "Identity"
+  },
+  "ocr": {
+    "ok": true,
+    "language": "eng",
+    "text": "sled 908% -Q eclal : 696rAE 928m : 99RYa ad ae -99 a8! : ARR fen faq (234 99689 - 402 dean 5 aR : 9ARga s poly AERgHe PRECAST QIF 6 6519S SI SIEAFR GFF 9a on) GRIN FI, TSI Riel, GIF 6 FIAT 1587741 6361 ISIN 6516S FAR 1 64RQ1 SRL0Q SATA TIFFS F5ER gAIR SIRI 8: AIF 981 SIR), 6519S AIR), AIed - QI A: 9599 AIR SIRI SI: TAUTEA, 2-6ICALYR, &-AARYR ¥)9R 8) 69% ) SASARIR SIRaIa Seas Pr are | sad f9IR6996 | eee Que 699 | e/a PE lod al QI 8il 6611 @° 7180/24 §1 2-12-24 ZEQEFEE SSI €° 3 RYE §° 9992.27 GF €° 100 0.06 SING 6A § SSI G° 158/741 62 6979 TRI | 9) T6618 Agar £5 : FE an 32 o : 7. &, = ( 17 La. be A {i at i 2D TA Sw To Em AIR Zn BLANK SPACE FOR STAMPING LONE Re 2661 GRETA 1 2¥5/02) 198 sean erdnaa EL s) Doar Sh £0 / ARG Sad Ae SRE Ts orR sh { an lin Rags RGR 7 IgA 9% TBE 679 GFE \\ ) aa A Ames 4 = a - 05/12/2024 Ne dev (Lomas",
+    "confidence": 34,
+    "quality": {
+      "chars": 833,
+      "printable_ratio": 0.983,
+      "alpha_ratio": 0.468,
+      "word_count": 74
+    },
+    "score": 401.375,
+    "best_variant": {
+      "source_image_index": 0,
+      "source_width": 1205,
+      "source_height": 1718,
+      "rotation": 90
+    },
+    "attempts": [
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 0,
+        "confidence": 32,
+        "quality": {
+          "chars": 921,
+          "printable_ratio": 0.971,
+          "alpha_ratio": 0.342,
+          "word_count": 15
+        },
+        "score": 150.475
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 90,
+        "confidence": 34,
+        "quality": {
+          "chars": 833,
+          "printable_ratio": 0.983,
+          "alpha_ratio": 0.468,
+          "word_count": 74
+        },
+        "score": 401.375
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 180,
+        "confidence": 42,
+        "quality": {
+          "chars": 909,
+          "printable_ratio": 0.981,
+          "alpha_ratio": 0.32,
+          "word_count": 21
+        },
+        "score": 182.525
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 270,
+        "confidence": 36,
+        "quality": {
+          "chars": 824,
+          "printable_ratio": 0.989,
+          "alpha_ratio": 0.488,
+          "word_count": 66
+        },
+        "score": 373.52500000000003
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 0,
+        "confidence": 32,
+        "quality": {
+          "chars": 458,
+          "printable_ratio": 0.954,
+          "alpha_ratio": 0.336,
+          "word_count": 12
+        },
+        "score": 137.45
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 90,
+        "confidence": 29,
+        "quality": {
+          "chars": 437,
+          "printable_ratio": 0.998,
+          "alpha_ratio": 0.517,
+          "word_count": 38
+        },
+        "score": 257.65
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 180,
+        "confidence": 36,
+        "quality": {
+          "chars": 472,
+          "printable_ratio": 0.983,
+          "alpha_ratio": 0.294,
+          "word_count": 6
+        },
+        "score": 113.975
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1205,
+        "source_height": 1718,
+        "rotation": 270,
+        "confidence": 28,
+        "quality": {
+          "chars": 391,
+          "printable_ratio": 0.992,
+          "alpha_ratio": 0.501,
+          "word_count": 33
+        },
+        "score": 234.9
+      }
+    ]
+  },
+  "content_hints": {
+    "document_type": "record_of_rights",
+    "extracted_fields": {
+      "office": null
+    },
+    "phrases": [],
+    "case_or_reference_numbers": []
+  },
+  "triage_status": "ocr_text_found",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

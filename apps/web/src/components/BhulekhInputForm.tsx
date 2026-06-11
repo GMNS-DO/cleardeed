@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { KHRDHA_TEHSIL_OPTIONS } from "@/lib/khordha-location";
 import { createRazorpayOrder } from "@/lib/payment";
+import { MapboxBoundaryMap } from "@/components/MapboxBoundaryMap";
 
 type SearchMode = "Plot" | "Khatiyan" | "Tenant";
 type FormState = "form" | "ordering" | "paying" | "generating" | "success" | "error";
@@ -78,11 +79,25 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
+async function waitForPreGeneration(
+  promise: Promise<{ reportId: string; bhunakshaPolygon: number[][][] | null; html: string; title: string } | null> | null,
+  timeoutMs: number
+): Promise<{ reportId: string; bhunakshaPolygon: number[][][] | null; html: string; title: string } | null> {
+  if (!promise) return null;
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+  ]);
+}
+
 export function BhulekhInputForm() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formState, setFormState] = useState<FormState>("form");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [reportData, setReportData] = useState<{ reportId: string; title: string; html: string; emailSent: boolean } | null>(null);
+  const [reportData, setReportData] = useState<{
+    reportId: string; title: string; html: string; emailSent: boolean;
+    bhunakshaPolygon?: number[][][] | null;
+  } | null>(null);
   const [villageQuery, setVillageQuery] = useState("");
   const razorpayLoaded = useRef(false);
 
@@ -96,6 +111,9 @@ export function BhulekhInputForm() {
     whatsapp: "",
     email: "",
   });
+
+  const preGeneratedReportIdRef = useRef<string | null>(null);
+  const preGenerationPromiseRef = useRef<Promise<{ reportId: string; bhunakshaPolygon: number[][][] | null; html: string; title: string } | null> | null>(null);
 
   // Pre-load Razorpay script on mount
   useEffect(() => {
@@ -153,13 +171,74 @@ export function BhulekhInputForm() {
     }
 
     try {
-      // Step 1: Create order
+      // Step 1: Generate the Bhulekh-backed report before charging.
+      const preGenerationPromise = fetch("/api/report/pregenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tehsil: selectedTehsilLabel,
+          tehsilValue: form.tehsilValue,
+          village: form.village,
+          villageCode: form.villageCode,
+          searchMode: form.searchMode,
+          identifier: form.identifier,
+          claimedOwnerName: form.sellerName || undefined,
+          email: form.email,
+        }),
+      }).then(async (r) => {
+        const data = await r.json() as {
+          reportId?: string; status?: string; error?: string;
+          html?: string; title?: string; bhunakshaPolygon?: number[][][] | null
+        };
+        if (!r.ok || data.status !== "generated" || !data.reportId) {
+          throw new Error(data.error ?? "Could not fetch Bhulekh RoR for this plot. Please retry.");
+        }
+        console.info("[BhulekhInputForm] Pre-generation response:", data.status, "reportId:", data.reportId, "html length:", data.html?.length ?? 0);
+        return { reportId: data.reportId, bhunakshaPolygon: data.bhunakshaPolygon ?? null, html: data.html ?? "", title: data.title ?? "" };
+      });
+      preGenerationPromiseRef.current = preGenerationPromise;
+      const pregenResult = await preGenerationPromise;
+      const generatedReportId = pregenResult.reportId;
+      preGeneratedReportIdRef.current = generatedReportId;
+
+      // Step 2: Create Razorpay order only after RoR-backed report is ready.
       const orderRes = await createRazorpayOrder({
         email: form.email,
         plotDescription: `${form.village} · ${form.identifier}`,
       });
 
-      // Step 3: Open Razorpay modal
+      // Step 3: Store checkout session for webhook retrieval.
+      // preGenerate response already has the HTML — use it directly as backup.
+      const preGeneratedHtml = pregenResult.html ?? null;
+      const preGeneratedTitle = pregenResult.title ?? null;
+      const preGeneratedBhunakshaPolygon = pregenResult.bhunakshaPolygon ?? null;
+      if (preGeneratedHtml) {
+        console.info("[BhulekhInputForm] Using HTML from preGenerate response, length:", preGeneratedHtml.length);
+      }
+
+      const checkoutPayload = {
+        orderId: orderRes.orderId,
+        tehsil: selectedTehsilLabel,
+        tehsilValue: form.tehsilValue,
+        village: form.village,
+        villageCode: form.villageCode,
+        searchMode: form.searchMode,
+        identifier: form.identifier,
+        claimedOwnerName: form.sellerName || undefined,
+        email: form.email,
+        whatsapp: form.whatsapp || undefined,
+        preGeneratedReportId: generatedReportId,
+        preGeneratedHtml,
+        preGeneratedTitle,
+        preGeneratedBhunakshaPolygon,
+      };
+      await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(checkoutPayload),
+      }).catch((e) => console.warn("[BhulekhInputForm] Checkout session store failed:", e));
+
+      // Step 4: Open Razorpay modal.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Razorpay = (window as unknown as Record<string, any>).Razorpay as {
         new (options: Record<string, unknown>): {
@@ -184,14 +263,22 @@ export function BhulekhInputForm() {
           email: form.email,
           contact: form.whatsapp || undefined,
         },
+        modal: {
+          ondismiss: () => {
+            setFormState("form");
+          },
+        },
         theme: {
           color: "#1d6f5b",
         },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           console.info("[BhulekhInputForm] Payment success:", response);
-          // Generate report and send email via client-side callback
           setFormState("generating");
           try {
+            const resolvedPreGenerated =
+              preGeneratedReportIdRef.current != null
+                ? { reportId: preGeneratedReportIdRef.current, bhunakshaPolygon: null as number[][][] | null, html: "", title: "" }
+                : await waitForPreGeneration(preGenerationPromiseRef.current, 65_000);
             const result = await fetch("/api/payment/success", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -208,18 +295,36 @@ export function BhulekhInputForm() {
                 claimedOwnerName: form.sellerName || undefined,
                 email: form.email,
                 whatsapp: form.whatsapp || undefined,
+                preGeneratedReportId: resolvedPreGenerated?.reportId ?? undefined,
               }),
             });
-            const data = await result.json() as { reportId?: string; title?: string; html?: string; emailSent?: boolean; error?: string };
+            const data = await result.json() as { reportId?: string; title?: string; html?: string; emailSent?: boolean; error?: string; bhunakshaPolygon?: number[][][] | null };
+            console.info("[BhulekhInputForm] payment/success bhunakshaPolygon in response:", data.bhunakshaPolygon != null ? `found (${data.bhunakshaPolygon.length} rings)` : "NULL");
+            console.info("[BhulekhInputForm] preGeneratedBhunakshaPolygon from pregen:", preGeneratedBhunakshaPolygon != null ? `found` : "NULL");
             if (!result.ok || data.error) {
               console.warn("[BhulekhInputForm] Payment success handler error:", data.error);
               setErrorMsg(data.error ?? "Report generation failed. Email us at support@cleardeed.in");
               setFormState("error");
               return;
             }
-            setReportData({ reportId: data.reportId ?? "", title: data.title ?? "", html: data.html ?? "", emailSent: data.emailSent ?? false });
+            if (!data.html || !data.html.trim()) {
+              console.warn("[BhulekhInputForm] Payment success returned no report HTML. reportId:", data.reportId);
+              setErrorMsg("Report generation timed out. Your payment was successful — email us at support@cleardeed.in and we'll deliver your report manually within 2 hours.");
+              setFormState("error");
+              return;
+            }
+            setReportData({
+              reportId: data.reportId ?? "",
+              title: data.title ?? "",
+              html: data.html ?? "",
+              emailSent: data.emailSent ?? false,
+              bhunakshaPolygon: preGeneratedBhunakshaPolygon ?? data.bhunakshaPolygon ?? null,
+            });
           } catch (e) {
             console.warn("[BhulekhInputForm] Payment success callback failed:", e);
+            setErrorMsg("Payment succeeded, but report generation did not complete. Email us at support@cleardeed.in and we will recover it.");
+            setFormState("error");
+            return;
           }
           setFormState("success");
         },
@@ -232,6 +337,7 @@ export function BhulekhInputForm() {
         setFormState("error");
       }) as any);
 
+      setFormState("paying");
       rzp.open();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -257,14 +363,28 @@ export function BhulekhInputForm() {
             <div className="flex items-center gap-3 rounded border border-[#e8efe9] bg-[#f7f7f2] px-4 py-4 text-sm">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1d6f5b] text-white text-base font-bold">✓</div>
               <div>
-                <p className="font-semibold text-[#17231d]">Payment successful! Report generated.</p>
+                <p className="font-semibold text-[#17231d]">Payment successful! Your report is ready.</p>
                 <p className="text-xs text-[#5b665f]">
                   {reportData?.emailSent
-                    ? <>Sent to <strong>{form.email}</strong>. Check your inbox (and spam).</>
-                    : <>Report generated. Save or screenshot this page.</>}
+                    ? <>Shown below and sent to <strong>{form.email}</strong>. Use the download button in the report header for a PDF copy.</>
+                    : <>Shown below. Use the download button in the report header for a PDF copy.</>}
                 </p>
               </div>
             </div>
+
+            {/* Map — shown above the report if polygon was resolved */}
+            {reportData?.bhunakshaPolygon ? (
+              <MapboxBoundaryMap
+                polygon={reportData.bhunakshaPolygon}
+                villageName={form.village}
+                plotNo={form.identifier}
+              />
+            ) : (
+              <div className="rounded border border-[#d9ddd4] bg-[#f7f7f2] px-4 py-3 text-sm text-[#5b665f]">
+                Plot boundary map is being prepared. It will appear in your emailed copy.
+              </div>
+            )}
+
             {reportData?.html && (
               <div dangerouslySetInnerHTML={{ __html: reportData.html }} />
             )}
@@ -463,9 +583,9 @@ export function BhulekhInputForm() {
               id="identifier"
               type="text"
               value={form.identifier}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, identifier: e.target.value }))
-              }
+              onChange={(e) => {
+                setForm((f) => ({ ...f, identifier: e.target.value }));
+              }}
               placeholder={SEARCH_PLACEHOLDERS[form.searchMode]}
               className="w-full rounded border border-[#d9ddd4] px-3 py-2 text-sm focus:border-[#1d6f5b] focus:outline-none"
             />
@@ -483,9 +603,9 @@ export function BhulekhInputForm() {
               type="button"
               disabled={!canAdvanceStep3}
               onClick={() => setStep(3)}
-              className="flex-1 rounded bg-[#1d6f5b] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b7c0b6]"
+              className="flex-1 rounded bg-[#163d33] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-[#b7c0b6]"
             >
-              Continue to payment →
+              Continue →
             </button>
           </div>
         </div>
@@ -578,12 +698,12 @@ export function BhulekhInputForm() {
                 ? "Preparing..."
                 : ["paying", "generating"].includes(formState as string)
                 ? "Opening payment..."
-                : "Pay ₹1 → Get Report"}
+                : "Get report"}
             </button>
           </div>
 
           <p className="text-center text-xs text-[#5b665f]">
-            ₹1 for the full report. Delivered to <strong>{form.email || "your email"}</strong> by email after payment.
+            ₹1 for the full report. Shown here after payment and emailed to <strong>{form.email || "your email"}</strong>.
           </p>
 
           <div className="flex items-center justify-center gap-2">

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: BADSHAH EXCELLENCY",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1462,
+      "masterAccHolder": "BADSHAH CONSTRUCTIONS PVT.LTD.-BADSHAH EXCELLENCY",
+      "masterAccIFSC": "HDFC0001080",
+      "masterAccNo": "50200119466149",
+      "masterAccbank": "HDFC BANK LIMITED",
+      "masterAccbranch": "SHAHID NAGAR, BHUBANESWAR",
+      "masterCancellCheque": "phpQ3VhRG_1776762438.pdf",
+      "masterCancellChequeId": 255791,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9438200850",
+      "reraAccHolder": "BADSHAH CONSTRUCTIONS PVT. LTD.-BADSHAH EXCELLENCY",
+      "reraAccIFSc": "HDFC0001080",
+      "reraAccNo": "50200119470850",
+      "reraAccbank": "HDFC BANK LIMITED",
+      "reraAccbranch": "SHAHID NAGAR, BHUBANESWAR",
+      "reraCancellCheque": "phpx8ebzK_1776762484.pdf",
+      "reraCancellChequeId": 255792,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9438200850",
+      "transAccHolder": "BADSHAH CONSTRUCTIONS PVT. LTD.-BADSHAH EXCELLENCY",
+      "transAccIFSC": "HDFC0001080",
+      "transrAccNo": "50200119873740",
+      "transAccbank": "HDFC BANK LIMITED",
+      "transAccbranch": "SHAHID NAGAR, BHUBANESWAR",
+      "transCancellCheque": "phpt1bGM0_1776762547.pdf",
+      "transCancellChequeId": 255793,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9438200850"
+    },
+    "fundSourceQuery": {
+      "fundId": 1425,
+      "estematedCost": "1897.84",
+      "allotteeInvestment": "1697.84",
+      "promoterInvestment": "200.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 210636,
+      "estimationCopy": "phpa0rIm7_1765197527.pdf",
+      "expndLand": "50.00",
+      "expndBuilding": "1847.84"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: GRACE ELITE EDGE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1354,
+      "masterAccHolder": "S GRACE ENGINEERING PVT LTD COLLECTION AC GRACE ELITE EDGE",
+      "masterAccIFSC": "BARB0KUNHEI",
+      "masterAccNo": "52690600000188",
+      "masterAccbank": "BANK OF BARODA",
+      "masterAccbranch": "KUNHEIPARA",
+      "masterCancellCheque": "phpWsDyVj_1753020867.pdf",
+      "masterCancellChequeId": 151172,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "7077727109",
+      "reraAccHolder": "S GRACE ENGINEERING PVT LTD PROJECT AC GRACE ELITE EDGE",
+      "reraAccIFSc": "BARB0KUNHEI",
+      "reraAccNo": "52690600000189",
+      "reraAccbank": "BANK OF BARODA",
+      "reraAccbranch": "KUNHEIPARA",
+      "reraCancellCheque": "phpWZLOXO_1753020875.pdf",
+      "reraCancellChequeId": 151173,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "7077727109",
+      "transAccHolder": "S GRACE ENGINEERING PVT LTD OPERATIVE AC GRACE ELITE EDGE",
+      "transAccIFSC": "BARB0KUNHEI",
+      "transrAccNo": "52690600000190",
+      "transAccbank": "BANK OF BARODA",
+      "transAccbranch": "KUNHEIPARA",
+      "transCancellCheque": "php3XrWiJ_1753020880.pdf",
+      "transCancellChequeId": 151174,
+      "transBranchTeleph": "",
+      "transBranchMobile": "7077727109"
+    },
+    "fundSourceQuery": {
+      "fundId": 1321,
+      "estematedCost": "1292.66",
+      "allotteeInvestment": "1000.00",
+      "promoterInvestment": "292.66",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 151175,
+      "estimationCopy": "phpYB9Zjs_1752995352.pdf",
+      "expndLand": "100.00",
+      "expndBuilding": "1192.66"
+    }
+  }
+}

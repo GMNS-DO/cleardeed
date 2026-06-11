@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: TULASI KOTTAGE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1474,
+      "masterAccHolder": "RA HOUSING & INFRA PRIVAT LIMITED, TULASI KOTTAGE",
+      "masterAccIFSC": "IOBA0000159",
+      "masterAccNo": "015902000002740",
+      "masterAccbank": "INDIAN OVERSEAS BANK",
+      "masterAccbranch": "BAPUJI NAGAR, BHUBANESWAR",
+      "masterCancellCheque": "phpqq3kiy_1774707941.pdf",
+      "masterCancellChequeId": 242670,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9090969150",
+      "reraAccHolder": "RA HOUSING & INFRA PRIVAT LIMITED, TULASI KOTTAGE",
+      "reraAccIFSc": "IOBA0000159",
+      "reraAccNo": "015902000002741",
+      "reraAccbank": "INDIAN OVERSEAS BANK",
+      "reraAccbranch": "BAPUJI NAGAR, BHUBANESWAR",
+      "reraCancellCheque": "phpMRnrGS_1774708044.pdf",
+      "reraCancellChequeId": 242671,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9090969150",
+      "transAccHolder": "RA HOUSING & INFRA PRIVAT LIMITED, TULASI KOTTAGE",
+      "transAccIFSC": "IOBA0000159",
+      "transrAccNo": "015902000002742",
+      "transAccbank": "INDIAN OVERSEAS BANK",
+      "transAccbranch": "BAPUJI NAGAR, BHUBANESWAR",
+      "transCancellCheque": "phpOdXCDc_1774708144.pdf",
+      "transCancellChequeId": 242672,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9090969150"
+    },
+    "fundSourceQuery": {
+      "fundId": 1434,
+      "estematedCost": "354.21",
+      "allotteeInvestment": "254.21",
+      "promoterInvestment": "100.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 215537,
+      "estimationCopy": "php4bpYQ6_1766508739.pdf",
+      "expndLand": "50.00",
+      "expndBuilding": "304.21"
+    }
+  }
+}

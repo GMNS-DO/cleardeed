@@ -1,0 +1,151 @@
+{
+  "source_url": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
+  "artifact_id": "ecourts-district-party-form",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "byte_length": 117623,
+  "notes": "District eCourts party-name form probe; external HTTP often returns 403, browser/captcha required.",
+  "title": "Home - eCourt India Services",
+  "link_count": 70,
+  "pdf_links": [],
+  "candidate_links": [
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#navbarsToggle01",
+      "text": "Skip to Navigation"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#sidebarMenu",
+      "text": "Skip to Main Content"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=site_map/index",
+      "text": "Site map"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "A"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "A"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "English"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
+      "text": "Case Status"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=courtorder/index",
+      "text": "Court Orders"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=caveat_search/index",
+      "text": "Caveat Search"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=villageSearch/index",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSPartyNameHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=hcservices/show_help_videos&caseSearchType=CSPartyNameHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSFilingNumberHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSAdvocateHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSFIRNumberHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSActHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSCaseTypeHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/static/viewHelpVideo.php?caseSearchType=CSPartyNameHelp",
+      "text": "Click here to view help video"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "&times;"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "&times;"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "&times;"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "&times;"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=site_map/index",
+      "text": "Site map"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": ""
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "National Informatics Centre (NIC) External website that opens a new window"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "download app on Google Play"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+      "text": "download app on App Store"
+    },
+    {
+      "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#page-top",
+      "text": ""
+    }
+  ],
+  "form_count": 7,
+  "input_count": 73,
+  "select_count": 9,
+  "has_captcha_hint": true,
+  "has_login_hint": true
+}

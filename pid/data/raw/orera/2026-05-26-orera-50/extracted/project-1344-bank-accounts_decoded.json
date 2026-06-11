@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: Disha Ananta Villa",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1269,
+      "masterAccHolder": "DISHA REAL ESTATE/Disha Ananta Villa/Account",
+      "masterAccIFSC": "IDBI000C149",
+      "masterAccNo": "7980874336",
+      "masterAccbank": "INDIAN BANK",
+      "masterAccbranch": "Rajarani Tower, Kamapalli Main Road, Near BN Pur Police Station",
+      "masterCancellCheque": "phpVXo27K_1743084574.pdf",
+      "masterCancellChequeId": 135504,
+      "masterBranchTeleph": "06802280430",
+      "masterBranchMobile": "8249288298",
+      "reraAccHolder": "DISHA REAL ESTATE/Disha Ananta Villa/ORERA",
+      "reraAccIFSc": "IDBI000C149",
+      "reraAccNo": "7980887471",
+      "reraAccbank": "INDIAN BANK",
+      "reraAccbranch": "Rajarani Tower, Kamapalli Main Road, Near BN Pur Police Station",
+      "reraCancellCheque": "phpmCKEjW_1743084685.pdf",
+      "reraCancellChequeId": 135505,
+      "reraBranchTeleph": "06802280430",
+      "reraBranchMobile": "8249288298",
+      "transAccHolder": "DISHA REAL ESTATE/Disha Ananta Villa/Transaction",
+      "transAccIFSC": "IDBI000C149",
+      "transrAccNo": "7980890256",
+      "transAccbank": "INDIAN BANK",
+      "transAccbranch": "Rajarani Tower, Kamapalli Main Road, Near BN Pur Police Station",
+      "transCancellCheque": "phpHOpyu7_1743084747.pdf",
+      "transCancellChequeId": 135506,
+      "transBranchTeleph": "06802280430",
+      "transBranchMobile": "8249288298"
+    },
+    "fundSourceQuery": {
+      "fundId": 1243,
+      "estematedCost": "1350.14",
+      "allotteeInvestment": "0.00",
+      "promoterInvestment": "1350.14",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 205678,
+      "estimationCopy": "phpcAMmhb_1762964918.pdf",
+      "expndLand": "14.00",
+      "expndBuilding": "1336.14"
+    }
+  }
+}

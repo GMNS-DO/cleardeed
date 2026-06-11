@@ -1,0 +1,40 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: PRADHAN ROYAL PALACE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "RTP/DTP (ST-ER)-456/2022",
+        "represntativeName": "NAGENDRA KUMAR PARIDA",
+        "represntativeEmail": "nkparidaconsultants @gmail.com",
+        "represntativeMobile": "9437013988",
+        "representiveType": 5
+      },
+      {
+        "liscenceNo": "CA/97/21736",
+        "represntativeName": "A.K. MUDULI",
+        "represntativeEmail": "arpoint12@gmail.com",
+        "represntativeMobile": "9238308095",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "FRN326119E",
+        "represntativeName": "S B DASH",
+        "represntativeEmail": "sbdashandco@gmail.com",
+        "represntativeMobile": "9861081040",
+        "representiveType": 1
+      }
+    ],
+    "promoters": [
+      {
+        "promoterName": "PRADHAN REALCON PRIVATE LIMITED",
+        "emailId": "pradhanrealconpltd@gmail.com",
+        "mobile": "9437224137"
+      }
+    ],
+    "agents": []
+  }
+}

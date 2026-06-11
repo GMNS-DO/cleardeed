@@ -1,0 +1,35 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/master/Projects/totalProjectCountDetails",
+  "label": "ORERA project count totals",
+  "http_status": 200,
+  "token_verified": true,
+  "status": 200,
+  "message": null,
+  "result_type": "object",
+  "keys": [
+    "commercialAvailableUnit",
+    "commercialCounts",
+    "landAvailableUnit",
+    "landCounts",
+    "residentialAvailableUnit",
+    "residentialCounts",
+    "status",
+    "totalCompleted",
+    "totalOngoing",
+    "totalRegistered",
+    "totalRejected"
+  ],
+  "values": {
+    "status": 200,
+    "totalRegistered": 1168,
+    "totalRejected": 226,
+    "totalCompleted": 196,
+    "totalOngoing": 972,
+    "residentialAvailableUnit": 38275,
+    "commercialAvailableUnit": 465,
+    "landAvailableUnit": 6194,
+    "residentialCounts": 18000,
+    "commercialCounts": 22,
+    "landCounts": 3169
+  }
+}

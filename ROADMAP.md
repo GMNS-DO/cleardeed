@@ -181,14 +181,20 @@ The entire implementation is 3 PIs and 15 sprints. Every sprint ships code that 
 
 ---
 
-## Sprint 11 (Weeks 21–22) — Adjacent Data Sources, Wave 2
+### Sprint 11 (Weeks 21–22) — Bhulekh Data Mirror + Adjacent Sources
 
 **Sprint goal:**
-> Second-wave data sources that compound the moat: BMC property tax, TPCODL connection history, adjacent plot kisam overlay, EOW blacklist cross-reference.
+> Bulk ROR data mirror for Khordha (Railway persistent process) + second-wave data sources that compound the moat.
 
 **Exit criteria:**
-- 4 of 5 above shipped
-- Insights from these sources tested in 20+ real reports
+- Bhulekh Mirror Stage 0–4 complete for Khordha: bulk ROR mirror in Supabase, change detector running on Railway, high_priority_recheck wired to Vercel pipeline
+- Sample validation gate passed (8–10 plots verified manually before bulk)
+- PID pattern matching integrated into reports for ≥3 VALIDATED patterns
+- BMC Policy Tracker property tax cross-reference shipped
+- TPCODL connection history (occupancy signal) shipped
+- 4 of 5 above shipped (BMC + TPCODL + 2 more)
+
+**Out of scope:** Phase 2 district expansion for Mirror. Any PID patterns below VALIDATED tier in reports.
 
 ---
 

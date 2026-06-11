@@ -1,0 +1,122 @@
+{
+  "generated_at": "2026-05-25T21:56:41.516Z",
+  "purpose": "PDF text/OCR triage for PID evidence promotion. This does not create final risk findings.",
+  "options": {
+    "run": "2026-05-26-orera-50",
+    "oreraRoot": "pid/data/raw/orera",
+    "candidates": "pid/research/generated/orera_50_pattern_candidates.json",
+    "outDir": "pid/research/generated/pdf_text_poc_ror",
+    "limit": 6,
+    "ocrLimit": 3,
+    "keepImages": false,
+    "field": [
+      "plotrorid"
+    ]
+  },
+  "environment": {
+    "pdftotext": null,
+    "tesseract_cli": null,
+    "sips": "/usr/bin/sips",
+    "tesseract_js": "file:///Users/deekshamohapatra/Documents/cleardeed/node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/src/index.js"
+  },
+  "processed_count": 6,
+  "ocr_attempted_count": 3,
+  "status_counts": {
+    "ocr_text_found": 1,
+    "image_pdf_ocr_weak": 2,
+    "image_pdf_ocr_pending": 3
+  },
+  "field_counts": {
+    "plotRorId": 6
+  },
+  "files": [
+    {
+      "file_name": "project-1878-doc-235560-plotrorid.pdf",
+      "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1878-doc-235560-plotrorid.pdf",
+      "field": "plotRorId",
+      "linked_card_count": 1,
+      "bytes": 293717,
+      "dct_image_count": 2,
+      "crude_literal_text_chars": 26,
+      "ocr_chars": 1391,
+      "ocr_quality": {
+        "chars": 1391,
+        "printable_ratio": 0.992,
+        "alpha_ratio": 0.623,
+        "word_count": 143
+      },
+      "ocr_confidence": 51,
+      "triage_status": "ocr_text_found"
+    },
+    {
+      "file_name": "project-1613-doc-163323-plotrorid.pdf",
+      "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1613-doc-163323-plotrorid.pdf",
+      "field": "plotRorId",
+      "linked_card_count": 1,
+      "bytes": 1141904,
+      "dct_image_count": 96,
+      "crude_literal_text_chars": 8,
+      "ocr_chars": 0,
+      "ocr_quality": null,
+      "ocr_confidence": 0,
+      "triage_status": "image_pdf_ocr_weak"
+    },
+    {
+      "file_name": "project-1920-doc-241019-plotrorid.pdf",
+      "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1920-doc-241019-plotrorid.pdf",
+      "field": "plotRorId",
+      "linked_card_count": 1,
+      "bytes": 3066475,
+      "dct_image_count": 414,
+      "crude_literal_text_chars": 7623,
+      "ocr_chars": 100,
+      "ocr_quality": {
+        "chars": 100,
+        "printable_ratio": 0.99,
+        "alpha_ratio": 0.54,
+        "word_count": 7
+      },
+      "ocr_confidence": 28,
+      "triage_status": "image_pdf_ocr_weak"
+    },
+    {
+      "file_name": "project-1876-doc-234960-plotrorid.pdf",
+      "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1876-doc-234960-plotrorid.pdf",
+      "field": "plotRorId",
+      "linked_card_count": 1,
+      "bytes": 288155,
+      "dct_image_count": 2,
+      "crude_literal_text_chars": 8,
+      "ocr_chars": 0,
+      "ocr_quality": null,
+      "ocr_confidence": null,
+      "triage_status": "image_pdf_ocr_pending"
+    },
+    {
+      "file_name": "project-1221-doc-115176-plotrorid.pdf",
+      "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1221-doc-115176-plotrorid.pdf",
+      "field": "plotRorId",
+      "linked_card_count": 1,
+      "bytes": 3110041,
+      "dct_image_count": 4,
+      "crude_literal_text_chars": 18,
+      "ocr_chars": 0,
+      "ocr_quality": null,
+      "ocr_confidence": null,
+      "triage_status": "image_pdf_ocr_pending"
+    },
+    {
+      "file_name": "project-1930-doc-241582-plotrorid.pdf",
+      "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1930-doc-241582-plotrorid.pdf",
+      "field": "plotRorId",
+      "linked_card_count": 1,
+      "bytes": 1559979,
+      "dct_image_count": 2,
+      "crude_literal_text_chars": 44,
+      "ocr_chars": 0,
+      "ocr_quality": null,
+      "ocr_confidence": null,
+      "triage_status": "image_pdf_ocr_pending"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: VANYA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1456,
+      "masterAccHolder": "VANYA",
+      "masterAccIFSC": "SBIN0000041",
+      "masterAccNo": "44763587139",
+      "masterAccbank": "STATE BANK OF INDIA",
+      "masterAccbranch": "BHUBANESWAR ",
+      "masterCancellCheque": "phpSrmb0J_1768219058.pdf",
+      "masterCancellChequeId": 223427,
+      "masterBranchTeleph": "06742530894",
+      "masterBranchMobile": "6742598501",
+      "reraAccHolder": "VANYA",
+      "reraAccIFSc": "SBIN0000041",
+      "reraAccNo": "44756866392",
+      "reraAccbank": "STATE BANK OF INDIA",
+      "reraAccbranch": "BHUBANESWAR ",
+      "reraCancellCheque": "phpfZ9xCF_1768219065.pdf",
+      "reraCancellChequeId": 223430,
+      "reraBranchTeleph": "06742530894",
+      "reraBranchMobile": "6742598501",
+      "transAccHolder": "VANYA",
+      "transAccIFSC": "SBIN0000041",
+      "transrAccNo": "44763589895",
+      "transAccbank": "STATE BANK OF INDIA",
+      "transAccbranch": "BHUBANESWAR ",
+      "transCancellCheque": "phpXEIAks_1768219070.pdf",
+      "transCancellChequeId": 223433,
+      "transBranchTeleph": "06742530894",
+      "transBranchMobile": "6742598501"
+    },
+    "fundSourceQuery": {
+      "fundId": 1417,
+      "estematedCost": "17094.32",
+      "allotteeInvestment": "16094.00",
+      "promoterInvestment": "1000.32",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 222240,
+      "estimationCopy": "phpi76nuT_1764047484.pdf",
+      "expndLand": "100.00",
+      "expndBuilding": "16994.32"
+    }
+  }
+}

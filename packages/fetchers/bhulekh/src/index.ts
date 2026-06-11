@@ -8,6 +8,10 @@
  * - Follow pageRedirect, parse the ROR HTML
  *
  * Browser/Playwright is only for discovery — the runtime path is request replay.
+ *
+ * NOTE: On Vercel serverless, ASP.NET event validation causes session-replay to fail
+ * with "Invalid postback" errors. Fall back to full Playwright-driven cascade for
+ * reliability. Slower but correct.
  */
 import serverlessChromium from "@sparticuz/chromium";
 import { chromium } from "playwright-core";
@@ -154,8 +158,14 @@ interface BhulekhArtifactSnapshot {
 
 async function readSelectOptions(
   page: Page,
-  selector: string
+  selector: string,
+  timeoutMs = 10_000
 ): Promise<DropdownOption[]> {
+  try {
+    await page.waitForSelector(selector, { timeout: timeoutMs, state: "attached" });
+  } catch {
+    // Selector not found — return empty
+  }
   return page.locator(selector).evaluateAll((nodes) => {
     const select = nodes[0] as HTMLSelectElement | undefined;
     if (!select) return [];
@@ -493,6 +503,10 @@ async function getBrowser() {
   return browser;
 }
 
+async function launchFreshBrowser(): Promise<Browser> {
+  return chromium.launch(await buildChromiumLaunchOptions());
+}
+
 async function browserBootstrap(): Promise<{
   cookies: string[];
   hiddenFields: Record<string, string>;
@@ -539,6 +553,15 @@ function resetCachedBrowserIfClosed(message: string): void {
 async function closePageQuietly(page: Page | null): Promise<void> {
   if (!page || page.isClosed()) return;
   await page.close().catch(() => undefined);
+}
+
+async function triggerAspNetPostBack(page: Page, target: string): Promise<void> {
+  await page.evaluate((eventTarget) => {
+    const win = window as typeof window & {
+      __doPostBack?: (target: string, argument: string) => void;
+    };
+    win.__doPostBack?.(eventTarget, "");
+  }, target);
 }
 
 async function captureRoRScreenshots(
@@ -694,6 +717,8 @@ export async function fetch(input: {
   identifierLabel?: string;
   /** V1.1: Optional claimed owner name for tenant matching */
   claimedOwnerName?: string;
+  /** V1.1: Skip screenshots/back-page fetch/retries for the free preview path */
+  previewOnly?: boolean;
 }): Promise<RoRResultType> {
   const fetchedAt = new Date().toISOString();
 
@@ -858,28 +883,31 @@ export async function fetch(input: {
     // but screenshot/browser failures must not make the parsed RoR disappear.
     console.log("[bhulekh] Browser bootstrap + optional screenshot capture...");
     let browserPage: Page | null = null;
+    let browserToClose: Browser | null = null;
     let session = new BhulekhSession(BHULEKH_URL);
-    if (attempt > 1) {
-      console.log("[bhulekh] HTTP bootstrap retry path...");
-      await session.bootstrap();
-      captureArtifact(
-        "http_retry_bootstrap",
-        JSON.stringify({ attempt, reason: "fresh_http_session_retry" }),
-        "json",
-        { attempt }
-      );
-    } else {
     try {
-      const browser = await getBrowser();
+      if (attempt > 1) {
+        console.log("[bhulekh] Retrying with a fresh browser session...");
+      }
+      const useFreshBrowser = input.previewOnly || isServerlessBrowserRuntime();
+      const browser = useFreshBrowser ? await launchFreshBrowser() : await getBrowser();
+      browserToClose = useFreshBrowser ? browser : null;
       browserPage = await browser.newPage();
       await browserPage.setExtraHTTPHeaders({
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
       });
       await browserPage.goto(ROR_VIEW_URL, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
-      if (browserPage.url().includes("BhulekhError.aspx")) {
+      const currentUrl = browserPage.url();
+      console.log("[bhulekh] Initial URL:", currentUrl);
+      if (currentUrl.includes("BhulekhError.aspx")) {
+        console.log("[bhulekh] On error page, following 'here' link...");
+        const hereLink = await browserPage.locator("a", { hasText: "here" }).getAttribute("href");
+        console.log("[bhulekh] 'here' link href:", hereLink);
         await browserPage.locator("a", { hasText: "here" }).click();
         await browserPage.waitForURL(/RoRView\.aspx/, { timeout: TIMEOUT_MS });
       }
+      const bootstrapUrl = browserPage.url();
+      console.log("[bhulekh] Bootstrap URL:", bootstrapUrl);
       // Capture cookies + initial hidden fields from the browser session
       const cookies = (await browserPage.context().cookies([ROR_VIEW_URL])).map((c) => `${c.name}=${c.value}`);
       const initialHidden: Record<string, string> = {};
@@ -889,240 +917,141 @@ export async function fetch(input: {
       for (const { name, value } of hiddenInputs) {
         initialHidden[name] = value;
       }
+      // Check district dropdown has options — wait for async population
+      const districtOpts = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlDistrict");
+      const tahasilOpts = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlTahsil");
+      const villageOpts = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlVillage");
+      console.log("[bhulekh] Bootstrap dropdowns — district:", districtOpts.length, "tahasil:", tahasilOpts.length, "village:", villageOpts.length);
       captureArtifact("browser_bootstrap_html", await browserPage.content(), "html", {
-        url: browserPage.url(),
+        url: bootstrapUrl,
         hiddenFieldCount: Object.keys(initialHidden).length,
         cookieCount: cookies.length,
+        districtOpts: districtOpts.slice(0, 5),
+        tahasilOpts: tahasilOpts.slice(0, 5),
       });
       session.injectSession({ cookies, hiddenFields: initialHidden });
+
+      // ── Playwright-driven cascade (reliable on serverless, session-replay fails) ──
+      console.log("[bhulekh] Playwright cascade — district:", districtCode, "tahasil:", tahasilCode, "village:", resolvedVillageCode);
+
+      // Select district
+      await browserPage.selectOption(
+        "#ctl00_ContentPlaceHolder1_ddlDistrict",
+        districtCode
+      );
+      await browserPage.waitForTimeout(750);
+      const districtAfter = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlDistrict");
+      console.log("[bhulekh] District options after select:", districtAfter.length);
+
+      // Select tahasil
+      await browserPage.selectOption(
+        "#ctl00_ContentPlaceHolder1_ddlTahsil",
+        tahasilCode
+      );
+      await browserPage.waitForTimeout(750);
+      const tahasilAfter = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlTahsil");
+      console.log("[bhulekh] Tahasil options after select:", tahasilAfter.length, "selected:", tahasilCode);
+
+      // Select village
+      await browserPage.selectOption(
+        "#ctl00_ContentPlaceHolder1_ddlVillage",
+        resolvedVillageCode
+      );
+      await browserPage.waitForTimeout(750);
+      const villageAfter = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlVillage");
+      console.log("[bhulekh] Village options after select:", villageAfter.length, "selected:", resolvedVillageCode);
+
+      // Switch to the requested search mode.
+      const requestedMode = input.searchMode ?? "Plot";
+      const searchModeValue = requestedMode === "Khatiyan" ? "Khatiyan" : "Plot";
+      await browserPage.locator(`input[name="ctl00$ContentPlaceHolder1$rbtnRORSearchtype"][value="${searchModeValue}"]`).click();
+      await browserPage.waitForTimeout(750);
+
+      // Check identifier dropdown options
+      const plotOpts = await readSelectOptions(browserPage, "#ctl00_ContentPlaceHolder1_ddlBindData");
+      console.log("[bhulekh] Identifier options:", plotOpts.length, "mode:", searchModeValue);
+
+      if (plotOpts.length === 0) {
+        throw Object.assign(
+          new Error("Identifier dropdown empty after search-mode selection."),
+          { code: "IDENTIFIER_DROPDOWN_EMPTY", attempts: attemptCount }
+        );
+      }
+
+      // Find matching identifier option
+      const targetIdentifier = requestedMode === "Khatiyan" ? khatiyanNo : plotNo;
+      const match = plotOpts.find(
+        (o) => o.text.trim() === targetIdentifier?.trim() || o.value.trim() === targetIdentifier?.trim()
+      );
+      if (!match) {
+        throw Object.assign(
+          new Error(`${searchModeValue} "${targetIdentifier}" not found in Bhulekh dropdown.`),
+          { code: "IDENTIFIER_NOT_FOUND", attempts: attemptCount }
+        );
+      }
+
+      console.log("[bhulekh] Selecting identifier:", match.text, "(value=", match.value, ")");
+      await browserPage.selectOption("#ctl00_ContentPlaceHolder1_ddlBindData", match.value);
+      await triggerAspNetPostBack(browserPage, "ctl00$ContentPlaceHolder1$ddlBindData").catch(() => undefined);
+      await browserPage.waitForTimeout(750);
+
+      // Click View RoR
+      await browserPage.click("#ctl00_ContentPlaceHolder1_btnRORFront");
+      await Promise.race([
+        browserPage.waitForURL(/SRoRFront_Uni\.aspx/, { timeout: TIMEOUT_MS }),
+        browserPage.waitForNavigation({ timeout: TIMEOUT_MS }),
+      ]).catch(() => undefined);
+
+      const rorUrl = browserPage.url();
+      console.log("[bhulekh] RoR page URL:", rorUrl);
+      const rorHtml = await browserPage.content();
+      captureArtifact("ror_html", rorHtml, "html", { redirectUrl: rorUrl, searchMode: searchModeValue });
+
+      const frontResult = annotateBhulekhAttemptMetadata(
+        parseRoRHtml(rorHtml, resolvedVillageInfo!, searchModeValue as "Plot" | "Khatiyan", match.value, match.text, fetchedAt),
+        attemptCount,
+        inputsTried
+      );
+
+      if (input.previewOnly) {
+        await closePageQuietly(browserPage);
+        browserPage = null;
+        await browserToClose?.close().catch(() => undefined);
+        browserToClose = null;
+        return frontResult;
+      }
+
+      // Capture screenshots (this closes browserPage)
+      const screenshots = await captureRoRScreenshots(browserPage, rorUrl);
+      frontPageScreenshot = screenshots.frontPageScreenshot;
+      backPageScreenshot = screenshots.backPageScreenshot;
+      browserPage = null; // already closed by captureRoRScreenshots
+
+      // Fetch Back Page via HTTP session (browserPage is null/closed)
+      const backPageResult = await fetchBackPage(session, rorUrl, fetchedAt, artifactSnapshots);
+      captureArtifact("back_page_html", backPageResult.html ?? "", "html", { status: backPageResult.status });
+
+      const combinedResult = combineFrontBackResult(frontResult, backPageResult, frontPageScreenshot, backPageScreenshot, artifactSnapshots);
+      await browserToClose?.close().catch(() => undefined);
+      browserToClose = null;
+      return combinedResult;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.warn("[bhulekh] Browser bootstrap failed; falling back to HTTP bootstrap:", errorMessage);
+      console.warn("[bhulekh] Browser cascade failed:", errorMessage);
       resetCachedBrowserIfClosed(errorMessage);
       await closePageQuietly(browserPage);
+      await browserToClose?.close().catch(() => undefined);
+      browserToClose = null;
       browserPage = null;
-      session = new BhulekhSession(BHULEKH_URL);
-      await session.bootstrap();
-      captureArtifact(
-        "http_bootstrap_fallback",
-        JSON.stringify({ reason: "browser_bootstrap_failed", error: errorMessage.slice(0, 500) }),
-        "json",
-        { fallback: "http_session_bootstrap" }
-      );
+      throw err;
     }
-    }
-
-    console.log("[bhulekh] Select district:", districtCode);
-    const d1 = await session.postAsync("ctl00$ContentPlaceHolder1$ddlDistrict", "", {
-      [districtField("ddlDistrict")]: districtCode,
-      [districtField("ddlTahsil")]: "",
-      [districtField("ddlVillage")]: "",
-    });
-    captureArtifact("select_district_delta", d1.raw, "aspnet_delta", { districtCode });
-    console.log("[bhulekh]   redirect:", d1.redirectPath ?? "none");
-
-    console.log("[bhulekh] Select tahasil:", tahasilCode);
-    const d2 = await session.postAsync("ctl00$ContentPlaceHolder1$ddlTahsil", "", {
-      [districtField("ddlDistrict")]: districtCode,
-      [districtField("ddlTahsil")]: tahasilCode,
-      [districtField("ddlVillage")]: "",
-    });
-    captureArtifact("select_tahasil_delta", d2.raw, "aspnet_delta", { districtCode, tahasilCode });
-    const tahasilOpts = extractSelectOptions(d2.updatePanelHtml ?? "", districtField("ddlTahsil"));
-    console.log("[bhulekh]   tahasil options count:", tahasilOpts.length);
-
-    console.log("[bhulekh] Select village:", resolvedVillageCode);
-    const d3 = await session.postAsync("ctl00$ContentPlaceHolder1$ddlVillage", "", {
-      [districtField("ddlDistrict")]: districtCode,
-      [districtField("ddlTahsil")]: tahasilCode,
-      [districtField("ddlVillage")]: resolvedVillageCode,
-    });
-    captureArtifact("select_village_delta", d3.raw, "aspnet_delta", {
-      districtCode,
-      tahasilCode,
-      villageCode: resolvedVillageCode,
-    });
-    const villageOpts = extractSelectOptions(d3.updatePanelHtml ?? "", districtField("ddlVillage"));
-    console.log("[bhulekh]   village options count:", villageOpts.length);
-
-    if (villageOpts.length === 0) {
-      captureArtifact(
-        "village_dropdown_empty_warning",
-        JSON.stringify({ villageCode: resolvedVillageCode, message: "Village dropdown was absent from AJAX delta; retrying with a fresh session." }),
-        "json",
-        { villageCode: resolvedVillageCode }
-      );
-      throw Object.assign(
-        new Error("Village dropdown empty after selection. Retrying with a fresh Bhulekh session."),
-        { code: "VILLAGE_DROPDOWN_EMPTY", attempts: attemptCount }
-      );
-    }
-
-    // Switch to Plot mode
-    console.log("[bhulekh] Switching to Plot mode...");
-    const d4 = await session.postAsync("ctl00$ContentPlaceHolder1$rbtnRORSearchtype$1", "", {
-      [districtField("ddlDistrict")]: districtCode,
-      [districtField("ddlTahsil")]: tahasilCode,
-      [districtField("ddlVillage")]: resolvedVillageCode,
-      [districtField("rbtnRORSearchtype")]: "Plot",
-    });
-    captureArtifact("select_search_mode_delta", d4.raw, "aspnet_delta", {
-      searchMode: "Plot",
-      districtCode,
-      tahasilCode,
-      villageCode: resolvedVillageCode,
-    });
-
-    if (d4.raw.includes("error|")) {
-      const errMatch = d4.raw.match(/error\|([^\|]+)/);
-      throw Object.assign(
-        new Error(`EVENTVALIDATION error: ${errMatch?.[1] ?? "unknown"}`),
-        { code: "EVENTVALIDATION_ERROR", attempts: attemptCount }
-      );
-    }
-
-    // Read plot options from the Plot mode delta
-    const plotOpts = extractSelectOptions(d4.updatePanelHtml ?? "", districtField("ddlBindData"));
-    console.log("[bhulekh]   plot options count:", plotOpts.length);
-    captureArtifact(
-      "plot_dropdown_options",
-      JSON.stringify({ count: plotOpts.length, options: plotOpts.slice(0, 500) }),
-      "json",
-      { optionCount: plotOpts.length }
-    );
-
-    if (plotOpts.length === 0) {
-      throw Object.assign(
-        new Error("Plot dropdown empty after search-mode selection. Retrying with a fresh Bhulekh session."),
-        { code: "PLOT_DROPDOWN_EMPTY", attempts: attemptCount }
-      );
-    }
-
-    if (plotNo) {
-      const match = plotOpts.find(
-        (o) => o.text.trim() === plotNo?.trim() || o.value.trim() === plotNo?.trim()
-      );
-      if (!match) {
-        throw Object.assign(
-          new Error(`Plot "${plotNo}" not found in Bhulekh plot dropdown.`),
-          { code: "PLOT_NOT_FOUND", attempts: attemptCount }
-        );
-      }
-
-      console.log("[bhulekh] Select plot:", match.text, "(value=", match.value, ")");
-      const d5 = await session.postFinal({
-        [districtField("ddlDistrict")]: districtCode,
-        [districtField("ddlTahsil")]: tahasilCode,
-        [districtField("ddlVillage")]: resolvedVillageCode,
-        [districtField("rbtnRORSearchtype")]: "Plot",
-        [districtField("ddlBindData")]: match.value,
-      });
-      captureArtifact("view_ror_plot_delta", d5.raw, "aspnet_delta", {
-        plotNo,
-        matchedOptionValue: match.value.trim(),
-        matchedOptionText: match.text.trim(),
-      });
-
-      if (!d5.redirectPath) {
-        const err = d5.raw.match(/error\|([^\|]+)/)?.[1];
-        throw Object.assign(
-          new Error(`View RoR returned no redirect. Delta error: ${err ?? "unknown"}`),
-          { code: "NO_REDIRECT", attempts: attemptCount }
-        );
-      }
-
-      const redirectUrl = d5.redirectPath.startsWith("/")
-        ? `${BHULEKH_URL}${d5.redirectPath}`
-        : d5.redirectPath;
-
-      console.log("[bhulekh] Following redirect to:", redirectUrl);
-      const rorHtml = await session.fetchPage(redirectUrl);
-      captureArtifact("ror_html", rorHtml, "html", { redirectUrl, searchMode: "Plot" });
-
-      // ── V1.1 Screenshot capture via Playwright ─────────────────────────────
-      const screenshots = await captureRoRScreenshots(browserPage, redirectUrl);
-      frontPageScreenshot = screenshots.frontPageScreenshot;
-      backPageScreenshot = screenshots.backPageScreenshot;
-      browserPage = null;
-
-      // ── Fetch Back Page ───────────────────────────────────────────────────────
-      const backPageResult = await fetchBackPage(session, ROR_REPORT_URL, fetchedAt, artifactSnapshots);
-      captureArtifact("back_page_html", backPageResult.html ?? "", "html", { status: backPageResult.status });
-
-      const frontResult = annotateBhulekhAttemptMetadata(
-        parseRoRHtml(rorHtml, resolvedVillageInfo!, "Plot", match.value, match.text, fetchedAt),
-        attemptCount,
-        inputsTried
-      );
-
-      // Return combined result with front + back + screenshots
-      return combineFrontBackResult(frontResult, backPageResult, frontPageScreenshot, backPageScreenshot, artifactSnapshots);
-    } else if (khatiyanNo) {
-      const khatiyanOpts = extractSelectOptions(d4.updatePanelHtml ?? "", districtField("ddlBindData"));
-      const match = khatiyanOpts.find(
-        (o) => o.text.trim() === khatiyanNo?.trim() || o.value.trim() === khatiyanNo?.trim()
-      );
-      if (!match) {
-        throw Object.assign(
-          new Error(`Khatiyan "${khatiyanNo}" not found.`),
-          { code: "KHATIYAN_NOT_FOUND", attempts: attemptCount }
-        );
-      }
-
-      const d5 = await session.postFinal({
-        [districtField("ddlDistrict")]: districtCode,
-        [districtField("ddlTahsil")]: tahasilCode,
-        [districtField("ddlVillage")]: resolvedVillageCode,
-        [districtField("rbtnRORSearchtype")]: "Khatiyan",
-        [districtField("ddlBindData")]: match.value,
-      });
-      captureArtifact("view_ror_khatiyan_delta", d5.raw, "aspnet_delta", {
-        khatiyanNo,
-        matchedOptionValue: match.value.trim(),
-        matchedOptionText: match.text.trim(),
-      });
-
-      if (!d5.redirectPath) {
-        const err = d5.raw.match(/error\|([^\|]+)/)?.[1];
-        throw Object.assign(
-          new Error(`View RoR no redirect: ${err ?? d5.raw.slice(0, 200)}`),
-          { code: "NO_REDIRECT", attempts: attemptCount }
-        );
-      }
-
-      const redirectUrl = d5.redirectPath.startsWith("/")
-        ? `${BHULEKH_URL}${d5.redirectPath}`
-        : d5.redirectPath;
-
-      const rorHtml = await session.fetchPage(redirectUrl);
-      captureArtifact("ror_html", rorHtml, "html", { redirectUrl, searchMode: "Khatiyan" });
-
-      // ── V1.1 Screenshot capture via Playwright (Khatiyan mode) ─────────────
-      const screenshots = await captureRoRScreenshots(browserPage, redirectUrl);
-      frontPageScreenshot = screenshots.frontPageScreenshot;
-      backPageScreenshot = screenshots.backPageScreenshot;
-      browserPage = null;
-
-      // ── Fetch Back Page ───────────────────────────────────────────────────────
-      const backPageResult = await fetchBackPage(session, redirectUrl, fetchedAt, artifactSnapshots);
-      captureArtifact("back_page_html", backPageResult.html ?? "", "html", { status: backPageResult.status });
-
-      const frontResult = annotateBhulekhAttemptMetadata(
-        parseRoRHtml(rorHtml, resolvedVillageInfo!, "Khatiyan", match.value, match.text, fetchedAt),
-        attemptCount,
-        inputsTried
-      );
-
-      return combineFrontBackResult(frontResult, backPageResult, frontPageScreenshot, backPageScreenshot, artifactSnapshots);
-    }
-
-    throw Object.assign(new Error("Unreachable"), { code: "UNREACHABLE", attempts: attemptCount });
   }
 
   // ── Wrap with shared retry helper ──────────────────────────────────────────
+  const maxAttempts = input.previewOnly ? 2 : MAX_ATTEMPTS;
   try {
     const retryResult = await runWithRetry(runBhulekhAttempt, {
-      maxAttempts: MAX_ATTEMPTS,
+      maxAttempts,
       baseDelayMs: 1_000,
       shouldRetry: (error) => isRetryableBhulekhError(error),
     });
@@ -1135,7 +1064,7 @@ export async function fetch(input: {
       `Bhulekh fetch failed: ${errorMessage}`,
       resolvedVillageInfo?.english ?? input.village,
       {
-        attempts: retryMeta?.length ?? MAX_ATTEMPTS,
+        attempts: retryMeta?.length ?? maxAttempts,
         inputsTried,
         retryAttempts: retryMeta,
         artifactSnapshots,
@@ -1163,60 +1092,60 @@ interface BackPageFetchResult {
  * We replicate this by navigating directly to the back page URL after getting the front page.
  */
 async function fetchBackPage(
-  session: BhulekhSession,
+  session: BhulekhSession | Page,
   frontPageUrl: string,
   fetchedAt: string,
   _artifactSnapshots: BhulekhArtifactSnapshot[]
 ): Promise<BackPageFetchResult> {
-  try {
-    // Build the back page URL: same host, different path
-    // SRoRBack_Uni.aspx is in the same directory as SRoRFront_Uni.aspx
-    const backUrl = ROR_BACK_URL;
-
-    console.log("[bhulekh] Fetching Back Page:", backUrl);
-
-    // The Back Page may require the same session cookies and hidden fields
-    // Try a GET request first
-    const res = await session.request(backUrl, {
-      method: "GET",
-      headers: {
-        "Cookie": session.buildCookieHeader(),
-        "Referer": frontPageUrl,
-      },
-    });
-    const text = res.text;
-
-    if (res.status === 404 || res.text.includes("Not Found") || res.text.includes("Page Not Found")) {
-      return { status: "not_found", url: backUrl, error: "Back Page URL not found (404)" };
+  // Support both BhulekhSession (HTTP replay) and Playwright Page (browser-driven)
+  if ("request" in session && "buildCookieHeader" in session) {
+    // BhulekhSession — HTTP replay path
+    const httpSession = session as BhulekhSession;
+    try {
+      const backUrl = ROR_BACK_URL;
+      console.log("[bhulekh] Fetching Back Page via HTTP:", backUrl);
+      const res = await httpSession.request(backUrl, {
+        method: "GET",
+        headers: {
+          "Cookie": httpSession.buildCookieHeader(),
+          "Referer": frontPageUrl,
+        },
+      });
+      const text = res.text;
+      if (res.status === 404 || text.includes("Not Found") || text.includes("Page Not Found")) {
+        return { status: "not_found", url: backUrl, error: "Back Page URL not found (404)" };
+      }
+      if (text.length < 200) {
+        return { status: "failed", url: backUrl, error: "Back Page returned empty response" };
+      }
+      console.log("[bhulekh] Back Page via HTTP:", text.length, "chars, status:", res.status);
+      return { status: res.ok ? "success" : "failed", html: text, url: backUrl };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[bhulekh] Back Page HTTP error:", msg);
+      return { status: "failed", error: msg };
     }
-
-    // Check if we got a valid page or a redirect
-    if (res.text.length < 200) {
-      return { status: "failed", url: backUrl, error: "Back Page returned empty/too small response" };
+  } else {
+    // Playwright Page — browser-driven path
+    const page = session as Page;
+    try {
+      const backUrl = ROR_BACK_URL;
+      console.log("[bhulekh] Fetching Back Page via Playwright:", backUrl);
+      if (page.isClosed()) {
+        return { status: "not_found", url: backUrl, error: "Browser page closed" };
+      }
+      await page.goto(backUrl, { waitUntil: "domcontentloaded", timeout: SCREENSHOT_TIMEOUT_MS });
+      const html = await page.content();
+      if (html.length < 200) {
+        return { status: "failed", url: backUrl, error: "Back Page returned empty response" };
+      }
+      console.log("[bhulekh] Back Page via Playwright:", html.length, "chars");
+      return { status: "success", html, url: backUrl };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[bhulekh] Back Page Playwright error:", msg);
+      return { status: "failed", error: msg };
     }
-
-    console.log("[bhulekh] Back Page fetched, length:", res.text.length, "status:", res.status);
-
-    // Check if the page has actual content (not an error page)
-    const isErrorPage =
-      res.text.includes("Error") ||
-      res.text.includes("exception") ||
-      res.text.includes("Server Error") ||
-      res.text.includes("Access Denied");
-
-    if (isErrorPage) {
-      return { status: "failed", html: res.text, url: backUrl, error: "Back Page returned error page" };
-    }
-
-    return {
-      status: "success",
-      html: res.text,
-      url: backUrl,
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[bhulekh] Back Page fetch error:", msg);
-    return { status: "failed", error: msg };
   }
 }
 
@@ -2158,6 +2087,17 @@ function buildFailedResult(
   } = {}
 ): RoRResultType {
   const artifactSnapshots = provenance.artifactSnapshots ?? [];
+  // Include diagnostic excerpts from artifact snapshots in the error message
+  const diagnosticLines: string[] = [];
+  for (const snap of artifactSnapshots) {
+    if (snap.stage === "select_tahasil_delta" || snap.stage === "select_village_delta") {
+      const excerpt = snap.excerpt ?? snap.raw ?? "";
+      if (excerpt) diagnosticLines.push(`[${snap.stage}] ${excerpt.slice(0, 200)}`);
+    }
+  }
+  const fullError = diagnosticLines.length > 0
+    ? `${error}\n--- Diagnostic ---\n${diagnosticLines.join("\n")}`
+    : error;
   const failureDocument = {
     schemaVersion: "bhulekh-failure-v1",
     source: {
@@ -2166,7 +2106,7 @@ function buildFailedResult(
       rawArtifactHash: artifactSnapshots.at(-1)?.hash,
       rawArtifactRef: artifactSnapshots.at(-1) ? `sha256:${artifactSnapshots.at(-1)?.hash}` : undefined,
     },
-    statusReason: error,
+    statusReason: fullError,
     village,
     artifactSnapshots,
     inputsTried: provenance.inputsTried ?? [],
@@ -2184,7 +2124,7 @@ function buildFailedResult(
     status: "failed",
     verification: "manual_required",
     fetchedAt,
-    statusReason: error,
+    statusReason: fullError,
     attempts: provenance.attempts,
     inputsTried: provenance.inputsTried,
     retryAttempts: provenance.retryAttempts,
@@ -2198,7 +2138,7 @@ function buildFailedResult(
       village,
       tenants: [],
     },
-    error,
+    error: fullError,
   };
 }
 

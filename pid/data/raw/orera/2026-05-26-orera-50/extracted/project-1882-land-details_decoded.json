@@ -1,0 +1,55 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: STALWART ATMOSPHERE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "321/12659",
+        "mouza": "BHUBANESWAR SAHAR UNIT NO-41 CHANDRASEKHAR PUR",
+        "khataNo": "611/4913",
+        "kisama": 6,
+        "plotArea": "18008.51",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 1,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "ROR stands in the name of M/S. PARAMITRA SMART INFRA PRIVATE LIMITED. Executed GPA IN FAVOUR OF STALWART PROJECTS PVT. LTD.",
+        "titleHolder": 2,
+        "plotAreaIncuded": "18008.5100",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 245479,
+        "plotEc": "phpiyIFcI_1775479131.pdf",
+        "plotRorId": 243518,
+        "saleDeedId": 0,
+        "poaId": 243519,
+        "landDetailId": 7196,
+        "shareAlloc": "php49xEt9_1775660132.pdf",
+        "shareAllocId": 246528,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "11132602971",
+        "poaRegnDate": "2026-03-31",
+        "poaRegnAt": "Sub-Registrar, Khandagiri",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "Yes",
+        "owners": [
+          {
+            "name": "M/S. PARAMITRA SMART INFRA PRIVATE LIMITED",
+            "share": "Residential 28% & Commercial 45%",
+            "fileId": 243517
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari)"
+      }
+    ]
+  }
+}

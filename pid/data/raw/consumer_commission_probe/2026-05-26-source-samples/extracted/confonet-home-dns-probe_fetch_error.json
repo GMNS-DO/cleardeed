@@ -1,0 +1,6 @@
+{
+  "source_url": "https://confonet.nic.in/index.html",
+  "artifact_id": "confonet-home-dns-probe",
+  "error": "Command failed: curl -k -L --compressed --max-time 45 -A ClearDeed-PID/0.1 raw evidence collector (research; public documents only) -w \n%{http_code}\n%{content_type} https://confonet.nic.in/index.html\n  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: confonet.nic.in\n",
+  "notes": "Legacy CONFONET landing page; may be DNS/availability blocked."
+}

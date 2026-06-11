@@ -70,8 +70,30 @@ Building a 10-advocate network across 5 districts pre-launch is over-investment.
 ### D-020: No new abstractions on first pass; no refactors during launch sprints.
 Write the obvious code that solves today's problem. Extract abstractions when the second or third use case appears, not before. Do not migrate stacks during launch sprints. The existing data fetchers and infrastructure stay; the consumer-facing product wraps around them. Suggest refactors in PR descriptions; do not perform them.
 
+### D-021: RESEND_API_KEY confirmed live in Vercel (2026-05-15).
+RESEND_API_KEY is now set in Vercel environment variables. Email delivery (sendReportEmail in lib/email.ts) is fully functional. No further action needed. Local .env.local also has the key for development testing.
+
+### D-022: Report URLs are token-scoped with server-side HMAC tokens.
+Sprint 1 report links now include a deterministic `?token=` generated from server-side secrets, and `/report/{id}` plus `/api/report/{id}/pdf` fail closed without a valid token in production. This avoids a mid-sprint database migration while still making emailed/shared report URLs unguessable and durable. If a future DB migration adds per-report random `view_token`, it should preserve the same route shape.
+
+### D-023: No free preview gate; paid report renders in-browser first.
+Supersedes the earlier free-preview-first funnel in D-001. The launch strategy is now a single paid decision: the buyer enters plot details and email, clicks `Get report`, pays ₹1 through Razorpay, then sees the generated HTML report in the browser with a download option. Email remains a copy/backup delivery path, not the only report surface. The `/api/preview` endpoint may remain as internal/debug infrastructure, but the buyer-facing form must not use a `Search free` CTA.
+
+### D-024: Bhulekh Data Mirror builds independently of /app, integrates at Sprint 11.
+The Bhulekh Mirror (bulk ROR data for Khordha, then 4 more districts) is a separate `/crawl` directory running on Railway. It writes to the same Supabase instance as the main app but does not touch `/app` code. It solves three problems the live fetcher cannot: instant free preview, "seller's other properties" cross-reference, and change detection between query and payment. Integration point is the `high_priority_recheck` table written by Vercel after paid report generation. See `BHULEKH_MIRROR_TRACK.md` for full spec. Gate to bulk: sample validation (8–10 plots manually verified) must pass before Stage 3 bulk fetch runs.
+
+### D-025: Pattern Intelligence Database (PID) builds independently, integrates at Sprint 11.
+The PID is a structured fraud pattern library with NLP extraction pipeline, entity resolution, and pattern matching engine. Built in a `/pid` directory. Produces predictive commentary in reports only for patterns at VALIDATED or PROBABLE tier (≥5 validated cases). STUB and INDICATIVE tier patterns are internal only. The `features-not-places` constraint is enforced in code — geographic blacklisting is prohibited. Phase 2 (4 more districts) only starts after Phase 1 produces ≥15 validated cases for ≥3 patterns. Integration contract written before Phase 1 is marked complete. See `PID_CLAUDE_CODE_INSTRUCTIONS.md` and `PID_TRACK.md` for full spec.
+
+### D-026: Bhunaksha village resolution by CQL filter, not GPS centroid.
+Bhunaksha WFS polygon fetch was failing for small Odia villages (e.g. "Mendhasala") because Nominatim lacks entries for them, so the pipeline fell back to tehsil centroids — but a ±0.05° BBOX around the Bhubaneswar centroid missed villages 10km+ away. Fix: add `villageName` and `plotNo` as CQL filter parameters to `bhunakshaFetch`, so the WFS query reads `revenue_village_name LIKE '%Mendhasala%' AND revenue_plot = '415'` instead of BBOX centroid search. Nominatim is no longer a hard dependency for map polygon resolution. Parked: map still stuck at loading in UI — likely client-side Mapbox initialization issue.
+
+### D-027: Sprint 3 financial exposure sources wired into generateReportV11.
+eCourts, IGR EC, CERSAI, and RCCMS fetchers now called in `generateReportV11` after Bhulekh, via `buildSourceResult()` helper → `mapToReportInput`. A7 EncumbranceReasoner combines IGR EC + CERSAI into instructions. Report HTML includes `#section-financial` with risk badges. RCCMS is no longer a placeholder — it probes `rccms.odisha.gov.in` and falls back to manual instructions if the portal is down or requires login. eCourts is running against Khordha district court complex. The `sourceSummary` in V11PipelineOutput now includes all six sources.
+
+### D-028: CERSAI captcha solved with Tesseract.js, per-tehsil EC instructions, build fix.
+Three changes made in Sprint 3: (1) CERSAI's `performBasicOcr()` stub (which threw `"captcha_requires_tesseract_or_2captcha_api"`) replaced with real Tesseract.js OCR using the same multi-strategy approach as eCourts (contrast/grayscale/threshold/invert, best result selected). (2) Per-tehsil EC instructions at `apps/web/src/lib/ec-instructions.ts` for Bhubaneswar, Jatni, Balipatna, Banapur, and Khandagiri SROs — each with SRO code, contact, portal URL, fees, and district-specific notes. (3) Next.js build failed on playwright-core's vite/recorder HTML file (playwright 1.59.1 ships a sync glob export that webpack tries to parse). Fixed by externalizing `playwright`, `playwright-core`, `tesseract.js`, and `@sparticuz/chromium` in webpack config via `config.externals`.
+
 ---
 
-*To add a decision: add a new entry below dated and numbered. Do not edit older entries. To reverse a decision, add a new entry that supersedes the prior one and update the prior entry with `**Superseded by D-NNN on YYYY-MM-DD.**` at the end.*
-
-*Last revised: 2026-05-15. Commercial activities isolated to `COMMERCIAL_TRACK.md`. Implementation PIs 1–3 are product/engineering only.*
+*Last revised: 2026-05-26. Commercial activities isolated to `COMMERCIAL_TRACK.md`. Implementation PIs 1–3 are product/engineering only.*

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: DWARKA PALACE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1251,
+      "masterAccHolder": "SILKCITY REALESTATE/DWARKA PALACE/Account",
+      "masterAccIFSC": "YESB0001255",
+      "masterAccNo": "125527000000123",
+      "masterAccbank": "YES BANK LTD",
+      "masterAccbranch": "YES BANK LTD. BERHAMPUR BRANCH",
+      "masterCancellCheque": "phpZM851R_1741010537.jpeg",
+      "masterCancellChequeId": 113918,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9437064556",
+      "reraAccHolder": "SILKCITY REALESTATE/DWARKA PALACE/ORERA",
+      "reraAccIFSc": "YESB0001255",
+      "reraAccNo": "125572500000100",
+      "reraAccbank": "YES BANK LTD",
+      "reraAccbranch": "YES BANK LTD. BERHAMPUR BRANCH",
+      "reraCancellCheque": "phphycmU4_1741011108.jpeg",
+      "reraCancellChequeId": 113919,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9437064556",
+      "transAccHolder": "SILKCITY REALESTATE/DWARKA PALACE/Transaction",
+      "transAccIFSC": "YESB0001255",
+      "transrAccNo": "125572500000077",
+      "transAccbank": "YES BANK LTD",
+      "transAccbranch": "YES BANK LTD. BERHAMPUR BRANCH",
+      "transCancellCheque": "phpTN63Wu_1741011243.jpeg",
+      "transCancellChequeId": 113920,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9437064556"
+    },
+    "fundSourceQuery": {
+      "fundId": 1222,
+      "estematedCost": "1417.05",
+      "allotteeInvestment": "1000.00",
+      "promoterInvestment": "217.05",
+      "fromInvestors": "100.00",
+      "fromBank": "100.00",
+      "estimationCopyId": 219261,
+      "estimationCopy": "phpUxc4m0_1750918726.pdf",
+      "expndLand": "50.00",
+      "expndBuilding": "1367.05"
+    }
+  }
+}

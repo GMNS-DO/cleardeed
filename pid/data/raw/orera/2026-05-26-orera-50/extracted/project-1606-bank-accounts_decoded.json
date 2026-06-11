@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: AHALYA AVENUE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1410,
+      "masterAccHolder": "Ahalya Construction Pvt.Ltd (Ahalya Avenue)",
+      "masterAccIFSC": "SBIN0010240",
+      "masterAccNo": "44438194343",
+      "masterAccbank": "STATE BANK OF INDIA",
+      "masterAccbranch": "RAIL COACH FACTORY BRANCH MANCHESWAR",
+      "masterCancellCheque": "phpTRWIFT_1758327961.pdf",
+      "masterCancellChequeId": 168287,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9040584419",
+      "reraAccHolder": "Ahalya Construction Pvt.Ltd (Ahalya Avenue)",
+      "reraAccIFSc": "SBIN0010240",
+      "reraAccNo": "44437933193",
+      "reraAccbank": "STATE BANK OF INDIA",
+      "reraAccbranch": "RAIL COACH FACTORY BRANCH MANCHESWAR",
+      "reraCancellCheque": "php0SEOfs_1758328908.pdf",
+      "reraCancellChequeId": 168288,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9040584419",
+      "transAccHolder": "Ahalya Construction Pvt.Ltd (Ahalya Avenue)",
+      "transAccIFSC": "SBIN0010240",
+      "transrAccNo": "44437934471",
+      "transAccbank": "STATE BANK OF INDIA",
+      "transAccbranch": "RAIL COACH FACTORY BRANCH MANCHESWAR",
+      "transCancellCheque": "phpR9sGT9_1758328936.pdf",
+      "transCancellChequeId": 168289,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9040584419"
+    },
+    "fundSourceQuery": {
+      "fundId": 1364,
+      "estematedCost": "2450.19",
+      "allotteeInvestment": "2150.19",
+      "promoterInvestment": "300.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 168291,
+      "estimationCopy": "phpaMLdOF_1758477353.pdf",
+      "expndLand": "100.00",
+      "expndBuilding": "2350.19"
+    }
+  }
+}

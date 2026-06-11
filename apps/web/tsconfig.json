@@ -21,6 +21,8 @@
       "@cleardeed/fetcher-bhulekh": ["../../packages/fetchers/bhulekh/src/index.ts"],
       "@cleardeed/fetcher-bhunaksha": ["../../packages/fetchers/bhunaksha/src/index.ts"],
       "@cleardeed/fetcher-ecourts": ["../../packages/fetchers/ecourts/src/index.ts"],
+      "@cleardeed/fetcher-igr-ec": ["../../packages/fetchers/igr-ec/src/index.ts"],
+      "@cleardeed/fetcher-cersai": ["../../packages/fetchers/cersai/src/index.ts"],
       "@cleardeed/fetcher-rccms": ["../../packages/fetchers/rccms/src/index.ts"],
       "@cleardeed/orchestrator": ["../../packages/orchestrator/src/index.ts"],
       "@cleardeed/consumer-report-writer": ["../../agents/consumer-report-writer/src/index.ts"],

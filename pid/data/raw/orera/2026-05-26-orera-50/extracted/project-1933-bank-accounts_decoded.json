@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: ANANYA SRIKSHETRA PHASE-2",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1550,
+      "masterAccHolder": "ANANYA SRIKSHETRA PHASE-2",
+      "masterAccIFSC": "SBIN0000041",
+      "masterAccNo": "44929200601",
+      "masterAccbank": "STATE BANK OF INDIA",
+      "masterAccbranch": "BHUBANESWAR MAIN BRANCH",
+      "masterCancellCheque": "phpwC1VNt_1774595028.jpeg",
+      "masterCancellChequeId": 242105,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9677236846",
+      "reraAccHolder": "ANANYA SRIKSHETRA PHASE-2",
+      "reraAccIFSc": "SBIN0000041",
+      "reraAccNo": "44916247895",
+      "reraAccbank": "STATE BANK OF INDIA",
+      "reraAccbranch": "BHUBANESWAR MAIN BRANCH",
+      "reraCancellCheque": "phpaJr5ts_1774595093.jpeg",
+      "reraCancellChequeId": 242106,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9677236846",
+      "transAccHolder": "ANANYA SRIKSHETRA PHASE-2",
+      "transAccIFSC": "SBIN0000041",
+      "transrAccNo": "44929146245",
+      "transAccbank": "STATE BANK OF INDIA",
+      "transAccbranch": "BHUBANESWAR MAIN BRANCH",
+      "transCancellCheque": "phpa6N7ai_1774595134.jpeg",
+      "transCancellChequeId": 242107,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9677236846"
+    },
+    "fundSourceQuery": {
+      "fundId": 1498,
+      "estematedCost": "3651.11",
+      "allotteeInvestment": "951.11",
+      "promoterInvestment": "200.00",
+      "fromInvestors": "0.00",
+      "fromBank": "2500.00",
+      "estimationCopyId": 242125,
+      "estimationCopy": "php2vwWJs_1774597945.pdf",
+      "expndLand": "11.11",
+      "expndBuilding": "3640.00"
+    }
+  }
+}

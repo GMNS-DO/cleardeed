@@ -1,0 +1,64 @@
+{
+  "run_date": "2026-05-26-wave1b",
+  "root": "pid/data/raw",
+  "selected_sources": [
+    "revenue",
+    "orera",
+    "drt",
+    "bhunaksha"
+  ],
+  "results": [
+    {
+      "source_id": "odisha_revenue_land_acquisition",
+      "pages_fetched": 2,
+      "listing_rows": 40,
+      "pdfs_saved": 4
+    },
+    {
+      "source_id": "odisha_revenue_sia_4_1",
+      "pages_fetched": 2,
+      "listing_rows": 40,
+      "pdfs_saved": 4
+    },
+    {
+      "source_id": "orera",
+      "url": "https://rera.odisha.gov.in/",
+      "links": 2
+    },
+    {
+      "source_id": "orera",
+      "url": "https://rera.odisha.gov.in/projects/project-list",
+      "links": 2
+    },
+    {
+      "source_id": "orera",
+      "url": "https://rera.odisha.gov.in/real-estate-agents",
+      "links": 2
+    },
+    {
+      "source_id": "orera",
+      "assets_saved": 10,
+      "endpoints_discovered": 80
+    },
+    {
+      "source_id": "drt_cuttack_cause_lists",
+      "form_saved": true,
+      "drt_options": 41
+    },
+    {
+      "source_id": "drt_cuttack_cause_lists",
+      "url": "https://cis.drt.gov.in/drtlive/order/Hgenerate_causelist_save1.php?filing_no=MTEvMjkvMDgvMjAyNS0xLWN1dHRhY2s%3D&id=1781901520",
+      "cases": 75
+    },
+    {
+      "source_id": "drt_cuttack_cause_lists",
+      "url": "https://cis.drt.gov.in/drtlive/order/Hgenerate_causelist_save1.php?filing_no=MTEvMDQvMDgvMjAyNS0xLWN1dHRhY2s%3D&id=1403341620",
+      "cases": 64
+    },
+    {
+      "source_id": "bhunaksha_wfs",
+      "layer": "khurda_bhubaneswar",
+      "feature_count": 41
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: BIKASH NAGAR",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 8,
+  "sample_records": [
+    {
+      "facilitiesId": 6,
+      "description": "UNDER PROGRESS",
+      "documentId": 0,
+      "areaSq": "389.000",
+      "completionDate": "2028-08-11",
+      "otherFacilityName": "",
+      "facilityName": "Community Center",
+      "iconClass": "icon-Community-Hall"
+    },
+    {
+      "facilitiesId": 24,
+      "description": "EXTERNAL BLACK TOP ROAD",
+      "documentId": 0,
+      "areaSq": "9.140",
+      "completionDate": "2026-01-31",
+      "otherFacilityName": "",
+      "facilityName": "External Road",
+      "iconClass": "icon-External-Road"
+    },
+    {
+      "facilitiesId": 26,
+      "description": "1515.70 INTERNAL ROAD PROVIDED",
+      "documentId": 0,
+      "areaSq": "1515.700",
+      "completionDate": "2028-08-11",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 14,
+      "description": "WATER SUPPLY NOC PROVIDED",
+      "documentId": 237569,
+      "areaSq": null,
+      "completionDate": "2028-08-11",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    },
+    {
+      "facilitiesId": 25,
+      "description": "ELECTRICITY AREA15.26SQMTS OUT OF  389.00 COMMUNITY USE",
+      "documentId": 228334,
+      "areaSq": "15.260",
+      "completionDate": "2028-08-11",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 19,
+      "description": "FIRE FIGHTING FACILITY NOT REQUIRED DUE TO PLOTTED SCHEME",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2028-08-11",
+      "otherFacilityName": "",
+      "facilityName": "Fire Fighting Facility ",
+      "iconClass": "icon-Fire-Fighting-Facility"
+    },
+    {
+      "facilitiesId": 15,
+      "description": "1.5 ft wide drainage",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2027-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Drainage",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 23,
+      "description": "One tree per 80 sqm will be provided",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2027-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Plantation Area/No.",
+      "iconClass": "icon-Plantation-Area"
+    }
+  ]
+}

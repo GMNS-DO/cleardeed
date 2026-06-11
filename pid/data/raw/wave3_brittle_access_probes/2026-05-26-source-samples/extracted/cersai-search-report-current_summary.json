@@ -1,0 +1,71 @@
+{
+  "source_url": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+  "artifact_id": "cersai-search-report-current",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html;charset=UTF-8",
+  "byte_length": 47810,
+  "notes": "Current CERSAI search report page linked from CERSAI home.",
+  "title": null,
+  "link_count": 69,
+  "pdf_links": [],
+  "candidate_links": [
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "--> {{$t('textGovtIndiaComp')}}"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": ""
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "A-"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "A"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "A+"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/sitemap.prg",
+      "text": ""
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "English"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "Hindi"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "{{$t('textLogin')}}"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+      "text": "{{$t('fistTimeLoginInstrText')}}"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/asstsrch.prg",
+      "text": "{{$t('textAssetBasedSearchButton')}}"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/dbtrsrch.prg",
+      "text": "{{$t('borrowerBasedSearchButton')}}"
+    },
+    {
+      "href": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+      "text": "{{$t('textSearchReport')}}"
+    }
+  ],
+  "form_count": 3,
+  "input_count": 15,
+  "select_count": 0,
+  "has_captcha_hint": true,
+  "has_login_hint": true
+}

@@ -1,0 +1,99 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: SAPPHIRE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "1259(P)",
+        "mouza": "NUAHAT",
+        "khataNo": "498/116",
+        "kisama": 6,
+        "plotArea": "1283.00",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 2,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "THROUGH GPA",
+        "titleHolder": 2,
+        "plotAreaIncuded": "842.2000",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 217924,
+        "plotEc": "phpBxmM4l_1767692133.pdf",
+        "plotRorId": 240823,
+        "saleDeedId": 0,
+        "poaId": 188578,
+        "landDetailId": 6714,
+        "shareAlloc": "phpSBuShc_1774438894.pdf",
+        "shareAllocId": 241294,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "10392501498",
+        "poaRegnDate": "2025-03-10",
+        "poaRegnAt": "DISTRICT SUB-REGISTRAR, CUTTACK",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "No",
+        "owners": [
+          {
+            "name": "SRI TANMAY KUMAR MISHRA",
+            "share": "43%",
+            "fileId": 188574
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari)"
+      },
+      {
+        "plotNo": "1250/2391",
+        "mouza": "NUAHAT",
+        "khataNo": "498/793",
+        "kisama": 6,
+        "plotArea": "242.75",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 1,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "THROUGH GPA",
+        "titleHolder": 2,
+        "plotAreaIncuded": "242.7500",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 217987,
+        "plotEc": "phpqhWXMI_1767692150.pdf",
+        "plotRorId": 240824,
+        "saleDeedId": 0,
+        "poaId": 188624,
+        "landDetailId": 6715,
+        "shareAlloc": "phpMICf8n_1774439288.pdf",
+        "shareAllocId": 241298,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "10382501498",
+        "poaRegnDate": "2025-03-10",
+        "poaRegnAt": "DISTRICT SUB-REGISTRAR, CUTTACK",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "Yes",
+        "owners": [
+          {
+            "name": "TANMAY KUMAR MISHRA",
+            "share": "43%",
+            "fileId": 188610
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari)"
+      }
+    ]
+  }
+}

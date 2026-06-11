@@ -1,0 +1,81 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: URBAN NEST-9 PHASE-I",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "PROVIDE",
+        "documentId": 0,
+        "areaSq": "206.550",
+        "completionDate": "2027-09-23",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "TPCODL NOC",
+        "documentId": 168536,
+        "areaSq": "11.000",
+        "completionDate": "2027-09-23",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 22,
+        "description": "PROVIDE",
+        "documentId": 0,
+        "areaSq": "114.970",
+        "completionDate": "2027-09-23",
+        "otherFacilityName": "",
+        "facilityName": "Park/Garden",
+        "iconClass": "icon-Park-Garden"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "PAVER BLOCK INTERNAL ROAD",
+        "documentId": 0,
+        "areaSq": "673.710",
+        "completionDate": "2027-09-23",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "MAIN GATE PROVIDE",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2027-09-23",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "NOC",
+        "documentId": 214100,
+        "areaSq": null,
+        "completionDate": "2027-08-31",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "SIDE DRAINS CONSTRUCTED BY B.M.C",
+        "documentId": 0,
+        "areaSq": "72.000",
+        "completionDate": "2026-01-08",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      }
+    ]
+  }
+}

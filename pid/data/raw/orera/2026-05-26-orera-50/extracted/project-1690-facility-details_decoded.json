@@ -1,0 +1,171 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: VANYA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 6,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "489.089",
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Community Center",
+        "iconClass": "icon-Community-Hall"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 205797,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "fire extinguisher ",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "15121.390",
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 207028,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "",
+        "documentId": 222236,
+        "areaSq": null,
+        "completionDate": "2029-01-26",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      },
+      {
+        "facilitiesId": 21,
+        "description": "",
+        "documentId": 243900,
+        "areaSq": null,
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Use of Renewable Energy",
+        "iconClass": "icon-Use-of-Renewable-Energy"
+      },
+      {
+        "facilitiesId": 10,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "10.870",
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Security Room",
+        "iconClass": "icon-market"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "Society Room For MIG 168 sqm And Society Room For EWS 83.089 ",
+        "documentId": 0,
+        "areaSq": "251.089",
+        "completionDate": "2029-12-26",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      }
+    ]
+  }
+}

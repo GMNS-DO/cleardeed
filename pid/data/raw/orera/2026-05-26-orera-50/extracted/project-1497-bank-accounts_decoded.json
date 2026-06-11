@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: Supratik Waves",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1430,
+      "masterAccHolder": "SUPRATIK VENTURES PRIVATE LIMTED (SUPRATIK WAVES)",
+      "masterAccIFSC": "CNRB0002466",
+      "masterAccNo": "120037275374",
+      "masterAccbank": "CANARA BANK",
+      "masterAccbranch": "BALASORE SAHADEVKHUNTA BRANCH",
+      "masterCancellCheque": "phpov5XYi_1762325351.pdf",
+      "masterCancellChequeId": 220213,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9938295642",
+      "reraAccHolder": "SUPRATIK VENTURES PRIVATE LIMTED (SUPRATIK WAVES)",
+      "reraAccIFSc": "CNRB0002466",
+      "reraAccNo": "120037275743",
+      "reraAccbank": "CANARA BANK",
+      "reraAccbranch": "BALASORE SAHADEVKHUNTA BRANCH",
+      "reraCancellCheque": "php1SeKRz_1762325575.pdf",
+      "reraCancellChequeId": 220214,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9938295642",
+      "transAccHolder": "SUPRATIK VENTURES PRIVATE LIMTED (SUPRATIK WAVES)",
+      "transAccIFSC": "CNRB0002466",
+      "transrAccNo": "120037264313",
+      "transAccbank": "CANARA BANK",
+      "transAccbranch": "BALASORE SAHADEVKHUNTA BRANCH",
+      "transCancellCheque": "phpu0CDGN_1762325673.pdf",
+      "transCancellChequeId": 220215,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9938295642"
+    },
+    "fundSourceQuery": {
+      "fundId": 1397,
+      "estematedCost": "899.56",
+      "allotteeInvestment": "799.56",
+      "promoterInvestment": "100.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 220211,
+      "estimationCopy": "phprtUUF1_1762764055.pdf",
+      "expndLand": "100.00",
+      "expndBuilding": "799.56"
+    }
+  }
+}

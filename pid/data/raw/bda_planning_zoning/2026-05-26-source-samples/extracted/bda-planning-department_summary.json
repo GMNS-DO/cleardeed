@@ -1,0 +1,107 @@
+{
+  "source_url": "https://bda.gov.in/bda/department/planning-department",
+  "artifact_id": "bda-planning-department",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html; charset=UTF-8",
+  "byte_length": 58660,
+  "notes": "BDA planning department page with CDP/zoning/map/report references.",
+  "title": ":: Bhubaneswar Development Authority",
+  "link_count": 80,
+  "pdf_links": [],
+  "candidate_links": [
+    {
+      "href": "https://bda.gov.in/projects/planning/1",
+      "text": "Planning"
+    },
+    {
+      "href": "javascript:void(0);",
+      "text": "Notices"
+    },
+    {
+      "href": "https://bda.gov.in/notifications/notices",
+      "text": "Notices"
+    },
+    {
+      "href": "https://bda.gov.in/notifications/office-order",
+      "text": "Office Order"
+    },
+    {
+      "href": "https://bda.gov.in/tender/auction",
+      "text": "Auction"
+    },
+    {
+      "href": "https://www.tenderwizard.com/BDABBSR",
+      "text": "e-Auction"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#",
+      "text": ""
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseOne",
+      "text": "General Branch"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseTwo",
+      "text": "Master Planning Branch"
+    },
+    {
+      "href": "http://bda.gov.in/bda/downloads/maps-reports",
+      "text": "Comprehensive Development Plan &ndash; 2010"
+    },
+    {
+      "href": "http://bda.gov.in/downloads/maps-reports",
+      "text": "Ring Road (Modified CDP)"
+    },
+    {
+      "href": "http://bda.gov.in/downloads/maps-reports",
+      "text": "Left Parallel Road (Modified CDP)"
+    },
+    {
+      "href": "https://cms.bhubaneswarone.in/uploadDocuments/content/01_Ring_Road_Key_Map_A0-large.jpg",
+      "text": "Ring Road Alignment"
+    },
+    {
+      "href": "https://cms.bhubaneswarone.in/uploadDocuments/content/Proposed-Landuse-of-BDPA-large.jpg",
+      "text": "CDP for BDPA 2030"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseThree",
+      "text": "Town Planning Scheme Branch"
+    },
+    {
+      "href": "http://bda.gov.in/townPlanningScheme",
+      "text": "Details of Town Planning Scheme"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseFour",
+      "text": "Environment and PSM Branch"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseFive",
+      "text": "GIS Branch"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseSix",
+      "text": "Building Plan Approval Branch"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseSeven",
+      "text": "Regulatory and Legal Branch"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#collapseEight",
+      "text": "Urban Transport Branch"
+    },
+    {
+      "href": "https://bda.gov.in/bda/department/planning-department#",
+      "text": ""
+    }
+  ],
+  "form_count": 1,
+  "input_count": 2,
+  "select_count": 0,
+  "has_captcha_hint": false,
+  "has_login_hint": true
+}

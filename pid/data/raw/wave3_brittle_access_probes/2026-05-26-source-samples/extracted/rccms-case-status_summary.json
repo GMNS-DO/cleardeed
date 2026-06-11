@@ -1,0 +1,23 @@
+{
+  "source_url": "https://bhulekh.ori.nic.in/rccms/Cause_StatusCustomise.aspx",
+  "artifact_id": "rccms-case-status",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "byte_length": 11534,
+  "notes": "RCCMS public case-status page probe; useful to confirm query fields and captcha/session requirements.",
+  "title": "RCCMS",
+  "link_count": 2,
+  "pdf_links": [],
+  "candidate_links": [
+    {
+      "href": "https://bhulekh.ori.nic.in/rccms/Cause_StatusCustomise.aspx#",
+      "text": "Revenue Court Case Monitoring System (RCCMS)"
+    }
+  ],
+  "form_count": 1,
+  "input_count": 6,
+  "select_count": 5,
+  "has_captcha_hint": false,
+  "has_login_hint": false
+}

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-05-25",
+  "purpose": "Raw Phase 0 artifacts collected for seed-corpus feasibility review.",
+  "artifacts": [
+    {
+      "artifact_id": "ART-REMOTE-HC-001",
+      "path": "pid/research/artifacts/remote/orissa_hc_cases_1737114339.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/cases_filed/1737114339.pdf",
+      "artifact_type": "pdf",
+      "sha256": "1d6ea204adab5acf15118954226e32f843d9c93c7b13eef7a9cf8a27ca97f3fc",
+      "linked_seed_examples": ["SEED-HC-LA-001"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-002",
+      "path": "pid/research/artifacts/remote/orissa_hc_cases_1721909249.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/cases_filed/1721909249.pdf",
+      "artifact_type": "pdf",
+      "sha256": "6da9aaeeacbb830f8c5d2977b7ecf9ae7135bf580e3a8957bf96dc8660cf9df6",
+      "linked_seed_examples": ["SEED-HC-LA-002"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-003",
+      "path": "pid/research/artifacts/remote/orissa_hc_cases_1745929373.pdf",
+      "source_url": "https://orissahighcourt.nic.in/uploads/cases_filed/1745929373.pdf",
+      "artifact_type": "pdf",
+      "sha256": "821262b07f5ece8785cbf87a3128c100c91ec7bac0d5e74cff5928a0a8065811",
+      "linked_seed_examples": ["SEED-HC-LA-003"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-004",
+      "path": "pid/research/artifacts/remote/orissa_hc_wp_13068_2016_e.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/vernacular_judgements/hc_judgements/WP%28C%29%2013068%20of%202016_e.pdf",
+      "artifact_type": "pdf",
+      "sha256": "36ea69d6a5050a75e230d2b85e3f4782c0fe968d974fd063836d977b4d9f3fbe",
+      "linked_seed_examples": ["SEED-HC-LA-004"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-005",
+      "path": "pid/research/artifacts/remote/orissa_hc_ilr_1581929162.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/ilr_cuttack/1581929162.pdf",
+      "artifact_type": "pdf",
+      "sha256": "fe7875c4b1f98aaf93d28fc02557b53815ac8fb47131de4ab144ce398b239445",
+      "linked_seed_examples": ["SEED-HC-PARTITION-001"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-006",
+      "path": "pid/research/artifacts/remote/orissa_hc_cmp_1292_2023_e.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/vernacular_judgements/hc_judgements/CMP_1292_2023_e.pdf",
+      "artifact_type": "pdf",
+      "sha256": "f8844f89ab62f792b6a1b8aa920dd4802cad88e8113e4259088cc290cb163d35",
+      "linked_seed_examples": ["SEED-HC-PARTITION-002"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-007",
+      "path": "pid/research/artifacts/remote/orissa_hc_ilr_1688379098.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/ilr_cuttack/1688379098.pdf",
+      "artifact_type": "pdf",
+      "sha256": "f21491f2d216cdee14f713aeef264c3088e3d87ac6224838f82b3b46b5ebe835",
+      "linked_seed_examples": ["SEED-HC-PARTITION-003"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-HC-008",
+      "path": "pid/research/artifacts/remote/orissa_hc_ilr_1581929347.pdf",
+      "source_url": "https://www.orissahighcourt.nic.in/uploads/ilr_cuttack/1581929347.pdf",
+      "artifact_type": "pdf",
+      "sha256": "5074e20e5685e5023b9663f28b3ad9b29af48bff8ca030a802f851e31a1bde8b",
+      "linked_seed_examples": ["SEED-HC-REGISTRATION-001"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-REV-001",
+      "path": "pid/research/artifacts/remote/odisha_revenue_land_acquisition.html",
+      "source_url": "https://revenue.odisha.gov.in/en/communication/land-acquisition",
+      "artifact_type": "html",
+      "sha256": "f76381c0987f2bd69bec42c7beb916286414fd20325f790ed8e63f953f2a9bbc",
+      "linked_seed_examples": ["SEED-REG-002"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-REV-002",
+      "path": "pid/research/artifacts/remote/odisha_revenue_sia_4_1.html",
+      "source_url": "https://revenue.odisha.gov.in/en/Communication/sia-notification/4-1-notification",
+      "artifact_type": "html",
+      "sha256": "0d4d9ed58655d16a6d205b6acc66e3fffbe4826d607eab3aa5824521f939c6df",
+      "linked_seed_examples": ["SEED-REG-003"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-RERA-001",
+      "path": "pid/research/artifacts/remote/orera_home.html",
+      "source_url": "https://rera.odisha.gov.in/",
+      "artifact_type": "html",
+      "sha256": "a94f5cff51454b5ed9b7a46a69548a3643c702150ed89fa63948e78a13b78a94",
+      "linked_seed_examples": ["SEED-RERA-001"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-DRT-001",
+      "path": "pid/research/artifacts/remote/drt_cuttack_causelist_2025_08_29.html",
+      "source_url": "https://cis.drt.gov.in/drtlive/order/Hgenerate_causelist_save1.php?filing_no=MTEvMjkvMDgvMjAyNS0xLWN1dHRhY2s%3D&id=1781901520",
+      "artifact_type": "html",
+      "sha256": "16b878025aa5eebd012eec859f8737a3936a23cffb55db4827c66869e9c36d49",
+      "linked_seed_examples": ["SEED-DRT-001"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-DRT-002",
+      "path": "pid/research/artifacts/remote/drt_cuttack_causelist_2025_08_04.html",
+      "source_url": "https://cis.drt.gov.in/drtlive/order/Hgenerate_causelist_save1.php?filing_no=MTEvMDQvMDgvMjAyNS0xLWN1dHRhY2s%3D&id=1403341620",
+      "artifact_type": "html",
+      "sha256": "227b3b0c9a13ffd0c5b2651987d0aa4d6c50269e410433a25189d393b10cf983",
+      "linked_seed_examples": ["SEED-DRT-002"]
+    },
+    {
+      "artifact_id": "ART-REMOTE-DRT-003",
+      "path": "pid/research/artifacts/remote/drt_cuttack_mortgage_release_order.pdf",
+      "source_url": "https://cis.drt.gov.in/drtlive/order/pdf/pdf1.php?file=L3VwbG9hZHMvZHJ0L2RydGNvdXJ0L2RhaWx5X29yZGVyLzIwMjYvTWFyY2gvMjEwMTEwMDkyNDUyMDE1XzhlNWFiYjAzMGY3OGRmNmU4M2NhNjg4YzM4Mzc3NzllLnBkZioqKjEyMjI4NCMxI2N1dHRhY2s%3D",
+      "artifact_type": "pdf",
+      "sha256": "00f47ca5c139f07db5a89451a4575cba8628346c7eee5f94b11b0ac04fa7a574",
+      "linked_seed_examples": ["SEED-DRT-003"]
+    }
+  ],
+  "notes": [
+    "Artifacts are raw evidence candidates only. Theme labels require parsing and review.",
+    "Some HTML artifacts were fetched with local certificate verification relaxed due local CA issues; retain source_url and hash for provenance."
+  ]
+}

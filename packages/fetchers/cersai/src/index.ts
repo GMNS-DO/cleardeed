@@ -18,6 +18,7 @@
 
 import { createHash } from "node:crypto";
 import { chromium, type Browser, type Page } from "playwright";
+import { createWorker } from "tesseract.js";
 import type { CERSAIResult } from "@cleardeed/schema";
 
 const BASE_URL = "https://www.cersai.org.in";
@@ -330,89 +331,111 @@ async function attemptSearch(
 }
 
 /**
- * Basic captcha solver for CERSAI — reads the captcha image and returns text.
- * CERSAI typically uses alphanumeric captchas (5-6 chars uppercase).
+ * Attempt to solve CERSAI captcha using Tesseract.js OCR with multi-strategy preprocessing.
  */
 async function solveCaptchaAttempt(page: Page): Promise<string> {
-  // Try to get captcha image as data URL
   const captchaImg = page.locator("img[src*='captcha'], img[id*='captcha']").first();
-  const captchaSrc = await captchaImg.getAttribute("src").catch(() => null);
+  const hasCaptcha = await captchaImg.isVisible().catch(() => false);
+  if (!hasCaptcha) return "";
 
-  if (!captchaSrc) {
-    throw new Error("no_captcha_image_found");
+  const dataUrl = await captureCaptchaImage(page, captchaImg);
+  if (!dataUrl) throw new Error("captcha_image_capture_failed");
+
+  const { text, confidence } = await performOcr(dataUrl, page);
+
+  if (!text || confidence < 40) {
+    // Try refreshing captcha once
+    try {
+      await page.locator("a:has-text('Refresh'), a:has-text('reload'), img[src*='Refresh']").first().click();
+      await page.waitForTimeout;
+      const newDataUrl = await captureCaptchaImage(page, captchaImg);
+      if (newDataUrl) {
+        const retry = await performOcr(newDataUrl, page);
+        if (retry.confidence > confidence) return retry.text;
+      }
+    } catch { /* ignore refresh failure */ }
   }
 
-  // Capture the image as base64
-  const dataUrl = await page.evaluate(async (src) => {
-    const img = document.createElement("img");
-    img.crossOrigin = "anonymous";
-    img.src = src;
-    await new Promise<void>((res, rej) => {
-      img.onload = () => res();
-      img.onerror = rej;
-    });
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0);
-    return canvas.toDataURL("image/png");
-  }, captchaSrc);
-
-  // Basic captcha OCR: for CERSAI alphanumeric captcha
-  // Use canvas processing for basic noise removal + OCR
-  const processedText = await page.evaluate(async (dataUrl: string) => {
-    const img = new Image();
-    img.src = dataUrl;
-    await new Promise<void>((res) => { img.onload = () => res(); });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
-
-    // Draw original
-    ctx.drawImage(img, 0, 0);
-
-    // Get pixel data for basic processing
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgData.data;
-
-    // Simple grayscale + threshold for binarization (handles light noise)
-    for (let i = 0; i < data.length; i += 4) {
-      const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-      const binary = gray > 140 ? 255 : 0;
-      data[i] = binary;
-      data[i + 1] = binary;
-      data[i + 2] = binary;
-    }
-
-    ctx.putImageData(imgData, 0, 0);
-
-    // Return canvas as data URL for further processing
-    return canvas.toDataURL("image/png");
-  }, dataUrl);
-
-  // Perform basic character recognition using a lookup approach
-  // For CERSAI: try to read characters using pattern matching
-  // This is a fallback — may need Tesseract.js for production
-  const text = await performBasicOcr(page, processedText);
   return text;
 }
 
 /**
- * Basic OCR attempt for CERSAI captchas.
- * Returns text extracted via canvas pixel analysis, or signals manual fallback.
- * Production note: CERSAI captchas may require Tesseract.js or a 2captcha API integration.
+ * Run OCR on a captcha image data URL using Tesseract.js with multi-strategy preprocessing.
+ * Tries grayscale + contrast + threshold + invert and picks the best result.
  */
-async function performBasicOcr(
-  _page: Page,
-  _processedDataUrl: string
-): Promise<string> {
-  // Canvas-based pixel pattern matching would go here.
-  // Production note: CERSAI captchas may require Tesseract.js (as used by eCourts)
-  // or a 2captcha API integration for reliable automated solving.
-  throw new Error("captcha_requires_tesseract_or_2captcha_api");
+async function performOcr(imageDataUrl: string, page: Page): Promise<{ text: string; confidence: number }> {
+  // Pre-process image with canvas filters (same approach as eCourts captcha solver)
+  const preprocessed = await page.evaluate(async (dataUrl: string) => {
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+
+    const strategies = [
+      { label: "contrast200", filter: "contrast(200%)" },
+      { label: "grayscale", filter: "grayscale(100%)" },
+      { label: "threshold", filter: "grayscale(100%) contrast(300%)" },
+      { label: "invert", filter: "invert(100%) grayscale(50%)" },
+    ];
+
+    const results: Array<{ label: string; dataUrl: string }> = [];
+    for (const s of strategies) {
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const cx = c.getContext("2d")!;
+      cx.filter = s.filter;
+      cx.drawImage(img, 0, 0);
+      results.push({ label: s.label, dataUrl: c.toDataURL("image/png") });
+    }
+    return results;
+  }, imageDataUrl) as Array<{ label: string; dataUrl: string }>;
+
+  // Run Tesseract OCR on each strategy and pick the best
+  const worker = await createWorker("eng");
+  let bestText = "";
+  let bestConfidence = 0;
+
+  for (const p of preprocessed) {
+    const { data } = await worker.recognize(p.dataUrl);
+    const cleaned = (data.text ?? "").replace(/[^A-Z0-9]/gi, "").toUpperCase().substring(0, 8);
+    if (data.confidence > bestConfidence && cleaned.length >= 4) {
+      bestText = cleaned;
+      bestConfidence = data.confidence;
+    }
+  }
+  await worker.terminate();
+
+  return { text: bestText, confidence: bestConfidence };
+}
+
+/**
+ * Capture captcha image from CERSAI page as data URL.
+ */
+async function captureCaptchaImage(page: Page, imageLocator: any): Promise<string | null> {
+  try {
+    const imgSrc = await imageLocator.getAttribute("src");
+    if (!imgSrc) return null;
+    const fullUrl = imgSrc.startsWith("http") ? imgSrc : `https://www.cersai.org.in${imgSrc}`;
+    return page.evaluate(async (url) => {
+      const img = document.createElement("img");
+      img.crossOrigin = "anonymous";
+      img.src = url;
+      await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; });
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      return canvas.toDataURL("image/png");
+    }, fullUrl);
+  } catch {
+    return null;
+  }
 }
 
 const CAPTURED_COVERAGE_STATES = ["Odisha", "Orissa", "OR"];

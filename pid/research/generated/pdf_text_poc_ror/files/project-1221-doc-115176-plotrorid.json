@@ -1,0 +1,35 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1221-doc-115176-plotrorid.pdf",
+    "file_name": "project-1221-doc-115176-plotrorid.pdf",
+    "file_id": "115176",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1221",
+        "project_name": "S.L.TOWER",
+        "promoter_name": "JAIN BUILDERS AND DEVELOPERS",
+        "mouza": "Cuttack Sahar Unit No-35,Jhangirmangala,Cuttack",
+        "khata_no": "657/871",
+        "plot_no": "916",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 3110041,
+  "detected": {
+    "dct_image_count": 4,
+    "crude_literal_text_chars": 18,
+    "crude_literal_text_quality": {
+      "chars": 18,
+      "printable_ratio": 1,
+      "alpha_ratio": 0.889,
+      "word_count": 3
+    },
+    "crude_literal_text_sample": "Bft/MeTWH iLovePDF"
+  },
+  "ocr": null,
+  "triage_status": "image_pdf_ocr_pending",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

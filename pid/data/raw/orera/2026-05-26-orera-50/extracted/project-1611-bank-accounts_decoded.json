@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: BENOY RESIDENCY PHASE-II",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1442,
+      "masterAccHolder": null,
+      "masterAccIFSC": null,
+      "masterAccNo": null,
+      "masterAccbank": null,
+      "masterAccbranch": null,
+      "masterCancellCheque": null,
+      "masterCancellChequeId": null,
+      "masterBranchTeleph": null,
+      "masterBranchMobile": null,
+      "reraAccHolder": "BAIKUNTHA BALIA CONSULTANCY & DEVELOPERPRIVATE LIMITED/BENOY RESIDENCY PHASE-II/ORERA",
+      "reraAccIFSc": "FDRL0002160",
+      "reraAccNo": "21600200001768",
+      "reraAccbank": "THE FEDERAL BANK LTD",
+      "reraAccbranch": "DHENKANAL BRANCH",
+      "reraCancellCheque": "phpwN1XzN_1761498370.pdf",
+      "reraCancellChequeId": 207332,
+      "reraBranchTeleph": "06742354621",
+      "reraBranchMobile": "9437219269",
+      "transAccHolder": null,
+      "transAccIFSC": null,
+      "transrAccNo": null,
+      "transAccbank": null,
+      "transAccbranch": null,
+      "transCancellCheque": null,
+      "transCancellChequeId": null,
+      "transBranchTeleph": null,
+      "transBranchMobile": null
+    },
+    "fundSourceQuery": {
+      "fundId": 1401,
+      "estematedCost": "240.00",
+      "allotteeInvestment": "0.00",
+      "promoterInvestment": "240.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 213258,
+      "estimationCopy": "phpBEpHV0_1761670605.pdf",
+      "expndLand": "239.00",
+      "expndBuilding": "1.00"
+    }
+  }
+}

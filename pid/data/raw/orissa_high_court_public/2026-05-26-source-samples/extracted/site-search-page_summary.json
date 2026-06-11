@@ -1,0 +1,320 @@
+{
+  "source_url": "https://www.orissahighcourt.nic.in/search.php",
+  "artifact_id": "site-search-page",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html; charset=UTF-8",
+  "byte_length": 99296,
+  "notes": "Official High Court site search page for manual keyword discovery.",
+  "title": "Search | Orissa High Court, Cuttack",
+  "link_count": 397,
+  "pdf_links": [
+    {
+      "href": "https://www.orissahighcourt.nic.in/history.pdf",
+      "text": "History"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/vc_rules_2025/vc_rules_2025.pdf",
+      "text": "The High Court of Orissa and District Courts Use of Electronic Communication and Audio-Video Electronic Means Rules, 2025"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/rules/efiling/eFiling_High_Court.pdf",
+      "text": "e-Filing Rules for the High Court of Orissa, 2024"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/rules/efiling/eFiling_District_Courts.pdf",
+      "text": "e-Filing Rules for District Courts and Tribunals under Control and Supervision of the High Court of Orissa, 2024"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//InspRules.pdf",
+      "text": "The Orissa Inspection of Subordinate Courts (by the High Court) Rules, 2004"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//live_streaming_2021.pdf",
+      "text": "High Court of Orissa Live Streaming of Court Proceedings Rules, 2021"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//compendium.pdf",
+      "text": "Compedium of General Letters and Circular (Criminal) 1916-1987"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//family1990.pdf",
+      "text": "Family Courts (Orissa) Rules, 1990"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//family2010.pdf",
+      "text": "Family Courts (Court) Rules, 2010"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//cmrules2020.pdf",
+      "text": "Odisha Senior Court Manager and Court Manager of the High Court and District Courts Rules, 2020"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//research-asst.pdf",
+      "text": "Scheme for Selection and Appointment of Research Assistant in the High Court of Orissa"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//ecourtsrule.pdf",
+      "text": "The Orissa High Court (Method of Recruitment and Condition of Service of Sr. System Officer, SO and SA under e-Courts Service) Rules, 2013"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//Admiralty_Rules2020.pdf",
+      "text": "The Orissa High Court Admiralty Rules, 2020"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2020.pdf",
+      "text": "2020"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2021.pdf",
+      "text": "2021"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2022.pdf",
+      "text": "2022"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2023.pdf",
+      "text": "2023"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2024.pdf",
+      "text": "2024"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2025.pdf",
+      "text": "2025"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/2026.pdf",
+      "text": "2026"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Comparative2025-26.pdf",
+      "text": "Institution-Disposal Comparative Figure of 2025 & 2026"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Comparative2024-25.pdf",
+      "text": "Institution-Disposal Comparative Figure of 2024 & 2025"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Comparative2023-24.pdf",
+      "text": "Institution-Disposal Comparative Figure of 2023 & 2024"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Comparative2022-23.pdf",
+      "text": "Institution-Disposal Comparative Figure of 2022 & 2023"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Comparative2021-22.pdf",
+      "text": "Institution-Disposal Comparative Figure of 2021 & 2022"
+    }
+  ],
+  "candidate_links": [
+    {
+      "href": "https://www.orissahighcourt.nic.in/search.php#",
+      "text": "Proceed"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "Judges"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/chief-justice/",
+      "text": "Chief Justice"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/acting-chief-justice/",
+      "text": "Acting Chief Justice"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/judges-profile/",
+      "text": "Judges"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/transfer-judges/",
+      "text": "Judges Transferred to other High Courts"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/chief-justices-judges-appointed-as-chief-justices-of-india/",
+      "text": "Chief Justices/ Judges Appointed as Chief Justice of India"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/chief-justices-judges-elevated-to-supreme-court/",
+      "text": "Chief Justices/ Judges Elevated to Supreme Court"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/former-chief-justices/",
+      "text": "Former Chief Justices"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/former-judges/",
+      "text": "Former Judges"
+    },
+    {
+      "href": "https://www.youtube.com/watch?v=wPzTxEk3Mn0",
+      "text": "Video of All Judges"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//rules/general-rules-and-circular-orders/",
+      "text": "General Rules and Circular Orders"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//research-asst.pdf",
+      "text": "Scheme for Selection and Appointment of Research Assistant in the High Court of Orissa"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//rules/Scheme_Retention_Purchase_Furnishing_Articles_Judges/",
+      "text": "Scheme for Retention and Purchase of Furnishing Articles of Judges of the High Court of Orissa, 2024"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/hc_Judgement_Glance.pdf",
+      "text": "No. of Judgments at a Glance"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Glance_2026.pdf",
+      "text": "Case Statistics at a Glance, 2026"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/dc/dc_Judgments_Glance.pdf",
+      "text": "No. of Judgments at a Glance"
+    },
+    {
+      "href": "http://112.133.226.244/einspection/",
+      "text": "e-Inspection of Case Records"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//sale_of_book_Vol-I_Vol-II.pdf",
+      "text": "Sale of Book – Judicial History of Odisha (Vol-I & Vol-II)"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/vernacular_judgments/",
+      "text": "Judgments in Vernacular Language"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/MP_MLA/",
+      "text": "Cases Involving MPs/MLAs"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "Judges"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/chief-justice/",
+      "text": "Chief Justice"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/acting-chief-justice/",
+      "text": "Acting Chief Justice"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/judges-profile/",
+      "text": "Judges"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/transfer-judges/",
+      "text": "Judges Transferred to other High Courts"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/chief-justices-judges-appointed-as-chief-justices-of-india/",
+      "text": "Chief Justices/ Judges Appointed as Chief Justice of India"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/chief-justices-judges-elevated-to-supreme-court/",
+      "text": "Chief Justices/ Judges Elevated to Supreme Court"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/former-chief-justices/",
+      "text": "Former Chief Justices"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges/former-judges/",
+      "text": "Former Judges"
+    },
+    {
+      "href": "https://www.youtube.com/watch?v=wPzTxEk3Mn0",
+      "text": "Video of All Judges"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/rules/general-rules-and-circular-orders/",
+      "text": "General Rules and Circular Orders"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/research-asst.pdf",
+      "text": "Scheme for Selection and Appointment of Research Assistant in the High Court of Orissa"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/hc_Judgement_Glance.pdf",
+      "text": "No. of Judgments at a Glance"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/hc/Glance_2026.pdf",
+      "text": "Case Statistics at a Glance, 2026"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//uploads/statistics/dc/dc_Judgments_Glance.pdf",
+      "text": "No. of Judgments at a Glance"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/search.php#",
+      "text": "Annual Report"
+    },
+    {
+      "href": "http://112.133.226.244/einspection/",
+      "text": "e-Inspection of Case Records"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in//sale_of_book_Vol-I_Vol-II.pdf",
+      "text": "Sale of Book – Judicial History of Odisha (Vol-I & Vol-II)"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/vernacular_judgments/",
+      "text": "Judgments in Vernacular Language"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/CA1083-2022.pdf",
+      "text": "Judgments in Odia"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/MP_MLA/",
+      "text": "Cases Involving MPs/MLAs"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/search.php#collapseOne",
+      "text": "Quick Links"
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/index_highcourt.php?state_cd=11&dist_cd=1&stateNm=Odisha",
+      "text": "Case Status / Cause List / Orders / Judgments"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/new-cases-filed/",
+      "text": "New Cases Filed/ Defect List"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/case-pendency-report/",
+      "text": "Case Pendency/ Disposal Report"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/tender-notice/",
+      "text": "Tender Notice"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/judges_library/",
+      "text": "Judges Library"
+    },
+    {
+      "href": "https://scr.sci.gov.in/scrsearch/",
+      "text": "SCR (Supreme Court Reports)"
+    },
+    {
+      "href": "https://www.orissahighcourt.nic.in/corrigendum/",
+      "text": "Corrigendum Notice"
+    }
+  ],
+  "form_count": 3,
+  "input_count": 4,
+  "select_count": 0,
+  "has_captcha_hint": false,
+  "has_login_hint": false
+}

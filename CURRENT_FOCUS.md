@@ -9,55 +9,91 @@
 
 ## This week's user behavior (the only thing that ships)
 
-**Sprint 1 — Week 1–2**
+**Sprint 4 — Week 7**
 
-> **A buyer in Khordha can pay ₹1 and receive a report by email within 10 minutes. No manual intervention, no concierge, no review queue.**
-
-If a task does not contribute to that sentence shipping, it does not happen this week.
+> **A buyer who has paid ₹1 sees a "What is it worth" panel in their report showing the circle rate floor for the village, whether the plot is a sub-plot (D/88 pattern), and the BDA zoning classification (residential / commercial / industrial / green-belt).**
 
 ---
 
-## Tasks remaining this sprint
+## Sprint 3 exit criteria
 
-(Delete as completed. Do not strikethrough. Just delete.)
+- [x] eCourts wired into pipeline (owner name search against Khordha court complex)
+- [x] IGR EC wired into pipeline (Encumbrance Certificate search)
+- [x] CERSAI wired into pipeline (mortgage/charge check by owner name)
+- [x] RCCMS wired into pipeline (revenue court cases) — now probes live portal
+- [x] Financial exposure summary panel in report HTML (#section-financial)
+- [x] Per-tehsil EC instructions panel (Bhubaneswar, Jatni, Balipatna, Banapur, Khandagiri)
+- [x] CERSAI captcha solver: real Tesseract.js OCR (was stub throwing error)
+- [x] Next.js build fixed: playwright packages externalized to resolve vite/recorder HTML parse error
+- [x] Sprint 1–3 regression: build passes ✓
 
-- [ ] Resend email delivery with PDF attachment — needs RESEND_API_KEY
-- [ ] Free preview endpoint — Bhulekh lookup, masked owner name, Kisam, map pin
-- [ ] Token-scoped persistent report URL — works, shareable
-- [ ] Server-rendered PDF from the same HTML as web report
-- [ ] Privacy Policy + Terms of Service pages live
-- [ ] In-report thumbs up/down feedback per section
-- [ ] Reports auto-send on generation — no review gate
-- [ ] Razorpay checkout at ₹1 — pay before report generation
+## Sprint 4 exit criteria
+
+- [ ] `khordha_circle_rates.json` with floor rates for top 50 villages
+- [ ] Section 7 (What is it worth) shows circle rate floor band with rate + view-source link
+- [ ] D/88 sub-plot detector: regex fires HIGH WATCH-OUT when surveyNo matches `D/\d+` or `\d+/\d+`
+- [ ] BDA zoning data for top 50 village/locality combos (residential / commercial / industrial / green-belt)
+- [ ] Land classifier surfaces BDA zone alongside kisam restrictions
+- [ ] Section 7 refactored to 3-band floor / directional / ceiling layout
+- [ ] Build passes
+
+**Deferred to BACKLOG or Sprint 5+** (out of scope for Sprint 4):
+- MagicBricks/99acres scraping (high effort, TOS risk)
+- IGR village-level sale records (IGR requires login)
+- Bhuvan flood layer (requires ORSAC WFS access)
+
+---
+
+## Sprint 2 regression checklist
+
+Run against Mendhasala / Plot 415:
+- [x] Home page loads without error
+- [x] Step 1: Tehsil/village selection works
+- [x] Step 2: Plot number entry works
+- [x] Step 3: Email required, Razorpay opens on "Get report"
+- [x] Payment success → report renders in-browser
+- [x] Download button produces PDF
+- [x] Email arrives (check inbox)
+- [ ] No-token `/report/{id}` blocked in production
+- [x] bhunakshaPolygon pregenerate working (village CQL filter)
+- [ ] Map renders in report UI (map stuck at loading — parked, BACKLOG.md)
 
 ---
 
 ## Blockers
 
-(If empty, you're unblocked.)
-
-- Need RESEND_API_KEY for email delivery
-- Vercel password protection — site returns 401 to all visitors
+- `NEXT_PUBLIC_MAPBOX_TOKEN` env var needed for Mapbox GL JS — add to Vercel before deploy
+- Map loading stuck — parked in BACKLOG, needs client-side investigation
 
 ---
 
-## This week's execution only
+## What's been built this sprint
 
-(Implementation only. Commercial activities in `COMMERCIAL_TRACK.md`.)
+**Financial exposure (Sprint 3):**
+- `apps/web/src/lib/pipeline/index.ts` — eCourts, IGR EC, CERSAI, RCCMS fetchers called in generateReportV11 after Bhulekh
+- `buildSourceResult()` helper converts raw fetcher results into SourceResult[] for mapToReportInput
+- A7 EncumbranceReasoner (manual instructions) wired in with IGR EC + CERSAI results
+- Report HTML now includes `#section-financial` with risk badges (clear/at-risk/unquantified)
+- Per-tehsil EC instructions: `apps/web/src/lib/ec-instructions.ts` with Bhubaneswar, Jatni, Balipatna, Banapur, Khandagiri SROs
+- CERSAI captcha solver: replaced stub `performBasicOcr()` with real `performOcr()` using Tesseract.js + multi-strategy (contrast/grayscale/threshold/invert)
+- RCCMS: replaced placeholder with live portal probe (rccms.odisha.gov.in) + Playwright search attempt
+- IGR link updated to `www.igrodisha.gov.in` (no more broken `igrodisha.gov.in` URL)
 
-- [ ] Disable Vercel password protection
-- [ ] Add RESEND_API_KEY to Vercel env vars
-- [ ] Add RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET to Vercel env vars
-- [ ] Test end-to-end: free preview → pay ₹1 → report email delivered → feedback captured
+**Build fix (Sprint 3):**
+- Next.js webpack build failed on playwright's vite/recorder HTML file — resolved by externalizing playwright/playwright-core/tesseract.js in webpack config (`config.externals`)
+
+**Bhunaksha map (Sprint 2):**
+- Bhunaksha village CQL filter: `revenue_village_name LIKE '%VillageName%'` + `revenue_plot = '<plotNo>'`
+- `resolveVillageGps()` fallback: tehsil centroids for villages Nominatim can't find
+- Pipeline → Bhunaksha → polygon → pregenerate response → checkout session → payment success → display
 
 ---
 
 ## Friday retrospective
 
 **Did the product infrastructure ship?**
-- If yes → continue Monday with Sprint 2.
-- If no → Monday is product work.
+Yes — all five financial exposure sources wired, per-tehsil EC instructions, CERSAI OCR fixed, build passing. Sprint 3 automation complete.
 
 ---
 
-*Last touched: 2026-05-15*
+*Last touched: 2026-05-26*

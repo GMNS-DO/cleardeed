@@ -1,0 +1,338 @@
+{
+  "run_date": "2026-05-26-wave1i",
+  "root": "pid/data/raw",
+  "selected_sources": [
+    "orera"
+  ],
+  "results": [
+    {
+      "source_id": "orera",
+      "url": "https://rera.odisha.gov.in/",
+      "links": 2
+    },
+    {
+      "source_id": "orera",
+      "url": "https://rera.odisha.gov.in/projects/project-list",
+      "links": 2
+    },
+    {
+      "source_id": "orera",
+      "url": "https://rera.odisha.gov.in/real-estate-agents",
+      "links": 2
+    },
+    {
+      "source_id": "orera",
+      "api": "api-project-counts",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true
+    },
+    {
+      "source_id": "orera",
+      "api": "api-registered-projects",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 1170,
+      "result_type": "array",
+      "skipped_existing": true
+    },
+    {
+      "source_id": "orera",
+      "api": "api-approved-agents",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 370,
+      "result_type": "array",
+      "skipped_existing": true
+    },
+    {
+      "source_id": "orera",
+      "api": "api-online-complaints-page-1",
+      "http_status": 500,
+      "token_verified": false,
+      "record_count": null,
+      "result_type": "decode_error",
+      "skipped_existing": true
+    },
+    {
+      "source_id": "orera",
+      "api": "api-offline-complaints-page-1",
+      "http_status": 500,
+      "token_verified": false,
+      "record_count": null,
+      "result_type": "decode_error",
+      "skipped_existing": true
+    },
+    {
+      "source_id": "orera",
+      "api": "api-project-listing-page-1",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 10,
+      "result_type": "array",
+      "skipped_existing": true,
+      "page": 1,
+      "page_size": 10
+    },
+    {
+      "source_id": "orera",
+      "api": "api-project-listing-page-2",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 10,
+      "result_type": "array",
+      "skipped_existing": true,
+      "page": 2,
+      "page_size": 10
+    },
+    {
+      "source_id": "orera",
+      "api": "project-detail-sample",
+      "projects_collected": 4,
+      "endpoint_calls": 20,
+      "documents_saved": 16
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1878-overview",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1878",
+      "promoter_id": "1370",
+      "detail_type": "overview"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1878-land-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 1,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1878",
+      "promoter_id": "1370",
+      "detail_type": "land-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1878-facility-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 11,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1878",
+      "promoter_id": "1370",
+      "detail_type": "facility-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1878-bank-accounts",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1878",
+      "promoter_id": "1370",
+      "detail_type": "bank-accounts"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1878-professionals",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 3,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1878",
+      "promoter_id": "1370",
+      "detail_type": "professionals"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1850-overview",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1850",
+      "promoter_id": "1349",
+      "detail_type": "overview"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1850-land-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 7,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1850",
+      "promoter_id": "1349",
+      "detail_type": "land-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1850-facility-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 7,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1850",
+      "promoter_id": "1349",
+      "detail_type": "facility-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1850-bank-accounts",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1850",
+      "promoter_id": "1349",
+      "detail_type": "bank-accounts"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1850-professionals",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 4,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1850",
+      "promoter_id": "1349",
+      "detail_type": "professionals"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1613-overview",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1613",
+      "promoter_id": "816",
+      "detail_type": "overview"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1613-land-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 1,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1613",
+      "promoter_id": "816",
+      "detail_type": "land-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1613-facility-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 7,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1613",
+      "promoter_id": "816",
+      "detail_type": "facility-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1613-bank-accounts",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1613",
+      "promoter_id": "816",
+      "detail_type": "bank-accounts"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1613-professionals",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 3,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1613",
+      "promoter_id": "816",
+      "detail_type": "professionals"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1771-overview",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1771",
+      "promoter_id": "1304",
+      "detail_type": "overview"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1771-land-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 6,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1771",
+      "promoter_id": "1304",
+      "detail_type": "land-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1771-facility-details",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 13,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1771",
+      "promoter_id": "1304",
+      "detail_type": "facility-details"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1771-bank-accounts",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": null,
+      "result_type": "object",
+      "skipped_existing": true,
+      "project_id": "1771",
+      "promoter_id": "1304",
+      "detail_type": "bank-accounts"
+    },
+    {
+      "source_id": "orera",
+      "api": "project-1771-professionals",
+      "http_status": 200,
+      "token_verified": true,
+      "record_count": 3,
+      "result_type": "array",
+      "skipped_existing": true,
+      "project_id": "1771",
+      "promoter_id": "1304",
+      "detail_type": "professionals"
+    }
+  ]
+}

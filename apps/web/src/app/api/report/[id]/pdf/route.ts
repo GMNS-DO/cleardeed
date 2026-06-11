@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderPdf } from "@cleardeed/pdf-renderer";
 import { getReport } from "@/lib/db";
+import { isReportViewAuthorized } from "@/lib/report-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,10 +19,18 @@ function safeFilenamePart(value: string): string {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  const token = req.nextUrl.searchParams.get("token");
+
+  if (!isReportViewAuthorized(id, token)) {
+    return NextResponse.json(
+      { error: "This PDF link is missing or has an invalid access token." },
+      { status: 401 }
+    );
+  }
 
   try {
     const { report } = await getReport(id) as { report?: ReportRecord | null };

@@ -1,0 +1,55 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: MERAK HEIGHTS BY TWO7 ADDRESS MAKERS",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "1435",
+        "mouza": "Bhubaneswar Sahar Unit No. 11 Sahid Nagar",
+        "khataNo": "2/648",
+        "kisama": 18,
+        "plotArea": "1393.85",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 1,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "Ror Holder SJ ENVIROMENTAL SOLUTIONS PRIVATE LIMITED represented through  Director Swayam Prakash Jena has executed and registered DA & GPOA with M/s. Two7 Real Estate SPV Pvt. Ltd.(Promoter).",
+        "titleHolder": 2,
+        "plotAreaIncuded": "1393.8500",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 231327,
+        "plotEc": "phpY0Ahls_1770155219.pdf",
+        "plotRorId": 231312,
+        "saleDeedId": 0,
+        "poaId": 231179,
+        "landDetailId": 6937,
+        "shareAlloc": "phpsj4TNY_1770132189.pdf",
+        "shareAllocId": 231196,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "11082601022",
+        "poaRegnDate": "2026-01-21",
+        "poaRegnAt": "SUB-REGISTRAR KHURDA BHUBANESWAR",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "Yes",
+        "owners": [
+          {
+            "name": "SJ ENVIROMENTAL SOLUTIONS Represented through Swayam Prakash Jena",
+            "share": "50%",
+            "fileId": 229661
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari 1)"
+      }
+    ]
+  }
+}

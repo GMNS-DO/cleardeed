@@ -1,0 +1,55 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: BIBHUTI SAP \"THE URBANITE\"",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "598/3036",
+        "mouza": "Bijipur",
+        "khataNo": "238/1398",
+        "kisama": 6,
+        "plotArea": "5508.00",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 2,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "Bibhuti Bhusan Pattnaik & Sukanta Kumar Pattnaik Executed GPA Earth Craft Limited",
+        "titleHolder": 2,
+        "plotAreaIncuded": "5237.0100",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 208880,
+        "plotEc": "phpwWuWaW_1764516283.pdf",
+        "plotRorId": 209156,
+        "saleDeedId": 0,
+        "poaId": 202619,
+        "landDetailId": 6677,
+        "shareAlloc": "phpxotk1L_1766856841.pdf",
+        "shareAllocId": 215196,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "11131805754 &11132311280 DTD.13.10.2023 ",
+        "poaRegnDate": "2018-07-10",
+        "poaRegnAt": "Sub- Registrar, Khandagiri, Bhubaneswar",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "No",
+        "owners": [
+          {
+            "name": "Bibhuti Bhusan Pattnaik & Sukanta Kumar Pattnaik",
+            "share": "40%",
+            "fileId": 214059
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari)"
+      }
+    ]
+  }
+}

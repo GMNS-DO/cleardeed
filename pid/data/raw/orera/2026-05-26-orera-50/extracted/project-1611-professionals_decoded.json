@@ -1,0 +1,40 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: BENOY RESIDENCY PHASE-II",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "RTP/DTP(C.ER)-243/2020",
+        "represntativeName": "Subhasis Bose",
+        "represntativeEmail": "ssbconsultants1@gmail.com",
+        "represntativeMobile": "9937811292",
+        "representiveType": 5
+      },
+      {
+        "liscenceNo": "CA/2024/175099",
+        "represntativeName": "MITRA MANDAKINI PATNAIK",
+        "represntativeEmail": "3asofficial.ak@gmail.com",
+        "represntativeMobile": "8260586961",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "308642",
+        "represntativeName": "PRAVAT KUMAR SAHU",
+        "represntativeEmail": "psahuassociates2015@gmail.com",
+        "represntativeMobile": "7205459172",
+        "representiveType": 1
+      }
+    ],
+    "promoters": [
+      {
+        "promoterName": "BAIKUNTHA BALIA CONSULTANCY  DEVELOPER PRIVATE LIMITED",
+        "emailId": "bbcdinfra@gmail.com",
+        "mobile": "9937448870"
+      }
+    ],
+    "agents": []
+  }
+}

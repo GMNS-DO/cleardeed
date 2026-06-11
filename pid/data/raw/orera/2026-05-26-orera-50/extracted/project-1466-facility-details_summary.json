@@ -1,0 +1,122 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: AcreRise Avenue",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 11,
+  "sample_records": [
+    {
+      "facilitiesId": 17,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "148.000",
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Boundary Wall",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 19,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Fire Fighting Facility ",
+      "iconClass": "icon-Fire-Fighting-Facility"
+    },
+    {
+      "facilitiesId": 18,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Gate Installation",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 16,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Site Development",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 27,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "25.000",
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Socitey Room",
+      "iconClass": null
+    },
+    {
+      "facilitiesId": 14,
+      "description": "CGWA NOC ",
+      "documentId": 210861,
+      "areaSq": null,
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    },
+    {
+      "facilitiesId": 25,
+      "description": "",
+      "documentId": 166949,
+      "areaSq": "2633.720",
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 23,
+      "description": "10 Numbers of Tree to be planted",
+      "documentId": 0,
+      "areaSq": "3.600",
+      "completionDate": "2028-07-01",
+      "otherFacilityName": "",
+      "facilityName": "Plantation Area/No.",
+      "iconClass": "icon-Plantation-Area"
+    },
+    {
+      "facilitiesId": 15,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "162.000",
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Drainage",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 26,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "162.000",
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 20,
+      "description": "Staircase and Fire extinguisher provided ",
+      "documentId": 210862,
+      "areaSq": null,
+      "completionDate": "2029-06-30",
+      "otherFacilityName": "",
+      "facilityName": "Emergency Evacuation Services",
+      "iconClass": "icon-Emergency-Evacuation-Services"
+    }
+  ]
+}

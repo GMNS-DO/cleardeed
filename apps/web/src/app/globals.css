@@ -1,1 +1,3 @@
 @import "tailwindcss";
+/* Mapbox GL JS styles */
+@import "mapbox-gl/dist/mapbox-gl.css";

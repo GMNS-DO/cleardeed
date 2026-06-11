@@ -1,0 +1,33 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: MOTWANI ANANDAM",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 3,
+  "sample_records": [
+    {
+      "liscenceNo": "M 124746 2",
+      "represntativeName": "Er. SIDDHARTH DAS",
+      "represntativeEmail": "srdesign2014@gmail.com",
+      "represntativeMobile": "9437116045",
+      "representiveType": 5
+    },
+    {
+      "liscenceNo": "REG NO 324527E",
+      "represntativeName": "RAMESH K KEJRIWAL",
+      "represntativeEmail": "kejriwalfca@gmail.com",
+      "represntativeMobile": "9437043043",
+      "representiveType": 1
+    },
+    {
+      "liscenceNo": "CA/1989/12607",
+      "represntativeName": "P.P. Karmakar",
+      "represntativeEmail": "preetechbbsr@gmail.com",
+      "represntativeMobile": "9437101328",
+      "representiveType": 6
+    }
+  ]
+}

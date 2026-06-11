@@ -1,0 +1,81 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: Maa Bagalamukhi Residency",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "111.480",
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 241061,
+        "areaSq": null,
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 241062,
+        "areaSq": null,
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "9 METER EXTERNAL ROAD",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 22,
+        "description": "Provided",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "Park/Garden",
+        "iconClass": "icon-Park-Garden"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "Gate to be installed ",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "Boundary to be made as per plan approval norms",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-08-11",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      }
+    ]
+  }
+}

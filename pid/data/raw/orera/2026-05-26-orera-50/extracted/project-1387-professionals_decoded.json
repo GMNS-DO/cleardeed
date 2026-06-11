@@ -1,0 +1,48 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: NILACHAL ENCLUSIVE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": null,
+        "represntativeName": "PRASANTA KUMAR BEHERA",
+        "represntativeEmail": "INFOPBTAXCON@GMAIL.COM",
+        "represntativeMobile": "8249311968",
+        "representiveType": 8
+      },
+      {
+        "liscenceNo": "052943",
+        "represntativeName": "SUNIL MURMURIA",
+        "represntativeEmail": "INFOMURMURIA@GMAIL.COM",
+        "represntativeMobile": "9040335228",
+        "representiveType": 1
+      },
+      {
+        "liscenceNo": null,
+        "represntativeName": "SUBASH CHANDRA PATTANAIK",
+        "represntativeEmail": "",
+        "represntativeMobile": "8249949125",
+        "representiveType": 7
+      },
+      {
+        "liscenceNo": "CA/2015/70452",
+        "represntativeName": " Sourav Kumar Dash",
+        "represntativeEmail": "",
+        "represntativeMobile": "9040446862",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "THE INSTITUTE OF ENGINEERS IND",
+        "represntativeName": "Er Durgaprasad Mohapatra",
+        "represntativeEmail": "PDURGA376@MAIL.COM",
+        "represntativeMobile": "7008687785",
+        "representiveType": 5
+      }
+    ],
+    "promoters": [],
+    "agents": []
+  }
+}

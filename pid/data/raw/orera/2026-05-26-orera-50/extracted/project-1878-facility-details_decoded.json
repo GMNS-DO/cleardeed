@@ -1,0 +1,121 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: NIRVANA NIWAS",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1392.340",
+        "completionDate": "2028-04-30",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1392.340",
+        "completionDate": "2029-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "",
+        "documentId": 251274,
+        "areaSq": null,
+        "completionDate": "2028-11-28",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 249664,
+        "areaSq": null,
+        "completionDate": "2026-06-30",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1392.340",
+        "completionDate": "2029-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 249665,
+        "areaSq": "1392.340",
+        "completionDate": "2028-12-28",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "30.130",
+        "completionDate": "2028-12-28",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1392.340",
+        "completionDate": "2029-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 21,
+        "description": "",
+        "documentId": 251277,
+        "areaSq": null,
+        "completionDate": "2029-01-30",
+        "otherFacilityName": "",
+        "facilityName": "Use of Renewable Energy",
+        "iconClass": "icon-Use-of-Renewable-Energy"
+      }
+    ]
+  }
+}

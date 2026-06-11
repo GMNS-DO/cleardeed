@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: URBAN NEST-9 PHASE-I",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1416,
+      "masterAccHolder": null,
+      "masterAccIFSC": null,
+      "masterAccNo": null,
+      "masterAccbank": null,
+      "masterAccbranch": null,
+      "masterCancellCheque": null,
+      "masterCancellChequeId": null,
+      "masterBranchTeleph": null,
+      "masterBranchMobile": null,
+      "reraAccHolder": "BAIKUNTHA BALIA CONSULTANCY & DEVELOPERPRIVATE LIMITED/URBAN NEST-9 PHASE-I/ORERA",
+      "reraAccIFSc": "FDRL0001513",
+      "reraAccNo": "15130200009809",
+      "reraAccbank": "FEDERAL BANK",
+      "reraAccbranch": "KALPANA SQUARE BHUBANESWAR",
+      "reraCancellCheque": "phpNH4zjb_1759992701.pdf",
+      "reraCancellChequeId": 171706,
+      "reraBranchTeleph": "06742313335",
+      "reraBranchMobile": "9583629661",
+      "transAccHolder": null,
+      "transAccIFSC": null,
+      "transrAccNo": null,
+      "transAccbank": null,
+      "transAccbranch": null,
+      "transCancellCheque": null,
+      "transCancellChequeId": null,
+      "transBranchTeleph": null,
+      "transBranchMobile": null
+    },
+    "fundSourceQuery": {
+      "fundId": 1371,
+      "estematedCost": "270.00",
+      "allotteeInvestment": "0.00",
+      "promoterInvestment": "270.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 261757,
+      "estimationCopy": "php2Zcwz7_1760289465.pdf",
+      "expndLand": "200.00",
+      "expndBuilding": "70.00"
+    }
+  }
+}

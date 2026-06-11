@@ -1,0 +1,99 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: JOSHNA SKYLINE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "59/6635",
+        "mouza": "CUTTACK SAHAR UNIT NO-28 PAISA",
+        "khataNo": "650/3109",
+        "kisama": 6,
+        "plotArea": "380.40",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 1,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "RT HOLDER FAKIR KUMAR SAHOO EXECUTED GPA IN FAVOUR OF PROMOTER, SANTOSH KUMAR NAYAK ON SHARING BASIS.",
+        "titleHolder": 2,
+        "plotAreaIncuded": "380.4000",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 209614,
+        "plotEc": "phpCqu939_1761674652.pdf",
+        "plotRorId": 193029,
+        "saleDeedId": 0,
+        "poaId": 193030,
+        "landDetailId": 6527,
+        "shareAlloc": "phpqXPcRi_1761674956.pdf",
+        "shareAllocId": 193031,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "10392505497",
+        "poaRegnDate": "2025-08-20",
+        "poaRegnAt": "DISTRICT SUB-REGISTRAR, CUTTACK",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "Yes",
+        "owners": [
+          {
+            "name": "FAKIR KUMAR SAHOO",
+            "share": "50% and Purchasable FAR 30%",
+            "fileId": 193027
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari)"
+      },
+      {
+        "plotNo": "59/6613",
+        "mouza": "CUTTACK SAHAR UNIT NO-28 PAISA",
+        "khataNo": "650/3091",
+        "kisama": 6,
+        "plotArea": "542.00",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 1,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "PURNA CHANDRA SAHOO AND NARENDRA KUMAR SAHOO EXECUTED GPA IN FAVOUR OF PROMOTER, SANTOSH KUMAR NAYAK",
+        "titleHolder": 2,
+        "plotAreaIncuded": "524.4800",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 193035,
+        "plotEc": "php3UZ4Fm_1761675035.pdf",
+        "plotRorId": 193036,
+        "saleDeedId": 0,
+        "poaId": 235781,
+        "landDetailId": 6722,
+        "shareAlloc": "phpFWHPqB_1761675383.pdf",
+        "shareAllocId": 193038,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "10392409898",
+        "poaRegnDate": "2024-11-27",
+        "poaRegnAt": "DISTRICT SUB-REGISTRAR, CUTTACK",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "Yes",
+        "owners": [
+          {
+            "name": "PURNA CHANDRA SAHOO AND NARENDRA KUMAR SAHOO",
+            "share": "50% and Purchasable FAR 30%",
+            "fileId": 193034
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari)"
+      }
+    ]
+  }
+}

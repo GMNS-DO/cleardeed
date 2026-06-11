@@ -1,0 +1,236 @@
+{
+  "source_url": "https://ncdrc.nic.in/bare_acts/RTIact.htm",
+  "artifact_id": "ncdrc-rti-page-with-ejagriti-reference",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html",
+  "byte_length": 682900,
+  "notes": "Official NCDRC page referencing e-Jagriti for orders/judgments; sample public HTML artifact.",
+  "title": null,
+  "link_count": 277,
+  "pdf_links": [
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/NCDRC_Images/Org_chart.pdf",
+      "text": "https://ncdrc.nic.in/NCDRC_Images/Org_chart.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/notification12012021.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/notification12012021.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/notification12012021.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/notification12012021.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/NCDRC_Images/Org_chart.pdf",
+      "text": "https://ncdrc.nic.in/NCDRC_Images/Org_chart.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/MediationRegulations2020.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf",
+      "text": "https://ncdrc.nic.in/bare_acts/CPA2019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/NCDRC_Images/Org_chart.pdf",
+      "text": "Org_chart.pdf (ncdrc.nic.in)"
+    }
+  ],
+  "candidate_links": [
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/notice.html",
+      "text": "https://ncdrc.nic.in/notice.html"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder28062024.pdf"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/Order25092023.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/Order25092023.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder09042025.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder09042025.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder23052025.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder23052025.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder01072024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder01072024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder19072024.pdf",
+      "text": "OfficeOrder19072024.pdf (ncdrc.nic.in)"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://www.indiacode.nic.in/show-data?abv=CEN&amp;statehandle=123456789/1362&amp;actid=AC_CEN_3_46_00003_198739_1517807322718&amp;sectionId=27585&amp;sectionno=12&amp;orderno=16&amp;orgactid=AC_CEN_3_46_00003_198739_1517807322718",
+      "text": "https://www.indiacode.nic.in"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/judgement",
+      "text": "https://e-jagriti.gov.in/judgement"
+    },
+    {
+      "href": "https://e-jagriti.gov.in/case-history-case-status",
+      "text": "https://e-jagriti.gov.in/case-history-case-status"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder06092019.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder06092019.pdf"
+    },
+    {
+      "href": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf",
+      "text": "https://ncdrc.nic.in/pdf_Files/OfficeOrder12072024.pdf"
+    }
+  ],
+  "form_count": 0,
+  "input_count": 0,
+  "select_count": 0,
+  "has_captcha_hint": false,
+  "has_login_hint": false
+}

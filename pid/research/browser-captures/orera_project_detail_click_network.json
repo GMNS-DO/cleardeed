@@ -1,0 +1,194 @@
+[
+  {
+    "type": "request",
+    "method": "GET",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getMenuConfig/header",
+    "postData": null
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "postData": "{\"REQUEST_DATA\":\"eyJkYXRhIjoiQWN0c2FuZFJ1bGVzIn0=\",\"REQUEST_TOKEN\":\"406f8fb35b096c6bb4a672fd1a0e23affed5bf4894aa7d63c6804c61d2355eb3\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "postData": "{\"REQUEST_DATA\":\"eyJkYXRhIjoiUXVpY2tMaW5rIn0=\",\"REQUEST_TOKEN\":\"54f6e41cc8e0507a33695d8ac4f69bd18f389433d555c40bc43834aba3b87784\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "postData": "{\"REQUEST_DATA\":\"eyJkYXRhIjoiQ29udGFjdFVzIn0=\",\"REQUEST_TOKEN\":\"0bbde67842e5276a4955478c4c526b501792d682ada5ab4a8d3a80732f238d18\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "postData": "{\"REQUEST_DATA\":\"eyJkYXRhIjoiUXVpY2tMaW5rIn0=\",\"REQUEST_TOKEN\":\"54f6e41cc8e0507a33695d8ac4f69bd18f389433d555c40bc43834aba3b87784\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "postData": "{\"REQUEST_DATA\":\"eyJkYXRhIjoiVGVuZGVyJlF1b3RhdGlvbnMifQ==\",\"REQUEST_TOKEN\":\"5895ef8a01e1ef5ff80c00084b13a5954f5536c96047309c916a53c87951de93\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "postData": "{\"REQUEST_DATA\":\"eyJkYXRhIjoiTGF0ZXN0SGFwcGVuaW5nc29yTmV3cyJ9\",\"REQUEST_TOKEN\":\"f941a7f9d3c601e94de492933e39e3c692d9380e667a6fa73989b99c3685aa01\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/cms/api/getVisitorCounts",
+    "postData": "{\"param\":true}"
+  },
+  {
+    "type": "request",
+    "method": "GET",
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee7e6e2d731710155750~png",
+    "postData": null
+  },
+  {
+    "type": "request",
+    "method": "GET",
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee8dd367371710155997~png",
+    "postData": null
+  },
+  {
+    "type": "request",
+    "method": "GET",
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee87fa7b671710155903~png",
+    "postData": null
+  },
+  {
+    "type": "request",
+    "method": "GET",
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee91d0acc21710156061~png",
+    "postData": null
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "bodyStart": "{\"RESPONSE_DATA\":\"Ilt7XCJjYXRlZ29yeVwiOjM4LFwidGl0bGVcIjpcIk9kaXNoYSBSZWFsIEVzdGF0ZSBSZWd1bGF0b3J5IEF1dGhvcml0eSAoQW1lbmRtZW50KSBSZWd1bGF0aW9ucywyMDIyXCIsXCJkb2N1bWVudFwiOlwiNjc2MjYxYzQ3YzA2ZTE3MzQ1MDA4MDQucGRmXCIsXCJkZXNjcmlwdGlvblwiOlwiXCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwie1xcXCJWQ0hDQVRFR09SWVxcXCI6XFxcIlJFUkEgQWN0cywgUnVsZXMgJmFtcDsgUmVndWxhdGlvblxcXCJ9XCIsXCJpZFwiOjU2LFwiZG9jdW1lbnRzaXplXCI6NDcyNTIyfSx7XCJjYXRlZ29yeVwiOjM4LFwidGl0bGVcIjpcIk9kaXNoYSBSZWFsIEVzdGF0ZSBSZWd1bGF0b3J5IEF1dGhvcml0eSAoQW1lbmRtZW50KSBSZWd1bGF0aW9uLCAyMDIxXCIsXCJkb2N1bWVudFwiOlwiNjc2MjYxZjJhNGI0NzE3MzQ1MDA4NTAucGRmXCIsXCJkZXNjcmlwdGlvblwiOlwiXCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwie1xcXCJWQ0hDQVRFR09SWVxcXCI6XFxcIlJFUkEgQWN0cywgUnVsZXMgJmFtcDsgUmVndWxhdGlvblxcXCJ9XCIsXCJpZFwiOjU3LFwiZG9jdW1lbnRzaXplXCI6MTk3MzQ5M30se1wiY2F0ZWdvcnlcIjozOCxcInRpdGxlXCI6XCJDb3JyaWdlbmR1bSBpbiBjb25uZWN0aW9uIHdpdGggT1JFUkEgbm90aWZpY2F0aW9uIE5vLiAyNjUzXFxcL1JFUkEgZGF0ZWQgMjYuMDguMjAyMSBvbiBPZGlzaGEgUmVhbCBFc3RhXCIsXCJkb2N1bWVudFwiOlwiNj"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getMenuConfig/header",
+    "bodyStart": "{\"status\":200,\"result\":\"[{\\\"intId\\\":8,\\\"intCreatedBy\\\":0,\\\"intOnlineServiceId\\\":6926,\\\"intUpdatedBy\\\":0,\\\"dtmCreatedOn\\\":\\\"2024-03-08 11:34:33\\\",\\\"stmUpdatedOn\\\":\\\"2024-03-08 11:34:33\\\",\\\"bitDeletedFlag\\\":0,\\\"jsonOptTxtDetails\\\":\\\"{\\\\\\\"INTGLOBALTYPE\\\\\\\":\\\\\\\"Global\\\\\\\",\\\\\\\"PAGE_ID\\\\\\\":\\\\\\\"About US\\\\\\\",\\\\\\\"VCHMENUTYPE\\\\\\\":\\\\\\\"Header\\\\\\\",\\\\\\\"INTLINKTYPE\\\\\\\":\\\\\\\"Internal\\\\\\\",\\\\\\\"INTWINDOWSTATUS\\\\\\\":\\\\\\\"Same\\\\\\\"}\\\",\\\"intHistoryId\\\":null,\\\"tinActiveStatus\\\":2,\\\"INTGLOBALTYPE\\\":1,\\\"INTPARENTMENUID\\\":0,\\\"HAS_SUB_MENU\\\":0,\\\"VCHMENUTYPE\\\":1,\\\"INTSLNO\\\":1,\\\"VCHMENUNAME\\\":\\\"About Us\\\",\\\"VCHMENUNAMEHINDI\\\":null,\\\"VCHMENUALIAS\\\":null,\\\"INTLINKTYPE\\\":2,\\\"VCHEXTERNALLINK\\\":\\\"\\\",\\\"CONTENT_PAGE_ID\\\":null,\\\"INTPLUGIN\\\":null,\\\"RELATED_HEADER\\\":0,\\\"RELATED_MENU\\\":0,\\\"INTWINDOWSTATUS\\\":1,\\\"tinPublishStatus\\\":1,\\\"PAGE_ID\\\":\\\"2\\\",\\\"VCHPAGETITLE\\\":\\\"About US\\\",\\\"VCHHINDITITLE\\\":null,\\\"VCHMETATITLE\\\":\\\"About US\\\",\\\"VCHMETAKEYWORD\\\":\\\"About US\\\",\\\"VCHMETADESCRIPTI\\\":\\\"About US\\\",\\\"VCHCKEDITORCONTE\\\":\\\"\\\",\\\"VCHHI"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "bodyStart": "{\"RESPONSE_DATA\":\"Ilt7XCJsaW5rVHlwZVwiOjEsXCJsaW5rTmFtZVwiOlwiT2Rpc2hhIEdvdiBMaW5rXCIsXCJ1UkxMaW5rXCI6XCJodHRwczpcXFwvXFxcL3d3dy5vZGlzaGEuZ292LmluXCIsXCJpbWFnZVwiOlwiNjVlZWU3ZTZlMmQ3MzE3MTAxNTU3NTAucG5nXCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwie1xcXCJUSU5MSU5LVFlQRVxcXCI6XFxcIkltcG9ydGFudCBMaW5rXFxcIn1cIixcImlkXCI6MSxcImltYWdlc2l6ZVwiOjk2MjZ9LHtcImxpbmtUeXBlXCI6MSxcImxpbmtOYW1lXCI6XCJEaWdpdGFsIEluZGlhXCIsXCJ1UkxMaW5rXCI6XCJodHRwczpcXFwvXFxcL2RpZ2l0YWxpbmRpYS5nb3YuaW5cIixcImltYWdlXCI6XCI2NWVlZThkZDM2NzM3MTcxMDE1NTk5Ny5wbmdcIixcImpzb25PcHRUeHREZXRhaWxzXCI6XCJ7XFxcIlRJTkxJTktUWVBFXFxcIjpcXFwiSW1wb3J0YW50IExpbmtcXFwifVwiLFwiaWRcIjo0LFwiaW1hZ2VzaXplXCI6MTU3MDh9LHtcImxpbmtUeXBlXCI6MixcImxpbmtOYW1lXCI6XCJCaHViYW5lc3dhciBEZXZlbG9wbWVudCBBdXRob3JpdHlcIixcInVSTExpbmtcIjpcImh0dHBzOlxcXC9cXFwvd3d3LmJkYS5nb3YuaW5cXFwvXCIsXCJpbWFnZVwiOlwiXCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwie1xcXCJUSU5MSU5LVFlQRVxcXCI6XFxcIk90aGVyIExpbmtcXFwifVwiLFwiaWRcIjo1LFwiaW1hZ2VzaXplXCI6ZmFsc2V9LHtcImxpbmtUeXBlXCI6MSxcImxpbmtOYW1lXC"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "bodyStart": "{\"RESPONSE_DATA\":\"Ilt7XCJhZGRyZXNzXCI6XCImbHQ7cCZndDtPZGlzaGEgUmVhbCBFc3RhdGUgUmVndWxhdG9yeSBBdXRob3JpdHkmbHQ7YnIgXFxcLyZndDtcXHJcXG5CbG9jay1BMSwgM3JkIEZsb29yLCZsdDticiBcXFwvJmd0O1xcclxcblRvc2hhbGkgQmhhd2FuLCBTYXR5YSBOYWdhciwmbHQ7YnIgXFxcLyZndDtcXHJcXG5CaHViYW5lc3dhci03NTEwMDcmbHQ7XFxcL3AmZ3Q7XCIsXCJ0ZWxlcGhvbmVcIjpcIjA2NzQtMjU3Mjg3N1wiLFwib3RoZXJUZWxlcGhvbmVcIjpcIlwiLFwiZW1haWxcIjpcInJlcmFvZGlzaGFAZ21haWwuY29tXCIsXCJzdXBwb3J0VGltaW5nXCI6XCIxMDozMCBBTSB0byAwNTozMCBQTSAoQWxsIFdvcmtpbmcgRGF5cylcIixcImZBUUNvbnRhY3ROb1wiOlwiMDY3NC0yNTcwNzU3XCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwiXCIsXCJpZFwiOjF9XSI=\",\"RESPONSE_TOKEN\":\"b0a5d79a35e29396b500461ce162f224272d40bcc5519a79ae1c9357f7877fad\"}"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "bodyStart": "{\"RESPONSE_DATA\":\"Ilt7XCJsaW5rVHlwZVwiOjEsXCJsaW5rTmFtZVwiOlwiT2Rpc2hhIEdvdiBMaW5rXCIsXCJ1UkxMaW5rXCI6XCJodHRwczpcXFwvXFxcL3d3dy5vZGlzaGEuZ292LmluXCIsXCJpbWFnZVwiOlwiNjVlZWU3ZTZlMmQ3MzE3MTAxNTU3NTAucG5nXCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwie1xcXCJUSU5MSU5LVFlQRVxcXCI6XFxcIkltcG9ydGFudCBMaW5rXFxcIn1cIixcImlkXCI6MSxcImltYWdlc2l6ZVwiOjk2MjZ9LHtcImxpbmtUeXBlXCI6MSxcImxpbmtOYW1lXCI6XCJEaWdpdGFsIEluZGlhXCIsXCJ1UkxMaW5rXCI6XCJodHRwczpcXFwvXFxcL2RpZ2l0YWxpbmRpYS5nb3YuaW5cIixcImltYWdlXCI6XCI2NWVlZThkZDM2NzM3MTcxMDE1NTk5Ny5wbmdcIixcImpzb25PcHRUeHREZXRhaWxzXCI6XCJ7XFxcIlRJTkxJTktUWVBFXFxcIjpcXFwiSW1wb3J0YW50IExpbmtcXFwifVwiLFwiaWRcIjo0LFwiaW1hZ2VzaXplXCI6MTU3MDh9LHtcImxpbmtUeXBlXCI6MixcImxpbmtOYW1lXCI6XCJCaHViYW5lc3dhciBEZXZlbG9wbWVudCBBdXRob3JpdHlcIixcInVSTExpbmtcIjpcImh0dHBzOlxcXC9cXFwvd3d3LmJkYS5nb3YuaW5cXFwvXCIsXCJpbWFnZVwiOlwiXCIsXCJqc29uT3B0VHh0RGV0YWlsc1wiOlwie1xcXCJUSU5MSU5LVFlQRVxcXCI6XFxcIk90aGVyIExpbmtcXFwifVwiLFwiaWRcIjo1LFwiaW1hZ2VzaXplXCI6ZmFsc2V9LHtcImxpbmtUeXBlXCI6MSxcImxpbmtOYW1lXC"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "bodyStart": "{\"RESPONSE_DATA\":\"Ilt7XCJ0eXBlXCI6MSxcInRpdGxlXCI6XCJTZWxlY3Rpb24gb2YgTWFucG93ZXIgU2VydmljZSBQcm92aWRlciBmb3IgUHJvdmlkaW5nIERhdGEgRW50cnkgT3BlcmF0b3JzIChERU9zKSwgRHJpdmVyLCBHcm91cC1ELCBDbGVhbmluZyBhbmQgU3dlZXBpbmcgUGVyc29ubmVsIGluIE9SRVJBLCBCaHViYW5lc3dhci5cIixcInRlbmRlck51bWJlclwiOlwiMjIxOVwiLFwiZGVzY3JpcHRpb25cIjpcIiZsdDtwJmd0O1NlbGVjdGlvbiBvZiBNYW5wb3dlciBTZXJ2aWNlIFByb3ZpZGVyIGZvciBQcm92aWRpbmcgRGF0YSBFbnRyeSBPcGVyYXRvcnMgKERFT3MpLCBEcml2ZXIsIEdyb3VwLUQsIENsZWFuaW5nICZhbXA7YW1wOyBTd2VlcGluZyBQZXJzb25uZWwgaW4gT1JFUkEsIEJodWJhbmVzd2FyLiZsdDtcXFwvcCZndDtcIixcInB1Ymxpc2hEYXRlXCI6XCIyMDI1LTA0LTExXCIsXCJsYXN0RGF0ZU9mU3VibWlzc2lvblwiOlwiMjAyNS0wNC0yOFwiLFwidGltZVwiOlwiMTc6MDA6MDBcIixcImpzb25PcHRUeHREZXRhaWxzXCI6XCJ7XFxcIlRJTlRFTkRFUlRZUEVcXFwiOlxcXCJUZW5kZXJcXFwifVwiLFwiaWRcIjoxMTksXCJ0ZW5kZXJEb2N1bWVudHNcIjpbe1wibmFtZVwiOlwiRG9jdW1lbnRcIixcInVwbG9hZFwiOlwiNjdmOTI1YjM3OTRmMTE3NDQzODEzNjMucGRmXCIsXCJvdGhlckZpbGVcIjpudWxsLFwianNvbk9wdFR4dERldGFpbHNcIjpcIlwiLFwiaWRcIjozMjcsXCJ1cGxvYWRzaXplXC"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getFormData",
+    "bodyStart": "{\"RESPONSE_DATA\":\"Ilt7XCJoZWFkaW5nXCI6XCJTaGlmdGluZyBvZiBPUkVSQSBPZmZpY2VcIixcImNvbnRlbnRcIjpcIiZsdDtwJmd0O1RoZSBPZmZpY2Ugb2YgT2Rpc2hhIFJlYWwgRXN0YXRlIFJlZ3VsYXRvcnkgQXV0aG9yaXR5IChPUkVSQSlpcyBzaGlmdGVkIHRvIGZ1bmN0aW9uIGF0IEJsb2NrLUExLCAzcmQgRmxvb3IsIFRvc2hhbGkgQmhhd2FuLCBTYXR5YSBOYWdhciwgQmh1YmFuZXN3YXItNzUxMDA3IHcuZS5mLiAxNi4xMi4yMDIwLiZsdDtcXFwvcCZndDtcIixcImRhdGVcIjpcIjIwMjQtMDItMjdcIixcImxpbmtcIjpcIlwiLFwiZG9jdW1lbnRcIjpcIlwiLFwianNvbk9wdFR4dERldGFpbHNcIjpcIlwiLFwiaWRcIjoyLFwiZG9jdW1lbnRzaXplXCI6ZmFsc2V9LHtcImhlYWRpbmdcIjpcIlJlZ2lzdGVyZWQgcHJvamVjdHMgaXNzdWVkIHdpdGggT2NjdXBhbmN5IENlcnRpZmljYXRlIChPQylcIixcImNvbnRlbnRcIjpcIiZsdDtwJmd0OyZsdDtzcGFuIHN0eWxlPVxcXCJmb250LXNpemU6MTFwdFxcXCImZ3Q7Jmx0O3NwYW4gc3R5bGU9XFxcImJhY2tncm91bmQ6d2hpdGVcXFwiJmd0OyZsdDtzcGFuIHN0eWxlPVxcXCJsaW5lLWhlaWdodDpub3JtYWxcXFwiJmd0OyZsdDtzcGFuIHN0eWxlPVxcXCJmb250LWZhbWlseTpDYWxpYnJpLHNhbnMtc2VyaWZcXFwiJmd0OyZsdDtzcGFuIHN0eWxlPVxcXCJiYWNrZ3JvdW5kOndoaXRlXFxcIiZndDsmbHQ7c3BhbiBzdHlsZT1cXFwiZm9udC1mYW1pbHk6JmFtcD"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/api/getVisitorCounts",
+    "bodyStart": "{\"Counter\":545262}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/Projects/totalProjectCountDetails",
+    "postData": "{\"REQUEST_DATA\":\"IiI=\",\"REQUEST_TOKEN\":\"0d6db9ffaa591fbde463dc786e2a4d73f495212d0b9a87696cb4a6c86a138827\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/AnnexureMaster/getMasterdataFromAnx",
+    "postData": "{\"REQUEST_DATA\":\"eyJhbnhUeXBlIjoiVU5JVF9UWVBFIn0=\",\"REQUEST_TOKEN\":\"7a1522d25ec9854370b27995dfa7452e5feb5b955b80e88bd5965ea731a68977\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/Demography/getDistrict",
+    "postData": "{\"REQUEST_DATA\":\"MjE=\",\"REQUEST_TOKEN\":\"09b866e96d6d44673a2c1d379e70f86d6441a3661afaa656b2122039be373a55\"}"
+  },
+  {
+    "type": "request",
+    "method": "POST",
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/Projects/projectListing",
+    "postData": "{\"REQUEST_DATA\":\"eyJzZWFyY2hUZXJtIjoiIiwiZGlzdHJpY3QiOjAsInRhaGFzaWwiOjAsInN0cnRZZWFyIjowLCJlbmRZZWFyIjowLCJwcm9qZWN0U3RhdHVzIjpbXSwiY2FycGV0QXJlYSI6IiIsInByb3BlcnR5VHlwZSI6W10sImxhdGl0dWRlIjoiIiwibG9uZ2l0dWRlIjoiIiwicmFkaXVzIjowLCJhcHByb3ZlZFN0YXR1cyI6ZmFsc2UsInJldm9rZWRTdGF0dXMiOmZhbHNlLCJwYWdlIjoxLCJwYWdlU2l6ZSI6MTAsInNvcnRPcmRlciI6ImFzYyJ9\",\"REQUEST_TOKEN\":\"58d963b813fe5145f27be2047e5ebf526f3e080d177af8687ffc1ec777aa5cf8\"}"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee8dd367371710155997~png",
+    "bodyStart": "�PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0000�\u0000\u0000\u0000l\b\u0006\u0000\u0000\u0000<\u0002��\u0000\u0000\u0000\u0004sBIT\b\b\b\b|\bd�\u0000\u0000 \u0000IDATx^�]\u0007\\�U�ֽ콇\f\u0001Ad� CE\u0005d��J��J��ֿz�����x�eY�˭o�\u0006\u0015\u0014' �((� \u001b\u0004��������u�� ���=�H���������CS�@\u0019�`d�%���9J��\u001bzHh�CA1��(8�\u0014m!P��,���v���hJ,f\u0019:�R��[$���;*�$R�����:��\u0014���5S\u001c \b�\u00034N��92��O��\u0017��Hô9ƬM)��ȑI��\u0007�#��X�w \u0002���\u0018�\u0012tX���Ŧ�f>��M�9��w�c/�hR�F)\b�u\u00040�S��q6QF�𸒦�\u0019�fdJ�\u0016D��.H@\rR��x�j\u0000�$,;��߽��\u0007\u0012\nZ*{ҟ�ͽ\u000f���\u0000fzR��F9�`�ͼ+\b�>N�~�\u001b�\\_B��Ej�����kJ���۩YAw!ЯH��d��)�\u0005��3��k�2x��2\u0001����\u001au:�a\u001d\\\n\u0014�\u00198���:�aiB~����Ts\u000f��4�� p'\t�\u000e\u000f�0��Ӷ\\�e�7*���Wg_��\f��\u000bG�(���#!��\b�IM�+C��\u0011��H�\u0007';i&\u0013h\u0017\u0005N���p�\rt\u0018��XE��\u0011;+��-��̣ 0�\u0004�\t^�����z*�>j�\u0007���\u000e\b��k�Q���Խ�&���;m5u�\u001d\b\f(\u0001<�jj�d���\u0012��iU�*���\\�1\u0012\u0018QL�<���O�4���y�z:�\u0001#�\u0019\u001e\u0006f�C�Vi���V���J�biJI�)�\u001d�hev}ѽ2o�<Ճ��\u0010�\f;\u0003�UѦ�E��T܃b%�\u000b�/-�������\\R\u000f��Z�\u0002\u0004��\u0000\u001e����X��\u0018(R.\\7��\u000b��i�DU����>X0eI\u001e\u0011\u000f4�\u0000�~%\u0000?[J7n�S���C�aͽ׋\u000e�0Z��n�5E�a-�{}=����e�_`Q������z��\u0017ag�k\u0014\u001d�\u0016�+��\u0019��⫿Ɗ�ޫ�\u001b��\u001ae��\u0014g��\u001a��ܮ\u0010K�&A,b\u0002�Ђ�\u0001��hA\u0010\u0019�B��\n��N�\u000e��Z,�z�b̘me\u0019o���W�/\u0004�c����Z�q�\u001bv\u0004\"\t���Y�\"\u00060�(V�\"�\u00031�\u001cC�y��XI�B��M*��)ʴ�\u0012Z&\u00180�ĂaEgJd|EZ�Ќ=\\��6x�\r4w\u0005�\u0010!ڳ\u0013wW���Ԭ�*����\t���N�"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee91d0acc21710156061~png",
+    "bodyStart": "�PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0000�\u0000\u0000\u0000W\b\u0006\u0000\u0000\u0000ho��\u0000\u0000\u0000\u0004sBIT\b\b\b\b|\bd�\u0000\u0000 \u0000IDATx^�\u0007x\u0015���礓\u0004B\t���{�\u001d\u0005QQ\u0010)���\u0002�\u0014T�\"EP�X\u0000\u0011�\r\u0011�\u0002Ҥ��{�=\u0010H\u0002��������ݫ�\u0012>��q|�\u0004s�����]�{�����g\u00064\u0003�\u0006\r\nY�xq�����\u000bGׯ_��֭[sn߾���\u000f?\\sɒ%eV�XQ�v��G�\u0015+6+--�_\u001f|�ALFN�'#/�ϵ��f�3lذ:\u0002a�e˖�˓'O`���=�N��DE�vRSӜ��t�\u0011�\u001c???�B�\nN�|y�RSSv\u0015/^���q�g�S�\u0003ƌ������⋥֯�\u001c=���\u0005:\u001f'�c�\u0003li�)\u000e`<y���8\u001e��Iw\n\u0014��T�T�ٲe�\u0013\u0016�ù���\u001f:tx��z���Q3�7��Tn��s��7o������\u0012\u0012\u0012��-[�ɗ/������s����ر\u0003��φ���\u001a��|\u001c�~�N�\u001a՜��\u0004���C\u0006H�\u0018\u0012\u001a�ԬY�INNv����d�\u001a�T�Z�d�Zu�����T�\u0005n��\u0007�70y�S}�v-e�\r={6�z�2e|\u0005��\r\u001b6��x���N���\u0013BCC=�ɩ��N�\u0016��qN�>��|��9s:\u0017.\\p<\u001e\u001f����)X�������޵�IMKuʖ-i��q�Fc�B��8R�Ntttz���}���;�{���F@�\u000f\u0018�f����<��\u0003�\n\u0015*4�믿~8[��~>>\u001e�\\�rΔ)S\u001c�����שV������D\u0014)朋>'�;\u0000�\u0004�\u0004'44�ɒ%���\u0011@����;ٳ�tb��9gϞq\u001a6���۷ω��wBBB��y�;k֬1\u0010s\r_���nݺ\r\u001b1b����\f��\u000f\u0018�w��&����+�֭���޽������'\u0006\u0014�9\u0001\u0001\u0001�<a'!!��\u001e\f\n\nt*T,g�kܸ��y�f1c��a�lٜ�\u0017/�\u0013��}}���\u0007\u000f�\r��uĲζm[����s�\u000fk\u0016-Z�ٹs��-Q����%�+W������3=���zf�otΈ\u0011��Y�xQ����y\u0000VV\u0001+$8�9s�콓f㥦���\u000b��W�9w.کW��s��Qc4�\u0013\u001e\u001e�(\\�,Z��X/--݉��sʗ/k���-P�\u001b�\u0000'���\r\u0010;�1@���}Ũ)))N�.]'�\u001a����3E���zf�or�믿^kْ�\u000b\u0003\u0002|�\u0015�15�g�^'g�p�ر�b�8S"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee7e6e2d731710155750~png",
+    "bodyStart": "�PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0001\u001a\u0000\u0000\u0000W\b\u0006\u0000\u0000\u0000�\u0002��\u0000\u0000\u0000\u0004sBIT\b\b\b\b|\bd�\u0000\u0000 \u0000IDATx^�M�eIV��eVe�\u000bg�E\u0011��^�\u000b���֝��j�\u0007\fT�ʅ�z%�\u001b�l7�n����@g�\u001b�E��\u0001g#�-*�`��\u0011\u0015���\u0003��K\u0018\u0005\u0005�,D议���\u0017��[�E���}�Q��\u0019\u0001���8\u0011q\"�O�8\u0011ѻt~�\re�/?�ߴl=�����f�I�@���\u001c�\u001a�\fÏD{b@\u0003��\u001b�|Y���=ô\u000b�3���\u0004��I0\u0014o,�3`�\u0003�?#�M�\u001f����gۮ}]�\u0006JgȚB�p�p�8�fd@1�u�\u0000\u0007\u0000\u0001p��#��\u0019�0�r)�8�\u000e��\u0017W8P8p�9�*�\u0006}\u000b�2�G�\u0001X��ǡ�q\u0010�\u001ePq�\rC���\u0005p��\u0015\u000e\u0014\u000e�c\u000e�l�A2���\u0005ָ�\u0002x�\u0000\u001b\u0000��\u0001\u000e`»�=�\u0015�\u0019\u001b�s�撵�́�\r4\u0000\u0006\u0000\u0002���ť\u0015��{�\u0003\u001e8�\u0001&�\u0011@�=ߧ�\u001d��o�\u0015\u000e\u0014\u000e�S\u000e�l�\u0001(F\u0006\u0018\u0013\u0003\rg\r�°\n\u0000zK\u001e�\f�w�~�!�Dx�\u0006z\\�+\u001c(\u001c8�\u001cx�@�\u0001�\u0000:\u0000�;�\u0003��[�bj`rSW�\u0006��w\u0013�G�) sN\u001bW�V�s�U\u0000\ri\u00032\u000e6�\u0006\u0000\u0003���0\bp\u0001H���\b\u0007@�\u000bȔ�\\8�����\u0002\u001a\u0000d\u0014�\u0002�Ao� �\u0017�M\r�\\r\u0001d\u0000��g��%��\u0003�\u0003�\nh�J�\u0000�{�\u0003\u0010\u0001X&V5\u0000\r߹:���+@S�o��g�\u0003/\u001bh6�\\�rk}}�\u0017?��c��\r@�f�\u0014\u0003��\f�pu�I����vu�ʕ�K��\u000f?��S�\u0016W8P8p�9p�@����\u000ff�[�f3$\u0010׵<9<8�����߂�2\r|�\u0018�\u000003y��]��/�zcm}�e\n8�hW\u0005�}������%k�\u0003\u0017�\u0003g\u00064�\\�K��\u0000�\n-���f��@��\u0000\u000e��\u000e a��\u0019�3\u0000�GZ!�#�7,\u001e�y�����5��\u0006J��W�Jg���3@ɇZ\u0017�rK�\u000b\u0007�\u000b\u0007N\u001dh\u0012��z�\u0004\u0014��C\ro�\u0001\\�r\u00034\f���\u0007\u001c�z|�D����KCc\u000b;G\u000b�9\u0014��@��/��)�s^�Y��E���\u0001M�..]z�\u0001f&�y��ǀ�\"7���C*A��\u001d�/\u000f��s@r}N#�4T;<\u001c�#\u0012�\u0003���^ѥ��\u0003��\u0003�\u00014��76�\u0013!\u0000��lmm�\u0003�x�#� � ���!�K0~ϕ��R�\u0001�"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/cms/getApiFile/uploads-65eee87fa7b671710155903~png",
+    "bodyStart": "�PNG\r\n\u001a\n\u0000\u0000\u0000\rIHDR\u0000\u0000\u0000�\u0000\u0000\u0000�\b\u0006\u0000\u0000\u0000�\u0000w%\u0000\u0000\u0000\u0004sBIT\b\b\b\b|\bd�\u0000\u0000 \u0000IDATx^�}\u0005@TY���\u0000C����\r&�bca\u0007b��]��ڝkw\u0017&�� � \n����10�=�\u000e�\u0006�˾����}�\u0017��������;O�+��\u000f�\u0000F�o#@��#�\u0000�\u0000F�����\u0000#�\n\u00040qZ\u0001\u001a\u001e�\u0011���:�\u0011h\u0005\u0002�8�\u0000\r\u000f�\b`�`\u001d�\b�\u0002\u0001L�V���`\u00040q�\u000e`\u0004Z�\u0000&N+@�C0\u0002�8X\u00070\u0002�@\u0000\u0013�\u0015��!\u0018\u0001L\u001c�\u0003\u0018�V ���\n��\u0010�\u0000&\u000e�\u0001�@+\u0010��i\u0005hx\bF\u0000\u0013\u0007�\u0000F�\u0015\b`�\u00024<\u0004#���u\u0000#�\n\u00040qZ\u0001\u001a\u001e�\u0011���:�\u0011h\u0005\u0002�8�\u0000\r\u000f�\b`�`\u001d�\b�\u0002\u0001L�V���`\u00040q�\u000e`\u0004Z�\u0000&N+@�C0\u0002�8X\u00070\u0002�@\u0000\u0013�\u0015��!\u0018\u0001L\u001c�\u0003\u0018�V ���\n��\u0010�\u0000&\u000e�\u0001�@+\u0010��i\u0005hx\bF\u0000\u0013\u0007�\u0000F�\u0015\b`�\u00024<\u0004#���u\u0000#�\n\u00040qZ\u0001\u001a\u001e�\u0011���:�\u0011h\u0005\u0002�8�\u0000\r\u000f�\b`�`\u001d�\b�\u0002\u0001L�V���`\u00040q�\u000e`\u0004Z�\u0000&N+@�C0\u0002�8X\u00070\u0002�@\u0000\u0013�\u0015��!\u0018\u0001L\u001c�\u0003\u0018�V ���\n��\u0010�\u0000&\u000e�\u0001�@+\u0010��i\u0005hx\bF\u0000\u0013\u0007�\u0000F�\u0015\b`�\u00024<\u0004#���u\u0000#�\n\u00040qZ\u0001\u001a\u001e�\u0011���:�\u0011h\u0005\u0002�8�\u0000\r\u000f�\b`�`\u001d�\b�\u0002\u0001L�V���`\u00040q~R\u0007\u0006\r\u001a�'�*���B�X\"&3�\u0014��:���F�\u0010\u001a��$?�}�O^�U��\u00193G���}��\u0006����jr\u000f\u001c�T\t\u0017\u0012��b��������R�-�(�}�D�?���c\u0007\f\u0018 ���!LNN�}MCCo��}ݔ\u0013\u0012^���\u001f\u0014��=�\u0001\u0001\u000b�%%U�&&JI�v��Gc|GN7Ta�V\u001f?�\u000b� ��u�<l�);1�i\u001d�+a��2����ܟ�w����8C:\f1PU6S����a/�\n\u0012�\u0012���\r��؝{��SeT,��\u0017ّ�T���B���^DDTf�����\u0011�N?NOO��7��g�X\u000b�#<�o�\u000f\\������Sy��_����,,܍����\u0017\u00017?f��q�\t�=<�u�\u0019�����w��A￾f������N�\u0010|�Z�����tO555��S\u000f�TVd���a4��պ\u0010�H\u0016��4���(m�C_���\u0012dj�1c���]\u000f�K\u0017\u000f�S"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/AnnexureMaster/getMasterdataFromAnx",
+    "bodyStart": "{\"RESPONSE_DATA\":\"eyJzdGF0dXMiOiIyMDAiLCJtc2ciOiJEYXRhIGZvdW5kIiwicmVzdWx0Ijp7IjEiOiIxIEJISyIsIjIiOiIxLjUgQkhLIiwiMyI6IjIgQkhLIiwiNCI6IjIuNSBCSEsiLCI1IjoiMyBCSEsiLCI2IjoiMy41IEJISyIsIjciOiI0IEJISyIsIjgiOiJEdXBsZXgiLCI5IjoiNSBCSEsiLCIxMCI6IjQuNSBCSEsiLCIxMSI6IjFSSyIsIjEyIjoiT2ZmaWNlIiwiMTMiOiI1IEJISyB3aXRoIEZhbWlseSBMb3VuZ2UiLCIxNCI6IlN0dWRpbyIsIjE1IjoiUGVudCBIb3VzZSJ9fQ==\",\"RESPONSE_TOKEN\":\"6194b5389006569a7d3af88edb1c9f0d765a8112da8b2d64e3a12b514ac4d405\"}"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/Demography/getDistrict",
+    "bodyStart": "{\"RESPONSE_DATA\":\"W3siaWQiOjM0NCwibmFtZSI6IkFuZ3VsIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM0NSwibmFtZSI6IkJhbGFuZ2lyIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM0NiwibmFtZSI6IkJhbGFzb3JlIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM0NywibmFtZSI6IkJhcmdhcmgiLCJzdGF0ZUlkIjoyMX0seyJpZCI6MzQ4LCJuYW1lIjoiQmhhZHJhayIsInN0YXRlSWQiOjIxfSx7ImlkIjozNDksIm5hbWUiOiJCb3VkaCIsInN0YXRlSWQiOjIxfSx7ImlkIjozNTAsIm5hbWUiOiJDdXR0YWNrIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM1MSwibmFtZSI6IkRlb2dhcmgiLCJzdGF0ZUlkIjoyMX0seyJpZCI6MzUyLCJuYW1lIjoiRGhlbmthbmFsIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM1MywibmFtZSI6IkdhamFwYXRpIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM1NCwibmFtZSI6IkdhbmphbSIsInN0YXRlSWQiOjIxfSx7ImlkIjozNTUsIm5hbWUiOiJKYWdhdHNpbmdoYXB1ciIsInN0YXRlSWQiOjIxfSx7ImlkIjozNTYsIm5hbWUiOiJKYWphcHVyIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM1NywibmFtZSI6IkpoYXJzdWd1ZGEiLCJzdGF0ZUlkIjoyMX0seyJpZCI6MzU4LCJuYW1lIjoiS2FsYWhhbmRpIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM1OSwibmFtZSI6IkthbmRoYW1hbCIsInN0YXRlSWQiOjIxfSx7ImlkIjozNjAsIm5hbWUiOiJLZW5kcmFwYXJhIiwic3RhdGVJZCI6MjF9LHsiaWQiOjM2MSwibmFtZSI6Iktlbm"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/Projects/totalProjectCountDetails",
+    "bodyStart": "{\"RESPONSE_DATA\":\"eyJzdGF0dXMiOjIwMCwidG90YWxSZWdpc3RlcmVkIjoxMTY4LCJ0b3RhbFJlamVjdGVkIjoyMjYsInRvdGFsQ29tcGxldGVkIjoxOTYsInRvdGFsT25nb2luZyI6OTcyLCJyZXNpZGVudGlhbEF2YWlsYWJsZVVuaXQiOjM4Mjc1LCJjb21tZXJjaWFsQXZhaWxhYmxlVW5pdCI6NDY1LCJsYW5kQXZhaWxhYmxlVW5pdCI6NjE5NCwicmVzaWRlbnRpYWxDb3VudHMiOjE4MDAwLCJjb21tZXJjaWFsQ291bnRzIjoyMiwibGFuZENvdW50cyI6MzE2OX0=\",\"RESPONSE_TOKEN\":\"8210432e1151bfd04a1f933940122f533b76b5c88863e1cc106151a0523ad4c0\"}"
+  },
+  {
+    "type": "response",
+    "status": 200,
+    "url": "https://reraapps.odisha.gov.in/pms/api/master/Projects/projectListing",
+    "bodyStart": "{\"RESPONSE_DATA\":\"eyJzdGF0dXMiOiIyMDAiLCJtc2ciOiIiLCJyZXN1bHQiOlt7ImludGlkIjoxODc4LCJwcm9qZWN0X05hbWUiOiJOSVJWQU5BIE5JV0FTIiwiZGlzdHJpY3QiOjM2MiwiYWRkcmVzc0FyZWEiOiJCQURBUkFHSFVOQVRIQVBVUiIsImFkZHJlc3NUb3duIjoiQkhVQkFORVNXQVIiLCJwcm9qZWN0U3RhcnRkYXRlIjoiMjAyNi0wNS0yMiIsInByb2plY3RFbmRkYXRlIjoiMjAyOS0wMS0zMCIsInByb21vdGVySWQiOjEzNzAsImZvbGRlck5hbWUiOiJQUkowMDE4NzgiLCJyZWdfbm8iOiJSUFwvMTlcLzIwMjZcLzAxNTA3IiwicHJvamVjdFR5cGUiOjEsImFwcGxpZWRPbiI6IjIwMjYtMDMtMDggMTM6MTY6NDQiLCJhcHBsaWNhdGlvbk5vIjoiUFIyNjAzMDA3Iiwib2xkUHJvamVjdElkIjowLCJpc0NvcnJpZ2VuZHVtQXBwbGllZCI6MCwidGFoYXNpbCI6MjUxLCJ1bml0X2NvdW50IjozMCwiYm9va2luZ19jb3VudCI6MCwicGxvdF91bml0X2NvdW50IjowLCJwbG90X2Jvb2tpbmdfY291bnQiOjAsImxvY2F0aW9uIjoiS2hvcmRoYSIsImNlcnRpZmljYXRlQ29weUlkIjoyNjQxNzIsIm1vYmlsZSI6Ijk5MzcwODEwNDQiLCJwcm9tb3Rvcl9OYW1lIjoiQVJSUyBJTkZSQSBWRU5UVVJFUyBQUklWQVRFIExJTUlURUQiLCJkb2N1bWVudHMiOiJbXSJ9LHsiaW50aWQiOjE4NTAsInByb2plY3RfTmFtZSI6IkdPUElOQVRIIFZJSEFSIiwiZGlzdHJpY3QiOjM1MCwiYWRkcmVzc0FyZWEiOiJHdWFsaSIsImFkZHJlc3"
+  }
+]

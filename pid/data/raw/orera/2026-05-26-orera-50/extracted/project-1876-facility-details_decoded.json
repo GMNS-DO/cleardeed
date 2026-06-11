@@ -1,0 +1,181 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: Welcome Village",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "620.000",
+        "completionDate": "2026-05-10",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-01-15",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 249762,
+        "areaSq": null,
+        "completionDate": "2029-01-08",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-02-10",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-02-10",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "The project is accessible by an approved means of access of 12.19 mtrs in width.",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-04-06",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 22,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-02-10",
+        "otherFacilityName": "",
+        "facilityName": "Park/Garden",
+        "iconClass": "icon-Park-Garden"
+      },
+      {
+        "facilitiesId": 10,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-04-06",
+        "otherFacilityName": "",
+        "facilityName": "Security Room",
+        "iconClass": "icon-market"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2026-05-31",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "Located at the tenth floor of block 3 (2S+9) as per building permit letter",
+        "documentId": 0,
+        "areaSq": "72.630",
+        "completionDate": "2028-11-30",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 8,
+        "description": "The pool area along with the pool deck is designed on 230 sq. meters area. Present status is foundation excavation is going on.",
+        "documentId": 0,
+        "areaSq": "230.000",
+        "completionDate": "2029-02-10",
+        "otherFacilityName": "",
+        "facilityName": "Swimming pool",
+        "iconClass": "icon-swimming-pool"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 249763,
+        "areaSq": null,
+        "completionDate": "2028-11-20",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 5,
+        "description": "550 sq. Mtrs. comprises of multiple grounds available in the project.",
+        "documentId": 0,
+        "areaSq": "550.000",
+        "completionDate": "2029-02-01",
+        "otherFacilityName": "",
+        "facilityName": "Playground",
+        "iconClass": "icon-outline"
+      },
+      {
+        "facilitiesId": 6,
+        "description": "Located at the tenth floor of block 3 (2S+9) as per building permit letter",
+        "documentId": 0,
+        "areaSq": "200.000",
+        "completionDate": "2029-01-01",
+        "otherFacilityName": "",
+        "facilityName": "Community Center",
+        "iconClass": "icon-Community-Hall"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "The entire road inside the project will be 9 meter wide concrete road. present status under development",
+        "documentId": 0,
+        "areaSq": "4000.000",
+        "completionDate": "2028-12-15",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "A strong gate will be provided which will be easy to open and close.",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-01-01",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "",
+        "documentId": 249767,
+        "areaSq": null,
+        "completionDate": "2028-12-20",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      }
+    ]
+  }
+}

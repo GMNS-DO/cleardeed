@@ -1,0 +1,33 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: AMRAPALLI",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 3,
+  "sample_records": [
+    {
+      "liscenceNo": "RTP/DTP/ST.ER.).012/2017",
+      "represntativeName": "Er. Sudhansu Sekhar Panda",
+      "represntativeEmail": "Sudhansu72_panda@yahoo.com",
+      "represntativeMobile": "9437092014",
+      "representiveType": 5
+    },
+    {
+      "liscenceNo": "216673",
+      "represntativeName": "HARGOVINDA MOHAPATRA, FCA",
+      "represntativeEmail": "mdc.dkl@gmail.com",
+      "represntativeMobile": "9556010865",
+      "representiveType": 1
+    },
+    {
+      "liscenceNo": "CA/2013/58646",
+      "represntativeName": "PIYUSH GOENKA",
+      "represntativeEmail": "piyush@envirogene.in",
+      "represntativeMobile": "9040091702",
+      "representiveType": 6
+    }
+  ]
+}

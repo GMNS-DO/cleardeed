@@ -1,0 +1,67 @@
+{
+  "source_url": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha",
+  "artifact_id": "high-court-party-form",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "byte_length": 34184,
+  "notes": "High Court eCourts party-name form probe; external HTTP often returns 403, browser/captcha required.",
+  "title": "Case Status : Search by Petitioners/Respondents Name",
+  "link_count": 13,
+  "pdf_links": [],
+  "candidate_links": [
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#smaller",
+      "text": ""
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#fontsize0",
+      "text": ""
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#bigger",
+      "text": ""
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": "Back"
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": "Back"
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": "Back"
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": "Back"
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": ""
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#top",
+      "text": ""
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#td_court_name_",
+      "text": "\"+totrecArr[0]+\" : \"+data_listP_a[5]+\""
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": "View"
+    },
+    {
+      "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+      "text": "View"
+    }
+  ],
+  "form_count": 1,
+  "input_count": 11,
+  "select_count": 0,
+  "has_captcha_hint": true,
+  "has_login_hint": false
+}

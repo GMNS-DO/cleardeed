@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: BIBHUTI SAP \"THE URBANITE\"",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1403,
+      "masterAccHolder": "EARTH CRAFT LTD-BIBHUTI SAP THE URBANITE",
+      "masterAccIFSC": "UCBA0001862",
+      "masterAccNo": "18620210003695",
+      "masterAccbank": "UCO BANK",
+      "masterAccbranch": "RADHA BALLABH LANE KHURDA",
+      "masterCancellCheque": "phpKzl4FZ_1757510537.PDF",
+      "masterCancellChequeId": 167616,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9937818202",
+      "reraAccHolder": "EARTH CRAFT LTD-BIBHUTI SAP THE URBANITE",
+      "reraAccIFSc": "UCBA0001862",
+      "reraAccNo": "18620210003701",
+      "reraAccbank": "UCO BANK",
+      "reraAccbranch": "RADHA BALLABH LANE KHURDA",
+      "reraCancellCheque": "phpLubz53_1757510643.PDF",
+      "reraCancellChequeId": 167617,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9937818202",
+      "transAccHolder": "EARTH CRAFT LTD-BIBHUTI SAP THE URBANITE",
+      "transAccIFSC": "UCBA0001862",
+      "transrAccNo": "18620210003718",
+      "transAccbank": "UCO BANK",
+      "transAccbranch": "RADHA BALLABH LANE KHURDA",
+      "transCancellCheque": "phpikdXKs_1757510705.PDF",
+      "transCancellChequeId": 167618,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9937818202"
+    },
+    "fundSourceQuery": {
+      "fundId": 1373,
+      "estematedCost": "6619.44",
+      "allotteeInvestment": "6019.44",
+      "promoterInvestment": "600.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 167631,
+      "estimationCopy": "phpftnafq_1758990489.pdf",
+      "expndLand": "200.00",
+      "expndBuilding": "6419.44"
+    }
+  }
+}

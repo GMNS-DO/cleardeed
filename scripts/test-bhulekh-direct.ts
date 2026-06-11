@@ -1,23 +1,65 @@
-#!/usr/bin/env npx tsx
 /**
- * Quick test of bhulekh fetcher — calls fetch() directly with Mendhasala village.
- * Run: node_modules/.bin/pnpm dlx tsx scripts/test-bhulekh-direct.ts
+ * Direct test: calls Bhulekh fetcher directly to trace exact data
+ * Usage: npx tsx scripts/test-bhulekh-direct.ts
  */
+import { fetch as bhulekhFetch } from "@cleardeed/fetcher-bhulekh";
 
-import { fetch as bhulekhFetch } from "@cleardeed/fetchers/bhulekh";
-
-async function main() {
-  console.log("Testing bhulekh fetcher with Mendhasala village, plot 128...");
-  console.time("bhulekh");
-
-  const result = await bhulekhFetch({
-    gps: { lat: 20.272688, lon: 85.701271 },
+async function test() {
+  const params = {
+    tehsil: "Bhubaneswar",
+    tehsilCode: "2",
     village: "Mendhasala",
-    plotNo: "128",
-  });
+    villageCode: "105",
+    searchMode: "Plot" as const,
+    identifierValue: "128",
+    identifierLabel: "128",
+  };
 
-  console.timeEnd("bhulekh");
-  console.log("\nResult:", JSON.stringify(result, null, 2));
+  console.info("Fetching Bhulekh for:", params);
+  const start = Date.now();
+
+  try {
+    const result = await bhulekhFetch(params as any);
+    const elapsed = Date.now() - start;
+
+    console.info("\n=== BHULEKH RESULT ===");
+    console.info("Status:", result.status);
+    console.info("Status reason:", result.statusReason);
+    console.info("Time:", elapsed, "ms");
+    console.info("Data keys:", Object.keys(result.data ?? {}));
+
+    if (result.data) {
+      const data = result.data as any;
+      console.info("khataNo:", data.khataNo);
+      console.info("village:", data.village);
+      console.info("tenant count:", data.tenants?.length ?? 0);
+      console.info("lastUpdated:", data.lastUpdated);
+
+      if (data.tenants?.length > 0) {
+        console.info("\n=== FIRST TENANT ===");
+        console.info(JSON.stringify(data.tenants[0], null, 2));
+      }
+    }
+
+    if (result.rawResponse) {
+      const raw = JSON.parse(result.rawResponse);
+      console.info("\n=== RAW DOCUMENT ===");
+      console.info("record keys:", Object.keys(raw.record ?? {}));
+      console.info("tenantNameOdia:", raw.record?.tenantNameOdia);
+      console.info("guardianNameOdia:", raw.record?.guardianNameOdia);
+      console.info("khatiyanNo:", raw.record?.khatiyanNo);
+      console.info("ownerBlocks count:", raw.record?.ownerBlocks?.length ?? 0);
+      console.info("first owner block:", JSON.stringify(raw.record?.ownerBlocks?.[0], null, 2));
+
+      console.info("\n=== PLOT TABLE ===");
+      console.info("plot rows:", raw.plotTable?.rows?.length ?? 0);
+      if (raw.plotTable?.rows?.length > 0) {
+        console.info("first row:", JSON.stringify(raw.plotTable.rows[0], null, 2));
+      }
+    }
+  } catch (err) {
+    console.error("Test failed:", err);
+  }
 }
 
-main().catch(console.error);
+test().catch(console.error);

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: BIKASH NAGAR",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1472,
+      "masterAccHolder": null,
+      "masterAccIFSC": null,
+      "masterAccNo": null,
+      "masterAccbank": null,
+      "masterAccbranch": null,
+      "masterCancellCheque": null,
+      "masterCancellChequeId": null,
+      "masterBranchTeleph": null,
+      "masterBranchMobile": null,
+      "reraAccHolder": "M/S. BIKASH NAGAR",
+      "reraAccIFSc": "HDFC0004165",
+      "reraAccNo": "50200117251823",
+      "reraAccbank": "HDFC BANK",
+      "reraAccbranch": "BUDHARAJA BRANCH, SAMBALPUR",
+      "reraCancellCheque": "phpxTPuxE_1773121935.pdf",
+      "reraCancellChequeId": 237528,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9937855263",
+      "transAccHolder": null,
+      "transAccIFSC": null,
+      "transrAccNo": null,
+      "transAccbank": null,
+      "transAccbranch": null,
+      "transCancellCheque": null,
+      "transCancellChequeId": null,
+      "transBranchTeleph": null,
+      "transBranchMobile": null
+    },
+    "fundSourceQuery": {
+      "fundId": 1444,
+      "estematedCost": "229.85",
+      "allotteeInvestment": "0.00",
+      "promoterInvestment": "229.85",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 238181,
+      "estimationCopy": "phpRjkbMb_1768656765.pdf",
+      "expndLand": "50.00",
+      "expndBuilding": "179.85"
+    }
+  }
+}

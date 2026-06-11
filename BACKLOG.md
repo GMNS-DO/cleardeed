@@ -6,6 +6,18 @@
 
 ---
 
+## Map rendering — Bhunaksha polygon not rendering in report UI (2026-05-26)
+
+**Symptom:** MapboxBoundaryMap component hangs at "Loading..." after payment success, even though `bhunakshaPolygon` is now returning valid GeoJSON (1 ring, 73 points) from the pregenerate API.
+
+**Root cause chain:**
+1. Nominatim lacks entries for small Odia villages → tehsil centroid fallback was too far → Bhunaksha BBOX returned 0 plots → polygon was always NULL → **FIXED** (CQL village filter + correct coordinate unwrapping)
+2. Polygon now arrives correctly at pregenerate API response → but MapboxBoundaryMap still stuck → likely a client-side rendering issue in the report page or Mapbox component initialization
+
+**Next step:** Instrument MapboxBoundaryMap with console logs to confirm the polygon prop arrives; check if Mapbox token is valid for the deployment domain; verify the component mounts without JS errors. Parked so we don't block the rest of the payment/email flow.
+
+---
+
 ## Parked from initial strategy review (2026-05-14)
 
 ### Visual & data overlays (PI 3+ candidates)
@@ -37,13 +49,18 @@
 - **HFC title diligence module.** Pursued only after second B2B customer signed.
 - **CA channel as a distribution-not-product play.** Implement as referral codes / partner discounts; not a separate product surface.
 
-### Additional data sources (cherry-pick into PI 3+)
+### Additional data sources (Sprint 11 — Bhulekh Mirror + PID)
 
-- **BMC property tax outstanding (T-053).** Real value. Scheduled S11.
+These are now split across two independent build tracks:
+
+- **Bhulekh ROR data mirror.** Bulk crawl for Khordha, then 4 more districts. Enables instant preview, "seller's other properties," and change detection. See `BHULEKH_MIRROR_TRACK.md`. Scheduled Sprint 11.
+- **Pattern Intelligence Database (PID).** Structured fraud pattern library with NLP extraction and matching engine. Patterns integrate into reports only at VALIDATED/PROBABLE tier. See `PID_CLAUDE_CODE_INSTRUCTIONS.md`. Scheduled Sprint 11.
+- **BMC property tax outstanding (T-053).** Scheduled S11 as part of the larger data sources wave.
 - **TPCODL connection history (T-054).** Strong occupancy signal. Scheduled S11.
-- **Newspaper public notice archives (T-055).** *Parked because:* OCR + paper archive pipeline is a 4–6 week effort. Revisit S12.
-- **IGR seller's other-properties cross-reference (T-057).** Strong signal for land-aggregator detection. Scheduled S11.
+- **IGR seller's other-properties cross-reference (T-057).** Powered by Bhulekh Mirror Stage 4 (tenant enrichment). Parked until Mirror Stage 3 is complete.
 - **TPCODL → seller-name match.** *Parked because:* TPCODL search-by-name is patchy. Address-based match (S11) is the simpler version.
+- **Newspaper public notice archives (T-055).** *Parked because:* OCR + paper archive pipeline is a 4–6 week effort. Revisit S12.
+- **EOW blacklist cross-reference.** *Parked because:* EOW data is not publicly scrapable. Requires formal request process. Revisit S13.
 
 ### Feedback & community (PI 3+ candidates)
 

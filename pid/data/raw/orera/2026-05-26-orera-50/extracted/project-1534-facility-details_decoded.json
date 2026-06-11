@@ -1,0 +1,131 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: Costa Furtune Horizon Heights",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "182.450",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 6,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "89.060",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Community Center",
+        "iconClass": "icon-Community-Hall"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "180.000",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "UNDER PROGRESS",
+        "documentId": 162827,
+        "areaSq": "9.000",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 19,
+        "description": " Fire Extinguisher, Staircase, Fire exit signage and fire exit root map, First-Aid hose reel, \nSprinkler, Fire Alarm, Basement Tank and Pump, ",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-06-15",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "GOVT ROAD",
+        "documentId": 0,
+        "areaSq": "12.190",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "2123.270",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "12 M WIDE GATE",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "88.000",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 10,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "7.980",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Security Room",
+        "iconClass": "icon-market"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "UNDER PROGRESS (1 TREE/80 SQM)",
+        "documentId": 0,
+        "areaSq": "392.000",
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "UNDER PROGRESS AS APPROVAL",
+        "documentId": 163174,
+        "areaSq": null,
+        "completionDate": "2028-06-09",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      }
+    ]
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: MOTWANI ANANDAM",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-04-30",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 1,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-03-30",
+        "otherFacilityName": "",
+        "facilityName": "Club House",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-02-28",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-04-30",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 22,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-08-15",
+        "otherFacilityName": "",
+        "facilityName": "Park/Garden",
+        "iconClass": "icon-Park-Garden"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "70 NO OF TREES PROVIDED",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-08-15",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 8,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-08-30",
+        "otherFacilityName": "",
+        "facilityName": "Swimming pool",
+        "iconClass": "icon-swimming-pool"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 150896,
+        "areaSq": null,
+        "completionDate": "2029-08-31",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 5,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "276.720",
+        "completionDate": "2029-08-31",
+        "otherFacilityName": "",
+        "facilityName": "Playground",
+        "iconClass": "icon-outline"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "227.900",
+        "completionDate": "2029-04-15",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1664.800",
+        "completionDate": "2029-06-30",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "1. Electricity NOC, 2. Demand Note, 3. Payment Receipt and 4. Fire Staircase",
+        "documentId": 157142,
+        "areaSq": null,
+        "completionDate": "2029-05-31",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      }
+    ]
+  }
+}

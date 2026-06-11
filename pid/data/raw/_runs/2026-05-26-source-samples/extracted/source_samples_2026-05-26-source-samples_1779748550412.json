@@ -1,0 +1,833 @@
+{
+  "run_date": "2026-05-26-source-samples",
+  "root": "pid/data/raw",
+  "selected_sources": [
+    "wave3_brittle_access_probes"
+  ],
+  "results": [
+    {
+      "source_id": "wave3_brittle_access_probes",
+      "label": "Wave 3 brittle source access probes",
+      "source_class": "wave3_access_probe_only",
+      "artifact_count": 16,
+      "saved_or_skipped": 16,
+      "errors": [],
+      "http_errors": [
+        {
+          "type": "page",
+          "source_url": "https://www.cersai.org.in/Search/SearchByBorrower.aspx",
+          "artifact_id": "cersai-borrower-search-probe",
+          "artifact_type": "html",
+          "http_status": 404,
+          "content_type": "text/html; charset=UTF-8",
+          "byte_length": 74,
+          "notes": "Previously documented borrower-search path; currently may return 404 or moved.",
+          "title": "Error",
+          "link_count": 0,
+          "pdf_links": [],
+          "candidate_links": [],
+          "form_count": 0,
+          "input_count": 0,
+          "select_count": 0,
+          "has_captcha_hint": false,
+          "has_login_hint": false,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/cersai-borrower-search-probe.html"
+        }
+      ],
+      "results": [
+        {
+          "type": "page",
+          "source_url": "https://bhulekh.ori.nic.in/RoRView.aspx",
+          "artifact_id": "bhulekh-rorview",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 15128,
+          "notes": "Bhulekh public RoR entry page; session workflow required for actual RoR.",
+          "title": ".:BHULEKH || ODISHA:.",
+          "link_count": 3,
+          "pdf_links": [],
+          "candidate_links": [],
+          "form_count": 1,
+          "input_count": 10,
+          "select_count": 0,
+          "has_captcha_hint": false,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/bhulekh-rorview.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://bhulekh.ori.nic.in/rccms/",
+          "artifact_id": "rccms-login",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 25585,
+          "notes": "RCCMS login/access probe; expected to be gated or unavailable without credentials.",
+          "title": "RCCMS",
+          "link_count": 10,
+          "pdf_links": [
+            {
+              "href": "https://bhulekh.ori.nic.in/rccms/REVENUECASE/RCCMS-User%20Manual.pdf",
+              "text": "User manual"
+            }
+          ],
+          "candidate_links": [
+            {
+              "href": "https://bhulekh.ori.nic.in/rccms/#",
+              "text": "Revenue Court Case Monitoring System (RCCMS)"
+            },
+            {
+              "href": "https://bhulekh.ori.nic.in/rccms/REVENUECASE/RCCMS-User%20Manual.pdf",
+              "text": "User manual"
+            },
+            {
+              "href": "https://bhulekh.ori.nic.in/rccms/CaseTypeWise_Report.aspx",
+              "text": "Daily CASE REPORT"
+            },
+            {
+              "href": "https://bhulekh.ori.nic.in/rccms/Cause_StatusCustomise.aspx",
+              "text": "Case Status"
+            }
+          ],
+          "form_count": 1,
+          "input_count": 13,
+          "select_count": 1,
+          "has_captcha_hint": true,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/rccms-login.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://bhulekh.ori.nic.in/rccms/Cause_StatusCustomise.aspx",
+          "artifact_id": "rccms-case-status",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 11534,
+          "notes": "RCCMS public case-status page probe; useful to confirm query fields and captcha/session requirements.",
+          "title": "RCCMS",
+          "link_count": 2,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://bhulekh.ori.nic.in/rccms/Cause_StatusCustomise.aspx#",
+              "text": "Revenue Court Case Monitoring System (RCCMS)"
+            }
+          ],
+          "form_count": 1,
+          "input_count": 6,
+          "select_count": 5,
+          "has_captcha_hint": false,
+          "has_login_hint": false,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/rccms-case-status.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://bhulekh.ori.nic.in/rccms/REVENUECASE/RCCMS-User%20Manual.pdf",
+          "artifact_id": "rccms-user-manual",
+          "artifact_type": "pdf",
+          "http_status": 200,
+          "content_type": "application/pdf",
+          "byte_length": 1540304,
+          "notes": "RCCMS user manual linked from the official login page; useful for understanding case lookup workflows.",
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/rccms-user-manual.pdf"
+        },
+        {
+          "type": "page",
+          "source_url": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
+          "artifact_id": "ecourts-district-party-form",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 117623,
+          "notes": "District eCourts party-name form probe; external HTTP often returns 403, browser/captcha required.",
+          "title": "Home - eCourt India Services",
+          "link_count": 70,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#navbarsToggle01",
+              "text": "Skip to Navigation"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#sidebarMenu",
+              "text": "Skip to Main Content"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=site_map/index",
+              "text": "Site map"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "A"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "A"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "English"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
+              "text": "Case Status"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=courtorder/index",
+              "text": "Court Orders"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=caveat_search/index",
+              "text": "Caveat Search"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=villageSearch/index",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSPartyNameHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=hcservices/show_help_videos&caseSearchType=CSPartyNameHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSFilingNumberHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSAdvocateHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSFIRNumberHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSActHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=view_help_videos/show_help_videos&caseSearchType=CSCaseTypeHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/static/viewHelpVideo.php?caseSearchType=CSPartyNameHelp",
+              "text": "Click here to view help video"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "&times;"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "&times;"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "&times;"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "&times;"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=site_map/index",
+              "text": "Site map"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": ""
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "National Informatics Centre (NIC) External website that opens a new window"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "download app on Google Play"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#",
+              "text": "download app on App Store"
+            },
+            {
+              "href": "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index#page-top",
+              "text": ""
+            }
+          ],
+          "form_count": 7,
+          "input_count": 73,
+          "select_count": 9,
+          "has_captcha_hint": true,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/ecourts-district-party-form.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha",
+          "artifact_id": "high-court-party-form",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 34184,
+          "notes": "High Court eCourts party-name form probe; external HTTP often returns 403, browser/captcha required.",
+          "title": "Case Status : Search by Petitioners/Respondents Name",
+          "link_count": 13,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#smaller",
+              "text": ""
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#fontsize0",
+              "text": ""
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#bigger",
+              "text": ""
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": "Back"
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": "Back"
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": "Back"
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": "Back"
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": ""
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#top",
+              "text": ""
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#td_court_name_",
+              "text": "\"+totrecArr[0]+\" : \"+data_listP_a[5]+\""
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": "View"
+            },
+            {
+              "href": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha#",
+              "text": "View"
+            }
+          ],
+          "form_count": 1,
+          "input_count": 11,
+          "select_count": 0,
+          "has_captcha_hint": true,
+          "has_login_hint": false,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/high-court-party-form.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.cersai.org.in/CERSAI/home.prg",
+          "artifact_id": "cersai-home",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html;charset=UTF-8",
+          "byte_length": 48044,
+          "notes": "CERSAI official home/public search access probe.",
+          "title": "CERSAI",
+          "link_count": 69,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://www.cersai.org.in/CERSAI/sitemap.prg",
+              "text": ""
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/asstsrch.prg",
+              "text": "{{$t('textAssetBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/dbtrsrch.prg",
+              "text": "{{$t('borrowerBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+              "text": "{{$t('textSearchReport')}}"
+            }
+          ],
+          "form_count": 3,
+          "input_count": 15,
+          "select_count": 0,
+          "has_captcha_hint": true,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/cersai-home.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.cersai.org.in/CERSAI/asstsrch.prg",
+          "artifact_id": "cersai-asset-search-current",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html;charset=UTF-8",
+          "byte_length": 48038,
+          "notes": "Current asset-based public search page linked from CERSAI home.",
+          "title": "Asset Based Search",
+          "link_count": 69,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://www.cersai.org.in/CERSAI/sitemap.prg",
+              "text": ""
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/asstsrch.prg",
+              "text": "{{$t('textAssetBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/dbtrsrch.prg",
+              "text": "{{$t('borrowerBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+              "text": "{{$t('textSearchReport')}}"
+            }
+          ],
+          "form_count": 3,
+          "input_count": 15,
+          "select_count": 0,
+          "has_captcha_hint": true,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/cersai-asset-search-current.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.cersai.org.in/CERSAI/dbtrsrch.prg",
+          "artifact_id": "cersai-borrower-search-current",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html;charset=UTF-8",
+          "byte_length": 48015,
+          "notes": "Current borrower-based public search page linked from CERSAI home.",
+          "title": "Debtor Based Search",
+          "link_count": 69,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://www.cersai.org.in/CERSAI/sitemap.prg",
+              "text": ""
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/asstsrch.prg",
+              "text": "{{$t('textAssetBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/dbtrsrch.prg",
+              "text": "{{$t('borrowerBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+              "text": "{{$t('textSearchReport')}}"
+            }
+          ],
+          "form_count": 3,
+          "input_count": 15,
+          "select_count": 0,
+          "has_captcha_hint": true,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/cersai-borrower-search-current.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+          "artifact_id": "cersai-search-report-current",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html;charset=UTF-8",
+          "byte_length": 47810,
+          "notes": "Current CERSAI search report page linked from CERSAI home.",
+          "title": null,
+          "link_count": 69,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "--> {{$t('textGovtIndiaComp')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": ""
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "A-"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "A"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "A+"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/sitemap.prg",
+              "text": ""
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "English"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "Hindi"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "{{$t('textLogin')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg#",
+              "text": "{{$t('fistTimeLoginInstrText')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/asstsrch.prg",
+              "text": "{{$t('textAssetBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/dbtrsrch.prg",
+              "text": "{{$t('borrowerBasedSearchButton')}}"
+            },
+            {
+              "href": "https://www.cersai.org.in/CERSAI/searchreport.prg",
+              "text": "{{$t('textSearchReport')}}"
+            }
+          ],
+          "form_count": 3,
+          "input_count": 15,
+          "select_count": 0,
+          "has_captcha_hint": true,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/cersai-search-report-current.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.cersai.org.in/Search/SearchByBorrower.aspx",
+          "artifact_id": "cersai-borrower-search-probe",
+          "artifact_type": "html",
+          "http_status": 404,
+          "content_type": "text/html; charset=UTF-8",
+          "byte_length": 74,
+          "notes": "Previously documented borrower-search path; currently may return 404 or moved.",
+          "title": "Error",
+          "link_count": 0,
+          "pdf_links": [],
+          "candidate_links": [],
+          "form_count": 0,
+          "input_count": 0,
+          "select_count": 0,
+          "has_captcha_hint": false,
+          "has_login_hint": false,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/cersai-borrower-search-probe.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.igrodisha.gov.in/",
+          "artifact_id": "igr-odisha-home",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 315522,
+          "notes": "IGR Odisha landing page; EC/deed retrieval is manual/login/payment-gated.",
+          "title": "IGR HOME",
+          "link_count": 393,
+          "pdf_links": [
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Renewal%20Of%20State%20Society%20SOP.pdf",
+              "text": "User Manual (State Level)"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Renewal%20Of%20District%20Society%20SOP.pdf",
+              "text": "User Manual (District Level)"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Renewal%20Of%20State%20Society%20SOP.pdf",
+              "text": "ବ୍ୟବହାରକାରୀ ମାନୁଆଲ୍ (ରାଜ୍ୟ ସ୍ତରୀୟ)"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Renewal%20Of%20District%20Society%20SOP.pdf",
+              "text": "ବ୍ୟବହାରକାରୀ ମାନୁଆଲ୍ (ଜିଲ୍ଲା ସ୍ତରୀୟ)"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/PublicServicesDeliveryTimeLine.pdf",
+              "text": "Public Service Delivery Timeline ସାର୍ବଜନିକ ସେବା ପ୍ରଦତ୍ତ ସମାୟାବଧି"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Registration_Documents.pdf",
+              "text": "Document Registration Procedure ଦସ୍ତାବେଜ ପଂଜୀକରଣ କାର୍ଯ୍ୟବିଧି"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/ListOfDocuments.pdf",
+              "text": "Requisite Documents For Registration ପଂଜୀକରଣ ପାଇଁ ଅପେକ୍ଷିତ ଦସ୍ତାବେଜ"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Slot%20Booking%20FAQ.pdf",
+              "text": "FAQ"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/DigilockerUM.pdf",
+              "text": ""
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Renewal%20Of%20State%20Society%20SOP.pdf",
+              "text": ""
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Renewal%20Of%20District%20Society%20SOP.pdf",
+              "text": ""
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Registration_Documents.pdf",
+              "text": "Steps for ' + $anchor.text() + '"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Deed.pdf",
+              "text": "Citizen Manual"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Deed_Dept.pdf",
+              "text": "Departmental Manual"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/ECProcedure.pdf",
+              "text": "Procedure_Test"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/DeedRegistrationProcessFlow.pdf",
+              "text": "ORTPS Time Line"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/DeedRegistrationProcessFlow.pdf",
+              "text": "Fee structure"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/EC.pdf",
+              "text": "Citizen Manual"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/EC_Dept.pdf",
+              "text": "Department Manual"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/CC.pdf",
+              "text": "Citizen Manual"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/CC_Dept.pdf",
+              "text": "Department Manual"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/CCSec89Procedure.pdf",
+              "text": "Citizen Manual For Applying Copy U/S-89"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/CCSec89Procedure.pdf",
+              "text": "Department Manual For Applying Copy U/S-89"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/MRGProcedure.pdf",
+              "text": "Procedure"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/pdf/Orissa_Marriage_Act.pdf",
+              "text": "The Special Marriage Act - 1954"
+            }
+          ],
+          "candidate_links": [
+            {
+              "href": "https://www.igrodisha.gov.in/ScreenRecorder.aspx",
+              "text": "Download Screen Reader"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/sitemap.aspx",
+              "text": "Sitemap"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/SROffice/SearchDistRoOffice.aspx",
+              "text": "Know your SRO"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=62",
+              "text": "Publication of notice regarding renewal of registered societies"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=58",
+              "text": "6152 - 05.12.2025 - Sepcial Order for effective implementation of Odisha Apartment (Ownership & Management) Act, 2023"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=53",
+              "text": "Odisha Development Authorities (Planning and Building Standards) Second Amendment Rules,2025-reg."
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=48",
+              "text": "Notice of the Societies Registration on 21-Dec-2023 Letter No. 5892"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=39",
+              "text": "Corrigendum To Public Notice 14-Jul-2022"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=38",
+              "text": "Public Notice 14-Jul-2022"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=33",
+              "text": "QUOTATION / TENDER CALL NOTICE"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=26",
+              "text": "Clarification regarding the definition of RoR under Section 22-A of the Registration (Odisha Amendment) Act, 21013."
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=29",
+              "text": "Collection of user fees for postal delivery of RoR through speed post after order in Mutation case."
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=22",
+              "text": "Tender Notice for for procurement of Document signaturecertificate."
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=21",
+              "text": "Tender Notice for for procurement of Document signature certificate"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=30",
+              "text": "Online transmission of OLR Form No. 3 after registration of documents for institution of online mutation cases."
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=18",
+              "text": "Tender Call Notice"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=16",
+              "text": "Corrigendum Tender Notice"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=15",
+              "text": "Tender Notice"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=12",
+              "text": "Sealed Tender Notice (I-4/2003 4451)"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=11",
+              "text": "Addendum to Tender Call Notice No. 3157 Dt: 10.09.2015"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/News/DocumentView.ashx?id=10",
+              "text": "Sealed Tender Notice"
+            },
+            {
+              "href": "https://www.igrodisha.gov.in/Admin/DOC/MARRIAGE/ViewMrgDetails.aspx",
+              "text": "Notice Dashbord For Marriage"
+            }
+          ],
+          "form_count": 1,
+          "input_count": 8,
+          "select_count": 1,
+          "has_captcha_hint": false,
+          "has_login_hint": true,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/igr-odisha-home.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.igrodisha.gov.in/SROffice/SearchDistRoOffice.aspx",
+          "artifact_id": "igr-know-your-sro",
+          "artifact_type": "html",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8",
+          "byte_length": 24513,
+          "notes": "IGR public SRO lookup page; useful for district/SRO mapping inputs.",
+          "title": "Search Ro Office",
+          "link_count": 3,
+          "pdf_links": [],
+          "candidate_links": [
+            {
+              "href": "https://www.igrodisha.gov.in/SROffice/SearchDistRoOffice.aspx#",
+              "text": "KNOW YOUR SUB REGISTRAR OFFICE"
+            }
+          ],
+          "form_count": 1,
+          "input_count": 5,
+          "select_count": 3,
+          "has_captcha_hint": false,
+          "has_login_hint": false,
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/igr-know-your-sro.html"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.igrodisha.gov.in/pdf/Registration_Documents.pdf",
+          "artifact_id": "igr-document-registration-procedure",
+          "artifact_type": "pdf",
+          "http_status": 200,
+          "content_type": "application/pdf",
+          "byte_length": 430548,
+          "notes": "Official IGR document registration procedure PDF.",
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/igr-document-registration-procedure.pdf"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.igrodisha.gov.in/pdf/ListOfDocuments.pdf",
+          "artifact_id": "igr-required-documents-registration",
+          "artifact_type": "pdf",
+          "http_status": 200,
+          "content_type": "application/pdf",
+          "byte_length": 472999,
+          "notes": "Official IGR required documents for registration PDF.",
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/igr-required-documents-registration.pdf"
+        },
+        {
+          "type": "page",
+          "source_url": "https://www.igrodisha.gov.in/pdf/PublicServicesDeliveryTimeLine.pdf",
+          "artifact_id": "igr-public-service-timeline",
+          "artifact_type": "pdf",
+          "http_status": 200,
+          "content_type": "application/pdf",
+          "byte_length": 151575,
+          "notes": "Official IGR public service delivery timeline PDF.",
+          "storage_path": "pid/data/raw/wave3_brittle_access_probes/2026-05-26-source-samples/artifacts/igr-public-service-timeline.pdf"
+        }
+      ]
+    }
+  ]
+}

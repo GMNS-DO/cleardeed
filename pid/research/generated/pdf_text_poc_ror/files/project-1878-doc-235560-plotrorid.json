@@ -1,0 +1,40 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1878-doc-235560-plotrorid.pdf",
+    "file_name": "project-1878-doc-235560-plotrorid.pdf",
+    "file_id": "235560",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1878",
+        "project_name": "NIRVANA NIWAS",
+        "promoter_name": "ARRS INFRA VENTURES PRIVATE LIMITED",
+        "mouza": "BADARAGHUNATHAPUR",
+        "khata_no": "23",
+        "plot_no": "471/5165",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 293717,
+  "detected": {
+    "dct_image_count": 2,
+    "crude_literal_text_chars": 26,
+    "crude_literal_text_quality": {
+      "chars": 26,
+      "printable_ratio": 0.962,
+      "alpha_ratio": 0.692,
+      "word_count": 3
+    },
+    "crude_literal_text_sample": "z\":#Omn_ñ[ OpenPDF UNKNOWN"
+  },
+  "ocr": {
+    "ok": true,
+    "language": "eng",
+    "text": "Kiosk Operator: SUKANT KUMAR DAS, (VLE), Bhubaneswar Court cz ! § 2b MOCREERRT ACE TR i: \\EC etl GOVERNMENT OF ODISHA oo Office of the Tahaslidar, Jatnl, Khordha. Miscellaneous Certificate Case No: e-CCP/147 of 2025 CERTIFIED COPY OF ROR Schedule T Form No.39-A «FAR AR: eeeqeE QR oda sca ae 1 eee oda eqa:. BIN KAA : 65 SF : Gare choles 91 6 GEA AQRQ 6S FQ 1 CURIS SI ATA Se cqga | IUTAINR GARR [23 | SQ 6AIRR OMe G:26TC OMG 1: VIDS QU: AFI 9) gee fF, AsIQ A, SIT G IAAI | mI asee Faia 6aQ IER coca ku Ga Nd 5 8) GNSEREIC USAR TSE wyeoa 58 ara 2)36e8 UAT |Qedd gel 6vens! @Nasa gale 0. weal RF 61 fo ual 5 aif, #1. 9909 ——, a. ac ef ar 6aQ &F zal 82 OIF , 9. FAS 699 <Q Ta 78 OF 0 IRIN 624 A8 68 537 oT eae 261 67 AE NQ6AQ | BIFITENS 69Q &° - 03/2023 § AR\" - 607 4.0.08 Q QU SQREa AISI 271/1 S168 | O.L.R. 8 (A) Case No.3484/2024 1 AF\" - 471 §49.0.344Q Tan 00d of ASEICR €.1032.00 6OIA AIGA! G TRYIFY QGIV QIN FANS! | BLANK SPACE FOR STAMPING 260 gee SIGN :27/03/1962 HSE MIN SIRS J —— ee RE ‘arta gee Sere 00g 00a! 22/01/2025 Ost sams by ACTA MADHUSMITA 1d 00 ros sa NANDA Tm or Ee Signature of the Revenue Officer NOTE: -ltis a digitally signed electronically generated certificate and therefore needs no ink-signed signature. - For any query or verification, Agency/Department/Office may visit http//edistrictodisha.gov.in. - Tampering of this certificate will attract penal action. 1of2",
+    "confidence": 51
+  },
+  "triage_status": "ocr_text_found",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

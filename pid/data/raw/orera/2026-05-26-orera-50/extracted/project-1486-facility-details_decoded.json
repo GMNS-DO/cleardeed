@@ -1,0 +1,121 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: HEADQUARTER",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 22,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "961.840",
+        "completionDate": "2028-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Park/Garden",
+        "iconClass": "icon-Park-Garden"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "168.000",
+        "completionDate": "2028-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 6,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "36.000",
+        "completionDate": "2028-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Community Center",
+        "iconClass": "icon-Community-Hall"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "123.890",
+        "completionDate": "2028-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 205168,
+        "areaSq": null,
+        "completionDate": "2028-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 218489,
+        "areaSq": null,
+        "completionDate": "2029-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "Fire Fighting Facility will be provided as per recommendation ",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "9.14MTR wide blacktop road adjacent to project plot",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-20",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "Stair Case provided ",
+        "documentId": 221952,
+        "areaSq": null,
+        "completionDate": "2029-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-20",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      }
+    ]
+  }
+}

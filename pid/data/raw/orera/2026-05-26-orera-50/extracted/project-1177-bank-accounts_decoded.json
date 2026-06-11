@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: MOTWANI ANANDAM",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1360,
+      "masterAccHolder": "MOTWANI CONSTRUCTIONS PRIVATE LIMITED MOTWANI ANANDAM MASTER ACCOUNT",
+      "masterAccIFSC": "ICIC0000284",
+      "masterAccNo": "028405012132",
+      "masterAccbank": "ICICI BANK LTD",
+      "masterAccbranch": "BHUBANESWAR-NAYAPALLI",
+      "masterCancellCheque": "php57DiqP_1752756697.pdf",
+      "masterCancellChequeId": 151366,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9937022458",
+      "reraAccHolder": "MOTWANI CONSTRUCTIONS PRIVATE LIMITED MOTWANI ANANDAM RERA ACCOUNT",
+      "reraAccIFSc": "ICIC0000284",
+      "reraAccNo": "028405012133",
+      "reraAccbank": "ICICI BANK LTD",
+      "reraAccbranch": "BHUBANESWAR-NAYAPALLI",
+      "reraCancellCheque": "phpZUclKK_1753096014.pdf",
+      "reraCancellChequeId": 151367,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9937022458",
+      "transAccHolder": "MOTWANI CONSTRUCTIONS PRIVATE LIMITED MOTWANI ANANDAM TRANSACTION ACCOUNT",
+      "transAccIFSC": "ICIC0000284",
+      "transrAccNo": "028405012134",
+      "transAccbank": "ICICI BANK LTD",
+      "transAccbranch": "BHUBANESWAR-NAYAPALLI",
+      "transCancellCheque": "phphIHpxL_1753096114.pdf",
+      "transCancellChequeId": 151368,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9937022458"
+    },
+    "fundSourceQuery": {
+      "fundId": 1319,
+      "estematedCost": "10829.00",
+      "allotteeInvestment": "7976.00",
+      "promoterInvestment": "353.00",
+      "fromInvestors": "0.00",
+      "fromBank": "2500.00",
+      "estimationCopyId": 152199,
+      "estimationCopy": "phpk4QIl1_1752913249.pdf",
+      "expndLand": "373.00",
+      "expndBuilding": "10456.00"
+    }
+  }
+}

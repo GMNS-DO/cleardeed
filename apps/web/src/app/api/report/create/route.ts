@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateReport, generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults, upsertSourceResult } from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
+import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import { validateKhordhaGPS } from "@cleardeed/schema";
 
@@ -106,13 +107,17 @@ export async function POST(req: NextRequest) {
         throw pipelineError;
       }
 
+      const reportHtml = reportId
+        ? addReportAccessTokensToHtml(pipelineOutput.html, reportId)
+        : pipelineOutput.html;
+
       // Persist results and auto-deliver
       let reportPersisted = false;
       if (persistenceEnabled && reportId) {
         try {
           await updateReportResults({
             reportId,
-            reportHtml: pipelineOutput.html,
+            reportHtml,
             reportTitle: pipelineOutput.title,
             bhulekhStatus: pipelineOutput.sourceSummary.bhulekh,
             validationFindings: pipelineOutput.validationFindings,
@@ -129,7 +134,7 @@ export async function POST(req: NextRequest) {
         sendReportOnDelivery({
           reportId,
           reportTitle: pipelineOutput.title,
-          reportHtml: pipelineOutput.html,
+          reportHtml,
           buyerEmail: v11.email,
           buyerWhatsApp: v11.whatsapp,
         }).catch((e) =>
@@ -138,12 +143,13 @@ export async function POST(req: NextRequest) {
       }
 
       const responseHtml = reportPersisted
-        ? pipelineOutput.html
-        : removePdfDownloadAction(pipelineOutput.html);
+        ? reportHtml
+        : removePdfDownloadAction(reportHtml);
 
       return NextResponse.json(
         {
           reportId,
+          reportUrl: reportId ? buildReportUrl(reportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin) : null,
           title: pipelineOutput.title,
           html: responseHtml,
           validationFindings: pipelineOutput.validationFindings,
@@ -222,13 +228,17 @@ export async function POST(req: NextRequest) {
       throw pipelineError;
     }
 
+    const reportHtml = reportId
+      ? addReportAccessTokensToHtml(pipelineOutput.html, reportId)
+      : pipelineOutput.html;
+
     // ── Persist pipeline results to Supabase (if configured) ─────────────────
     let reportPersisted = false;
     if (persistenceEnabled && reportId) {
       try {
         await updateReportResults({
           reportId,
-          reportHtml: pipelineOutput.html,
+          reportHtml,
           reportTitle: pipelineOutput.title,
           nominatimStatus: pipelineOutput.sourceSummary.nominatim,
           bhunakshaStatus: pipelineOutput.sourceSummary.bhunaksha,
@@ -260,12 +270,13 @@ export async function POST(req: NextRequest) {
       }
     }
     const responseHtml = reportPersisted
-      ? pipelineOutput.html
-      : removePdfDownloadAction(pipelineOutput.html);
+      ? reportHtml
+      : removePdfDownloadAction(reportHtml);
 
     return NextResponse.json(
       {
         reportId,
+        reportUrl: reportId ? buildReportUrl(reportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin) : null,
         title: pipelineOutput.title,
         html: responseHtml,
         validationFindings: pipelineOutput.validationFindings,

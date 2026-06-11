@@ -1,0 +1,40 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: NIRVANA NIWAS",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "RTP/DTP (STER)-093/2018",
+        "represntativeName": "Er R.N Mohapatra",
+        "represntativeEmail": "srengineering.admn@gmail.com",
+        "represntativeMobile": "7894199885",
+        "representiveType": 5
+      },
+      {
+        "liscenceNo": "CA-2002-287-795",
+        "represntativeName": "D K SWAIN",
+        "represntativeEmail": "dushmantswain@gmail.com",
+        "represntativeMobile": "8144605307",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "0329649E",
+        "represntativeName": "DHARANI AND COMPANY",
+        "represntativeEmail": "cadharani1983@gmail.com",
+        "represntativeMobile": "9439416172",
+        "representiveType": 1
+      }
+    ],
+    "promoters": [
+      {
+        "promoterName": "ARRS INFRA VENTURES PRIVATE LIMITED",
+        "emailId": "arrsinfraventures@gmail.com",
+        "mobile": "9937081044"
+      }
+    ],
+    "agents": []
+  }
+}

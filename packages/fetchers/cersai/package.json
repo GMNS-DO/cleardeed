@@ -8,6 +8,7 @@
   "dependencies": {
     "@cleardeed/schema": "workspace:*",
     "playwright": "^1.52.0",
+    "tesseract.js": "^5.1.1",
     "zod": "^3.0.0"
   },
   "scripts": {

@@ -1,0 +1,33 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: URBAN NEST-9 PHASE-I",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 3,
+  "sample_records": [
+    {
+      "liscenceNo": "RTP/DTP(C.ER)-243/2020",
+      "represntativeName": "Subhasis Bose",
+      "represntativeEmail": "ssbconsultants1@gmail.com",
+      "represntativeMobile": "9937811292",
+      "representiveType": 5
+    },
+    {
+      "liscenceNo": "CA/2024/175099",
+      "represntativeName": "MITRA MANDAKINI PATNAIK",
+      "represntativeEmail": "3asofficial.ak@gmail.com",
+      "represntativeMobile": "8260586961",
+      "representiveType": 6
+    },
+    {
+      "liscenceNo": "308642",
+      "represntativeName": "PRAVAT KUMAR SAHU",
+      "represntativeEmail": "psahuassociates2015@gmail.com",
+      "represntativeMobile": "7205459172",
+      "representiveType": 1
+    }
+  ]
+}

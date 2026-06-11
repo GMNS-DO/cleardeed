@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: GOPINATH VIHAR",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1500,
+      "masterAccHolder": null,
+      "masterAccIFSC": null,
+      "masterAccNo": null,
+      "masterAccbank": null,
+      "masterAccbranch": null,
+      "masterCancellCheque": null,
+      "masterCancellChequeId": null,
+      "masterBranchTeleph": null,
+      "masterBranchMobile": null,
+      "reraAccHolder": "M/S. SHREEGOPINATH REALCON PVT. LTD/GOPINATH VIHAR/ORERA",
+      "reraAccIFSc": "IOBA0000692",
+      "reraAccNo": "069202000000557",
+      "reraAccbank": "INDIAN OVERSEAS BANK",
+      "reraAccbranch": "Jagannathpur",
+      "reraCancellCheque": "phpjfyzWY_1776193180.pdf",
+      "reraCancellChequeId": 252145,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "8925950692",
+      "transAccHolder": null,
+      "transAccIFSC": null,
+      "transrAccNo": null,
+      "transAccbank": null,
+      "transAccbranch": null,
+      "transCancellCheque": null,
+      "transCancellChequeId": null,
+      "transBranchTeleph": null,
+      "transBranchMobile": null
+    },
+    "fundSourceQuery": {
+      "fundId": 1456,
+      "estematedCost": "1153.62",
+      "allotteeInvestment": "599.00",
+      "promoterInvestment": "554.62",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 252153,
+      "estimationCopy": "php7KBWCV_1770654466.pdf",
+      "expndLand": "454.00",
+      "expndBuilding": "699.62"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: S.L.TOWER",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1242,
+      "masterAccHolder": "JAIN BUILDERS AND DEVELOPERS/S.L.TOWER/Account",
+      "masterAccIFSC": "HDFC0001973",
+      "masterAccNo": "50200108066632",
+      "masterAccbank": "HDFC BANK",
+      "masterAccbranch": "NANDI SAHI, JHOLA SAHI,CUTTACK",
+      "masterCancellCheque": "phpHu43OT_1761989440.pdf",
+      "masterCancellChequeId": 200055,
+      "masterBranchTeleph": "06712456822",
+      "masterBranchMobile": "9938234561",
+      "reraAccHolder": "JAIN BUILDERS AND DEVELOPERS/S.L.TOWER/ORERA",
+      "reraAccIFSc": "HDFC0001973",
+      "reraAccNo": "50200108099032",
+      "reraAccbank": "HDFC BANK",
+      "reraAccbranch": "NANDI SAHI, JHOLA SAHI,CUTTACK",
+      "reraCancellCheque": "phpwaLSK9_1761989449.pdf",
+      "reraCancellChequeId": 200056,
+      "reraBranchTeleph": "06712456822",
+      "reraBranchMobile": "9938234561",
+      "transAccHolder": "JAIN BUILDERS AND DEVELOPERS/S.L.TOWER/Transaction",
+      "transAccIFSC": "HDFC0001973",
+      "transrAccNo": "99998895599607",
+      "transAccbank": "HDFC BANK",
+      "transAccbranch": "NANDI SAHI, JHOLA SAHI,CUTTACK",
+      "transCancellCheque": "php8dp4cx_1761989458.pdf",
+      "transCancellChequeId": 200057,
+      "transBranchTeleph": "06712456822",
+      "transBranchMobile": "9938234561"
+    },
+    "fundSourceQuery": {
+      "fundId": 1218,
+      "estematedCost": "725.00",
+      "allotteeInvestment": "575.00",
+      "promoterInvestment": "150.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 157643,
+      "estimationCopy": "phpSgAjJA_1754499250.pdf",
+      "expndLand": "50.00",
+      "expndBuilding": "675.00"
+    }
+  }
+}

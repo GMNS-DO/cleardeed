@@ -1,0 +1,33 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: Welcome Village",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 3,
+  "sample_records": [
+    {
+      "liscenceNo": "CA/2023/155247",
+      "represntativeName": "Ishita Beriwal",
+      "represntativeEmail": "ishitaberiwal0303@gmail.com",
+      "represntativeMobile": "8249983528",
+      "representiveType": 6
+    },
+    {
+      "liscenceNo": "M.NO.304101",
+      "represntativeName": "Ashish Lacchuka",
+      "represntativeEmail": "lacchuka.co@gmail.com",
+      "represntativeMobile": "9777772228",
+      "representiveType": 1
+    },
+    {
+      "liscenceNo": "RTP/DTP(C.ER)-454/2022",
+      "represntativeName": "Akash Mohapatra",
+      "represntativeEmail": "abhitechconsulting@gmail.com",
+      "represntativeMobile": "9439533478",
+      "representiveType": 5
+    }
+  ]
+}

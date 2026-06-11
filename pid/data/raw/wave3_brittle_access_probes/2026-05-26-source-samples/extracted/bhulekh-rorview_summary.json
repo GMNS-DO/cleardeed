@@ -1,0 +1,18 @@
+{
+  "source_url": "https://bhulekh.ori.nic.in/RoRView.aspx",
+  "artifact_id": "bhulekh-rorview",
+  "artifact_type": "html",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "byte_length": 15128,
+  "notes": "Bhulekh public RoR entry page; session workflow required for actual RoR.",
+  "title": ".:BHULEKH || ODISHA:.",
+  "link_count": 3,
+  "pdf_links": [],
+  "candidate_links": [],
+  "form_count": 1,
+  "input_count": 10,
+  "select_count": 0,
+  "has_captcha_hint": false,
+  "has_login_hint": true
+}

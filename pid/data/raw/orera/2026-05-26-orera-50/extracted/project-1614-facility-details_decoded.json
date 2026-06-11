@@ -1,0 +1,141 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: HIRALAYA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 22,
+        "description": "PLAY GROUND 3.08% OF LAND ",
+        "documentId": 0,
+        "areaSq": "145.800",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Park/Garden",
+        "iconClass": "icon-Park-Garden"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "ELECTRICITY 1.85% OF LAND ",
+        "documentId": 205634,
+        "areaSq": "87.780",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "INTERNAL ROAD 46.13% OF LAND ",
+        "documentId": 0,
+        "areaSq": "2185.050",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "PLANTATION  9.64% OF LAND  ",
+        "documentId": 0,
+        "areaSq": "456.730",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "CGWA NOC",
+        "documentId": 163920,
+        "areaSq": null,
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "FIRE RECOMNENDATION CERTIFICATE  FROM FIRE OFFICE ",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 1,
+        "description": "CLUB HOUSE 4.15% OF LAND ",
+        "documentId": 0,
+        "areaSq": "196.770",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Club House",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "its under process gate installation schedule date 01.05.2028",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 28,
+        "description": "land area 3.08  for play ground",
+        "documentId": 0,
+        "areaSq": "145.800",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Playgroud",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 20,
+        "description": "FIRE SAFETY RECOMMENDATION",
+        "documentId": 205602,
+        "areaSq": null,
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "drainage completion schedule date on 01.05.2028 ",
+        "documentId": 0,
+        "areaSq": "329.550",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "Boundary wall completion schedule date 01.05.2028",
+        "documentId": 0,
+        "areaSq": "344.110",
+        "completionDate": "2028-05-01",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 5,
+        "description": "Badminton Court area 145.80 sqm.",
+        "documentId": null,
+        "areaSq": "145.800",
+        "completionDate": "2028-05-02",
+        "otherFacilityName": null,
+        "facilityName": "Playground",
+        "iconClass": "icon-outline"
+      }
+    ]
+  }
+}

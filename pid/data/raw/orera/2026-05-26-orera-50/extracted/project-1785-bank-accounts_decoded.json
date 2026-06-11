@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: MERAK HEIGHTS BY TWO7 ADDRESS MAKERS",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1486,
+      "masterAccHolder": "TWO7 REAL ESTATE SPV PRIVATE LIMITED MERAK HEIGHTS MASTER COLLECTION ACCOUNT (100%)",
+      "masterAccIFSC": "HDFC0001080",
+      "masterAccNo": "99990009151515",
+      "masterAccbank": "HDFC",
+      "masterAccbranch": "SAHEEDNAGAR",
+      "masterCancellCheque": "phpuBT0JN_1769530279.pdf",
+      "masterCancellChequeId": 246569,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9409767967",
+      "reraAccHolder": "TWO7 REAL ESTATE SPV PRIVATE LIMITED MERAK HEIGHTS RERA ACCOUNT (70%)",
+      "reraAccIFSc": "HDFC0001080",
+      "reraAccNo": "99900099151515",
+      "reraAccbank": "HDFC",
+      "reraAccbranch": "SAHEEDNAGAR",
+      "reraCancellCheque": "phpv8FR8X_1769530393.pdf",
+      "reraCancellChequeId": 246570,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9409767967",
+      "transAccHolder": "TWO7 REAL ESTATE SPV PVT LTD (30%)",
+      "transAccIFSC": "HDFC0001080",
+      "transrAccNo": "99990009991515",
+      "transAccbank": "HDFC",
+      "transAccbranch": "SAHEEDNAGAR",
+      "transCancellCheque": "phplheb1w_1770128620.pdf",
+      "transCancellChequeId": 246571,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9409767967"
+    },
+    "fundSourceQuery": {
+      "fundId": 1452,
+      "estematedCost": "3041.00",
+      "allotteeInvestment": "1041.00",
+      "promoterInvestment": "2000.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 231425,
+      "estimationCopy": "phpzlEnQu_1770207551.pdf",
+      "expndLand": "33.33",
+      "expndBuilding": "3007.67"
+    }
+  }
+}

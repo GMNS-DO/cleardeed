@@ -1,0 +1,142 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: MAGNAURA HEIGHTS BY TWO7 ADDRESS MAKERS",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 13,
+  "sample_records": [
+    {
+      "facilitiesId": 26,
+      "description": "6.00mtr wide internal road ",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 8,
+      "description": "As per approved plan on 12th floor",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Swimming pool",
+      "iconClass": "icon-swimming-pool"
+    },
+    {
+      "facilitiesId": 11,
+      "description": "2 Lifts as per ARD facilities",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Elevators",
+      "iconClass": "icon-lift"
+    },
+    {
+      "facilitiesId": 19,
+      "description": "As per Fire recommendation",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Fire Fighting Facility ",
+      "iconClass": "icon-Fire-Fighting-Facility"
+    },
+    {
+      "facilitiesId": 17,
+      "description": "The project shall be bounded by wall covered by all four sides.",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2026-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Boundary Wall",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 18,
+      "description": "The project will be secured by gate",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2026-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Gate Installation",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 27,
+      "description": "As per approval plan on 12th floor",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2026-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Socitey Room",
+      "iconClass": null
+    },
+    {
+      "facilitiesId": 12,
+      "description": "As per approval plan on 12th floor",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2026-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Gym/fitness center",
+      "iconClass": "icon-treadmill"
+    },
+    {
+      "facilitiesId": 15,
+      "description": "STP will be provided as per approved plan",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Drainage",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 23,
+      "description": "Plantation (nos of trees per 80 sqm)- 13",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Plantation Area/No.",
+      "iconClass": "icon-Plantation-Area"
+    },
+    {
+      "facilitiesId": 25,
+      "description": "TPCODL Electricity Supply",
+      "documentId": 246552,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 14,
+      "description": "CGWA NOC",
+      "documentId": 246559,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    },
+    {
+      "facilitiesId": 21,
+      "description": "Solar Water Heater and Solar Pannel",
+      "documentId": 247174,
+      "areaSq": null,
+      "completionDate": "2029-02-28",
+      "otherFacilityName": "",
+      "facilityName": "Use of Renewable Energy",
+      "iconClass": "icon-Use-of-Renewable-Energy"
+    }
+  ]
+}

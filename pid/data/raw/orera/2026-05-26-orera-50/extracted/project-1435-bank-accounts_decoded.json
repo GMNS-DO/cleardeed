@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: EVOS ATMAN.",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1346,
+      "masterAccHolder": "EVOS BUILDCON PVT LTD -EVOS ATMAN COLLECTION ACCOUNT",
+      "masterAccIFSC": "SBIN0004256",
+      "masterAccNo": "42989406617",
+      "masterAccbank": "STATE BANK OF INDIA",
+      "masterAccbranch": "PERSONAL BANKING BRANCH JANPATH BAPUJI",
+      "masterCancellCheque": "phpTf0nU1_1751288472.pdf",
+      "masterCancellChequeId": 201631,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9437557490",
+      "reraAccHolder": "EVOS BUILDCON PVT LTD -EVOS ATMAN RERA ACCOUNT",
+      "reraAccIFSc": "SBIN0004256",
+      "reraAccNo": "00000042989292202",
+      "reraAccbank": "STATE BANK OF INDIA",
+      "reraAccbranch": "PERSONAL BANKING BRANCH JANPATH BAPUJI",
+      "reraCancellCheque": "phpsyjRLu_1752323407.pdf",
+      "reraCancellChequeId": 201632,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9437557490",
+      "transAccHolder": "EVOS BUILDCON PVT LTD -EVOS ATMAN TRANSACTION ACCOUNT",
+      "transAccIFSC": "SBIN0004256",
+      "transrAccNo": "42989405273",
+      "transAccbank": "STATE BANK OF INDIA",
+      "transAccbranch": "PERSONAL BANKING BRANCH JANPATH BAPUJI",
+      "transCancellCheque": "phpUHCpmI_1752301039.pdf",
+      "transCancellChequeId": 201633,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9437557490"
+    },
+    "fundSourceQuery": {
+      "fundId": 1299,
+      "estematedCost": "4251.00",
+      "allotteeInvestment": "3500.00",
+      "promoterInvestment": "751.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 156202,
+      "estimationCopy": "phpqyX15w_1753768656.pdf",
+      "expndLand": "187.12",
+      "expndBuilding": "4063.88"
+    }
+  }
+}

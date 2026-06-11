@@ -1,0 +1,101 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: MASON GARDEN COURT",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 26,
+        "description": "NOT YET START",
+        "documentId": 0,
+        "areaSq": "2185.850",
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "PAVER BLOCK ROAD",
+        "documentId": 0,
+        "areaSq": "9.140",
+        "completionDate": "2025-03-30",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 29,
+        "description": "NOT YET START",
+        "documentId": 0,
+        "areaSq": "238.140",
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "UTILITY AREA",
+        "facilityName": "Others",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "NOT YET START",
+        "documentId": 0,
+        "areaSq": "340.620",
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "UNDER PROGRESS",
+        "documentId": 208188,
+        "areaSq": "55.880",
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "UNDER PROGRESS",
+        "documentId": 208189,
+        "areaSq": null,
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "182.620",
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "6555.900",
+        "completionDate": "2028-02-29",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      }
+    ]
+  }
+}

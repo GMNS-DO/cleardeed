@@ -1,0 +1,40 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1920-doc-241019-plotrorid.pdf",
+    "file_name": "project-1920-doc-241019-plotrorid.pdf",
+    "file_id": "241019",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1920",
+        "project_name": "Maa Bagalamukhi Residency",
+        "promoter_name": "MAA BAGALAMUKHI DEVELOPER",
+        "mouza": "Biragobindapur",
+        "khata_no": "1189/113",
+        "plot_no": "444",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 3066475,
+  "detected": {
+    "dct_image_count": 414,
+    "crude_literal_text_chars": 7623,
+    "crude_literal_text_quality": {
+      "chars": 7623,
+      "printable_ratio": 0.969,
+      "alpha_ratio": 0.345,
+      "word_count": 423
+    },
+    "crude_literal_text_sample": "¢GÿÙ endstream endobj 7 0 obj << /XObject << /Image1 8 0 R /Image10 9 0 R /Image11 10 0 R /Image12 11 0 R /Image2 12 0 R /Image3 13 0 R /Image4 14 0 R /Image5 15 0 R /Image6 16 0 R /Image7 17 0 R /Image8 18 0 R /Image9 19 0 R >> >> endobj 20 0 obj << /Filter /FlateDecode /Length 572 >> stream x»\u00131\u0010Eóù ÇT!ô~ä\u0010nDLQ\u0014\u0004\u0018jÿ?¡åÕH}Õ¢°ÆNä;{4'ð´V Identity ¦\u0002ÑE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0014QE\u0000\u0014QE\u0000ÿÙ endstream endobj 52 0 obj << /XObject << /Image1 53 0 R /Image10 54 0 R /Image100 55 0 R /Image101 56 0 R /Image102 57 0 R /Image103 58 0 R /Image104 59 0 R /Image105 60 0 R /Image106 61 0 R /Image107 62 0 R /Image108 63 0 R /Image109 64 0 R /Image11 65 0 R /Image110 66 0 R /Image111 67 0 R /Image112 68 0 R /Image113 69 0 R /Image114 70 0 R /Image115 71 0 R /Image116 72 0 R /Image117 73 0 R /Image118 74 0 R /Image119 75 0 R /Image12 76 0 R /Image120 77 0 R /Image121 78 0 R /Image122 79 0 R /Image123 80 0 R /Image124 81 0 R /Image125 82 0 R /Image126 83 0 R /Image127 84 0 R /Image128 85 0 R /Image129 86 0 R /Image13 87 0 R /Image130 88 0 R /Image131 89 0 R /Image132 90 0 R /Image133 91 0 R /Image134 92 0 R /Image135 93 0 R /Image136 94 0 R /Image137 "
+  },
+  "ocr": {
+    "ok": true,
+    "language": "eng",
+    "text": "(Tk Iv EDV == Ee BES NE “(ey TT tout ly ECE 2) 59 GR | 3 =n Ll Re Ry SR CEE = TWO RUPEES 284 (Yo iC)",
+    "confidence": 28
+  },
+  "triage_status": "image_pdf_ocr_weak",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

@@ -1,0 +1,72 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: BENOY RESIDENCY PHASE-II",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 6,
+  "sample_records": [
+    {
+      "facilitiesId": 25,
+      "description": "ELECTRICITY NOC",
+      "documentId": 192998,
+      "areaSq": "10.000",
+      "completionDate": "2027-11-15",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 26,
+      "description": "PEVER BLOCK INTERNAL ROAD",
+      "documentId": 0,
+      "areaSq": "2303.360",
+      "completionDate": "2027-11-15",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 22,
+      "description": "PROVIDE",
+      "documentId": 0,
+      "areaSq": "379.200",
+      "completionDate": "2027-11-15",
+      "otherFacilityName": "",
+      "facilityName": "Park/Garden",
+      "iconClass": "icon-Park-Garden"
+    },
+    {
+      "facilitiesId": 16,
+      "description": "UNDER PROGRESS",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2026-01-01",
+      "otherFacilityName": "",
+      "facilityName": "Site Development",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 14,
+      "description": "CGWA NOC",
+      "documentId": 213257,
+      "areaSq": null,
+      "completionDate": "2027-11-15",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    },
+    {
+      "facilitiesId": 18,
+      "description": "PROVIDE",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2027-11-15",
+      "otherFacilityName": "",
+      "facilityName": "Gate Installation",
+      "iconClass": "icon-other-entities"
+    }
+  ]
+}

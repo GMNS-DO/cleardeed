@@ -1,0 +1,181 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: ARYAVARTA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "4613.000",
+        "completionDate": "2027-04-05",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "4613.000",
+        "completionDate": "2027-04-03",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 238397,
+        "areaSq": "4613.000",
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "6 NOS OF KONE BRAND LIFT (4 NOS.- 8 PERSON & 2 NOS. -15 PERSON CAPACITY) WITH ARD FACILITY",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2027-04-05",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "",
+        "documentId": 238398,
+        "areaSq": null,
+        "completionDate": "2027-04-05",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "24.38 MTR WIDE EXTERNAL ROAD ADJACENT TO PROJECT PLOT",
+        "documentId": 0,
+        "areaSq": "4613.000",
+        "completionDate": "2026-11-10",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "FIRE FIGHTING FACILITIES SHALL BE PROVIDED AS PER THE FIRE RECOMMENDATION DTD.31.01.2022",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2027-04-05",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "1667.440",
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "154.120",
+        "completionDate": "2027-04-05",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 10,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "4.110",
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Security Room",
+        "iconClass": "icon-market"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "140.566",
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 21,
+        "description": "",
+        "documentId": 238407,
+        "areaSq": null,
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Use of Renewable Energy",
+        "iconClass": "icon-Use-of-Renewable-Energy"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 238408,
+        "areaSq": null,
+        "completionDate": "2027-02-28",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 8,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "122.550",
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Swimming pool",
+        "iconClass": "icon-swimming-pool"
+      },
+      {
+        "facilitiesId": 12,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "15.000",
+        "completionDate": "2027-04-10",
+        "otherFacilityName": "",
+        "facilityName": "Gym/fitness center",
+        "iconClass": "icon-treadmill"
+      }
+    ]
+  }
+}

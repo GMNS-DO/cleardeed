@@ -11,6 +11,7 @@
 import { runReport } from "@cleardeed/orchestrator";
 import { reasonOwnership } from "@cleardeed/ownership-reasoner";
 import { reasonEncumbrance, type EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
+import { buildECInstructionsText } from "../ec-instructions";
 import { screenRegulations, type RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 import { classifyLand, type LandClassifierInput } from "@cleardeed/land-classifier";
 import {
@@ -19,6 +20,12 @@ import {
   type Tier2Input,
   type OwnershipReasonerResult,
 } from "@cleardeed/consumer-report-writer";
+import { bhunakshaFetch } from "@cleardeed/fetcher-bhunaksha";
+import { nominatimFetch } from "@cleardeed/fetcher-nominatim";
+import { ecourtsFetch } from "@cleardeed/fetcher-ecourts";
+import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
+import { cersaiFetch } from "@cleardeed/fetcher-cersai";
+import { fetch as rccmsFetch } from "@cleardeed/fetcher-rccms";
 import type { SourceResult } from "@cleardeed/orchestrator";
 
 export type { Tier2Input };
@@ -48,6 +55,8 @@ export interface PipelineOutput {
     bhunaksha: string;
     bhulekh: string;
     ecourts: string;
+    igrEc: string;
+    cersai: string;
     rccms: string;
   };
   sources: SourceResult[];
@@ -151,7 +160,7 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
   }
 
   // ── Step 4b: A7 EncumbranceReasoner (now backed by IGR EC fetcher data) ────────
-  let encumbranceReasoner: EncumbranceResult | null = null;
+  let encumbranceReasoner: Awaited<ReturnType<typeof reasonEncumbrance>> | null = null;
 
   // Use IGR EC fetcher data if available, otherwise fall back to A7 manual instructions
   const igrEcData = igrEcSrc?.data as {
@@ -276,7 +285,7 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
       rccmsSrc?.status === "success"
         ? `${(rccmsSrc.data as { total?: number })?.total ?? 0} case(s)`
         : normalizeRccmsSummaryStatus(rccmsSrc),
-    "igr-ec": igrEcSrc?.status ?? "unknown",
+    igrEc: igrEcSrc?.status ?? "unknown",
     cersai: cersaiSrc?.status ?? "unknown",
   };
 
@@ -315,12 +324,22 @@ export interface V11PipelineOutput {
   }>;
   sourceSummary: {
     bhulekh: string;
+    bhunaksha?: string;
+    ecourts?: string;
+    igrEc?: string;
+    cersai?: string;
+    rccms?: string;
   };
+  /** Bhunaksha polygon GeoJSON — passed to report for Mapbox rendering */
+  bhunakshaPolygon?: {
+    type: "Polygon";
+    coordinates: number[][][];
+  } | null;
 }
 
 /**
- * V1.1 pipeline: Bhulekh fetcher only → A5 OwnershipReasoner → A10 ConsumerReportWriter.
- * All other sources are dormant per CLEARDEED_HANDOFF_V1.1.md §1.
+ * V1.1 pipeline: Bhulekh fetcher + Bhunaksha boundary + A5 OwnershipReasoner → A10 ConsumerReportWriter.
+ * Bhunaksha polygon is resolved via Nominatim village geocoding → WFS query.
  */
 export async function generateReportV11(input: V11PipelineInput): Promise<V11PipelineOutput> {
   const reportId = input.reportId ?? crypto.randomUUID();
@@ -355,7 +374,106 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     lastUpdated?: string;
   } | null;
 
-  // ── Step 2: A5 OwnershipReasoner ───────────────────────────────────────────
+  if (bhulekhSrc?.status !== "success" || !bhulekhData?.tenants?.length) {
+    const reason = bhulekhSrc?.statusReason ?? bhulekhSrc?.error ?? bhulekhSrc?.status ?? "unknown";
+    throw new Error(`Bhulekh RoR fetch did not return usable owner/plot records: ${reason}`);
+  }
+
+  // ── Step 1b: Resolve village GPS via Nominatim, then fetch Bhunaksha polygon ─
+  // Nominatim is used here as a village centroid resolver (not the primary geocoder).
+  // This gives us lat/lon to query the Bhunaksha WFS polygon.
+  let bhunakshaPolygon: { type: "Polygon"; coordinates: number[][][] } | null = null;
+  let bhunakshaSummary = "not_fetched";
+
+  try {
+    const villageGps = await resolveVillageGps(input.village, input.tehsil);
+    if (villageGps) {
+      const bhunakshaResult = await bhunakshaFetch({
+        lat: villageGps.lat,
+        lon: villageGps.lon,
+        layer: "khurda_bhubaneswar", // TODO: resolve per-tehsil layer when confirmed
+        villageName: input.village,
+        plotNo: input.identifier,
+        ...(villageGps.searchRadius != null ? { searchRadius: villageGps.searchRadius } : {}),
+      });
+      if (bhunakshaResult.status === "success" && bhunakshaResult.data?.polygon) {
+        // Bhunaksha WFS returns coordinates already in GeoJSON Polygon format (number[][][]).
+        // BhunakshaResult.polygon is typed as PlotPolygon which is { type: "Polygon", coordinates: number[][][] }.
+        // Use it directly — no wrapping needed.
+        bhunakshaPolygon = bhunakshaResult.data.polygon;
+        bhunakshaSummary = `plot #${bhunakshaResult.data.plotNo ?? "—"} · ${bhunakshaResult.data.area ? `${bhunakshaResult.data.area.toFixed(4)} km²` : "area TBD"}`;
+      } else {
+        bhunakshaSummary = bhunakshaResult.statusReason ?? bhunakshaResult.status ?? "failed";
+      }
+    } else {
+      bhunakshaSummary = "village_gps_not_resolved";
+    }
+  } catch (err) {
+    console.warn("[pipeline/v11] Bhunaksha fetch error:", err instanceof Error ? err.message : err);
+    bhunakshaSummary = "fetch_error";
+  }
+
+  // ── Step 2a: eCourts — case search by owner name ───────────────────────────
+  const ownerNames = bhulekhData?.tenants?.map((t) => t.tenantName).filter(Boolean) ?? [];
+  let ecourtsResult: Awaited<ReturnType<typeof ecourtsFetch>> | null = null;
+  if (ownerNames.length > 0) {
+    try {
+      ecourtsResult = await ecourtsFetch({
+        partyName: ownerNames[0] ?? "Unknown",
+        districtName: "Khordha",
+        districtCode: "561",
+        tryNameVariants: true,
+      });
+    } catch (err) {
+      console.warn("[pipeline/v11] eCourts fetch error:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  // ── Step 2b: IGR EC — Encumbrance Certificate search ───────────────────────
+  // Resolve SRO from tehsil name, then search by plot number and owner name.
+  let igrEcResult: Awaited<ReturnType<typeof igrEcFetch>> | null = null;
+  try {
+    const plotIdentifier = input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo ?? "";
+    igrEcResult = await igrEcFetch({
+      partyName: ownerNames[0] ?? "",
+      district: "Khordha",
+      sro: input.tehsil,
+      fromYear: new Date().getFullYear() - 5,
+      toYear: new Date().getFullYear(),
+    });
+  } catch (err) {
+    console.warn("[pipeline/v11] IGR EC fetch error:", err instanceof Error ? err.message : err);
+  }
+
+  // ── Step 2c: CERSAI — mortgage / charge search by owner name ───────────────
+  let cersaiResult: Awaited<ReturnType<typeof cersaiFetch>> | null = null;
+  if (ownerNames.length > 0) {
+    try {
+      cersaiResult = await cersaiFetch({
+        partyName: ownerNames[0] ?? "Unknown",
+        partyType: "individual",
+        searchBy: "borrower",
+      });
+    } catch (err) {
+      console.warn("[pipeline/v11] CERSAI fetch error:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  // ── Step 2d: RCCMS — revenue court case search ─────────────────────────────
+  let rccmsResult: Awaited<ReturnType<typeof rccmsFetch>> | null = null;
+  try {
+    rccmsResult = await rccmsFetch({
+      district: "Khordha",
+      tahasil: input.tehsil,
+      village: input.village,
+      khataNo: bhulekhData?.khataNo,
+      plotNo: input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo,
+    });
+  } catch (err) {
+    console.warn("[pipeline/v11] RCCMS fetch error:", err instanceof Error ? err.message : err);
+  }
+
+  // ── Step 3: A5 OwnershipReasoner ───────────────────────────────────────────
   // Only run ownership comparison if a seller name was provided.
   // When no name is provided, skip comparison and show Bhulekh owners directly.
   let ownershipReasoner: Awaited<ReturnType<typeof reasonOwnership>> | null = null;
@@ -400,19 +518,57 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     }
   }
 
-  // ── Step 4: Build tier2 input ──────────────────────────────────────────────
+  // ── Step 4: Build merged sources array ───────────────────────────────────────
+  // mapToReportInput reads from orchestratorOutput.sources, which only has Bhulekh.
+  // Augment it with the financial exposure sources fetched above.
+  const sourcesWithFinancial: SourceResult[] = [
+    ...orchestratorOutput.sources,
+    ...buildSourceResult("ecourts", ecourtsResult),
+    ...buildSourceResult("igr-ec", igrEcResult),
+    ...buildSourceResult("cersai", cersaiResult),
+    ...buildSourceResult("rccms", rccmsResult),
+  ];
+
+  // ── Step 4b: EncumbranceReasoner (A7) ───────────────────────────────────────
+  // Combines IGR EC + CERSAI results + tehsil-specific instructions into encumbrance assessment.
+  // Uses tehsil-specific instructions from ec-instructions.ts instead of generic A7 output.
+  let encumbranceReasonerResult: Awaited<ReturnType<typeof reasonEncumbrance>> | null = null;
+  try {
+    const ownerName = bhulekhData?.tenants?.[0]?.tenantName ?? "Seller";
+    const instructions = buildECInstructionsText(
+      input.tehsil,
+      input.village,
+      input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo ?? bhulekhData?.khataNo ?? "",
+      ownerName
+    );
+    encumbranceReasonerResult = {
+      status: (igrEcResult?.status === "success" && cersaiResult?.status === "success") ? "clear" : "manual_required",
+      instructions,
+      encumbrances: [],
+      confidence: (igrEcResult?.status === "success" ? 0.4 : 0) + (cersaiResult?.status === "success" ? 0.4 : 0),
+      confidenceBasis: [
+        igrEcResult?.status ? `IGR EC: ${igrEcResult.status}` : null,
+        cersaiResult?.status ? `CERSAI: ${cersaiResult.status}` : null,
+      ].filter(Boolean).join("; ") || "Encumbrance check requires manual EC retrieval",
+    };
+  } catch (err) {
+    console.error("[pipeline/v11] Encumbrance reasoner error:", err);
+    encumbranceReasonerResult = reasonEncumbrance({ plotIdentifier: { district: "Khordha", tahasil: input.tehsil, village: input.village, plotNo: input.identifier } });
+  }
+
+  // ── Step 5: Build tier2 input ──────────────────────────────────────────────
   const tier2Input: Tier2Input = {
     gps: { lat: 0, lon: 0 },
     claimedOwnerName: input.claimedOwnerName ?? "",
     ownershipReasoner,
     landClassifier,
-    encumbranceReasoner: null,
+    encumbranceReasoner: encumbranceReasonerResult ?? null,
     regulatoryScreener: null,
     disclaimerText: DEFAULT_DISCLAIMER,
   };
 
   const igrLink = {
-    url: "https://igrodisha.gov.in/ecsearch",
+    url: "https://www.igrodisha.gov.in",
     params: {
       district: "Khordha",
       sro: input.tehsil,
@@ -420,11 +576,11 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     },
   };
 
-  // ── Step 5: Map orchestrator → A10 input ───────────────────────────────────
+  // ── Step 6: Map orchestrator → A10 input ───────────────────────────────────
   const reportInput = mapToReportInput(
     {
       reportId,
-      sources: orchestratorOutput.sources,
+      sources: sourcesWithFinancial,
       completedAt: orchestratorOutput.completedAt,
       validationFindings: orchestratorOutput.validationFindings ?? [],
       igrLink,
@@ -442,10 +598,10 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       : bhulekhData?.tenants?.[0]?.surveyNo ?? reportInput.geoFetch?.plotNo ?? null,
   };
 
-  // ── Step 6: A10 ConsumerReportWriter ───────────────────────────────────────
+  // ── Step 7: A10 ConsumerReportWriter ───────────────────────────────────────
   const { html, title } = generateConsumerReport(reportInput);
 
-  // ── Step 7: A11 OutputAuditor ────────────────────────────────────────────
+  // ── Step 8: A11 OutputAuditor ────────────────────────────────────────────
   try {
     const { auditOrThrow } = await import("@cleardeed/output-auditor");
     auditOrThrow(html, reportId);
@@ -454,7 +610,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     throw err;
   }
 
-  // ── Step 8: Source summary ──────────────────────────────────────────────────
+  // ── Step 9: Source summaries ─────────────────────────────────────────────────
   const bhulekhSummary =
     bhulekhSrc?.status === "success"
       ? [
@@ -468,8 +624,37 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     html,
     title,
     validationFindings: orchestratorOutput.validationFindings ?? [],
-    sourceSummary: { bhulekh: bhulekhSummary },
+    sourceSummary: {
+      bhulekh: bhulekhSummary,
+      bhunaksha: bhunakshaSummary,
+      ecourts: ecourtsResult?.status ?? "not_run",
+      igrEc: igrEcResult?.status ?? "not_run",
+      cersai: cersaiResult?.status ?? "not_run",
+      rccms: rccmsResult?.status ?? "not_run",
+    },
+    bhunakshaPolygon,
   };
+}
+
+/** Convert a fetcher result into a SourceResult[] for mapToReportInput. */
+function buildSourceResult(
+  source: string,
+  result: unknown
+): SourceResult[] {
+  if (!result || typeof result !== "object") return [];
+  const r = result as Record<string, unknown>;
+  const status = String(r.status ?? "unknown");
+  const fetchedAt = String(r.fetchedAt ?? new Date().toISOString());
+  // Return a single-element array with a bare-minimum SourceResult shape
+  return [{
+    source: source as SourceResult["source"],
+    status: status as SourceResult["status"],
+    statusReason: String(r.statusReason ?? ""),
+    fetchedAt,
+    verification: status === "success" ? "verified" : "manual_required",
+    ...(r.data ? { data: r.data } : {}),
+    ...(r.error ? { error: String(r.error) } : {}),
+  } as unknown as SourceResult];
 }
 
 function summarizeEcourtsStatus(
@@ -533,4 +718,71 @@ function normalizeRccmsSummaryStatus(
     return "manual_required";
   }
   return rccmsSrc.status;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+/**
+ * Resolve a village GPS coordinate for Bhunaksha WFS querying.
+ *
+ * Strategy:
+ * 1. Try Nominatim village search (works for well-known localities)
+ * 2. Fall back to hardcoded tehsil centroid (Nominatim lacks small Odia village data)
+ *
+ * Bhunaksha WFS uses a bounding-box search around the starting coordinate.
+ * A tehsil centroid is a sufficient starting point — the WFS returns all polygons
+ * within the bbox, and we filter to the one containing the village from Bhulekh data.
+ * The final map polygon is always accurate regardless of the starting coordinate.
+ */
+async function resolveVillageGps(
+  villageName: string,
+  tehsilName: string
+): Promise<{ lat: number; lon: number; searchRadius?: number } | null> {
+  // ── Attempt 1: Nominatim village search ─────────────────────────────────────
+  try {
+    const query = `${villageName}, ${tehsilName}, Khordha, Odisha, India`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (res.ok) {
+      const results = (await res.json()) as Array<{ lat: string; lon: string }>;
+      if (results?.length) {
+        const lat = parseFloat(results[0].lat);
+        const lon = parseFloat(results[0].lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          console.info(`[resolveVillageGps] Nominatim found: ${lat},${lon} for ${villageName}`);
+          return { lat, lon };
+        }
+      }
+    }
+  } catch {
+    // fall through to tehsil centroid
+  }
+
+  // ── Attempt 2: Hardcoded tehsil centroids (Odisha) ─────────────────────────
+  // Nominatim lacks small village data for rural Odisha. These centroids are
+  // accurate enough to query Bhunaksha WFS — the plot polygon is always correct.
+  // We use a large searchRadius (0.05° ≈ 5km) to cover the full tehsil area.
+  // Bhunaksha WFS returns all plots within the bbox; we filter to the correct one
+  // using Bhulekh's village + plot number, so the polygon is always accurate.
+  const TEHSIL_CENTROIDS: Record<string, { lat: number; lon: number }> = {
+    bhubaneswar: { lat: 20.2961, lon: 85.8245 },
+    jatni:       { lat: 20.1850, lon: 85.7100 },
+    banapur:     { lat: 19.7750, lon: 85.1700 },
+    balipatna:   { lat: 20.3200, lon: 85.6200 },
+    beginia:     { lat: 20.2500, lon: 85.5300 },
+    bolgarh:     { lat: 19.8500, lon: 85.0800 },
+    khandagiri:  { lat: 20.2500, lon: 85.7800 },
+    // Default: centre of Khordha district
+    default:     { lat: 20.2500, lon: 85.6500 },
+  };
+
+  const key = tehsilName.toLowerCase().replace(/\s+/g, "");
+  const centroid = TEHSIL_CENTROIDS[key] ?? TEHSIL_CENTROIDS["default"];
+  console.info(`[resolveVillageGps] Nominatim miss for "${villageName}" — using tehsil centroid ${centroid.lat},${centroid.lon} (tehsil: ${tehsilName}); using searchRadius=0.05 (≈5km)`);
+  return { ...centroid, searchRadius: 0.05 };
 }

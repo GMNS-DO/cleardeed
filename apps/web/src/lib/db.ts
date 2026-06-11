@@ -59,6 +59,14 @@ export function getSupabaseServerClient(): SupabaseClient {
 
 // ── Convenience wrappers for common operations ───────────────────────────────────
 
+/**
+ * Server-side admin client (bypasses RLS). Use in API routes only.
+ * Shorthand for getSupabaseServerClient().
+ */
+export function supabaseAdmin(): SupabaseClient {
+  return getSupabaseServerClient();
+}
+
 export interface DbReport {
   id: string;
   user_id: string | null;

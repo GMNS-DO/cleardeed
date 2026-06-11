@@ -1,0 +1,46 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1613-doc-163323-plotrorid.pdf",
+    "file_name": "project-1613-doc-163323-plotrorid.pdf",
+    "file_id": "163323",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1613",
+        "project_name": "URBAN NEST-9 PHASE-I",
+        "promoter_name": "BAIKUNTHA BALIA CONSULTANCY  DEVELOPER PRIVATE LIMITED",
+        "mouza": "PATRAPADA",
+        "khata_no": "371/1551",
+        "plot_no": "650/2113",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 1141904,
+  "detected": {
+    "dct_image_count": 96,
+    "crude_literal_text_chars": 8,
+    "crude_literal_text_quality": {
+      "chars": 8,
+      "printable_ratio": 1,
+      "alpha_ratio": 1,
+      "word_count": 1
+    },
+    "crude_literal_text_sample": "iLovePDF"
+  },
+  "ocr": {
+    "ok": false,
+    "error": "no large embedded image candidates found"
+  },
+  "content_hints": {
+    "document_type": "record_of_rights",
+    "extracted_fields": {
+      "office": null
+    },
+    "phrases": [],
+    "case_or_reference_numbers": []
+  },
+  "triage_status": "image_pdf_ocr_pending",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

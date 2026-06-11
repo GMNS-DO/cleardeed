@@ -1,0 +1,40 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: S.L.TOWER",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "RTP/DTP/ER006/2017",
+        "represntativeName": "PRITIRANJAN MOHARANA",
+        "represntativeEmail": "mmconsult@yahoo.com",
+        "represntativeMobile": "9437008288",
+        "representiveType": 5
+      },
+      {
+        "liscenceNo": "CA/04/33697",
+        "represntativeName": "AR, SABYASACHI MISHRA",
+        "represntativeEmail": "jituarch@gmail.com",
+        "represntativeMobile": "9853010838",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "318464",
+        "represntativeName": "SURAJ JHUNJHUNWALA",
+        "represntativeEmail": "surajca98@gmail.com",
+        "represntativeMobile": "9124022566",
+        "representiveType": 1
+      }
+    ],
+    "promoters": [
+      {
+        "promoterName": "JAIN BUILDERS AND DEVELOPERS",
+        "emailId": "chabhavyaj@gmail.com",
+        "mobile": "7008897136"
+      }
+    ],
+    "agents": []
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: ANANYA SRIKSHETRA PHASE-2",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 25,
+        "description": "UNDER PROGRESS",
+        "documentId": 242167,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "UNDER PROGRESS",
+        "documentId": 242168,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "1133.190",
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "AS PER FIRE SAFETY RECOMMENDATION",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "2879.170",
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 6,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": "213.000",
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Community Center",
+        "iconClass": "icon-Community-Hall"
+      },
+      {
+        "facilitiesId": 16,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Site Development",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 17,
+        "description": "UNDER PROGRESS",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "UNDER PROGRESS",
+        "documentId": 242169,
+        "areaSq": null,
+        "completionDate": "2032-03-31",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      }
+    ]
+  }
+}

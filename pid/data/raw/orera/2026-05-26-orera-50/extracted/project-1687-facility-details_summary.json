@@ -1,0 +1,162 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: AMRAPALLI",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 15,
+  "sample_records": [
+    {
+      "facilitiesId": 17,
+      "description": "Boundary wall to be provided as per Approval Plan",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Boundary Wall",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 27,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "268.259",
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Socitey Room",
+      "iconClass": null
+    },
+    {
+      "facilitiesId": 23,
+      "description": "1 Tree per 80 Sqm i.e. 119 Trees Provided",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Plantation Area/No.",
+      "iconClass": "icon-Plantation-Area"
+    },
+    {
+      "facilitiesId": 28,
+      "description": "Children's Play Area 5%",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Playgroud",
+      "iconClass": null
+    },
+    {
+      "facilitiesId": 12,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "145.390",
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Gym/fitness center",
+      "iconClass": "icon-treadmill"
+    },
+    {
+      "facilitiesId": 25,
+      "description": "",
+      "documentId": 207358,
+      "areaSq": "48.000",
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 11,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-02-02",
+      "otherFacilityName": "",
+      "facilityName": "Elevators",
+      "iconClass": "icon-lift"
+    },
+    {
+      "facilitiesId": 24,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "External Road",
+      "iconClass": "icon-External-Road"
+    },
+    {
+      "facilitiesId": 19,
+      "description": "AS PER FIRE NORMS",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Fire Fighting Facility ",
+      "iconClass": "icon-Fire-Fighting-Facility"
+    },
+    {
+      "facilitiesId": 26,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 18,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Gate Installation",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 3,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Shopping Complex",
+      "iconClass": "icon-market"
+    },
+    {
+      "facilitiesId": 16,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Site Development",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 8,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "143.950",
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Swimming pool",
+      "iconClass": "icon-swimming-pool"
+    },
+    {
+      "facilitiesId": 14,
+      "description": "",
+      "documentId": 207371,
+      "areaSq": null,
+      "completionDate": "2030-12-31",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    }
+  ]
+}

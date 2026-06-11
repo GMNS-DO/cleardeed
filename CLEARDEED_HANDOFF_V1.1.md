@@ -62,9 +62,9 @@ A single mobile-first web page with these fields, in this order:
 4. **Search by** — segmented control: Plot (default) | Khatiyan | Tenant name.
 5. **Identifier** — single text field. On submit, the fetcher scrapes the available options for the resolved village and presents a ranked picker. The user selects from the picker — no exact-format typing required.
 6. **Claimed seller name (optional)** — free text, used for owner-match in Section 2.
-7. **WhatsApp number** — required. International format +91...
+7. **Phone number** — required. International format +91...
 8. **Email (optional)** — for PDF receipt.
-9. **Payment button:** 'Pay ₹999 and generate report'. Disclaimer block below. Payment-first: buyer cannot submit without successful payment.
+9. **Payment button:** 'Pay ₹499 and generate report'. Disclaimer block below.
 
 Draft state persists in localStorage.
 
@@ -81,9 +81,19 @@ Every page footer: 'This report summarizes public records as of [timestamp]. It 
 
 Both surfaces embed: Front Page screenshot, Back Page screenshot (always, even if blank), Bhunaksha image (best-effort), Smart-RoR QR if present, shareable view-token link.
 
-### 3.4 WhatsApp delivery message template
+### 3.4 Report delivery
 
-The 3-line summary before the link is mandatory. A bare link reads as spam. The summary signals human review and converts the message into a professional advisory note.
+After manual review:
+- The founder views the generated report at `/report/{id}?token={ADMIN_VIEW_TOKEN}`.
+- Approve or Reject from the `/admin` queue page.
+- On approve: the report link is shared with the buyer (via email or direct message).
+- No automated WhatsApp delivery in V1.1 — the founder sends the report link personally.
+
+### 3.5 Payment
+
+- ₹499 launch price — Razorpay integration (Day 10).
+- For concierge launch: payment can be collected manually before or after report generation.
+- Payment status is tracked in the lead_requests table.
 
 ## 4. The input-resolution problem
 

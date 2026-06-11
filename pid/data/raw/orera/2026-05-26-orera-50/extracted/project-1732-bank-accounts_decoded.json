@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: Qala",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1467,
+      "masterAccHolder": "ASHIANA REALTY LLP QALA MASTER ACCOUNT",
+      "masterAccIFSC": "ICIC0007287",
+      "masterAccNo": "728705000336",
+      "masterAccbank": "ICICI BANK LIMITED",
+      "masterAccbranch": "SAHID NAGAR-II, BHUBANESWAR",
+      "masterCancellCheque": "phpWmEHc9_1765890212.pdf",
+      "masterCancellChequeId": 213280,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "8655332839",
+      "reraAccHolder": "ASHIANA REALTY LLP QALA RERA ACCOUNT",
+      "reraAccIFSc": "ICIC0007287",
+      "reraAccNo": "728705000337",
+      "reraAccbank": "ICICI BANK LIMITED",
+      "reraAccbranch": "SAHID NAGAR-II, BHUBANESWAR",
+      "reraCancellCheque": "phpbKuOzx_1765890221.pdf",
+      "reraCancellChequeId": 213281,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "8655332839",
+      "transAccHolder": "ASHIANA REALTY LLP QALA TRANSACTION ACCOUNT",
+      "transAccIFSC": "ICIC0007287",
+      "transrAccNo": "728705000338",
+      "transAccbank": "ICICI BANK LIMITED",
+      "transAccbranch": "SAHID NAGAR-II, BHUBANESWAR",
+      "transCancellCheque": "php18mDNn_1765890234.pdf",
+      "transCancellChequeId": 213282,
+      "transBranchTeleph": "",
+      "transBranchMobile": "8655332839"
+    },
+    "fundSourceQuery": {
+      "fundId": 1430,
+      "estematedCost": "36268.00",
+      "allotteeInvestment": "26268.00",
+      "promoterInvestment": "6000.00",
+      "fromInvestors": "0.00",
+      "fromBank": "4000.00",
+      "estimationCopyId": 213299,
+      "estimationCopy": "phpR3eiLr_1765891457.pdf",
+      "expndLand": "4000.00",
+      "expndBuilding": "32268.00"
+    }
+  }
+}

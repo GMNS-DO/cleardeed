@@ -1,0 +1,40 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: BIKASH NAGAR",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "334167E",
+        "represntativeName": "KHUSHBOO AGARWAL",
+        "represntativeEmail": "cakhushboo0411@gmail.com",
+        "represntativeMobile": "7381175891",
+        "representiveType": 1
+      },
+      {
+        "liscenceNo": "CA/2016/75592",
+        "represntativeName": "ASIS NATH",
+        "represntativeEmail": "studiogreenaarch@gmail.com",
+        "represntativeMobile": "8456033388",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "RTP/DTP(C.ER)-480/2022",
+        "represntativeName": "KAUSHIK DEBATA",
+        "represntativeEmail": "kaushikdebata@gmail.com",
+        "represntativeMobile": "7008766791",
+        "representiveType": 5
+      }
+    ],
+    "promoters": [
+      {
+        "promoterName": "BIKASH KUMAR AGARWALA",
+        "emailId": "bikashnagar2025@gmail.com",
+        "mobile": "8926334784"
+      }
+    ],
+    "agents": []
+  }
+}

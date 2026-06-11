@@ -262,9 +262,9 @@ function buildTitleInsights(input: RiskInsightInput): RiskInsight[] {
         SRC_BACK, 4));
     }
   } else {
-    // Back page fetched but no mutations = clean
+    // Back page fetched but no mutations.
     if (back.mutationHistory) {
-      insights.push(make("title", "positive", "No mutation entries — clean title record",
+      insights.push(make("title", "positive", "Back Page returned zero mutation entries",
         "The Back Page shows no recorded mutations. This is a positive indicator, but note that Bhulekh may not reflect all historical transfers. An EC from the Sub-Registrar office is still required for a complete picture.",
         SRC_BACK, 5));
     }
@@ -272,7 +272,7 @@ function buildTitleInsights(input: RiskInsightInput): RiskInsight[] {
 
   // Check encumbrance count
   if (encumbrances.length === 0 && (back.encumbranceEntries ?? []).length === 0 && back.backPageRemarks) {
-    insights.push(make("title", "positive", "No encumbrance entries in Bhulekh",
+    insights.push(make("title", "positive", "Bhulekh returned zero encumbrance entries",
       "The Back Page shows no recorded encumbrances in Bhulekh. This is a positive signal, but EC from the Sub-Registrar office — which covers all registered transactions — is still required for a complete picture.",
       SRC_BACK, 5));
   }
@@ -346,9 +346,9 @@ function buildFinancialInsights(input: RiskInsightInput): RiskInsight[] {
       SRC_REG, 4));
   }
 
-  // No encumbrances
+  // Encumbrance entries absent in the parsed Back Page.
   if (encumbrances.length === 0 && back.encumbranceEntries) {
-    insights.push(make("financial", "positive", "No encumbrances in Bhulekh record",
+    insights.push(make("financial", "positive", "Bhulekh returned zero encumbrance entries",
       "The Back Page shows no recorded encumbrances in Bhulekh. This is a positive signal, but note that Bhulekh reflects only what has been entered in the digital record. Many transactions are registered at the Sub-Registrar without updating Bhulekh. Obtain an EC from IGR Odisha for a complete picture.",
       SRC_BACK, 5));
   }
@@ -369,7 +369,7 @@ function buildPositiveInsights(input: RiskInsightInput): RiskInsight[] {
 
   if (!input.bhulekhUsable) return insights;
 
-  // Clean scenario: single owner, no encumbrances, no court cases, buildable
+  // Positive scenario: single owner, with no charge/court markers in Bhulekh Back Page.
   const encumbrances = Array.isArray(back.encumbranceEntries) ? back.encumbranceEntries : [];
   const remarks = Array.isArray(back.backPageRemarks) ? back.backPageRemarks : [];
   const noCourt = !remarks.some(r => (r.category ?? "").toLowerCase() === "court_case" || (r.text ?? "").toLowerCase().includes("case"));
@@ -380,8 +380,8 @@ function buildPositiveInsights(input: RiskInsightInput): RiskInsight[] {
 
   if (owners.length === 1 && encumbrances.length === 0 && noCourt && noBank && noBankEnc) {
     const ownerName = displayName(owners[0]);
-    insights.push(make("positive", "positive", "Appears clean — single owner, no charges",
-      `This plot appears clean: a single owner (${ownerName}) on record, no registered charges in Bhulekh, and no court case or bank charge mentions in the Back Page. This is the highest-confidence scenario, but EC from IGR Odisha and a lawyer's title verification are still required before any transaction.`,
+    insights.push(make("positive", "positive", "Single-owner Bhulekh record; charge markers not returned",
+      `Bhulekh shows a single owner (${ownerName}) on record, and the Back Page did not return registered charge, court-case, or bank-charge markers. This is a positive record signal, but EC from IGR Odisha and a lawyer's title verification are still required before any transaction.`,
       SRC_OWNER, 2));
   }
 

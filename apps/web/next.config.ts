@@ -1,8 +1,18 @@
 /** @type {import('next').NextConfig} */
 const path = require("path");
+const webpack = require("webpack");
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
-  serverExternalPackages: ["@sparticuz/chromium"],
+  serverExternalPackages: [
+    "@sparticuz/chromium",
+    "playwright",
+    "playwright-core",
+    "@cleardeed/fetcher-bhulekh",
+    "@cleardeed/fetcher-ecourts",
+    "@cleardeed/fetcher-igr-ec",
+    "@cleardeed/fetcher-cersai",
+    "@cleardeed/fetcher-rccms",
+  ],
   outputFileTracingRoot: path.join(__dirname, "../.."),
   outputFileTracingIncludes: {
     "/api/report/create": [
@@ -17,14 +27,9 @@ const nextConfig = {
   transpilePackages: [
     "@cleardeed/schema",
     "@cleardeed/fetcher-nominatim",
-    "@cleardeed/fetcher-bhulekh",
     "@cleardeed/fetcher-high-court",
     "@cleardeed/fetcher-drt",
     "@cleardeed/fetcher-bhunaksha",
-    "@cleardeed/fetcher-ecourts",
-    "@cleardeed/fetcher-rccms",
-    "@cleardeed/fetcher-igr-ec",
-    "@cleardeed/fetcher-cersai",
     "@cleardeed/orchestrator",
     "@cleardeed/pdf-renderer",
     "@cleardeed/consumer-report-writer",
@@ -35,28 +40,49 @@ const nextConfig = {
     "@cleardeed/regulatory-screener",
   ],
   webpack: (config: { resolve: { alias: Record<string, string> } }) => {
+    // Playwright-using fetcher packages are externalized via serverExternalPackages above,
+    // so their node_modules path is used at runtime. Non-Playwright packages still need
+    // source aliases so webpack bundles them correctly from the monorepo sources.
     config.resolve.alias = {
       ...config.resolve.alias,
+      // Non-playwright packages — must alias to source files for webpack to bundle them
       "@cleardeed/schema": path.resolve(__dirname, "../../packages/schema/src/index.ts"),
       "@cleardeed/fetcher-nominatim": path.resolve(__dirname, "../../packages/fetchers/nominatim/src/index.ts"),
-      "@cleardeed/fetcher-bhulekh": path.resolve(__dirname, "../../packages/fetchers/bhulekh/src/index.ts"),
-      "@cleardeed/fetcher-high-court": path.resolve(__dirname, "../../packages/fetchers/high-court/src/index.ts"),
-      "@cleardeed/fetcher-drt": path.resolve(__dirname, "../../packages/fetchers/drt/src/index.ts"),
       "@cleardeed/fetcher-bhunaksha": path.resolve(__dirname, "../../packages/fetchers/bhunaksha/src/index.ts"),
-      "@cleardeed/fetcher-ecourts": path.resolve(__dirname, "../../packages/fetchers/ecourts/src/index.ts"),
       "@cleardeed/orchestrator": path.resolve(__dirname, "../../packages/orchestrator/src/index.ts"),
       "@cleardeed/consumer-report-writer": path.resolve(__dirname, "../../agents/consumer-report-writer/src/index.ts"),
       "@cleardeed/consumer-report-writer/fixtures/golden-path": path.resolve(__dirname, "../../agents/consumer-report-writer/fixtures/golden-path.ts"),
       "@cleardeed/ownership-reasoner": path.resolve(__dirname, "../../agents/ownership-reasoner/index.ts"),
       "@cleardeed/output-auditor": path.resolve(__dirname, "../../agents/output-auditor/src/index.ts"),
       "@cleardeed/land-classifier": path.resolve(__dirname, "../../agents/land-classifier/index.ts"),
-      "@cleardeed/fetcher-rccms": path.resolve(__dirname, "../../packages/fetchers/rccms/src/index.ts"),
-      "@cleardeed/fetcher-igr-ec": path.resolve(__dirname, "../../packages/fetchers/igr-ec/src/index.ts"),
-      "@cleardeed/fetcher-cersai": path.resolve(__dirname, "../../packages/fetchers/cersai/src/index.ts"),
       "@cleardeed/encumbrance-reasoner": path.resolve(__dirname, "../../agents/encumbrance-reasoner/index.ts"),
       "@cleardeed/regulatory-screener": path.resolve(__dirname, "../../agents/regulatory-screener/index.ts"),
       "@cleardeed/pdf-renderer": path.resolve(__dirname, "../../packages/pdf-renderer/index.ts"),
+      // Playwright-using packages — DO NOT alias to source; let webpack use node_modules path
+      // (serverExternalPackages above ensures they're not bundled and loaded at runtime instead)
+      // Note: TypeScript will resolve via tsconfig paths, so imports still work.
     };
+
+    // Explicitly externalize playwright packages so webpack doesn't try to parse them
+    // This overrides any resolution and prevents the vite/recorder HTML parse failure
+    const pwExternal = (context, request, callback) => {
+      if (
+        request === "playwright" ||
+        request === "playwright-core" ||
+        request === "tesseract.js" ||
+        request === "@sparticuz/chromium" ||
+        request === "@sparticuz/chromium-linux-x64"
+      ) {
+        return callback(null, `commonjs ${request}`);
+      }
+      callback();
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (!config.externals) config.externals = [];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (config.externals as unknown[]).push(pwExternal);
+
     return config;
   },
 };

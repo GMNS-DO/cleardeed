@@ -10,21 +10,26 @@
 
 import { CONSUMER_REPORT_FIXTURE } from "@cleardeed/consumer-report-writer/fixtures/golden-path";
 import { getReport } from "@/lib/db";
+import { addReportAccessTokensToHtml, isReportViewAuthorized } from "@/lib/report-access";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ demo?: string }>;
+  searchParams: Promise<{ demo?: string; token?: string }>;
 }
 
 export default async function ReportPage({ params, searchParams }: PageProps) {
   const { id: reportId } = await params;
-  const { demo: demoFlag } = await searchParams;
+  const { demo: demoFlag, token } = await searchParams;
   const isDemoMode = demoFlag === "true" || reportId.startsWith("CLD-DEMO");
 
   if (isDemoMode) {
     return <DemoReport />;
+  }
+
+  if (!isReportViewAuthorized(reportId, token)) {
+    return <ReportUnavailable reportId={reportId} status="unauthorized" message="This report link is missing or has an invalid access token." />;
   }
 
   return <LiveReport reportId={reportId} />;
@@ -47,7 +52,7 @@ async function LiveReport({ reportId }: { reportId: string }) {
       return <ReportUnavailable reportId={reportId} status={report?.status ?? "not_found"} />;
     }
 
-    return <div dangerouslySetInnerHTML={{ __html: report.html }} />;
+    return <div dangerouslySetInnerHTML={{ __html: addReportAccessTokensToHtml(report.html, reportId) }} />;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load report.";
     return <ReportUnavailable reportId={reportId} status="error" message={message} />;

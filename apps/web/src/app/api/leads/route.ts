@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     if (!buyerName || !phone) {
       return NextResponse.json(
-        { error: "Name and WhatsApp number are required." },
+        { error: "Name and phone number are required." },
         { status: 400 }
       );
     }

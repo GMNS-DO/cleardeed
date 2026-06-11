@@ -1,0 +1,92 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: Disha Ananta Villa",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 8,
+  "sample_records": [
+    {
+      "facilitiesId": 11,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2027-06-07",
+      "otherFacilityName": "",
+      "facilityName": "Elevators",
+      "iconClass": "icon-lift"
+    },
+    {
+      "facilitiesId": 23,
+      "description": "1 Tree/80 SQM",
+      "documentId": 0,
+      "areaSq": "160.000",
+      "completionDate": "2027-06-10",
+      "otherFacilityName": "",
+      "facilityName": "Plantation Area/No.",
+      "iconClass": "icon-Plantation-Area"
+    },
+    {
+      "facilitiesId": 19,
+      "description": "",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2027-07-15",
+      "otherFacilityName": "",
+      "facilityName": "Fire Fighting Facility ",
+      "iconClass": "icon-Fire-Fighting-Facility"
+    },
+    {
+      "facilitiesId": 6,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "48.000",
+      "completionDate": "2027-07-14",
+      "otherFacilityName": "",
+      "facilityName": "Community Center",
+      "iconClass": "icon-Community-Hall"
+    },
+    {
+      "facilitiesId": 26,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "448.780",
+      "completionDate": "2025-07-17",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 25,
+      "description": "",
+      "documentId": 132491,
+      "areaSq": "9.000",
+      "completionDate": "2027-05-20",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 24,
+      "description": "",
+      "documentId": 0,
+      "areaSq": "9.140",
+      "completionDate": "2025-05-10",
+      "otherFacilityName": "",
+      "facilityName": "External Road",
+      "iconClass": "icon-External-Road"
+    },
+    {
+      "facilitiesId": 14,
+      "description": "",
+      "documentId": 135507,
+      "areaSq": null,
+      "completionDate": "2027-05-13",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    }
+  ]
+}

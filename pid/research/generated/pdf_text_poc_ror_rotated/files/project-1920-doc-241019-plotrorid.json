@@ -1,0 +1,183 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1920-doc-241019-plotrorid.pdf",
+    "file_name": "project-1920-doc-241019-plotrorid.pdf",
+    "file_id": "241019",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1920",
+        "project_name": "Maa Bagalamukhi Residency",
+        "promoter_name": "MAA BAGALAMUKHI DEVELOPER",
+        "mouza": "Biragobindapur",
+        "khata_no": "1189/113",
+        "plot_no": "444",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 3066475,
+  "detected": {
+    "dct_image_count": 414,
+    "crude_literal_text_chars": 7623,
+    "crude_literal_text_quality": {
+      "chars": 7623,
+      "printable_ratio": 0.969,
+      "alpha_ratio": 0.345,
+      "word_count": 423
+    },
+    "crude_literal_text_sample": "¢GÿÙ endstream endobj 7 0 obj << /XObject << /Image1 8 0 R /Image10 9 0 R /Image11 10 0 R /Image12 11 0 R /Image2 12 0 R /Image3 13 0 R /Image4 14 0 R /Image5 15 0 R /Image6 16 0 R /Image7 17 0 R /Image8 18 0 R /Image9 19 0 R >> >> endobj 20 0 obj << /Filter /FlateDecode /Length 572 >> stream x»\u00131\u0010Eóù ÇT!ô~ä\u0010nDLQ\u0014\u0004\u0018jÿ?¡åÕH}Õ¢°ÆNä;{4'ð´V Identity ¦\u0002ÑE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0000QE\u0014\u0014QE\u0000\u0014QE\u0000ÿÙ endstream endobj 52 0 obj << /XObject << /Image1 53 0 R /Image10 54 0 R /Image100 55 0 R /Image101 56 0 R /Image102 57 0 R /Image103 58 0 R /Image104 59 0 R /Image105 60 0 R /Image106 61 0 R /Image107 62 0 R /Image108 63 0 R /Image109 64 0 R /Image11 65 0 R /Image110 66 0 R /Image111 67 0 R /Image112 68 0 R /Image113 69 0 R /Image114 70 0 R /Image115 71 0 R /Image116 72 0 R /Image117 73 0 R /Image118 74 0 R /Image119 75 0 R /Image12 76 0 R /Image120 77 0 R /Image121 78 0 R /Image122 79 0 R /Image123 80 0 R /Image124 81 0 R /Image125 82 0 R /Image126 83 0 R /Image127 84 0 R /Image128 85 0 R /Image129 86 0 R /Image13 87 0 R /Image130 88 0 R /Image131 89 0 R /Image132 90 0 R /Image133 91 0 R /Image134 92 0 R /Image135 93 0 R /Image136 94 0 R /Image137 "
+  },
+  "ocr": {
+    "ok": true,
+    "language": "eng",
+    "text": "3/22/26, 2:13 PM about:blank Schedule I Form No.39-A slela 661%: MRBSNRL YR G2dM : 9eYRIQ 2191 : 4eYLIQ SLM FAR : 509 219 9a: 138 aml: gen REAQIGG GIE1 6 65191 QI SEAR GFR | (=o) 000 camaao | Raa | gia Bie, TSR Gl. 616 6 SIs 2618 gen ALIalg 8:2ip ALIAIE Gl: SIFE SI: GAYS €l. 9I- AVCIAIR 6616 QR awe F215 692 6 AQUIRY . _ FREQ sal Shel 61S | 5) ARERR HREIQ FAQ 699 2G fag 4) 690. : 818.00 614.00 82.00 1514.00 QIHIM SING 6Q6 6° 640/2020 EGF GING IS 6° 444 ARS 10.2500 8 B G6 8° 4459 ARI 0.0500 § § RFI © 2.20 YAUSR SNS! 6° 1085 Q 6 IR AQ u/s 8(A) 68€ 8° l6) T6618 2996 AG GF 211 [08/2020 €. 1. AB HSIN YS 8° 4449@81 90.25 &, GF 0° 445/4780 QQ 90.058 Q 96 GAS FAUTRI G ell CHIT FAUTIRI AISA SOG 6K §° 4495/2025 GFE FOI9Q 96 6° 444 § OQQ1 9 0.02758 § KEI © 82.00 PEF SISI Q° 1189/421 GQ | BLANK SPACE FOR STAMPING RISA glee SIE - 18/12/2013 [S161 MIHY SIRE! - 01/04/2014",
+    "confidence": 41,
+    "quality": {
+      "chars": 868,
+      "printable_ratio": 0.977,
+      "alpha_ratio": 0.404,
+      "word_count": 69
+    },
+    "score": 381.825,
+    "best_variant": {
+      "source_image_index": 25,
+      "source_width": 1241,
+      "source_height": 1059,
+      "rotation": 0
+    },
+    "attempts": [
+      {
+        "ok": true,
+        "source_image_index": 25,
+        "source_width": 1241,
+        "source_height": 1059,
+        "rotation": 0,
+        "confidence": 41,
+        "quality": {
+          "chars": 868,
+          "printable_ratio": 0.977,
+          "alpha_ratio": 0.404,
+          "word_count": 69
+        },
+        "score": 381.825
+      },
+      {
+        "ok": true,
+        "source_image_index": 25,
+        "source_width": 1241,
+        "source_height": 1059,
+        "rotation": 90,
+        "confidence": 44,
+        "quality": {
+          "chars": 783,
+          "printable_ratio": 0.974,
+          "alpha_ratio": 0.231,
+          "word_count": 17
+        },
+        "score": 159.45
+      },
+      {
+        "ok": true,
+        "source_image_index": 25,
+        "source_width": 1241,
+        "source_height": 1059,
+        "rotation": 180,
+        "confidence": 33,
+        "quality": {
+          "chars": 886,
+          "printable_ratio": 0.982,
+          "alpha_ratio": 0.423,
+          "word_count": 63
+        },
+        "score": 351.85
+      },
+      {
+        "ok": true,
+        "source_image_index": 25,
+        "source_width": 1241,
+        "source_height": 1059,
+        "rotation": 270,
+        "confidence": 36,
+        "quality": {
+          "chars": 760,
+          "printable_ratio": 0.961,
+          "alpha_ratio": 0.287,
+          "word_count": 21
+        },
+        "score": 172.725
+      },
+      {
+        "ok": true,
+        "source_image_index": 26,
+        "source_width": 1215,
+        "source_height": 530,
+        "rotation": 0,
+        "confidence": 40,
+        "quality": {
+          "chars": 262,
+          "printable_ratio": 0.992,
+          "alpha_ratio": 0.405,
+          "word_count": 19
+        },
+        "score": 181.3
+      },
+      {
+        "ok": true,
+        "source_image_index": 26,
+        "source_width": 1215,
+        "source_height": 530,
+        "rotation": 90,
+        "confidence": 45,
+        "quality": {
+          "chars": 326,
+          "printable_ratio": 0.985,
+          "alpha_ratio": 0.218,
+          "word_count": 3
+        },
+        "score": 103.425
+      },
+      {
+        "ok": true,
+        "source_image_index": 26,
+        "source_width": 1215,
+        "source_height": 530,
+        "rotation": 180,
+        "confidence": 32,
+        "quality": {
+          "chars": 255,
+          "printable_ratio": 0.976,
+          "alpha_ratio": 0.439,
+          "word_count": 19
+        },
+        "score": 176.3
+      },
+      {
+        "ok": true,
+        "source_image_index": 26,
+        "source_width": 1215,
+        "source_height": 530,
+        "rotation": 270,
+        "confidence": 43,
+        "quality": {
+          "chars": 378,
+          "printable_ratio": 0.974,
+          "alpha_ratio": 0.278,
+          "word_count": 6
+        },
+        "score": 119.15
+      }
+    ]
+  },
+  "content_hints": {
+    "document_type": "record_of_rights",
+    "extracted_fields": {
+      "office": null
+    },
+    "phrases": [],
+    "case_or_reference_numbers": []
+  },
+  "triage_status": "ocr_text_found",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

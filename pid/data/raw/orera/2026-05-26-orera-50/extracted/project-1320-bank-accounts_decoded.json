@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: VIP PRESTANCIA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1265,
+      "masterAccHolder": "VATERLAND INFRASTRUCTURE PRIVATE LIMITED/VIP PRESTANCIA/Account",
+      "masterAccIFSC": "CNRB0003886",
+      "masterAccNo": "120025477557",
+      "masterAccbank": "CANARA BANK",
+      "masterAccbranch": "CHANDAKA JOGISAHI BHUBANESWAR",
+      "masterCancellCheque": "phpO9lE7Z_1742297037.pdf",
+      "masterCancellChequeId": 155776,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "7605009068",
+      "reraAccHolder": "VATERLAND INFRASTRUCTURE PRIVATE LIMITED/VIP PRESTANCIA/ORERA",
+      "reraAccIFSc": "CNRB0003886",
+      "reraAccNo": "120025495336",
+      "reraAccbank": "CANARA BANK",
+      "reraAccbranch": "CHANDAKA JOGISAHI BHUBANESWAR",
+      "reraCancellCheque": "phpSr5wq3_1742297022.pdf",
+      "reraCancellChequeId": 155777,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "7605009068",
+      "transAccHolder": "VATERLAND INFRASTRUCTURE PRIVATE LIMITED/VIP PRESTANCIA/Transaction",
+      "transAccIFSC": "CNRB0003886",
+      "transrAccNo": "120025398920",
+      "transAccbank": "CANARA BANK",
+      "transAccbranch": "CHANDAKA JOGISAHI BHUBANESWAR",
+      "transCancellCheque": "phpemOZ5C_1742297028.pdf",
+      "transCancellChequeId": 155778,
+      "transBranchTeleph": "",
+      "transBranchMobile": "7605009068"
+    },
+    "fundSourceQuery": {
+      "fundId": 1224,
+      "estematedCost": "1192.90",
+      "allotteeInvestment": "596.90",
+      "promoterInvestment": "596.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 155176,
+      "estimationCopy": "phpIJQRSp_1742379347.pdf",
+      "expndLand": "5.00",
+      "expndBuilding": "1187.90"
+    }
+  }
+}

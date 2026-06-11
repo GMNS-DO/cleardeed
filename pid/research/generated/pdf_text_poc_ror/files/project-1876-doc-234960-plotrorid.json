@@ -1,0 +1,35 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1876-doc-234960-plotrorid.pdf",
+    "file_name": "project-1876-doc-234960-plotrorid.pdf",
+    "file_id": "234960",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1876",
+        "project_name": "Welcome Village",
+        "promoter_name": "WELCOME BUILDERS",
+        "mouza": "Dengsargi",
+        "khata_no": "158/741",
+        "plot_no": "99",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 288155,
+  "detected": {
+    "dct_image_count": 2,
+    "crude_literal_text_chars": 8,
+    "crude_literal_text_quality": {
+      "chars": 8,
+      "printable_ratio": 1,
+      "alpha_ratio": 1,
+      "word_count": 1
+    },
+    "crude_literal_text_sample": "Identity"
+  },
+  "ocr": null,
+  "triage_status": "image_pdf_ocr_pending",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

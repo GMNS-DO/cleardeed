@@ -24,6 +24,18 @@ export interface BhunakshaInput {
   layer?: string;
   /** Search radius in degrees. Default 0.001 (~100m). Larger = more results. */
   searchRadius?: number;
+  /**
+   * Village name to filter results to a specific village.
+   * Use when you know the village name (e.g. from Bhulekh) but not exact GPS.
+   * This adds a CQL_FILTER=revenue_village_name LIKE '%VillageName%' clause.
+   */
+  villageName?: string;
+  /**
+   * Plot number to match a specific plot within the village.
+   * When provided alongside villageName, this adds a second CQL clause:
+   * revenue_plot = '<plotNo>'. This allows precise plot matching without GPS.
+   */
+  plotNo?: string;
 }
 
 const Coordinate = z.tuple([z.number(), z.number()]).rest(z.number());
@@ -201,12 +213,34 @@ async function queryWFS(
   lat: number,
   lon: number,
   layer: string,
-  searchRadius: number
+  searchRadius: number,
+  villageName?: string,
+  plotNo?: string
 ): Promise<WFSQueryResult> {
   const result = await runWithRetry(
     async (attempt) => {
       const bbox = buildBbox(lat, lon, searchRadius);
-      const url = `${GEOSERVER_BASE}?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&TYPENAME=revenue:${layer}&BBOX=${bbox},EPSG:4326&MAXFEATURES=${MAX_FEATURES}&OUTPUTFORMAT=application/json`;
+      const params = new URLSearchParams({
+        SERVICE: "WFS",
+        VERSION: "1.0.0",
+        REQUEST: "GetFeature",
+        TYPENAME: `revenue:${layer}`,
+        BBOX: `${bbox},EPSG:4326`,
+        MAXFEATURES: String(MAX_FEATURES),
+        OUTPUTFORMAT: "application/json",
+      });
+      if (villageName) {
+        // CQL filter by village name — exact match on Bhunaksha's revenue_village_name field.
+        // Bhunaksha stores names as "Mendhasala", "Ghatikia", etc. (no underscores in source data).
+        // WFS LIKE is case-insensitive on the server side.
+        // If plotNo is also provided, add an AND clause for exact plot number match.
+        const villageFilter = `revenue_village_name LIKE '%${villageName}%'`;
+        const plotFilter = plotNo ? ` AND revenue_plot = '${plotNo}'` : "";
+        params.set("CQL_FILTER", villageFilter + plotFilter);
+        // No BBOX when filtering by village — we want all plots in the village.
+        params.delete("BBOX");
+      }
+      const url = `${GEOSERVER_BASE}?${params.toString()}`;
 
       const res = await globalThis.fetch(url, {
         headers: { "User-Agent": USER_AGENT },
@@ -294,32 +328,59 @@ export async function bhunakshaFetch(
   input: BhunakshaInput
 ): Promise<z.infer<typeof BhunakshaResult>> {
   const fetchedAt = new Date().toISOString();
-  const { lat, lon, layer = "khurda_bhubaneswar", searchRadius = 0.001 } = input;
+  const { lat, lon, layer = "khurda_bhubaneswar", searchRadius = 0.001, villageName, plotNo } = input;
   const templateHash = sha256(WFS_TEMPLATE);
   const inputsTried: z.infer<typeof BhunakshaResult>["inputsTried"] = [];
   const warnings: NonNullable<z.infer<typeof BhunakshaResult>["warnings"]> = [];
   let rawArtifactHash: string | undefined;
 
   try {
-    let query = await queryWFS(lat, lon, layer, searchRadius);
-    inputsTried.push({
-      label: "initial_bbox",
-      input: { lat, lon, layer, searchRadius, bbox: query.bbox, url: query.url },
-    });
-    rawArtifactHash = query.rawArtifactHash;
-
-    if (query.data.features.length === 0) {
-      const expandedRadius = searchRadius * EMPTY_RETRY_MULTIPLIER;
-      warnings.push({
-        code: "empty_initial_bbox_retry",
-        message: `Initial BBOX returned 0 candidate polygons; retried with radius ${expandedRadius}.`,
-      });
-      query = await queryWFS(lat, lon, layer, expandedRadius);
+    // ── Query WFS ────────────────────────────────────────────────────────────
+    let query: WFSQueryResult;
+    if (villageName) {
+      // Village-level filter: CQL filter replaces BBOX. Always try village first.
+      query = await queryWFS(lat, lon, layer, searchRadius, villageName, plotNo);
       inputsTried.push({
-        label: "expanded_bbox",
-        input: { lat, lon, layer, searchRadius: expandedRadius, bbox: query.bbox, url: query.url },
+        label: "village_cql_filter",
+        input: { lat, lon, layer, villageName, searchRadius, url: query.url },
       });
       rawArtifactHash = query.rawArtifactHash;
+
+      // If village CQL returned 0, fall back to plain BBOX (no village filter)
+      if (query.data.features.length === 0) {
+        warnings.push({
+          code: "village_cql_empty_fallback",
+          message: `CQL filter for village "${villageName}" returned 0 features; falling back to BBOX.`,
+        });
+        query = await queryWFS(lat, lon, layer, searchRadius);
+        inputsTried.push({
+          label: "village_fallback_bbox",
+          input: { lat, lon, layer, searchRadius, bbox: query.bbox, url: query.url },
+        });
+        rawArtifactHash = query.rawArtifactHash;
+      }
+    } else {
+      // Standard BBOX-based query
+      query = await queryWFS(lat, lon, layer, searchRadius);
+      inputsTried.push({
+        label: "initial_bbox",
+        input: { lat, lon, layer, searchRadius, bbox: query.bbox, url: query.url },
+      });
+      rawArtifactHash = query.rawArtifactHash;
+
+      if (query.data.features.length === 0) {
+        const expandedRadius = searchRadius * EMPTY_RETRY_MULTIPLIER;
+        warnings.push({
+          code: "empty_initial_bbox_retry",
+          message: `Initial BBOX returned 0 candidate polygons; retried with radius ${expandedRadius}.`,
+        });
+        query = await queryWFS(lat, lon, layer, expandedRadius);
+        inputsTried.push({
+          label: "expanded_bbox",
+          input: { lat, lon, layer, searchRadius: expandedRadius, bbox: query.bbox, url: query.url },
+        });
+        rawArtifactHash = query.rawArtifactHash;
+      }
     }
 
     const data = query.data;
@@ -354,65 +415,58 @@ export async function bhunakshaFetch(
       };
     }
 
-    const containingFeatures = data.features
-      .filter((f) => pointInPolygon(lon, lat, f.geometry.coordinates[0]))
-      .map((f) => ({ f, area: areaSquareKm(f.geometry.coordinates[0]) }))
-      .sort((a, b) => a.area - b.area);
-    const matchingFeature = containingFeatures[0]?.f;
+    // ── Match feature ────────────────────────────────────────────────────────
+    let matchingFeature: WFSFeature | undefined;
 
-    if (containingFeatures.length > 1) {
-      warnings.push({
-        code: "multiple_containing_polygons",
-        message: `Found ${containingFeatures.length} candidate polygons containing the GPS point; selected the smallest by area (${String(matchingFeature?.id ?? "unknown id")}).`,
-      });
+    // Priority 1: match by plot number (Bhulekh already knows the plot number)
+    if (plotNo) {
+      const plotMatch = data.features.find(
+        (f) => String(f.properties?.revenue_plot ?? "").trim() === String(plotNo).trim()
+      );
+      if (plotMatch) {
+        matchingFeature = plotMatch;
+        warnings.push({
+          code: "matched_by_plot_number",
+          message: `Matched plot #${plotNo} by Bhulekh plot number.`,
+        });
+      } else if (data.features.length > 0) {
+        warnings.push({
+          code: "plot_number_not_found_in_village",
+          message: `Plot #${plotNo} not found in village "${villageName ?? "BBOX"}" candidates (${data.features.length} plots returned).`,
+        });
+      }
+    }
+
+    // Priority 2: match by centroid-in-polygon (when no plot number match or no plotNo provided)
+    if (!matchingFeature) {
+      const containingFeatures = data.features
+        .filter((f) => pointInPolygon(lon, lat, f.geometry.coordinates[0]))
+        .map((f) => ({ f, area: areaSquareKm(f.geometry.coordinates[0]) }))
+        .sort((a, b) => a.area - b.area);
+      matchingFeature = containingFeatures[0]?.f;
+
+      if (containingFeatures.length > 1) {
+        warnings.push({
+          code: "multiple_containing_polygons",
+          message: `Found ${containingFeatures.length} candidate polygons containing the GPS point; selected the smallest by area (${String(matchingFeature?.id ?? "unknown id")}).`,
+        });
+      }
     }
 
     if (!matchingFeature) {
       const returned = data.features.length;
       const declaredTotal = featureCount(data.totalFeatures ?? data.numberReturned);
-      if (declaredTotal !== undefined && declaredTotal > returned) {
-        warnings.push({
-          code: "candidate_truncated",
-          message: `GeoServer reported ${declaredTotal} candidate polygons but returned ${returned}; no containing polygon was present in the returned page.`,
-        });
-        return {
-          source: "bhunaksha",
-          status: "partial",
-          statusReason: "candidate_truncated_no_containing_polygon",
-          verification: "manual_required",
-          fetchedAt,
-          attempts: inputsTried.length,
-          inputsTried,
-          rawArtifactHash,
-          parserVersion: PARSER_VERSION,
-          templateHash,
-          warnings,
-          data: {
-            plotNo: "",
-            village: "",
-            tahasil: "",
-          area: undefined,
-          areaUnit: "sq_km",
-          shapeAreaUnit: "degrees2",
-          crs: crsName(data),
-          layer,
-          areaComputation: AREA_COMPUTATION,
-          polygon: undefined,
-          sourceDocument: sourceDocument(layer),
-        },
-        };
-      }
-
-      // Point not in any returned polygon — too small radius or no plot at this location
-      // Return nearest by centroid distance as partial
+      const truncated = declaredTotal !== undefined && declaredTotal > returned;
       warnings.push({
-        code: "no_containing_polygon",
-        message: `Found ${data.features.length} candidate polygons, but none contained the GPS point.`,
+        code: truncated ? "candidate_truncated" : "no_containing_polygon",
+        message: truncated
+          ? `GeoServer reported ${declaredTotal} candidate polygons but returned ${returned}; no containing polygon was present in the returned page.`
+          : `Found ${returned} candidate polygons, but none contained the GPS point.`,
       });
       return {
         source: "bhunaksha",
         status: "partial",
-        statusReason: "point_outside_returned_polygons",
+        statusReason: truncated ? "candidate_truncated_no_containing_polygon" : "point_outside_returned_polygons",
         verification: "manual_required",
         fetchedAt,
         attempts: inputsTried.length,
@@ -440,15 +494,14 @@ export async function bhunakshaFetch(
     const props = matchingFeature.properties;
     const polygonCoords = matchingFeature.geometry.coordinates[0];
     const shapeAreaRaw = numericProperty(props.shape_area);
-
-    // Use Turf.js for geodesic area (accurate across all latitudes).
-    // areaSquareDegrees is kept for debugging/relative comparisons only.
     const areaSqKm = areaSquareKm(polygonCoords);
 
     return {
       source: "bhunaksha",
       status: "success",
-      statusReason: "point_contained_in_polygon",
+      statusReason: plotNo && String(props.revenue_plot ?? "").trim() === String(plotNo).trim()
+        ? "matched_by_plot_number"
+        : "point_contained_in_polygon",
       verification: "verified",
       fetchedAt,
       attempts: inputsTried.length,

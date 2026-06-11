@@ -1,0 +1,101 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: SKY RESIDENCY",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 27,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "16.400",
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 23,
+        "description": "",
+        "documentId": 0,
+        "areaSq": "64.000",
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "",
+        "documentId": 213883,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 14,
+        "description": "",
+        "documentId": 213884,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 29,
+        "description": "",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-06-27",
+        "otherFacilityName": "STP and Solar water heater to be provided",
+        "facilityName": "Others",
+        "iconClass": "icon-other-entities"
+      }
+    ]
+  }
+}

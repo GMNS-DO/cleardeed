@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 const RAZORPAY_AMOUNT_PAISE = 100; // ₹1
 
 export async function POST(req: NextRequest) {
-  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) {

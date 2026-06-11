@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: Costa Furtune Horizon Heights",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1388,
+      "masterAccHolder": "SAI HARMONY PVT LTD Project Name -\"COSTA FURTUNE HORIZON HEIGHTS\"",
+      "masterAccIFSC": "SBIN0063560",
+      "masterAccNo": "44263412962",
+      "masterAccbank": "STATE BANK OF INDIA",
+      "masterAccbranch": "SME Bhubaneswar Branch",
+      "masterCancellCheque": "phpPPcXa3_1755928662.pdf",
+      "masterCancellChequeId": 205249,
+      "masterBranchTeleph": "",
+      "masterBranchMobile": "9937844422",
+      "reraAccHolder": "CSAI HARMONY PVT LTD Project Name -\"COSTA FURTUNE HORIZON HEIGHTS\"",
+      "reraAccIFSc": "SBIN0063560",
+      "reraAccNo": "44263295021",
+      "reraAccbank": "STATE BANK OF INDIA",
+      "reraAccbranch": "SME Bhubaneswar Branch",
+      "reraCancellCheque": "phpS0oTw8_1755928851.pdf",
+      "reraCancellChequeId": 205252,
+      "reraBranchTeleph": "",
+      "reraBranchMobile": "9937844422",
+      "transAccHolder": "SAI HARMONY PVT LTD Project Name -\"COSTA FURTUNE HORIZON HEIGHTS\"",
+      "transAccIFSC": "SBIN0063560",
+      "transrAccNo": "44263573247",
+      "transAccbank": "STATE BANK OF INDIA",
+      "transAccbranch": "SME Bhubaneswar Branch",
+      "transCancellCheque": "phpXKs2Bz_1755928915.pdf",
+      "transCancellChequeId": 205254,
+      "transBranchTeleph": "",
+      "transBranchMobile": "9937844422"
+    },
+    "fundSourceQuery": {
+      "fundId": 1361,
+      "estematedCost": "5519.45",
+      "allotteeInvestment": "5019.45",
+      "promoterInvestment": "500.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 205257,
+      "estimationCopy": "phpb0Oz8u_1762360854.pdf",
+      "expndLand": "200.00",
+      "expndBuilding": "5319.45"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: RUDRANSH SOUTH KINGDOM",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1404,
+      "masterAccHolder": null,
+      "masterAccIFSC": null,
+      "masterAccNo": null,
+      "masterAccbank": null,
+      "masterAccbranch": null,
+      "masterCancellCheque": null,
+      "masterCancellChequeId": null,
+      "masterBranchTeleph": null,
+      "masterBranchMobile": null,
+      "reraAccHolder": "RAHAS AND RUDRANSH REALCON PRIVATE LIMITED/RUDRANSH SOUTH KINGDOM/ORERA",
+      "reraAccIFSc": "BARB0KHANDG",
+      "reraAccNo": "31460200001928",
+      "reraAccbank": "BANK OF BARODA",
+      "reraAccbranch": "KHANDAGIRI BRANCH",
+      "reraCancellCheque": "phpQu8vH4_1757520716.pdf",
+      "reraCancellChequeId": 167874,
+      "reraBranchTeleph": "06742470589",
+      "reraBranchMobile": "7077727107",
+      "transAccHolder": null,
+      "transAccIFSC": null,
+      "transrAccNo": null,
+      "transAccbank": null,
+      "transAccbranch": null,
+      "transCancellCheque": null,
+      "transCancellChequeId": null,
+      "transBranchTeleph": null,
+      "transBranchMobile": null
+    },
+    "fundSourceQuery": {
+      "fundId": 1360,
+      "estematedCost": "628.62",
+      "allotteeInvestment": "0.00",
+      "promoterInvestment": "628.62",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 167876,
+      "estimationCopy": "phpNQfOt6_1757844192.pdf",
+      "expndLand": "128.62",
+      "expndBuilding": "500.00"
+    }
+  }
+}

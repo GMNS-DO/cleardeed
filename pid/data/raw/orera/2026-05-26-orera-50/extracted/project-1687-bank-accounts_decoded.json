@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: AMRAPALLI",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1449,
+      "masterAccHolder": "VUMEE INFRA LLP-AMRAPALLI",
+      "masterAccIFSC": "SBIN0000068",
+      "masterAccNo": "44645874901",
+      "masterAccbank": "STATE BANK OF INDIA",
+      "masterAccbranch": "DHENKANAL",
+      "masterCancellCheque": "phpH4CmPL_1763466941.pdf",
+      "masterCancellChequeId": 207412,
+      "masterBranchTeleph": "06762226451",
+      "masterBranchMobile": "7978167039",
+      "reraAccHolder": "VUMEE INFRA LLP-AMRAPALLI",
+      "reraAccIFSc": "SBIN0000068",
+      "reraAccNo": "44639766370",
+      "reraAccbank": "STATE BANK OF INDIA",
+      "reraAccbranch": "DHENKANAL",
+      "reraCancellCheque": "phpfW9fwC_1763467034.pdf",
+      "reraCancellChequeId": 207413,
+      "reraBranchTeleph": "06762226451",
+      "reraBranchMobile": "7978167039",
+      "transAccHolder": "VUMEE INFRA LLP-AMRAPALLI",
+      "transAccIFSC": "SBIN0000068",
+      "transrAccNo": "44645875406",
+      "transAccbank": "STATE BANK OF INDIA",
+      "transAccbranch": "DHENKANAL",
+      "transCancellCheque": "phplc1SWO_1763467108.pdf",
+      "transCancellChequeId": 207414,
+      "transBranchTeleph": "06762226451",
+      "transBranchMobile": "7978167039"
+    },
+    "fundSourceQuery": {
+      "fundId": 1416,
+      "estematedCost": "18140.00",
+      "allotteeInvestment": "16940.00",
+      "promoterInvestment": "1200.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 212111,
+      "estimationCopy": "phpf7N1ME_1765648717.pdf",
+      "expndLand": "700.00",
+      "expndBuilding": "17440.00"
+    }
+  }
+}

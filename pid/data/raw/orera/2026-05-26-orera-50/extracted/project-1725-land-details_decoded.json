@@ -1,0 +1,55 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/landDetails",
+  "label": "Land details: TULASI KOTTAGE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "plotNo": "710",
+        "mouza": "BHUBANESWAR SAHAR UNIT NO-10, SATYANAGAR",
+        "khataNo": "303/303",
+        "kisama": 19,
+        "plotArea": "424.64",
+        "plotAreaUnit": "Square Mtr",
+        "isplotFullyOccupied": 1,
+        "isEcOverPlot": 2,
+        "revenueMapNo": null,
+        "isSaleDeed": 0,
+        "isPOA": 1,
+        "ownerShare": "0.00",
+        "titleFlow": "Construction of [S+4] Residential, Apartment Building No. of Unit-12",
+        "titleHolder": 2,
+        "plotAreaIncuded": "424.6400",
+        "plotAreaIncudedUnit": "Square Mtr",
+        "plotEcId": 215224,
+        "plotEc": "phpdl3luE_1766914439.pdf",
+        "plotRorId": 215225,
+        "saleDeedId": 0,
+        "poaId": 214242,
+        "landDetailId": 6855,
+        "shareAlloc": "phpiLxvJw_1766419251.pdf",
+        "shareAllocId": 214243,
+        "saleDeedRegnNo": "",
+        "saleDeedRegnDate": null,
+        "saleDeedRegnAt": "",
+        "poaRegnNo": "11082507352",
+        "poaRegnDate": "2025-08-20",
+        "poaRegnAt": "Sub-Registrar Khurdha",
+        "powerAttorney": "Yes",
+        "saleDeed": "No",
+        "encumbrance": "No",
+        "plotOccupied": "Yes",
+        "owners": [
+          {
+            "name": "SUJATA DAS NAMITA DAS MAMATA DAS CHITARANJAN DAS  AND PUSPALATA DAS",
+            "share": "101(2BHK),201(2BHK),202(2BHK),301(2BHK),303(3BHK),401(1BHK) & 402(2BHK) as per Development",
+            "fileId": 215223
+          }
+        ],
+        "kisamaName": "Homestead (Gharabari 2)"
+      }
+    ]
+  }
+}

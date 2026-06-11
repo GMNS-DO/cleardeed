@@ -1,0 +1,142 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: BADSHAH EXCELLENCY",
+  "http_status": 200,
+  "token_verified": true,
+  "status": "200",
+  "message": null,
+  "result_type": "array",
+  "record_count": 13,
+  "sample_records": [
+    {
+      "facilitiesId": 23,
+      "description": "UNDER PROGRESS (1TREE/80 SQMT)",
+      "documentId": 0,
+      "areaSq": "200.000",
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Plantation Area/No.",
+      "iconClass": "icon-Plantation-Area"
+    },
+    {
+      "facilitiesId": 6,
+      "description": "UNDER PROGRESS\n",
+      "documentId": 0,
+      "areaSq": "37.050",
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Community Center",
+      "iconClass": "icon-Community-Hall"
+    },
+    {
+      "facilitiesId": 26,
+      "description": "\tUNDER PROGRESS",
+      "documentId": 0,
+      "areaSq": "529.920",
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Internal Road",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 24,
+      "description": "12.12 MTR WIDE GOVT BLACK TOP ROAD",
+      "documentId": 0,
+      "areaSq": "12.120",
+      "completionDate": "2025-12-10",
+      "otherFacilityName": "",
+      "facilityName": "External Road",
+      "iconClass": "icon-External-Road"
+    },
+    {
+      "facilitiesId": 25,
+      "description": "\nUNDER PROGRESS",
+      "documentId": 209921,
+      "areaSq": "24.000",
+      "completionDate": "2028-01-20",
+      "otherFacilityName": "",
+      "facilityName": "Elecricity Supply",
+      "iconClass": "icon-Elecricity-Supply"
+    },
+    {
+      "facilitiesId": 14,
+      "description": "UNDER PROGRESS",
+      "documentId": 209922,
+      "areaSq": null,
+      "completionDate": "2028-01-20",
+      "otherFacilityName": "",
+      "facilityName": "Water Supply",
+      "iconClass": "icon-Drinking-Water"
+    },
+    {
+      "facilitiesId": 18,
+      "description": "20 FEET HEIGHT AND 8 FEET WIDTH",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Gate Installation",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 15,
+      "description": "Re -charge pit and Zero disposal",
+      "documentId": 0,
+      "areaSq": "300.000",
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Drainage",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 17,
+      "description": "HEIGHT 8 FEET",
+      "documentId": 0,
+      "areaSq": "1136.290",
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Boundary Wall",
+      "iconClass": "icon-other-entities"
+    },
+    {
+      "facilitiesId": 19,
+      "description": "Fire Extinguisher and down commer line to be provided in each floor.",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Fire Fighting Facility ",
+      "iconClass": "icon-Fire-Fighting-Facility"
+    },
+    {
+      "facilitiesId": 21,
+      "description": "SOLAR SYSTEM /DG BACK UP",
+      "documentId": 215053,
+      "areaSq": null,
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Use of Renewable Energy",
+      "iconClass": "icon-Use-of-Renewable-Energy"
+    },
+    {
+      "facilitiesId": 11,
+      "description": "2 NOS OF ELEVATORS AS PER BDA PLAN",
+      "documentId": 0,
+      "areaSq": null,
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Elevators",
+      "iconClass": "icon-lift"
+    },
+    {
+      "facilitiesId": 27,
+      "description": "2.5MT 2.5 MT SECURITY ROOM WITH WINDOW AND DOOR CONNECTION",
+      "documentId": 0,
+      "areaSq": "6.250",
+      "completionDate": "2028-08-06",
+      "otherFacilityName": "",
+      "facilityName": "Socitey Room",
+      "iconClass": null
+    }
+  ]
+}

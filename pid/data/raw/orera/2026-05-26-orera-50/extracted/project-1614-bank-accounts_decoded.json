@@ -1,0 +1,51 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/getBankAccountDetails",
+  "label": "Bank account details: HIRALAYA",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": {
+      "bankAccId": 1411,
+      "masterAccHolder": "JAISWAL DEVELOPERS AND HOSPITALITY PLTD THE HIRALAYA",
+      "masterAccIFSC": "HDFC0000369",
+      "masterAccNo": "50200114358179",
+      "masterAccbank": "HDFC BANK",
+      "masterAccbranch": "COMBINE GOL BAZAR SAMBALPUR",
+      "masterCancellCheque": "phpHPMJi2_1758348904.pdf",
+      "masterCancellChequeId": 163976,
+      "masterBranchTeleph": "09437932919",
+      "masterBranchMobile": "9437921919",
+      "reraAccHolder": "JAISWAL DEVELOPERS AND HOSPITALITY PLTD THE HIRALAYA",
+      "reraAccIFSc": "HDFC0000369",
+      "reraAccNo": "50200114392271",
+      "reraAccbank": "HDFC BANK",
+      "reraAccbranch": "COMBINE GOL BAZAR SAMBALPUR",
+      "reraCancellCheque": "phpyz4qI3_1758348985.pdf",
+      "reraCancellChequeId": 163977,
+      "reraBranchTeleph": "09437932919",
+      "reraBranchMobile": "9437921919",
+      "transAccHolder": "JAISWAL DEVELOPERS AND HOSPITALITY PVT  LTD",
+      "transAccIFSC": "HDFC0000369",
+      "transrAccNo": "99990123451919",
+      "transAccbank": "HDFC BANK",
+      "transAccbranch": "COMBINE GOL BAZAR SAMBALPUR",
+      "transCancellCheque": "phpA4L2a2_1758349060.pdf",
+      "transCancellChequeId": 163978,
+      "transBranchTeleph": "09437932919",
+      "transBranchMobile": "9437921919"
+    },
+    "fundSourceQuery": {
+      "fundId": 1363,
+      "estematedCost": "5600.00",
+      "allotteeInvestment": "4500.00",
+      "promoterInvestment": "1100.00",
+      "fromInvestors": "0.00",
+      "fromBank": "0.00",
+      "estimationCopyId": 164022,
+      "estimationCopy": "php1B4HJA_1758371949.pdf",
+      "expndLand": "1100.00",
+      "expndBuilding": "4500.00"
+    }
+  }
+}

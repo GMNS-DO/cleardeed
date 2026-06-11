@@ -1,0 +1,131 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectOverview/facilityDetails",
+  "label": "Facility details: GRACE ELITE EDGE",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "facilitiesId": 17,
+        "description": "PROVIDE",
+        "documentId": 0,
+        "areaSq": "110.000",
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Boundary Wall",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 25,
+        "description": "PROVIDE",
+        "documentId": 151079,
+        "areaSq": "9.000",
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Elecricity Supply",
+        "iconClass": "icon-Elecricity-Supply"
+      },
+      {
+        "facilitiesId": 18,
+        "description": "PROVIDE",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Gate Installation",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 26,
+        "description": "PAVER BLOCK ROAD",
+        "documentId": 0,
+        "areaSq": "299.380",
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Internal Road",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 23,
+        "description": "1 TREE PER 80 SQMT",
+        "documentId": 0,
+        "areaSq": "136.000",
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Plantation Area/No.",
+        "iconClass": "icon-Plantation-Area"
+      },
+      {
+        "facilitiesId": 27,
+        "description": "IN 1ST FLOOR",
+        "documentId": 0,
+        "areaSq": "46.480",
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Socitey Room",
+        "iconClass": null
+      },
+      {
+        "facilitiesId": 14,
+        "description": "NOC CGWA",
+        "documentId": 151082,
+        "areaSq": null,
+        "completionDate": "2029-03-25",
+        "otherFacilityName": "",
+        "facilityName": "Water Supply",
+        "iconClass": "icon-Drinking-Water"
+      },
+      {
+        "facilitiesId": 19,
+        "description": "It will be provided.",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-11-23",
+        "otherFacilityName": "",
+        "facilityName": "Fire Fighting Facility ",
+        "iconClass": "icon-Fire-Fighting-Facility"
+      },
+      {
+        "facilitiesId": 24,
+        "description": "9.14 MTR. ACCESS ROAD",
+        "documentId": 0,
+        "areaSq": "1307.760",
+        "completionDate": "2028-04-20",
+        "otherFacilityName": "",
+        "facilityName": "External Road",
+        "iconClass": "icon-External-Road"
+      },
+      {
+        "facilitiesId": 15,
+        "description": "PROVIDE",
+        "documentId": 0,
+        "areaSq": "1307.760",
+        "completionDate": "2028-04-20",
+        "otherFacilityName": "",
+        "facilityName": "Drainage",
+        "iconClass": "icon-other-entities"
+      },
+      {
+        "facilitiesId": 11,
+        "description": "2 NOS. OF LIFT PROVIDE",
+        "documentId": 0,
+        "areaSq": null,
+        "completionDate": "2028-04-20",
+        "otherFacilityName": "",
+        "facilityName": "Elevators",
+        "iconClass": "icon-lift"
+      },
+      {
+        "facilitiesId": 20,
+        "description": "PROVIDE",
+        "documentId": 212351,
+        "areaSq": null,
+        "completionDate": "2028-11-30",
+        "otherFacilityName": "",
+        "facilityName": "Emergency Evacuation Services",
+        "iconClass": "icon-Emergency-Evacuation-Services"
+      }
+    ]
+  }
+}

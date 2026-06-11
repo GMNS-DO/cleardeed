@@ -1,0 +1,35 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1878-doc-250157-poaid.pdf",
+    "file_name": "project-1878-doc-250157-poaid.pdf",
+    "file_id": "250157",
+    "field": "poaId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1878",
+        "project_name": "NIRVANA NIWAS",
+        "promoter_name": "ARRS INFRA VENTURES PRIVATE LIMITED",
+        "mouza": "BADARAGHUNATHAPUR",
+        "khata_no": "23",
+        "plot_no": "471/5165",
+        "signal_id": "ORERA_POA_WITHOUT_DECLARED_SALE_DEED"
+      }
+    ]
+  },
+  "bytes": 2302600,
+  "detected": {
+    "dct_image_count": 24,
+    "crude_literal_text_chars": 12,
+    "crude_literal_text_quality": {
+      "chars": 12,
+      "printable_ratio": 1,
+      "alpha_ratio": 0.917,
+      "word_count": 2
+    },
+    "crude_literal_text_sample": "Pdftools SDK"
+  },
+  "ocr": null,
+  "triage_status": "image_pdf_ocr_pending",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

@@ -1,0 +1,189 @@
+{
+  "file": {
+    "file_path": "pid/data/raw/orera/2026-05-26-orera-50/artifacts/project-1878-doc-235560-plotrorid.pdf",
+    "file_name": "project-1878-doc-235560-plotrorid.pdf",
+    "file_id": "235560",
+    "field": "plotRorId",
+    "run": "2026-05-26-orera-50",
+    "linked_cards": [
+      {
+        "project_id": "1878",
+        "project_name": "NIRVANA NIWAS",
+        "promoter_name": "ARRS INFRA VENTURES PRIVATE LIMITED",
+        "mouza": "BADARAGHUNATHAPUR",
+        "khata_no": "23",
+        "plot_no": "471/5165",
+        "signal_id": "ORERA_PLOT_ROR_ARTIFACT_COLLECTED"
+      }
+    ]
+  },
+  "bytes": 293717,
+  "detected": {
+    "dct_image_count": 2,
+    "crude_literal_text_chars": 26,
+    "crude_literal_text_quality": {
+      "chars": 26,
+      "printable_ratio": 0.962,
+      "alpha_ratio": 0.692,
+      "word_count": 3
+    },
+    "crude_literal_text_sample": "z\":#Omn_ñ[ OpenPDF UNKNOWN"
+  },
+  "ocr": {
+    "ok": true,
+    "language": "eng",
+    "text": "Kiosk Operator: SUKANT KUMAR DAS, (VLE), Bhubaneswar Court cz Vi £2 bb HOLEEARAET AE TR et \\C gH GOVERNMENT OF ODISHA oo Office of the Tahaslidar, Jatnl, Khordha. Miscellaneous Certificate Case No: e-CCP/147 of 2025 CERTIFIED COPY OF ROR Schedule T Form No.39-A «FAR [3215] : ERNIE QR oda : ee ae 1 eee oda aaa :. BIN KA : 65 SF : Gare choles 91 6 GEA AQRQ EHS FIR 1 6UQIC SI ATA | fie eae | USAIN GAR F* |23 | SQ 6AIRR eM G:26TC OMG 1: AYIAR QU: AFI 9) goa fF, sR A, SIT G IAI | mI asee Faia 6aQ IER coca fa a Eine 5 8) GACEREIR ASAIQ FeE wyeoa 58 ara 2)36e8 UAT |Qedd gel 6vens! @Nasa gale ©. weal RF oC fo pal 5 aif, #1. 9909 ——, a. ac ef ara aq &F zal as OF , ©. FOR 629 9@ 06 78 Of 8 IRIN 6aQ N18 6a §F 1 eae 261 67 AE NQ6AQ | BIFITENS 69Q &° - 03/2023 § AR\" - 607 § 4.0.08] Q QUID TQREa AISI 271/1 G16Q | O.L.R. 8 (A) Case No.3484/2024 1 AF\" - 471 §4.0.344Q Tan 00cIl of ASEICR €.1032.00 COIA AIGA! G TRYIFY QGIV QIN FANS! | BLANK SPACE FOR STAMPING 260 gee SIGN :27/03/1962 HSE MI SIRS : FE —— ‘aa gee Sere 00g 00a! 22/01/2025 sped by MADHUSMITA MADHUSMITA [1 Sapa NANDA f—kalad w= Signature of the Revenue Officer NOTE: -ltis a digitally signed electronically generated certificate and therefore needs no ink-signed signature. - For any query or verification, Agency/Department/Office may visit http//edistrictodisha.gov.in. - Tampering of this certificate will attract penal action. 1of2",
+    "confidence": 51,
+    "quality": {
+      "chars": 1396,
+      "printable_ratio": 0.989,
+      "alpha_ratio": 0.621,
+      "word_count": 141
+    },
+    "score": 701.825,
+    "best_variant": {
+      "source_image_index": 0,
+      "source_width": 1433,
+      "source_height": 1931,
+      "rotation": 0
+    },
+    "attempts": [
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1570,
+        "source_height": 2067,
+        "rotation": 0,
+        "confidence": 61,
+        "quality": {
+          "chars": 827,
+          "printable_ratio": 0.994,
+          "alpha_ratio": 0.665,
+          "word_count": 76
+        },
+        "score": 456.35
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1570,
+        "source_height": 2067,
+        "rotation": 90,
+        "confidence": 44,
+        "quality": {
+          "chars": 492,
+          "printable_ratio": 0.978,
+          "alpha_ratio": 0.301,
+          "word_count": 14
+        },
+        "score": 154.55
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1570,
+        "source_height": 2067,
+        "rotation": 180,
+        "confidence": 26,
+        "quality": {
+          "chars": 760,
+          "printable_ratio": 0.982,
+          "alpha_ratio": 0.647,
+          "word_count": 73
+        },
+        "score": 407.25
+      },
+      {
+        "ok": true,
+        "source_image_index": 1,
+        "source_width": 1570,
+        "source_height": 2067,
+        "rotation": 270,
+        "confidence": 37,
+        "quality": {
+          "chars": 445,
+          "printable_ratio": 0.969,
+          "alpha_ratio": 0.294,
+          "word_count": 16
+        },
+        "score": 154.625
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1433,
+        "source_height": 1931,
+        "rotation": 0,
+        "confidence": 51,
+        "quality": {
+          "chars": 1396,
+          "printable_ratio": 0.989,
+          "alpha_ratio": 0.621,
+          "word_count": 141
+        },
+        "score": 701.825
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1433,
+        "source_height": 1931,
+        "rotation": 90,
+        "confidence": 45,
+        "quality": {
+          "chars": 963,
+          "printable_ratio": 0.966,
+          "alpha_ratio": 0.228,
+          "word_count": 23
+        },
+        "score": 183.95
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1433,
+        "source_height": 1931,
+        "rotation": 180,
+        "confidence": 32,
+        "quality": {
+          "chars": 1332,
+          "printable_ratio": 0.985,
+          "alpha_ratio": 0.61,
+          "word_count": 143
+        },
+        "score": 689.625
+      },
+      {
+        "ok": true,
+        "source_image_index": 0,
+        "source_width": 1433,
+        "source_height": 1931,
+        "rotation": 270,
+        "confidence": 33,
+        "quality": {
+          "chars": 856,
+          "printable_ratio": 0.96,
+          "alpha_ratio": 0.329,
+          "word_count": 29
+        },
+        "score": 205.9
+      }
+    ]
+  },
+  "content_hints": {
+    "document_type": "record_of_rights",
+    "extracted_fields": {
+      "office": "Tahaslidar, Jatnl, Khordha"
+    },
+    "phrases": [
+      "certified_copy_of_ror_phrase"
+    ],
+    "case_or_reference_numbers": [
+      "Case No: e-CCP/147 of 2025 CERTIFIED COPY OF ROR Schedule T Form No",
+      "Case No.3484/2024 1 AF",
+      "O.L.R. 8 (A) Case No.3484/2024 1 AF"
+    ]
+  },
+  "triage_status": "ocr_text_found",
+  "next_step": "Use OCR with orientation/language preprocessing, then human review for legal signals."
+}

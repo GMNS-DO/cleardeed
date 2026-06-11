@@ -10,10 +10,23 @@
  */
 
 /** Resend email client — loaded lazily to avoid compile-time dependency */
+import { buildReportUrl } from "@/lib/report-access";
+
 async function getResendClient() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Resend } = require("resend");
   return new Resend(process.env.RESEND_API_KEY);
+}
+
+/** PDF renderer — loaded lazily to avoid Chromium import at startup */
+async function generatePdfBuffer(html: string): Promise<Buffer | null> {
+  try {
+    const { renderPdf } = await import("@cleardeed/pdf-renderer");
+    return await renderPdf({ html });
+  } catch (err) {
+    console.warn("[email] PDF generation failed — email will be sent without attachment:", err instanceof Error ? err.message : String(err));
+    return null;
+  }
 }
 
 export interface SendEmailOptions {
@@ -64,7 +77,8 @@ export async function sendReportEmail(params: {
   buyerName?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const { to, reportId, reportTitle, reportHtml, buyerName } = params;
-  const reportUrl = `${process.env.CLEARDEED_BASE_URL ?? "https://cleardeed.in"}/report/${reportId}`;
+  const baseUrl = process.env.CLEARDEED_BASE_URL ?? "https://v0-cleardeed.vercel.app";
+  const reportUrl = buildReportUrl(reportId, baseUrl);
 
   const emailHtml = `
 <!DOCTYPE html>
@@ -113,7 +127,7 @@ export async function sendReportEmail(params: {
     <!-- Footer -->
     <div style="padding:16px 8px;text-align:center;">
       <p style="margin:0;color:#8a8f89;font-size:12px;">
-        ClearDeed · Bhubaneswar, Odisha · <a href="${process.env.CLEARDEED_BASE_URL ?? "https://cleardeed.in"}" style="color:#1d6f5b;">cleardeed.in</a>
+        ClearDeed · Bhubaneswar, Odisha · <a href="${baseUrl}" style="color:#1d6f5b;">cleardeed.in</a>
       </p>
     </div>
   </div>
@@ -121,11 +135,47 @@ export async function sendReportEmail(params: {
 </html>
   `.trim();
 
-  return sendEmail({
-    to,
-    subject: `Your ClearDeed report: ${reportTitle}`,
-    html: emailHtml,
-  });
+  // ── Generate PDF attachment (non-blocking — email goes even if PDF fails) ──
+  const [pdfBuffer] = await Promise.all([generatePdfBuffer(reportHtml)]);
+
+  const safeTitle = reportTitle.replace(/[^a-z0-9\-_ ]+/gi, "").replace(/ /g, "-").slice(0, 80) || "ClearDeed-Report";
+  const attachments: Array<{ content: string; filename: string; content_type: string }> = [];
+  if (pdfBuffer) {
+    attachments.push({
+      content: pdfBuffer.toString("base64"),
+      filename: `${safeTitle}.pdf`,
+      content_type: "application/pdf",
+    });
+  }
+
+  // ── Send email ────────────────────────────────────────────────────────────
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("[email] RESEND_API_KEY not set — email stubbed");
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  try {
+    const resend = await getResendClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (resend as any).emails.send({
+      from: "ClearDeed <reports@cleardeed.in>",
+      to: [to],
+      subject: `Your ClearDeed report: ${reportTitle}`,
+      html: emailHtml,
+      reply_to: "support@cleardeed.in",
+      ...(attachments.length > 0 ? { attachments } : {}),
+    } as Record<string, unknown>);
+    if (error) {
+      console.error("[email] Resend error:", error);
+      return { success: false, error: String(error) };
+    }
+    return { success: true, messageId: data?.id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[email] Failed to send:", msg);
+    return { success: false, error: msg };
+  }
 }
 
 export async function sendFollowUpSurvey(params: {
@@ -134,7 +184,7 @@ export async function sendFollowUpSurvey(params: {
   reportTitle: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const { to, reportId, reportTitle } = params;
-  const surveyUrl = `${process.env.CLEARDEED_BASE_URL ?? "https://cleardeed.in"}/survey/${reportId}`;
+  const surveyUrl = `${process.env.CLEARDEED_BASE_URL ?? "https://v0-cleardeed.vercel.app"}/survey/${reportId}`;
 
   const emailHtml = `
 <!DOCTYPE html>

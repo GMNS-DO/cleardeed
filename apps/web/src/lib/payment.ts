@@ -53,23 +53,3 @@ export async function createRazorpayOrder(params: {
 export async function storeCheckoutSession(orderId: string, data: CheckoutData): Promise<void> {
   console.warn("[payment] storeCheckoutSession is deprecated — see /api/payment/success for the current flow");
 }
-
-/** Verify client-side payment signature (for manual payment callback, not webhook) */
-export async function verifyPaymentSignature(params: {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-}): Promise<boolean> {
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keySecret) return true; // Skip verification if not configured
-
-  const crypto = await import("node:crypto");
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = params;
-  const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-  const expected = crypto
-    .createHmac("sha256", keySecret)
-    .update(body)
-    .digest("hex");
-
-  return expected === razorpay_signature;
-}

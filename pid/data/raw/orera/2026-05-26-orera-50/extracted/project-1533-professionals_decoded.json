@@ -1,0 +1,40 @@
+{
+  "source_url": "https://reraapps.odisha.gov.in/pms/api/project/ProjectBooking/professinalDetails",
+  "label": "Project professionals: RUDRANSH SOUTH KINGDOM",
+  "token_verified": true,
+  "decoded": {
+    "status": "200",
+    "msg": "Data found",
+    "result": [
+      {
+        "liscenceNo": "RTP/DTP (C.ER)-367/2021",
+        "represntativeName": "Er Manas Ranjan Sabar",
+        "represntativeEmail": "MICKSRANJAN@GMAIL.COM",
+        "represntativeMobile": "7847061690",
+        "representiveType": 5
+      },
+      {
+        "liscenceNo": "CA/2017/84826",
+        "represntativeName": "SASMIT MISHRA",
+        "represntativeEmail": "ssujatadesign@gmail.com",
+        "represntativeMobile": "7377037777",
+        "representiveType": 6
+      },
+      {
+        "liscenceNo": "MN306348",
+        "represntativeName": "JEETRANDRA DAS",
+        "represntativeEmail": "jitan.das@gmail.com",
+        "represntativeMobile": "9938456460",
+        "representiveType": 1
+      }
+    ],
+    "promoters": [
+      {
+        "promoterName": "RAHAS AND RUDRANSH REALCON PRIVATE LIMITED",
+        "emailId": "rudransh@rrrealcon.com",
+        "mobile": "9237345932"
+      }
+    ],
+    "agents": []
+  }
+}
