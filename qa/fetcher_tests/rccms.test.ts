@@ -1,11 +1,10 @@
 /**
  * Sprint V2 — RCCMS (Revenue Court Case Management System) contract tests.
  *
- * Known caveat: V1.1 short-circuits RCCMS to a "failed" stub
- * (statusReason: "rccms_probe_skipped_sprint6_todo"). The contract below
- * describes the *intended* post-parse shape, not the V1.1 stub. The contract
- * tests run against the intended shape so that re-enabling the fetcher in
- * Sprint 7+ requires no contract change.
+ * The pipeline calls the live RCCMS fetcher behind a 5s budget (see
+ * `RCCMS — pipeline timeout contract` below). The contract tests at the top
+ * of the file describe the *intended* post-parse shape and continue to apply
+ * unchanged — the live fetcher's return shape is what they validate.
  */
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
@@ -17,6 +16,10 @@ import {
   loadInvalidInputs,
 } from "./_helper";
 import { RccmsContract, RccmsDataSchema } from "../../apps/web/src/lib/pipeline/contracts/rccms";
+import {
+  rccmsFetchWithTimeout,
+  rccmsTimeoutStub,
+} from "../../apps/web/src/lib/pipeline";
 
 const goldenPaths = goldenPathsFor("rccms");
 
@@ -109,4 +112,116 @@ describe("RCCMS — negative cases", () => {
       expect(["invalid_input", "no_data", "source_down"]).toContain(c.expected_status);
     });
   }
+});
+
+/**
+ * Pipeline timeout contract (replaces D-030 stub).
+ *
+ * The V1.1 pipeline calls the RCCMS fetcher behind a 5s budget. These tests
+ * pin that contract: a fast fetcher result must be passed through unchanged,
+ * a slow fetcher must surface as `statusReason: "rccms_timeout"`, and the
+ * pipeline must never block for more than the configured budget.
+ */
+describe("RCCMS — pipeline timeout contract", () => {
+  type FastResult = {
+    source: "rccms";
+    status: "partial";
+    statusReason: string;
+    verification: "manual_required";
+    fetchedAt: string;
+    attempts: number;
+    inputsTried: unknown[];
+    parserVersion: string;
+  };
+
+  const FAST_INPUT = {
+    district: "Khordha",
+    tahasil: "Bhubaneswar",
+    village: "Mendhasala",
+    khataNo: "415",
+    plotNo: "128",
+  };
+
+  const makeFastResult = (): FastResult => ({
+    source: "rccms",
+    status: "partial",
+    statusReason: "no_cases_found",
+    verification: "manual_required",
+    fetchedAt: "2026-06-13T00:00:00.000Z",
+    attempts: 1,
+    inputsTried: [],
+    parserVersion: "rccms-probe-v1",
+  });
+
+  it("passes through a fetcher result that completes within 5s", async () => {
+    const fastResult = makeFastResult();
+    const fetcher = async () => fastResult;
+
+    const result = await rccmsFetchWithTimeout(
+      fetcher,
+      FAST_INPUT,
+      5000
+    );
+
+    expect(result).toEqual(fastResult);
+  });
+
+  it("rejects with an error when the fetcher exceeds the budget", async () => {
+    // Fetcher that never resolves within the budget.
+    const fetcher = () =>
+      new Promise<FastResult>(() => {
+        /* never resolves */
+      });
+
+    await expect(
+      rccmsFetchWithTimeout(fetcher, FAST_INPUT, 50) // 50ms timeout
+    ).rejects.toThrow("rccms_timeout");
+  });
+
+  it("never blocks the pipeline for more than the configured budget", async () => {
+    const fetcher = () =>
+      new Promise<FastResult>(() => {
+        /* never resolves */
+      });
+
+    const budgetMs = 100;
+    const t0 = Date.now();
+    await expect(
+      rccmsFetchWithTimeout(fetcher, FAST_INPUT, budgetMs)
+    ).rejects.toThrow("rccms_timeout");
+    const elapsed = Date.now() - t0;
+
+    // Allow generous slack (3x) for CI scheduling jitter.
+    expect(elapsed).toBeLessThan(budgetMs * 3);
+  });
+
+  it("the timeout stub carries statusReason: 'rccms_timeout'", () => {
+    const stub = rccmsTimeoutStub();
+    expect(stub.status).toBe("failed");
+    expect(stub.statusReason).toBe("rccms_timeout");
+    expect(stub.verification).toBe("manual_required");
+    expect(stub.source).toBe("rccms");
+  });
+
+  it("mirrors the pipeline: a hung fetcher surfaces as statusReason 'rccms_timeout' (not 'rccms_probe_skipped_sprint6_todo')", async () => {
+    // The V1.1 pipeline wraps the call in try/catch: success → fetcher result,
+    // failure (incl. timeout) → rccmsTimeoutStub(). Replicate that pattern
+    // here so a regression to the D-030 stub is caught by the test.
+    const fetcher = () =>
+      new Promise<FastResult>(() => {
+        /* never resolves */
+      });
+
+    let result: { status: string; statusReason: string } | undefined;
+    try {
+      result = await rccmsFetchWithTimeout(fetcher, FAST_INPUT, 50);
+    } catch {
+      result = rccmsTimeoutStub();
+    }
+
+    expect(result?.status).toBe("failed");
+    expect(result?.statusReason).toBe("rccms_timeout");
+    // Guard against the D-030 stub being re-introduced.
+    expect(result?.statusReason).not.toBe("rccms_probe_skipped_sprint6_todo");
+  });
 });

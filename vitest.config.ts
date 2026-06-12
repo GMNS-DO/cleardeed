@@ -50,6 +50,7 @@ export default defineConfig({
       "@/lib/pipeline": path.resolve(__dirname, "./apps/web/src/lib/pipeline/index"),
       "@/lib/pipeline/contracts": path.resolve(__dirname, "./apps/web/src/lib/pipeline/contracts/index"),
       "@cleardeed/land-classifier": path.resolve(__dirname, "agents/land-classifier/index.ts"),
+      "@cleardeed/regulatory-screener": path.resolve(__dirname, "agents/regulatory-screener/index.ts"),
       "@cleardeed/fetcher-nominatim": path.resolve(__dirname, "packages/fetchers/nominatim/src/index.ts"),
       "@cleardeed/fetcher-bhunaksha": path.resolve(__dirname, "packages/fetchers/bhunaksha/src/index.ts"),
       "@cleardeed/fetcher-ecourts": path.resolve(__dirname, "packages/fetchers/ecourts/src/index.ts"),
@@ -69,6 +70,7 @@ export default defineConfig({
       "@cleardeed/consumer-report-writer": path.resolve(__dirname, "agents/consumer-report-writer/src/index.ts"),
       "@cleardeed/ownership-reasoner": path.resolve(__dirname, "agents/ownership-reasoner/index.ts"),
       "@cleardeed/encumbrance-reasoner": path.resolve(__dirname, "agents/encumbrance-reasoner/index.ts"),
+      "@cleardeed/output-auditor": path.resolve(__dirname, "agents/output-auditor/src/index.ts"),
     },
   },
 });
