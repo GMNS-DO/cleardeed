@@ -42,6 +42,27 @@ describe("A10 ConsumerReportWriter", () => {
     expect(html).toContain("disclaimer");
   });
 
+  it("embeds Sprint 5 print-optimized CSS and print footer", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { html } = generateConsumerReport(input as any);
+
+    // The extended @media print block must be present in the inline stylesheet.
+    expect(html).toContain("@media print");
+    expect(html).toContain("@page { size: A4;");
+    expect(html).toContain("Sprint 5: print-optimized CSS");
+    // The footer element is wired into the body.
+    expect(html).toContain("class=\"print-footer\"");
+    // Screen CSS hides the footer (display: none outside @media print).
+    expect(html).toMatch(/\.print-footer\s*\{\s*display:\s*none/);
+    // Footer content includes the report id and generation date.
+    expect(html).toMatch(/print-footer[^<]*ClearDeed Property Report/);
+  });
+
   it("handles missing Bhulekh data gracefully", () => {
     const input = {
       ...CONSUMER_REPORT_FIXTURE,

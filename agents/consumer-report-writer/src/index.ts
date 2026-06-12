@@ -404,6 +404,7 @@ ${CSS}
 </head>
 <body>
 ${demoBanner}
+<div class="print-footer" aria-hidden="true">ClearDeed Property Report · ${escapeHtml(data.reportId)} · ${generatedDate}</div>
 <div class="page">
 
 <!-- ── Header ────────────────────────────────────────────────────────── -->
@@ -4195,18 +4196,310 @@ body {
 /* Misc */
 .small-print { font-size: 11px; color: var(--gray-400); }
 
-/* Print */
+/* Print-only footer (hidden on screen, shown when printing / generating PDF). */
+.print-footer { display: none; }
+
+/* Print — Sprint 5: print-optimized CSS for buyer/lawyer handoff */
 @media print {
-  @page { size: A4; margin: 18mm 15mm; }
-  body { font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .page { max-width: 100%; padding: 0; }
-  .section { break-inside: avoid; }
-  .success-notice, .error-notice, .warning-notice, .caution-box, .info-box, .error-box {
-    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  /* Page setup: A4 portrait, 15mm margins (matches PDF renderer defaults). */
+  @page { size: A4; margin: 15mm; }
+  @page :first { margin-top: 10mm; }
+
+  /* Force browsers to render the colors we set (status badges, etc.) */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
-  .demo-banner { display: none; }
-  .tenant-table-details summary { cursor: default; }
-  .feedback-widget { display: none; }
+
+  /* Reset base typography for print: dark text on white, 12pt body. */
+  html, body {
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 12pt;
+    line-height: 1.45;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  .page {
+    max-width: 100% !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header: keep the brand + report ID visible, drop the download button. */
+  .report-header {
+    display: flex !important;
+    flex-direction: row;
+    align-items: flex-start;
+    border-bottom: 2px solid #111111 !important;
+    padding-bottom: 10pt;
+    margin-bottom: 14pt;
+  }
+  .report-actions { display: none !important; }
+  .meta { text-align: right; }
+
+  /* Section breaks: each major section starts on a new page.
+     Sections are the buyer-facing primary unit — give them breathing room. */
+  .section,
+  .summary-panel,
+  .bq-panel,
+  .fin-summary,
+  .source-audit,
+  .prov-strip {
+    page-break-before: always;
+    break-before: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border: 1px solid #cccccc !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    margin: 0 0 14pt 0;
+  }
+  /* Don't force a break on the very first section (right after the header). */
+  .summary-panel:first-of-type,
+  .bq-panel:first-of-type { page-break-before: avoid; break-before: avoid; }
+
+  /* Section header backgrounds → white in print. */
+  .section-hdr {
+    background: #f3f4f6 !important;
+    border-bottom: 1px solid #cccccc !important;
+    padding: 8pt 10pt;
+  }
+  .section-action .section-hdr { background: #111111 !important; }
+  .section-action .section-title { color: #ffffff !important; }
+  .section-action .section-sub { color: #cccccc !important; }
+  .section-action .section-icon { background: #1f2937 !important; border-color: #1f2937 !important; color: #ffffff !important; }
+
+  .section-icon {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+  }
+  .section-title { color: #111111 !important; }
+  .section-sub { color: #4b5563 !important; }
+
+  /* Body padding for sections in print. */
+  .section-body { padding: 10pt 12pt; }
+
+  /* Status / badge / chip backgrounds: light tint with dark text so it survives B&W print. */
+  .status-badge { border: 1px solid #888888 !important; }
+  .status-green  { background: #f0fdf4 !important; color: #15803d !important; border-color: #15803d !important; }
+  .status-amber  { background: #fffbeb !important; color: #b45309 !important; border-color: #b45309 !important; }
+  .status-red    { background: #fef2f2 !important; color: #b91c1c !important; border-color: #b91c1c !important; }
+  .status-gray   { background: #f9fafb !important; color: #4b5563 !important; border-color: #4b5563 !important; }
+  .badge-info { background: #eff6ff !important; color: #1d4ed8 !important; border: 1px solid #1d4ed8 !important; }
+
+  /* Notice / box backgrounds → light tint, dark text. */
+  .success-notice, .error-notice, .warning-notice, .info-notice,
+  .caution-box, .warning-box, .info-box, .error-box {
+    border: 1px solid #888888 !important;
+    background: #f9fafb !important;
+    color: #111111 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .caution-box.flag-high { background: #fef2f2 !important; color: #b91c1c !important; border-color: #b91c1c !important; }
+  .caution-box.flag-medium { background: #fffbeb !important; color: #b45309 !important; border-color: #b45309 !important; }
+
+  /* Tables: keep together, force readable, expand URLs. */
+  .data-table,
+  .fin-table,
+  .tenant-table,
+  .source-audit table,
+  .key-questions-list {
+    page-break-inside: auto;
+    break-inside: auto;
+    width: 100% !important;
+    color: #111111 !important;
+  }
+  .data-table th, .data-table td,
+  .fin-table th, .fin-table td,
+  .tenant-table th, .tenant-table td {
+    color: #111111 !important;
+    border-bottom: 1px solid #cccccc !important;
+    padding: 4pt 6pt;
+    font-size: 11pt;
+  }
+  .data-table tr, .fin-table tr, .tenant-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  /* Small lookup tables (less than ~10 rows): keep whole table on one page. */
+  .data-table tbody tr:nth-last-child(-n+8):first-child ~ tr,
+  .data-table:has(tbody tr:nth-last-child(2):first-child) tr { /* fallback no-op */ }
+
+  /* Source URLs: never as plain link text. Show full URL visibly. */
+  a, a:link, a:visited {
+    color: #1d4ed8 !important;
+    text-decoration: underline;
+    word-break: break-all;
+    overflow-wrap: anywhere;
+  }
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #4b5563 !important;
+    word-break: break-all;
+  }
+  /* Don't append the URL to the brand/pseudo-button links that already
+     show the URL as the link text, or to the in-page anchor jumps. */
+  .report-actions a::after,
+  a[href^="#"]::after,
+  .prov-link::after,
+  .pdf-button::after { content: "" !important; }
+
+  /* Hide non-printable interactive elements. */
+  .feedback-widget,
+  .feedback-comment,
+  .demo-banner,
+  .report-actions,
+  .source-image-details summary {
+    display: none !important;
+  }
+  /* Expand any collapsed <details> blocks for print — buyer should see all the data. */
+  details.tenant-table-details,
+  details.source-image-details,
+  details.source-audit {
+    display: block !important;
+  }
+  details > summary { display: block !important; }
+
+  /* Map / satellite elements: hidden (we don't embed them, but defensive). */
+  .leaflet-container,
+  iframe,
+  .map-pane,
+  .map-container { display: none !important; }
+
+  /* RoR screenshots: include the figure (text caption + URL footnote is what
+     matters in print), and show a small text note. */
+  .ror-screenshot img {
+    max-height: 240px;
+    width: auto;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .ror-screenshot figcaption,
+  .ror-screenshot-too-large span {
+    color: #111111 !important;
+    font-size: 10pt;
+  }
+  .ror-screenshot-too-large { background: #f9fafb !important; border-color: #888888 !important; }
+
+  /* Financial exposure summary table: force it onto a single page if possible. */
+  .fin-summary .fin-body { page-break-inside: avoid; break-inside: avoid; }
+  .fin-table { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Six Buyer Questions panel: print after the header, before the rest. */
+  .bq-panel {
+    page-break-after: always;
+    break-after: page;
+  }
+  .bq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+  .bq-item {
+    border: 1px solid #888888 !important;
+    background: #fffbeb !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Buyer summary: keep together. */
+  .summary-panel { page-break-inside: avoid; break-inside: avoid; }
+  .summary-title { font-size: 16pt !important; }
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6pt;
+  }
+  .status-item {
+    background: #f9fafb !important;
+    border: 1px solid #888888 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .status-ok { background: #f0fdf4 !important; border-color: #15803d !important; }
+  .status-warn { background: #fffbeb !important; border-color: #b45309 !important; }
+  .status-fail { background: #fef2f2 !important; border-color: #b91c1c !important; }
+  .status-unknown { background: #eff6ff !important; border-color: #1d4ed8 !important; }
+  .status-icon { background: #ffffff !important; color: #111111 !important; border: 1px solid #888888 !important; }
+  .status-label { color: #111111 !important; }
+  .status-finding { color: #111111 !important; }
+
+  /* Provenance strip → simple text strip in print. */
+  .prov-strip {
+    background: #f9fafb !important;
+    border: 1px solid #888888 !important;
+  }
+  .prov-link { border: 1px solid #888888 !important; }
+
+  /* Section 7 market benchmark: keep the three bands on one page if possible. */
+  .bm-panel { page-break-inside: avoid; break-inside: avoid; }
+  .bm-floor, .bm-dir, .bm-ceil {
+    background: #f9fafb !important;
+    border: 1px solid #888888 !important;
+    border-left: 4px solid #888888 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .bm-floor { border-left-color: #15803d !important; }
+  .bm-dir { border-left-color: #b45309 !important; }
+  .bm-ceil { border-left-color: #1d4ed8 !important; }
+
+  /* BDA zone card → simple block, no fancy color. */
+  .bda-card {
+    background: #f9fafb !important;
+    border: 1px solid #888888 !important;
+    border-left: 4px solid #888888 !important;
+  }
+  .bda-card-watchout { border-left-color: #b45309 !important; }
+  .bda-card-ok { border-left-color: #15803d !important; }
+
+  /* Source line at the bottom of each section: keep the URL visible. */
+  .source-line {
+    color: #4b5563 !important;
+    border-top: 1px dashed #888888 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .source-line a { color: #1d4ed8 !important; }
+
+  /* Disclaimer / action list: keep together. */
+  .disclaimer-box {
+    background: #fffbeb !important;
+    border: 1px solid #b45309 !important;
+    color: #111111 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .action-list li { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Disable hover/transitions in print. */
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* Section icons (SVG) — keep visible. */
+  .section-icon svg { display: inline-block; }
+
+  /* Print-only page header/footer: rendered by Chromium via the @page margin boxes.
+     We can't inject @top-left/right content via plain CSS, so we add a visible
+     report-ID and date in the page footer via a small fixed-position strip
+     that repeats on each printed page. */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9pt;
+    color: #4b5563;
+    border-top: 1px solid #888888;
+    padding-top: 4pt;
+    display: block !important;
+  }
+  .print-footer::after {
+    content: "ClearDeed Property Report  ·  Page " counter(page) " of " counter(pages);
+  }
 }
 @media (max-width: 600px) {
   .page { padding: 20px 20px; }
