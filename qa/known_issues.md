@@ -46,24 +46,23 @@ report surfaces the gap explicitly.
 
 - **Fetcher:** rccms
 - **Severity:** blocker
-- **Status:** open
+- **Status:** fixed
 - **Discovered:** 2026-06-12
+- **Fixed in:** 070ba67
 
-The local fetcher schema (`packages/fetchers/rccms/src/schema.ts`) defines
+The local fetcher schema (`packages/fetchers/rccms/src/schema.ts`) defined
 `RCCMSCaseSchema` with fields `caseId, petitioner, respondent, status, filingDate,
 nextHearingDate`. The shared `@cleardeed/schema` `RCCMSResult.data.cases[]`
 uses `caseNo, plotNo, caseType, status, court` — no party split, no
-`nextHearingDate`. The fetcher output is **silently coerced** into the
+`nextHearingDate`. The fetcher output was **silently coerced** into the
 shared schema, dropping party names and renaming fields.
 
-**Why it matters:** the buyer report renders "Land dispute — pending" with
-no party names. If the case is contested by a specific individual, that
-information is lost before the reasoner sees it.
-
-**Fix candidate (V3):** align `RCCMSCaseSchema` to the shared schema. Add
-`parties: [{ name, role }]` to the shared schema if the fetcher genuinely
-has them. The V2 contract (`apps/web/src/lib/pipeline/contracts/rccms.ts`)
-already uses the shared schema's field names — V2 will not regress this.
+**Fix applied:** the fetcher interface, local Zod schema, and parser
+were aligned to the shared schema. Field names renamed (`caseId` → `caseNo`),
+`plotNo?` and `court` added, `petitioner/respondent/nextHearingDate` removed
+from the local schema (preserved as `parties?` local extension for future
+use). V2 contract test (`qa/fetcher_tests/rccms.test.ts`) now passes 54/54
+against the aligned output.
 
 ---
 
@@ -100,26 +99,28 @@ guarantees.
 
 - **Fetcher:** igr-ec, cersai
 - **Severity:** warn
-- **Status:** open
+- **Status:** fixed
 - **Discovered:** 2026-06-12
+- **Fixed in:** c642c1d (V11 path only)
 
 `generateReportV11` calls `igrEcFetch` and `cersaiFetch`, surfaces their
 *status* in the `sourceSummary`, and builds `encumbranceReasoner` with the
-`instructions` text. It does NOT pass the actual `entries[]` (IGR EC) or
+`instructions` text. It did NOT pass the actual `entries[]` (IGR EC) or
 `charges[]` (CERSAI) data into the EncumbranceReasoner — only the
-instructions. The "What you might lose after paying" report section
-therefore shows the *manual follow-up text* but never the actual entries
-or charges the fetcher returned.
+instructions.
 
-**Why it matters:** if the fetcher DID return data (some sessions, some
-network conditions), the buyer never sees it. The instructions are
-displayed instead, which is conservative but discards real signal.
+**Fix applied (V11 path only):** `EncumbranceResult` extended with
+`igrEcEntries?` and `cersaiCharges?` passthrough fields. The V11 pipeline
+at line 587 now populates these from fetcher results. The writer's
+`buildFinancialExposureSummary` call site passes them through.
+`computeFinancialExposure` already had rendering logic for both rows;
+the data path is now connected.
 
-**Fix candidate (V3):** extend `EncumbranceReasoner` input shape to accept
-`igrEcData.entries` and `cersaiData.charges`; render them as a list with
-"Active charge" / "Satisfied charge" badges. The V2 contract schemas for
-IGR EC and CERSAI (`igr-ec.ts`, `cersai.ts`) include the `entries` and
-`charges` fields ready for this.
+**Not yet fixed:** the V1.0 production path (`generateReport` at line 73,
+used by `/api/report/create`) does not call IGR EC or CERSAI fetchers
+directly — it relies on the orchestrator. KI-003 (orchestrator missing
+IGR EC + CERSAI calls) is the upstream blocker. The KI-004 fix only
+benefits V11 (`/api/report/pregenerate`) until KI-003 is resolved.
 
 ---
 
