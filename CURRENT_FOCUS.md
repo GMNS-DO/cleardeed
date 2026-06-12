@@ -9,9 +9,9 @@
 
 ## This week's user behavior (the only thing that ships)
 
-**Sprint 4 — Week 7**
+**Sprint 5 — Week 8**
 
-> **A buyer who has paid ₹1 sees a "What is it worth" panel in their report showing the circle rate floor for the village, whether the plot is a sub-plot (D/88 pattern), and the BDA zoning classification (residential / commercial / industrial / green-belt).**
+> **A buyer in Khordha can pay ₹1, view a 6-section report in the browser, download a print-optimized PDF, refresh the URL within 60 days for free, and re-pay ₹1 to refresh after expiry.**
 
 ---
 
@@ -26,6 +26,19 @@
 - [x] CERSAI captcha solver: real Tesseract.js OCR (was stub throwing error)
 - [x] Next.js build fixed: playwright packages externalized to resolve vite/recorder HTML parse error
 - [x] Sprint 1–3 regression: build passes ✓
+
+## Sprint 5 exit criteria
+
+- [x] Print-optimized CSS in report HTML (`@media print` rules, 12pt minimum, page-break-inside avoid, footer with page numbers + source URLs)
+- [x] Verify-yourself source links inline in 5 sections (Bhulekh, IGR EC, CERSAI, eCourts, Bhunaksha) — 8 anchors added
+- [x] Conversion funnel instrumentation: 6 stage events (page_view, plot_search, report_generated, payment_started, payment_completed, report_viewed)
+- [x] 60-day report validity (expires_at + revoked_at columns, pay-to-refresh checkout via existing Razorpay pattern, ₹1 refresh)
+- [x] 6-section regression test (2 test cases asserting all 6 section IDs render)
+- [x] **Pipeline end-to-end works in browser** — pregenerate returns 200 in ~60s, /report/[id] page renders (RCCMS probe disabled as workaround, see BACKLOG)
+
+## Pre-Sprint-5 hotfix (2026-06-12)
+
+- [x] **RCCMS Playwright probe hang:** `rccmsFetch` was hanging >3min on `rccms.odisha.gov.in` (chromium.launch + page.goto never resolved). Pipeline now skips RCCMS, marks `verification=manual_required`, and reports ship in ~60s. Buyers see a note to verify revenue court cases manually. Tracked in BACKLOG.md for Sprint 6.
 
 ## Sprint 4 exit criteria
 
@@ -96,4 +109,4 @@ Yes — all five financial exposure sources wired, per-tehsil EC instructions, C
 
 ---
 
-*Last touched: 2026-05-26*
+*Last touched: 2026-06-12*
