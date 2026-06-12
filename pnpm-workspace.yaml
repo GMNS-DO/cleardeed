@@ -16,6 +16,8 @@ packages:
   - 'packages/fetchers/larr'
   - 'packages/fetchers/rera'
   - 'packages/fetchers/civic-dues'
+  - 'packages/fetchers/circle-rate'
+  - 'packages/fetchers/bda-zoning'
   - 'agents/land-classifier'
   - 'agents/ownership-reasoner'
   - 'agents/output-auditor'

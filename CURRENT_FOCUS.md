@@ -29,13 +29,13 @@
 
 ## Sprint 4 exit criteria
 
-- [ ] `khordha_circle_rates.json` with floor rates for top 50 villages
-- [ ] Section 7 (What is it worth) shows circle rate floor band with rate + view-source link
-- [ ] D/88 sub-plot detector: regex fires HIGH WATCH-OUT when surveyNo matches `D/\d+` or `\d+/\d+`
-- [ ] BDA zoning data for top 50 village/locality combos (residential / commercial / industrial / green-belt)
-- [ ] Land classifier surfaces BDA zone alongside kisam restrictions
-- [ ] Section 7 refactored to 3-band floor / directional / ceiling layout
-- [ ] Build passes
+- [x] `khordha_circle_rates.json` with floor rates for top 50 villages
+- [x] Section 7 (What is it worth) shows circle rate floor band with rate + view-source link
+- [x] D/88 sub-plot detector: regex fires HIGH WATCH-OUT when surveyNo matches `D/\d+` or `\d+/\d+`
+- [x] BDA zoning data for top 50 village/locality combos (residential / commercial / industrial / green-belt)
+- [x] Land classifier surfaces BDA zone alongside kisam restrictions
+- [x] Section 7 refactored to 3-band floor / directional / ceiling layout
+- [x] Build passes (TypeScript compilation verified; pre-existing `/404` prerender issue tracked separately)
 
 **Deferred to BACKLOG or Sprint 5+** (out of scope for Sprint 4):
 - MagicBricks/99acres scraping (high effort, TOS risk)

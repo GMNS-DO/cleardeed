@@ -24,6 +24,8 @@
       "@cleardeed/fetcher-igr-ec": ["../../packages/fetchers/igr-ec/src/index.ts"],
       "@cleardeed/fetcher-cersai": ["../../packages/fetchers/cersai/src/index.ts"],
       "@cleardeed/fetcher-rccms": ["../../packages/fetchers/rccms/src/index.ts"],
+      "@cleardeed/fetcher-circle-rate": ["../../packages/fetchers/circle-rate/src/index.ts"],
+      "@cleardeed/fetcher-bda-zoning": ["../../packages/fetchers/bda-zoning/src/index.ts"],
       "@cleardeed/orchestrator": ["../../packages/orchestrator/src/index.ts"],
       "@cleardeed/consumer-report-writer": ["../../agents/consumer-report-writer/src/index.ts"],
       "@cleardeed/consumer-report-writer/fixtures/golden-path": ["../../agents/consumer-report-writer/fixtures/golden-path.ts"],

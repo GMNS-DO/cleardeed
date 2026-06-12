@@ -328,6 +328,21 @@ export function generateConsumerReport(
 
   // Build Encumbrance section
   const ecSection = buildEcSection(encumbranceReasoner, safeRegUrl, safeDistrict, safeSro, safePlotNo, safeTransliterated || escapeHtml(data.claimedOwnerName));
+
+  // Sprint 4 — Section 7 (What is it worth — floor / directional / ceiling)
+  const benchmarkSection = buildBenchmarkSection(data.circleRateData ?? null, {
+    village: plotVillage,
+    tahasil: plotTahasil,
+    district: plotDistrict,
+    plotNo,
+    acres: plotArea?.acres ?? null,
+  });
+
+  // Sprint 4 — BDA zone card (rendered inside Section 3)
+  const bdaZoneCard = buildBdaZoneCard(data.bdaZoneData ?? null, {
+    village: plotVillage,
+    tahasil: plotTahasil,
+  });
   const actionItems = buildActionItems({
     nameMatch: nameMatch.state ?? "unknown",
     bhulekhUsable,
@@ -590,6 +605,7 @@ ${buildProvenanceStrip({
       plotNo,
       khataNo: revenueRecords?.khataNo ?? null,
     })}
+    ${bdaZoneCard}
     ${conversionRequired ? `
     <div class="caution-box">
       <span class="caution-label">&#9888; Land use conversion required</span>
@@ -730,21 +746,11 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
     </div>
     <div class="section-title-group">
       <div class="section-title">Market Benchmark &amp; Circle Rate</div>
-      <div class="section-sub">Official stamp duty and registration minimum guidance value</div>
+      <div class="section-sub">Official stamp duty floor &middot; directional signals &middot; market ceiling</div>
     </div>
   </div>
   <div class="section-body">
-    <div class="info-box">
-      <span class="info-label">Check official benchmark valuation</span>
-      <p>ClearDeed provides this link to the official IGR Odisha benchmark valuation portal. The exact circle rate depends on the specific Kisam (land type), proximity to roads, and mouza.</p>
-      <p><strong>Guidance for Khordha Zone:</strong> Rural agricultural land often ranges from ₹20L to ₹50L per acre. Urban/Bhubaneswar outskirts can range from ₹1,000 to ₹3,000+ per sqft.</p>
-      <p style="margin-top: 8px;">
-        <a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener" style="font-weight: 600; color: #1e4d3b; text-decoration: underline;">Verify official circle rate at regis.odisha.gov.in &rarr;</a>
-      </p>
-    </div>
-    <div class="source-line">
-      <span>Source: IGR Odisha Benchmark Valuation Portal &mdash; Last verified: 2026-05-01</span>
-    </div>
+    ${benchmarkSection}
   </div>
 </section>
 
@@ -933,6 +939,206 @@ function buildEcSection(
       <p>To check for prior transfers, liens, or loans on this plot, obtain an Encumbrance Certificate (EC) from IGR Odisha or the Sub-Registrar's office and have it reviewed by a property lawyer.</p>
       <ol class="igr-steps">${stepsHtml}</ol>
     </div>`;
+}
+
+// ─── Section 7 builder: What is it worth (floor / directional / ceiling) ────
+
+interface BenchmarkRateRow {
+  mouza?: string;
+  tehsil?: string;
+  kisam?: string;
+  ratePerAcre?: number;
+  ratePerSqft?: number;
+  ratePerDecimal?: number;
+  rateType?: string;
+  lastUpdated?: string;
+  sourceUrl?: string;
+}
+
+interface BenchmarkSectionInput {
+  village?: string | null;
+  tahasil?: string | null;
+  district?: string | null;
+  plotNo?: string | null;
+  acres?: number | null;
+}
+
+/**
+ * Pick the best circle-rate row for the report's mouza/tehsil/kisam.
+ * The pipeline already filters, so data[0] is the best match. We still
+ * search the array for a row whose mouza matches the report's village,
+ * falling back to data[0] when no exact row is present.
+ */
+function selectBestRateRow(
+  data: BenchmarkRateRow[] | undefined,
+  input: BenchmarkSectionInput
+): BenchmarkRateRow | null {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  const villageLower = String(input.village ?? "").toLowerCase().trim();
+  if (villageLower) {
+    const exact = data.find((row) => String(row.mouza ?? "").toLowerCase() === villageLower);
+    if (exact) return exact;
+  }
+  return data[0] ?? null;
+}
+
+/** Format ₹X / Y with proper grouping. */
+function formatInr(value: number): string {
+  return `₹${value.toLocaleString("en-IN")}`;
+}
+
+/** Format a circle-rate row into a human "X per acre" or "Y per sqft" string. */
+function formatRateDisplay(row: BenchmarkRateRow): string {
+  if (row.ratePerAcre && row.ratePerAcre > 0) {
+    return `${formatInr(row.ratePerAcre)} per acre`;
+  }
+  if (row.ratePerSqft && row.ratePerSqft > 0) {
+    return `${formatInr(row.ratePerSqft)} per sqft`;
+  }
+  return "rate not parsed";
+}
+
+/** Multiply sqft-rate into per-acre (1 acre = 43,560 sqft). */
+function sqftToPerAcre(ratePerSqft: number): number {
+  return Math.round(ratePerSqft * 43560);
+}
+
+function buildBenchmarkSection(
+  circleRateData: any,
+  input: BenchmarkSectionInput
+): string {
+  const rows: BenchmarkRateRow[] = Array.isArray(circleRateData?.data)
+    ? circleRateData.data
+    : [];
+  const row = selectBestRateRow(rows, input);
+
+  if (!row) {
+    // No circle-rate data — show a "not in our dataset" message with the
+    // official IGR link so the buyer can verify at the source.
+    return `<div class="bm-panel">
+      <div class="bm-floor">
+        <div class="bm-band-label">Floor &mdash; Circle rate</div>
+        <div class="bm-band-value">Not in our dataset for ${escapeHtml(input.village ?? "this village")}, ${escapeHtml(input.tahasil ?? "")}</div>
+        <p class="bm-note">The exact circle rate depends on the specific Kisam (land type), proximity to roads, and mouza. Verify the official rate on the IGR Odisha portal:</p>
+        <p><a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener" class="bm-verify-link">Verify official circle rate at regis.odisha.gov.in &rarr;</a></p>
+      </div>
+      <div class="bm-dir">
+        <div class="bm-band-label">Directional &mdash; Recent transactions</div>
+        <div class="bm-band-value">Not fetched in this run</div>
+        <p class="bm-note">Recent IGR transaction prices in the same mouza would give a directional band. This data is not yet wired into the report.</p>
+      </div>
+      <div class="bm-ceil">
+        <div class="bm-band-label">Ceiling &mdash; Market comparables</div>
+        <div class="bm-band-value">Verify with local broker</div>
+        <p class="bm-note">Ask a local broker or property agent for 2-3 recent sale prices within 500m of this plot. Market rates typically run 1.5&ndash;3&times; the floor for well-located plots.</p>
+      </div>
+      <div class="source-line">
+        <span>Source: IGR Odisha Benchmark Valuation Portal &mdash; <a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener">regis.odisha.gov.in</a></span>
+      </div>
+    </div>`;
+  }
+
+  // Floor band: the matched circle rate, scaled to per-acre for the report.
+  const ratePerSqft = row.ratePerSqft ?? 0;
+  const ratePerAcre = row.ratePerAcre ?? (ratePerSqft > 0 ? sqftToPerAcre(ratePerSqft) : 0);
+  const rateDisplay = formatRateDisplay(row);
+
+  // Plot-area-scaled floor value (informational, not a valuation).
+  const acres = input.acres;
+  const scaledFloor = acres && ratePerAcre > 0
+    ? `${formatInr(Math.round(acres * ratePerAcre))} (${acres.toFixed(3)} acres &times; floor rate)`
+    : null;
+
+  const sourceDate = row.lastUpdated ? escapeHtml(row.lastUpdated) : "—";
+  const sourceUrl = row.sourceUrl || "https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx";
+  const rateTypeLabel = row.rateType
+    ? `&mdash; <span class="bm-rate-type">${escapeHtml(row.rateType)}</span>`
+    : "";
+
+  return `<div class="bm-panel">
+    <div class="bm-floor">
+      <div class="bm-band-label">Floor &mdash; Circle rate (stamp duty minimum)</div>
+      <div class="bm-band-value">${escapeHtml(rateDisplay)}</div>
+      <div class="bm-band-meta">${escapeHtml(row.mouza ?? input.village ?? "—")} &middot; ${escapeHtml(row.tehsil ?? input.tahasil ?? "—")} &middot; ${escapeHtml(row.kisam ?? "—")} ${rateTypeLabel}</div>
+      ${scaledFloor ? `<div class="bm-band-scaled">Floor for this plot: <strong>${scaledFloor}</strong></div>` : ""}
+      <p class="bm-note">Below the official IGR circle rate, the government treats the sale value as under-declared and the stamp duty is calculated on the higher figure. <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" class="bm-verify-link">View source at IGR Odisha &rarr;</a></p>
+    </div>
+    <div class="bm-dir">
+      <div class="bm-band-label">Directional &mdash; Recent transactions</div>
+      <div class="bm-band-value">Not fetched in this run</div>
+      <p class="bm-note">Recent IGR transaction prices in the same mouza would give a directional band. This data is not yet wired into the report.</p>
+    </div>
+    <div class="bm-ceil">
+      <div class="bm-band-label">Ceiling &mdash; Market comparables</div>
+      <div class="bm-band-value">Verify with local broker</div>
+      <p class="bm-note">Ask a local broker or property agent for 2-3 recent sale prices within 500m of this plot. Market rates typically run 1.5&ndash;3&times; the floor for well-located plots.</p>
+    </div>
+    <div class="source-line">
+      <span>Source: IGR Odisha Benchmark Valuation Portal &mdash; last updated ${sourceDate} &mdash; <a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener">regis.odisha.gov.in</a></span>
+    </div>
+  </div>`;
+}
+
+// ─── Section 3 builder: BDA Master Plan zone card ───────────────────────────
+
+interface BdaZoneCardInput {
+  village?: string | null;
+  tahasil?: string | null;
+}
+
+function buildBdaZoneCard(
+  bdaZoneData: any,
+  input: BdaZoneCardInput
+): string {
+  const rows: any[] = Array.isArray(bdaZoneData?.data) ? bdaZoneData.data : [];
+  if (rows.length === 0) return "";
+
+  const firstRow = rows[0];
+  const zone = firstRow?.zone;
+  if (!zone || !zone.id) return "";
+
+  const zoneName = zone.name ?? zone.id;
+  const zoneCode = zone.zoneCode ? ` (zone code ${escapeHtml(zone.zoneCode)})` : "";
+  const description = zone.description ?? "BDA Master Plan zone classification";
+  const permittedUses: string[] = Array.isArray(zone.permittedUses) ? zone.permittedUses : [];
+  const restrictions: string[] = Array.isArray(zone.restrictions) ? zone.restrictions : [];
+  const locality = firstRow?.locality ? ` &middot; ${escapeHtml(firstRow.locality)}` : "";
+  const matchLocation = `${escapeHtml(firstRow?.village ?? input.village ?? "this village")}, ${escapeHtml(firstRow?.tehsil ?? input.tahasil ?? "")}${locality}`;
+
+  // Severity color: green-belt and institutional are watch-outs; residential/commercial
+  // are green lights; mixed_use/special are neutral.
+  const zoneId = String(zone.id).toLowerCase();
+  const watchoutZones = new Set(["green_belt", "institutional", "industrial"]);
+  const cardCls = watchoutZones.has(zoneId) ? "bda-card-watchout" : "bda-card-ok";
+
+  const permitsList = permittedUses.length
+    ? `<ul class="bda-permits">${permittedUses.slice(0, 5).map((u) => `<li>${escapeHtml(u)}</li>`).join("")}</ul>`
+    : `<p class="bda-empty">No specific permitted-use list available.</p>`;
+  const restrictionsList = restrictions.length
+    ? `<ul class="bda-restrictions">${restrictions.slice(0, 4).map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>`
+    : "";
+
+  return `<div class="bda-card ${cardCls}">
+    <div class="bda-card-head">
+      <span class="bda-card-label">BDA Master Plan zone</span>
+      <span class="bda-card-zone">${escapeHtml(zoneName)}${zoneCode}</span>
+    </div>
+    <div class="bda-card-meta">${matchLocation}</div>
+    <p class="bda-card-desc">${escapeHtml(description)}</p>
+    <div class="bda-card-cols">
+      <div class="bda-card-col">
+        <div class="bda-col-label">What you can build</div>
+        ${permitsList}
+      </div>
+      ${restrictionsList ? `<div class="bda-card-col">
+        <div class="bda-col-label">Restrictions</div>
+        ${restrictionsList}
+      </div>` : ""}
+    </div>
+    <div class="source-line">
+      <span>Source: BDA Master Plan${firstRow?.sourceUrl ? ` &mdash; <a href="${escapeHtml(firstRow.sourceUrl)}" target="_blank" rel="noopener">view source</a>` : " &mdash; verify at bdaodisha.gov.in"}</span>
+    </div>
+  </div>`;
 }
 
 function buildActionItems(input: {
@@ -4010,5 +4216,51 @@ body {
   .data-table td.key { width: 40%; }
   .summary-grid { grid-template-columns: 1fr; }
   .insight-highlights { grid-template-columns: 1fr; }
+}
+
+/* Section 7: Market Benchmark (floor/directional/ceiling) */
+.bm-panel { margin-bottom: 16px; }
+.bm-floor, .bm-dir, .bm-ceil {
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--gray-300);
+}
+.bm-floor { background: var(--green-50); border-left-color: var(--green-600); }
+.bm-dir { background: var(--amber-50); border-left-color: var(--amber-600); }
+.bm-ceil { background: var(--blue-50); border-left-color: var(--blue-600); }
+.bm-band-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-500); margin-bottom: 4px; }
+.bm-band-value { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+.bm-band-meta { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+.bm-band-scaled { font-size: 13px; margin-top: 6px; padding: 8px; background: rgba(255,255,255,0.6); border-radius: 4px; }
+.bm-rate-type { font-weight: 600; color: var(--amber-700); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.bm-note { font-size: 12px; color: var(--gray-600); margin-top: 8px; line-height: 1.5; }
+.bm-verify-link { font-weight: 600; color: var(--green-700); }
+
+/* Section 3: BDA zone card */
+.bda-card {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--gray-300);
+  background: var(--gray-50);
+}
+.bda-card-watchout { border-left-color: var(--amber-600); background: var(--amber-50); }
+.bda-card-ok { border-left-color: var(--green-600); background: var(--green-50); }
+.bda-card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.bda-card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-500); }
+.bda-card-zone { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+.bda-card-meta { font-size: 11px; color: var(--gray-500); margin-bottom: 8px; }
+.bda-card-desc { font-size: 12px; color: var(--gray-700); margin-bottom: 10px; }
+.bda-card-cols { display: flex; gap: 16px; flex-wrap: wrap; }
+.bda-card-col { flex: 1; min-width: 140px; }
+.bda-col-label { font-size: 11px; font-weight: 600; color: var(--gray-500); margin-bottom: 6px; }
+.bda-permits, .bda-restrictions { margin: 0; padding-left: 18px; font-size: 11px; color: var(--gray-700); }
+.bda-permits li, .bda-restrictions li { margin-bottom: 3px; }
+.bda-empty { font-size: 11px; color: var(--gray-400); font-style: italic; }
+
+@media (max-width: 600px) {
+  .bm-floor, .bm-dir, .bm-ceil { padding: 10px 12px; }
+  .bda-card-cols { flex-direction: column; }
 }
 `;

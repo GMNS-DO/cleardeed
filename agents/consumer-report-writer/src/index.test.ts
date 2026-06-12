@@ -1078,4 +1078,203 @@ describe("A10 ConsumerReportWriter", () => {
     expect(html).toContain("Land class not verified");
     expect(html).toContain("Post-purchase costs need manual estimation");
   });
+
+  // Sprint 4 — Section 7 (What is it worth) renders 3-band floor/directional/ceiling
+  // from circle-rate fetcher data, and Section 3 (Land Classification) renders
+  // a BDA Master Plan zone card from bda-zoning fetcher data.
+  describe("Sprint 4 — Section 7 benchmark + Section 3 BDA zone", () => {
+    const reportInput = mapToReportInput(
+      {
+        reportId: "CLD-S4-BM-BDA",
+        completedAt: "2026-06-12T10:30:00.000Z",
+        validationFindings: [],
+        sources: [
+          {
+            source: "bhulekh",
+            status: "success",
+            verification: "verified",
+            fetchedAt: "2026-06-12T10:30:00.000Z",
+            data: {
+              khataNo: "415",
+              village: "Mendhasala",
+              plotRows: [
+                { plotNo: "415", areaAcres: 0.1, areaDecimals: 10 },
+              ],
+              tenants: [
+                { tenantName: "Test Owner", surveyNo: "415", areaAcres: 0.1, landClassEnglish: "Residential" },
+              ],
+            },
+          },
+          {
+            source: "circle-rate",
+            status: "success",
+            verification: "verified",
+            fetchedAt: "2026-06-12T10:30:00.000Z",
+            data: [
+              {
+                mouza: "Mendhasala",
+                tehsil: "Bhubaneswar",
+                kisam: "Residential",
+                ratePerAcre: 0,
+                ratePerSqft: 1800,
+                rateType: "peri-urban",
+                sourceUrl: "https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+                lastUpdated: "2024-06-01",
+              },
+            ],
+          },
+          {
+            source: "bda-zoning",
+            status: "success",
+            verification: "verified",
+            fetchedAt: "2026-06-12T10:30:00.000Z",
+            data: [
+              {
+                tehsil: "Bhubaneswar",
+                village: "Mendhasala",
+                locality: "Patia",
+                zone: {
+                  id: "residential",
+                  name: "Residential",
+                  zoneCode: "R",
+                  description: "Areas designated for residential development",
+                  permittedUses: ["Single-family residential", "Apartments"],
+                  restrictions: ["No industrial/commercial use"],
+                },
+              },
+            ],
+          },
+        ] as any,
+      },
+      {
+        gps: { lat: 20.272688, lon: 85.701271 },
+        claimedOwnerName: "Test Owner",
+        disclaimerText: CONSUMER_REPORT_FIXTURE.disclaimerText,
+        circleRateData: {
+          source: "circle-rate",
+          status: "success",
+          data: [
+            {
+              mouza: "Mendhasala",
+              tehsil: "Bhubaneswar",
+              kisam: "Residential",
+              ratePerAcre: 0,
+              ratePerSqft: 1800,
+              rateType: "peri-urban",
+              sourceUrl: "https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+              lastUpdated: "2024-06-01",
+            },
+          ],
+        },
+        bdaZoneData: {
+          source: "bda-zoning",
+          status: "success",
+          data: [
+            {
+              tehsil: "Bhubaneswar",
+              village: "Mendhasala",
+              locality: "Patia",
+              zone: {
+                id: "residential",
+                name: "Residential",
+                zoneCode: "R",
+                description: "Areas designated for residential development",
+                permittedUses: ["Single-family residential", "Apartments"],
+                restrictions: ["No industrial/commercial use"],
+              },
+            },
+          ],
+        },
+      }
+    );
+
+    it("Section 7 renders the 3-band floor/directional/ceiling layout", () => {
+      const { html } = generateConsumerReport(reportInput as any);
+
+      // Section 7 floor band with rate from circle-rate data
+      expect(html).toContain("id=\"section-benchmark\"");
+      expect(html).toContain("Floor");
+      expect(html).toContain("Circle rate");
+      expect(html).toContain("1,800 per sqft");
+      expect(html).toContain("Mendhasala");
+      expect(html).toContain("Bhubaneswar");
+      expect(html).toContain("Residential");
+
+      // Scaled floor value for the 0.1-acre plot (1800 sqft * 43560 sqft/acre
+      // * 0.1 = 7,840,800 INR). The "bm-band-scaled" div is the discriminator
+      // — it only renders when acres AND ratePerAcre > 0.
+      expect(html).toMatch(/Floor for this plot|bm-band-scaled/);
+
+      // Directional and ceiling bands are present, marked as "not fetched"
+      // since IGR-transaction and market-comparable wiring is post-Sprint-4.
+      expect(html).toContain("Directional");
+      expect(html).toContain("Ceiling");
+      expect(html).toContain("Not fetched in this run");
+
+      // IGR verify-yourself link
+      expect(html).toContain("regis.odisha.gov.in");
+    });
+
+    it("Section 3 renders the BDA Master Plan zone card", () => {
+      const { html } = generateConsumerReport(reportInput as any);
+
+      // BDA card appears in Section 3 (Land Classification), before Section 7
+      expect(html).toContain("BDA Master Plan zone");
+      expect(html).toContain("Residential");
+      expect(html).toMatch(/\(zone code R\)/);
+      expect(html).toContain("Patia"); // locality
+      expect(html).toContain("Single-family residential"); // permitted uses
+      expect(html).toContain("No industrial/commercial use"); // restrictions
+    });
+
+    it("Section 7 falls back to a clear 'not in our dataset' message when no rate row matches", () => {
+      const noRateInput = {
+        ...reportInput,
+        circleRateData: { source: "circle-rate", status: "no_data_match", data: [] },
+      };
+      const { html } = generateConsumerReport(noRateInput as any);
+
+      expect(html).toContain("Not in our dataset");
+      expect(html).toContain("regis.odisha.gov.in");
+    });
+
+    it("BDA zone card is suppressed when bdaZoneData has no data rows", () => {
+      const noZoneInput = {
+        ...reportInput,
+        bdaZoneData: { source: "bda-zoning", status: "no_data_match", data: [] },
+      };
+      const { html } = generateConsumerReport(noZoneInput as any);
+
+      expect(html).not.toContain("BDA Master Plan zone");
+    });
+
+    it("BDA zone card flags watch-out zones (green_belt) with watchout styling", () => {
+      const greenBeltInput = {
+        ...reportInput,
+        bdaZoneData: {
+          source: "bda-zoning",
+          status: "success",
+          data: [
+            {
+              tehsil: "Bhubaneswar",
+              village: "Mendhasala",
+              zone: {
+                id: "green_belt",
+                name: "Green Belt",
+                zoneCode: "G",
+                description: "Areas reserved for environmental conservation",
+                permittedUses: ["Agriculture", "Parks"],
+                restrictions: ["No construction", "No development"],
+              },
+            },
+          ],
+        },
+      };
+      const { html } = generateConsumerReport(greenBeltInput as any);
+
+      expect(html).toContain("Green Belt");
+      expect(html).toContain("bda-card-watchout");
+      expect(html).toContain("No construction");
+    });
+  });
 });
