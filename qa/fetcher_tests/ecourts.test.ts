@@ -121,3 +121,46 @@ describe("eCourts — negative cases", () => {
     });
   }
 });
+
+/**
+ * Regression test for the Sprint 6 Khordha launch blocker.
+ *
+ * The eCourts fetcher's `unsupported_district` guard fires when
+ *   districtCode !== KHURDA_DISTRICT_CODE || !/khurda|khordha/i.test(districtName)
+ * The pipeline at apps/web/src/lib/pipeline/index.ts calls ecourtsFetch with
+ * { districtName: "Khordha", districtCode: "8" }. eCourts uses "8" as Khurda's
+ * code (Bhulekh uses "561" — a different vocabulary). Previously the pipeline
+ * passed "561", which caused the guard to fire on every Khordha input.
+ *
+ * This test reads the actual eCourts input the pipeline sends and asserts the
+ * guard's two conditions are both false for that input. Deterministic — does
+ * not launch Playwright.
+ */
+describe("eCourts — Khordha guard regression (Sprint 6)", () => {
+  it("the value the pipeline passes for districtCode matches the eCourts Khurda code", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const pipelinePath = path.resolve(
+      process.cwd(),
+      "apps/web/src/lib/pipeline/index.ts"
+    );
+    const src = fs.readFileSync(pipelinePath, "utf8");
+    // Extract the literal districtCode value from the ecourtsFetch call.
+    const match = src.match(/ecourtsFetch\(\{[\s\S]*?districtCode:\s*"([^"]+)"/);
+    expect(match).not.toBeNull();
+    expect(match![1]).toBe("8");
+  });
+
+  it("the value the pipeline passes for districtName matches the Khurda/Khordha regex", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const pipelinePath = path.resolve(
+      process.cwd(),
+      "apps/web/src/lib/pipeline/index.ts"
+    );
+    const src = fs.readFileSync(pipelinePath, "utf8");
+    const match = src.match(/ecourtsFetch\(\{[\s\S]*?districtName:\s*"([^"]+)"/);
+    expect(match).not.toBeNull();
+    expect(match![1]).toMatch(/khurda|khordha/i);
+  });
+});

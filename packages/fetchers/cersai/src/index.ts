@@ -768,12 +768,49 @@ export async function cersaiFetch(
     }
 
     if (!searchSucceeded && activeCharges === 0) {
-      // All variants returned no results — this is a valid negative
+      // Distinguish "search ran cleanly, 0 charges returned" (success) from
+      // "search itself failed" (captcha unsolvable, portal error, unparseable
+      // page). A "no records" return from a working search is a positive
+      // negative result, not a system failure.
+      const searchActuallyRan = variantAttempts.length > 0 &&
+        variantAttempts.every((a) => a.outcome === "no_records");
+      if (!searchActuallyRan) {
+        const lastError = variantAttempts.find((a) => a.outcome === "captcha_failed" || a.outcome === "search_error");
+        return {
+          source: "cersai",
+          status: "failed",
+          statusReason: lastError?.outcome === "captcha_failed" ? "captcha_unsolvable" : (lastError?.errorMessage ?? "search_failed"),
+          verification: "manual_required",
+          fetchedAt,
+          attempts: variantAttempts.length,
+          inputsTried,
+          parserVersion: PARSER_VERSION,
+          data: {
+            searchType: "borrower",
+            searchName: partyName,
+            charges: [],
+            totalCharges: 0,
+            activeCharges: 0,
+            satisfiedCharges: 0,
+            searchMetadata: {
+              nameVariantsTried: nameVariants,
+              searchAttempts: variantAttempts.length,
+            },
+          },
+          warnings: [
+            {
+              code: "search_failed",
+              message: `CERSAI search could not be completed (${lastError?.outcome ?? "unknown"}). ${lastError?.errorMessage ?? "Captcha unsolvable or portal unavailable."} Manual search at cersai.org.in required.`,
+            },
+          ],
+        };
+      }
+      // All variants returned no records — this is a valid negative
       return {
         source: "cersai",
-        status: "partial", // "partial" because CERSAI may miss private loans
-        statusReason: "no_cersai_charges_found",
-        verification: "manual_required", // name variant mismatch may have hidden charges
+        status: "success",
+        statusReason: "no_charges_found",
+        verification: "verified",
         fetchedAt,
         attempts: variantAttempts.length,
         inputsTried,
@@ -806,7 +843,7 @@ export async function cersaiFetch(
         },
         warnings: [
           {
-            code: "no_cersai_charges_found",
+            code: "no_charges_found",
             message:
               negativeResultConfidence === "low"
                 ? "No CERSAI charges found for any name variant tried. This is a low-confidence negative — some charges may be missed if the name spelling differs from CERSAI records. Verify the seller's name spelling with Bhulekh before assuming zero encumbrance."

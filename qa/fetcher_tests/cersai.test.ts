@@ -7,7 +7,7 @@
  * the post-parse shape; the captcha accuracy is tracked separately under
  * `qa/fetcher_tests/cersai_ocr/`.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { z } from "zod";
 import {
   goldenPathsFor,
@@ -119,6 +119,114 @@ describe("CERSAI — value correctness (per golden path)", () => {
       satisfiedCharges: 0,
     });
     expect(result.success).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Status mapping tests (test discriminant logic)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("CERSAI status mapping", () => {
+  beforeEach(() => {
+    // Reset module cache so each test gets a fresh cersai module that picks up
+    // the current vi.doMock state for "playwright" and "tesseract.js".
+    vi.resetModules();
+  });
+
+  it("captcha solved + 0 records → status='success' with data.charges=[]", async () => {
+    vi.doMock("playwright", () => {
+      // Returns isVisible: true for form inputs, false for captcha images
+      const isVisibleFor = (selector: string) => /captcha/i.test(selector) ? false : true;
+      return {
+        chromium: {
+          launch: vi.fn().mockResolvedValue({
+            newPage: vi.fn().mockResolvedValue({
+              goto: vi.fn().mockResolvedValue(undefined),
+              waitForTimeout: vi.fn().mockResolvedValue(undefined),
+              locator: vi.fn().mockImplementation((selector: string) => ({
+                first: vi.fn().mockImplementation(function (this: any) { return this; }),
+                isVisible: vi.fn().mockImplementation(() => Promise.resolve(isVisibleFor(selector))),
+                click: vi.fn().mockResolvedValue(undefined),
+                fill: vi.fn().mockResolvedValue(undefined),
+                press: vi.fn().mockResolvedValue(undefined),
+                selectOption: vi.fn().mockResolvedValue(undefined),
+                getAttribute: vi.fn().mockResolvedValue(""),
+              })),
+              evaluate: vi.fn().mockResolvedValue("No records found for the search criteria."),
+              click: vi.fn().mockResolvedValue(undefined),
+              fill: vi.fn().mockResolvedValue(undefined),
+              press: vi.fn().mockResolvedValue(undefined),
+              close: vi.fn().mockResolvedValue(undefined),
+              content: vi.fn().mockResolvedValue(""),
+              setExtraHTTPHeaders: vi.fn().mockResolvedValue(undefined),
+            }),
+            isConnected: vi.fn().mockReturnValue(true),
+            close: vi.fn().mockResolvedValue(undefined),
+          }),
+        },
+      };
+    });
+
+    const { cersaiFetch } = await import("../../packages/fetchers/cersai/src/index.js");
+    const result = await cersaiFetch({ partyName: "Bikash Chandra Mohapatra" });
+
+    expect(result.status).toBe("success");
+    expect(result.statusReason).toBe("no_charges_found");
+    expect(result.verification).toBe("verified");
+    expect(result.data?.charges).toEqual([]);
+    expect(result.data?.totalCharges).toBe(0);
+  });
+
+  it("captcha unsolvable → status='failed' with verification='manual_required'", async () => {
+    vi.doMock("playwright", () => ({
+      chromium: {
+        launch: vi.fn().mockResolvedValue({
+          newPage: vi.fn().mockResolvedValue({
+            goto: vi.fn().mockResolvedValue(undefined),
+            waitForTimeout: vi.fn().mockResolvedValue(undefined),
+            locator: vi.fn().mockReturnValue({
+              first: vi.fn().mockReturnValue({
+                isVisible: vi.fn().mockResolvedValue(true),
+                click: vi.fn().mockResolvedValue(undefined),
+                fill: vi.fn().mockResolvedValue(undefined),
+                press: vi.fn().mockResolvedValue(undefined),
+                selectOption: vi.fn().mockResolvedValue(undefined),
+                getAttribute: vi.fn().mockResolvedValue(""),
+              }),
+              isVisible: vi.fn().mockResolvedValue(true),
+              click: vi.fn().mockResolvedValue(undefined),
+              fill: vi.fn().mockResolvedValue(undefined),
+              press: vi.fn().mockResolvedValue(undefined),
+              selectOption: vi.fn().mockResolvedValue(undefined),
+              getAttribute: vi.fn().mockResolvedValue(""),
+            }),
+            evaluate: vi.fn().mockResolvedValue("Invalid captcha! Please enter correct captcha."),
+            click: vi.fn().mockResolvedValue(undefined),
+            fill: vi.fn().mockResolvedValue(undefined),
+            press: vi.fn().mockResolvedValue(undefined),
+            close: vi.fn().mockResolvedValue(undefined),
+            content: vi.fn().mockResolvedValue(""),
+            setExtraHTTPHeaders: vi.fn().mockResolvedValue(undefined),
+          }),
+          isConnected: vi.fn().mockReturnValue(true),
+          close: vi.fn().mockResolvedValue(undefined),
+        }),
+      },
+    }));
+
+    // Mock tesseract.js so the OCR solver doesn't blow up
+    vi.doMock("tesseract.js", () => ({
+      createWorker: vi.fn().mockResolvedValue({
+        recognize: vi.fn().mockResolvedValue({ data: { text: "ABCDE", confidence: 80 } }),
+        terminate: vi.fn().mockResolvedValue(undefined),
+      }),
+    }));
+
+    const { cersaiFetch } = await import("../../packages/fetchers/cersai/src/index.js");
+    const result = await cersaiFetch({ partyName: "Bikash Chandra Mohapatra" });
+
+    expect(result.status).toBe("failed");
+    expect(result.verification).toBe("manual_required");
   });
 });
 

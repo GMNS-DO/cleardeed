@@ -60,15 +60,19 @@ interface BdaZoneJsonRow {
   sourceDate?: string;
 }
 
-type BdaZoneStatus = "success" | "no_match";
-type BdaZoneStatusReason = "seed_data_found" | "json_data_loaded" | "no_data_match";
+type BdaZoneStatus = "success" | "no_match" | "out_of_scope";
+type BdaZoneStatusReason =
+  | "seed_data_found"
+  | "json_data_loaded"
+  | "no_data_match"
+  | "outside_bda_planning_area";
 type BdaZoneWarningCode = "seed_data_limitation" | "json_data_limitation";
 
 interface BdaZoneResult {
   source: "bda-zoning";
   status: BdaZoneStatus;
   statusReason: BdaZoneStatusReason;
-  verification: "verified";
+  verification: "verified" | "n/a";
   fetchedAt: string;
   attempts: 0;
   inputsTried: Array<{ label: string; input: Record<string, unknown> }>;
@@ -325,13 +329,20 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
     );
   }
 
+  // When results is empty the plot is outside BDA's planning area. BDA Master
+  // Plan zoning only covers localities within the BDA jurisdiction (mostly the
+  // Bhubaneswar Municipal Corporation area plus a few BDA-notified villages).
+  // A non-match is therefore a *neutral* outcome, not a degraded one — report
+  // it as "out_of_scope" so the buyer is told to check the local Tahsildar
+  // rather than seeing a "source failed" message.
+  const isOutOfScope = results.length === 0;
   return {
     source: "bda-zoning",
-    status: results.length > 0 ? "success" : "no_match",
-    statusReason: results.length > 0
-      ? (getDataSource() === "json" ? "json_data_loaded" : "seed_data_found")
-      : "no_data_match",
-    verification: "verified",
+    status: isOutOfScope ? "out_of_scope" : "success",
+    statusReason: isOutOfScope
+      ? "outside_bda_planning_area"
+      : (getDataSource() === "json" ? "json_data_loaded" : "seed_data_found"),
+    verification: isOutOfScope ? "n/a" : "verified",
     fetchedAt,
     attempts: 0,
     inputsTried,
