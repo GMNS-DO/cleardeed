@@ -6,6 +6,16 @@
 
 ---
 
+## RCCMS Playwright probe — currently disabled (2026-06-12)
+
+**Symptom:** `rccmsFetch` hangs indefinitely (>3 minutes) on Mendhasala/Plot 415, blocking the entire pipeline. The probe uses `chromium.launch` + `page.goto(rccms.odisha.gov.in)` and never resolves.
+
+**Workaround in place:** Pipeline skips the probe and stamps `rccms.status = "failed"` with `statusReason = "rccms_probe_skipped_sprint6_todo"` and `verification = "manual_required"`. The report includes a note that buyers should check revenue court cases manually.
+
+**Next step (Sprint 6):** Either (a) add a hard 30s timeout wrapper around the Playwright probe so it returns partial on slow networks, or (b) replace Playwright with HTTP fetch + a portal probe endpoint, or (c) cache successful probes for 24h so repeat searches don't re-hit the portal. Diagnose on the actual portal response — does it 200, 5xx, or never respond? *Parked because:* a portal reliability fix is a Sprint 6 engineering task, not a launch blocker — buyers can verify RCCMS manually.
+
+---
+
 ## Map rendering — Bhunaksha polygon not rendering in report UI (2026-05-26)
 
 **Symptom:** MapboxBoundaryMap component hangs at "Loading..." after payment success, even though `bhunakshaPolygon` is now returning valid GeoJSON (1 ring, 73 points) from the pregenerate API.

@@ -462,18 +462,16 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   }
 
   // ── Step 2d: RCCMS — revenue court case search ─────────────────────────────
-  let rccmsResult: Awaited<ReturnType<typeof rccmsFetch>> | null = null;
-  try {
-    rccmsResult = await rccmsFetch({
-      district: "Khordha",
-      tahasil: input.tehsil,
-      village: input.village,
-      khataNo: bhulekhData?.khataNo,
-      plotNo: input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo,
-    });
-  } catch (err) {
-    console.warn("[pipeline/v11] RCCMS fetch error:", err instanceof Error ? err.message : err);
-  }
+  // Sprint 6 TODO: re-enable once Playwright portal probe is reliable (currently hangs in production).
+  // Skip the slow probe and mark as manual_required; the report includes a note that buyer should check RCCMS.
+  let rccmsResult: Awaited<ReturnType<typeof rccmsFetch>> | null = {
+    source: "rccms",
+    status: "failed",
+    statusReason: "rccms_probe_skipped_sprint6_todo",
+    verification: "manual_required",
+    fetchedAt: new Date().toISOString(),
+    error: "RCCMS portal probe is temporarily disabled; please verify revenue court cases manually at rccms.odisha.gov.in",
+  } as Awaited<ReturnType<typeof rccmsFetch>>;
 
   // ── Step 2e: Circle Rate (BMV) — floor band for Section 7 ──────────────────
   // Sprint 4: feeds "What is it worth" floor/directional/ceiling layout.
