@@ -1298,4 +1298,170 @@ describe("A10 ConsumerReportWriter", () => {
       expect(html).toContain("No construction");
     });
   });
+
+  // Sprint 5 — "Verify yourself" source links appear in each section whose
+  // underlying data carries a real source URL. The links use the
+  // `.verify-link` class (small, subdued) and target an actual href.
+  describe("Sprint 5 — verify-yourself source links per section", () => {
+    const sliceBetween = (html: string, marker: string, nextMarker?: string): string => {
+      const start = html.indexOf(marker);
+      if (start === -1) return "";
+      const end = nextMarker ? html.indexOf(nextMarker, start) : -1;
+      return end === -1 ? html.slice(start) : html.slice(start, end);
+    };
+
+    it("Section 1 (The Plot) renders a verify-yourself link to Bhunaksha and Bhulekh", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        sourceStatus: {
+          bhunaksha: "success",
+          bhulekh: "success",
+          ecourts: "success",
+          rccms: "success",
+        },
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      // Slice between Section 1 and Section 2 to scope the assertion.
+      const section1 = sliceBetween(html, 'id="section-plot"', 'id="section-owner"');
+      expect(section1).toContain("Verify yourself on Bhunaksha");
+      expect(section1).toContain("Verify yourself on Bhulekh");
+      expect(section1).toContain("mapserver.odisha4kgeo.in");
+      expect(section1).toContain("bhulekh.ori.nic.in");
+      // href and class appear in either order in the rendered HTML — match both.
+      const linkMatcher = (href: string) =>
+        new RegExp(`<a [^>]*(?:class="verify-link"[^>]*href="${href}"|href="${href}"[^>]*class="verify-link")`);
+      expect(section1).toMatch(linkMatcher("https:\\/\\/mapserver\\.odisha4kgeo\\.in[^\"]*"));
+      expect(section1).toMatch(linkMatcher("https:\\/\\/bhulekh\\.ori\\.nic\\.in[^\"]*"));
+    });
+
+    it("Section 2 (The Owner) renders a verify-yourself link to Bhulekh when bhulekh is usable", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        sourceStatus: { bhunaksha: "success", bhulekh: "success", ecourts: "success", rccms: "success" },
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      const section2 = sliceBetween(html, 'id="section-owner"', 'id="section-land"');
+      expect(section2).toContain("Verify yourself on Bhulekh");
+      const linkMatcher = (href: string) =>
+        new RegExp(`<a [^>]*(?:class="verify-link"[^>]*href="${href}"|href="${href}"[^>]*class="verify-link")`);
+      expect(section2).toMatch(linkMatcher("https:\\/\\/bhulekh\\.ori\\.nic\\.in[^\"]*"));
+    });
+
+    it("Section 3 (Land Classification) renders a verify-yourself link to Bhulekh", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        sourceStatus: { bhunaksha: "success", bhulekh: "success", ecourts: "success", rccms: "success" },
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      // Adjacent plots section may not render in every fixture — pick a
+      // marker that always follows Section 3.
+      const section3 = sliceBetween(html, 'id="section-land"', 'id="section-encumbrance"');
+      expect(section3).toContain("Verify yourself on Bhulekh");
+      const linkMatcher = (href: string) =>
+        new RegExp(`<a [^>]*(?:class="verify-link"[^>]*href="${href}"|href="${href}"[^>]*class="verify-link")`);
+      expect(section3).toMatch(linkMatcher("https:\\/\\/bhulekh\\.ori\\.nic\\.in[^\"]*"));
+    });
+
+    it("Section 4 (Court Cases & Encumbrances) renders verify-yourself links to eCourts, RCCMS, and IGR", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        sourceStatus: { bhunaksha: "success", bhulekh: "success", ecourts: "success", rccms: "success" },
+        courtCases: {
+          total: 0,
+          cases: [],
+          sources: { ecourts: "success", rccms: "success" },
+        },
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      const section4 = sliceBetween(html, 'id="section-encumbrance"', 'id="section-regulatory"');
+      expect(section4).toContain("Verify yourself on eCourts");
+      expect(section4).toContain("Verify yourself on RCCMS");
+      expect(section4).toContain("Verify yourself on IGR Odisha");
+      const linkMatcher = (href: string) =>
+        new RegExp(`<a [^>]*(?:class="verify-link"[^>]*href="${href}"|href="${href}"[^>]*class="verify-link")`);
+      expect(section4).toMatch(linkMatcher("https:\\/\\/services\\.ecourts\\.gov\\.in[^\"]*"));
+      expect(section4).toMatch(linkMatcher("https:\\/\\/rccms\\.odisha\\.gov\\.in[^\"]*"));
+      expect(section4).toMatch(linkMatcher("https:\\/\\/igrodisha\\.gov\\.in[^\"]*"));
+    });
+
+    it("Section 4 does not render eCourts or RCCMS verify-yourself links when those sources did not run", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        sourceStatus: { bhunaksha: "success", bhulekh: "success", ecourts: "not_run", rccms: "not_run" },
+        courtCases: {
+          total: 0,
+          cases: [],
+          sources: { ecourts: "not_run", rccms: "not_run" },
+        },
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      const section4 = sliceBetween(html, 'id="section-encumbrance"', 'id="section-regulatory"');
+      // eCourts and RCCMS should NOT appear (no successful run → no link).
+      expect(section4).not.toContain("Verify yourself on eCourts");
+      expect(section4).not.toContain("Verify yourself on RCCMS");
+      // IGR EC link is still wired (it comes from registryLinks, not the
+      // source status).
+      expect(section4).toContain("Verify yourself on IGR Odisha");
+    });
+
+    it("Section 7 (Market Benchmark) keeps the existing IGR verify-yourself link", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        sourceStatus: { bhunaksha: "success", bhulekh: "success", ecourts: "success", rccms: "success" },
+        circleRateData: {
+          source: "circle-rate",
+          status: "success",
+          data: [
+            {
+              mouza: "Mendhasala",
+              tehsil: "Bhubaneswar",
+              kisam: "Residential",
+              ratePerSqft: 1800,
+              rateType: "peri-urban",
+              sourceUrl: "https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+              lastUpdated: "2024-06-01",
+            },
+          ],
+        },
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      const section7 = sliceBetween(html, 'id="section-benchmark"', 'id="section-action"');
+      expect(section7).toContain("View source at IGR Odisha");
+      expect(section7).toContain("regis.odisha.gov.in");
+    });
+
+    it("Adjacent Plots section renders a verify-yourself link to Bhunaksha GeoServer", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+        adjacentPlots: {
+          adjacentPlots: [
+            { plotNo: "414", village: "Mendhasala", featureId: "f-1", geometryHash: "h-1", areaSqKm: 0.001 },
+          ],
+          totalFound: 1,
+          filteredFromTarget: 0,
+          status: "success",
+        },
+      };
+      const { html } = generateConsumerReport(input as any);
+
+      const section = sliceBetween(html, 'id="section-adjacent-plots"', 'id="section-encumbrance"');
+      expect(section).toContain("Verify yourself on Bhunaksha GeoServer");
+      const linkMatcher = (href: string) =>
+        new RegExp(`<a [^>]*(?:class="verify-link"[^>]*href="${href}"|href="${href}"[^>]*class="verify-link")`);
+      expect(section).toMatch(linkMatcher("https:\\/\\/mapserver\\.odisha4kgeo\\.in[^\"]*"));
+    });
+  });
 });

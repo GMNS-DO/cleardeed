@@ -516,6 +516,10 @@ ${buildProvenanceStrip({
       <span>Revenue map source: Bhunaksha (${escapeHtml(bhunakshaSourceStatus)}) — GeoServer WFS (mapserver.odisha4kgeo.in)</span>
       <span>Land-record source: Bhulekh RoR (${escapeHtml(bhulekhSourceStatus)}) — bhulekh.ori.nic.in</span>
     </div>
+    <div class="verify-links">
+      ${bhunakshaUsable ? buildVerifyLink("https://mapserver.odisha4kgeo.in/geoserver/ows", "Bhunaksha", "Open the Odisha revenue map GeoServer WFS") : ""}
+      ${bhulekhUsable ? buildVerifyLink("https://bhulekh.ori.nic.in/", "Bhulekh", "Open the Bhulekh RoR portal") : ""}
+    </div>
     ${rorCompletenessPanel}
     ${rorPlotTablePanel}
   </div>
@@ -563,6 +567,9 @@ ${buildProvenanceStrip({
     </details>
     <div class="source-line">
       <span>Source: Bhulekh RoR (bhulekh.ori.nic.in) &mdash; last published: ${escapeHtml(revenueRecords?.lastUpdated ?? '—')}</span>
+    </div>
+    <div class="verify-links">
+      ${bhulekhUsable ? buildVerifyLink("https://bhulekh.ori.nic.in/", "Bhulekh", "Open the Bhulekh RoR portal") : ""}
     </div>
   </div>
 </section>
@@ -628,6 +635,9 @@ ${buildProvenanceStrip({
     <div class="source-line">
       <span>Land-class source: Bhulekh RoR (${escapeHtml(landClassSourceStatus)}) — per-plot land class fields in Khatiyan #${safeKhataNo}</span>
     </div>
+    <div class="verify-links">
+      ${bhulekhUsable ? buildVerifyLink("https://bhulekh.ori.nic.in/", "Bhulekh", "Open the Bhulekh RoR portal") : ""}
+    </div>
   </div>
 </section>
 
@@ -660,6 +670,11 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
     ${courtSection} ${rorBackPagePanel} ${mutationReferencePanel} ${ecSection}
     <div class="source-line">
       <span>Court cases: services.ecourts.gov.in, rccms.odisha.gov.in &mdash; Encumbrance Certificate: igrodisha.gov.in</span>
+    </div>
+    <div class="verify-links">
+      ${courtSourceStatuses.ecourts === "success" ? buildVerifyLink("https://services.ecourts.gov.in/", "eCourts", "Search for court cases at the eCourts portal") : ""}
+      ${courtSourceStatuses.rccms === "success" ? buildVerifyLink("https://rccms.odisha.gov.in/", "RCCMS", "Search for revenue cases at RCCMS Odisha") : ""}
+      ${buildVerifyLink(safeRegUrl, "IGR Odisha", "Obtain Encumbrance Certificate at IGR Odisha")}
     </div>
   </div>
 </section>
@@ -2914,6 +2929,9 @@ function buildAdjacentPlotsPanel(adjacentData: AdjacentPlotsData | null | undefi
     <div class="source-line">
       <span>Neighbour data: ORSAC GeoServer WFS (mapserver.odisha4kgeo.in) — revenue plot polygons, no authentication required</span>
     </div>
+    <div class="verify-links">
+      ${buildVerifyLink("https://mapserver.odisha4kgeo.in/geoserver/ows", "Bhunaksha GeoServer", "Open the Odisha revenue map GeoServer WFS")}
+    </div>
   </div>
 </section>`;
 }
@@ -3145,6 +3163,22 @@ function isRegulatoryScreeningVerified(regulatoryScreener: RegulatoryScreenerRes
     source.includes("bhunaksha geoserver");
 
   return regulatoryScreener.confidence >= 0.8 && !looksPlaceholder;
+}
+
+// ─── Verify-yourself source links (Sprint 5) ──────────────────────────────────
+//
+// Inline "Verify yourself → <source label>" anchor for each fact block whose
+// underlying data carries a real source URL. The link is small and subdued so
+// it does not dominate the section — this is a verification affordance, not a
+// CTA. The function returns an empty string when the URL is missing so the
+// caller can drop it in unconditionally.
+
+function buildVerifyLink(url: unknown, label: string, title?: string): string {
+  const href = String(url ?? "").trim();
+  if (!href) return "";
+  const safeLabel = escapeHtml(label);
+  const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+  return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener" class="verify-link"${titleAttr}>Verify yourself on ${safeLabel} &rarr;</a>`;
 }
 
 // ─── Error fallback ────────────────────────────────────────────────────────────
@@ -4181,6 +4215,25 @@ body {
 }
 .source-line a { color: var(--blue-700); }
 
+/* Verify-yourself inline link (Sprint 5): a small, subdued verification
+   affordance at the bottom of each section's fact blocks. Not a CTA. */
+.verify-links {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11px;
+}
+.verify-links:empty { display: none; }
+.verify-link {
+  color: var(--gray-600);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px dotted var(--gray-200);
+  padding-bottom: 1px;
+}
+.verify-link:hover { color: var(--blue-700); border-bottom-color: var(--blue-200); }
+
 /* Demo banner */
 .demo-banner {
   background: var(--amber-200);
@@ -4461,6 +4514,17 @@ body {
     break-inside: avoid;
   }
   .source-line a { color: #1d4ed8 !important; }
+
+  /* Verify-links: render all URLs in print so buyer can copy them. */
+  .verify-links { display: block !important; margin-top: 8pt; }
+  .verify-link {
+    font-size: 10pt !important;
+    color: #1d4ed8 !important;
+    text-decoration: none !important;
+    border: none !important;
+    display: inline-block;
+    margin-right: 14pt;
+  }
 
   /* Disclaimer / action list: keep together. */
   .disclaimer-box {
