@@ -16,6 +16,28 @@ export interface PlotIdentifier {
   khataNo?: string;
 }
 
+export interface EncumbranceEntry {
+  docType?: string;
+  docNo?: string;
+  regDate?: string;
+  party1?: string;
+  party2?: string;
+  propertyDesc?: string;
+  consideration?: string;
+  marketValue?: string;
+}
+
+export interface CERSAICharge {
+  chargeType?: string;
+  borrowerName?: string;
+  propertyDesc?: string;
+  securedCreditor?: string;
+  chargeCreationDate?: string;
+  chargeAmount?: string;
+  chargeStatus?: "Active" | "Satisfied" | "Unknown";
+  caseRef?: string;
+}
+
 export interface EncumbranceResult {
   status: "clear" | "encumbered" | "manual_required" | "error";
   encumbrances?: Array<{
@@ -26,6 +48,10 @@ export interface EncumbranceResult {
     registrationNo?: string;
     source?: string;
   }>;
+  /** IGR EC entries from the IGR Odisha EC fetcher — passthrough to the report. */
+  igrEcEntries?: EncumbranceEntry[];
+  /** CERSAI active/satisfied charges from the CERSAI fetcher — passthrough to the report. */
+  cersaiCharges?: CERSAICharge[];
   clearPeriod?: { from?: string; to?: string };
   instructions: string | null;
   confidence: number;

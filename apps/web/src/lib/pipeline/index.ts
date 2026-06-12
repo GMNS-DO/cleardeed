@@ -587,6 +587,9 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       status: (igrEcResult?.status === "success" && cersaiResult?.status === "success") ? "clear" : "manual_required",
       instructions,
       encumbrances: [],
+      // Pass through IGR EC and CERSAI entries for the financial exposure section
+      igrEcEntries: igrEcResult?.data?.entries ?? [],
+      cersaiCharges: cersaiResult?.data?.charges ?? [],
       confidence: (igrEcResult?.status === "success" ? 0.4 : 0) + (cersaiResult?.status === "success" ? 0.4 : 0),
       confidenceBasis: [
         igrEcResult?.status ? `IGR EC: ${igrEcResult.status}` : null,

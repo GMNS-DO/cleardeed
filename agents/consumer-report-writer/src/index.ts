@@ -472,6 +472,9 @@ ${buildFinancialExposureSummary({
     safeDistrict,
     backPage: revenueRecords?.backPage ?? null,
     dues: revenueRecords?.dues ?? null,
+    // KI-004: surface IGR EC + CERSAI entries from the encumbrance reasoner
+    igrEcEntries: (encumbranceReasoner as any)?.igrEcEntries ?? [],
+    cersaiCharges: (encumbranceReasoner as any)?.cersaiCharges ?? [],
   })}
 
 ${buildSourceAuditPanel(sourceDetails)}
