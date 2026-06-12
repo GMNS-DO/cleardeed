@@ -3,16 +3,34 @@
  *
  * Point-in-polygon lookup against BDA Master Plan zones.
  * Integrates with land classifier to show "what you can build here."
+ *
+ * Loads per-village zone data from data/bda_zones.json (produced by
+ * scripts/probe/bluis-scraper.ts). Falls back to a 10-row seed (Patia,
+ * Jaydev Vihar, Khandagiri, etc.) if the JSON is missing.
  */
 
-import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-const PARSER_VERSION = "bda-zoning-v1";
+declare const __dirname: string; // Provided by vitest/Node CommonJS runtime
+
+const BDA_ZONES_JSON_PATH = join(__dirname, "../data/bda_zones.json");
+const BDA_ZONES_DATA_URL = "https://bluis.in/";
+const PARSER_VERSION = "bda-zoning-v2";
 
 // --- Type definitions for BDA zones ---
 
+export type ZoneId =
+  | "residential"
+  | "commercial"
+  | "industrial"
+  | "green_belt"
+  | "special"
+  | "mixed_use"
+  | "institutional";
+
 interface Zone {
-  id: string;
+  id: ZoneId;
   name: string;
   description: string;
   permittedUses: string[];
@@ -23,18 +41,33 @@ interface Zone {
 interface BdaZoneRow {
   tehsil: string;
   village: string;
-  locality: string;
+  locality?: string;
   zone: Zone;
-  centroid: {
+  centroid?: {
     latitude: number;
     longitude: number;
   };
 }
 
+/** Shape as stored in bda_zones.json (zone is a string id, not a Zone object). */
+interface BdaZoneJsonRow {
+  village: string;
+  tehsil: string;
+  locality?: string;
+  zone: ZoneId;
+  centroid?: { latitude: number; longitude: number };
+  sourceUrl?: string;
+  sourceDate?: string;
+}
+
+type BdaZoneStatus = "success" | "no_match";
+type BdaZoneStatusReason = "seed_data_found" | "json_data_loaded" | "no_data_match";
+type BdaZoneWarningCode = "seed_data_limitation" | "json_data_limitation";
+
 interface BdaZoneResult {
   source: "bda-zoning";
-  status: "success";
-  statusReason: "seed_data_found";
+  status: BdaZoneStatus;
+  statusReason: BdaZoneStatusReason;
   verification: "verified";
   fetchedAt: string;
   attempts: 0;
@@ -42,7 +75,7 @@ interface BdaZoneResult {
   parserVersion: string;
   data: BdaZoneRow[];
   warnings: Array<{
-    code: "seed_data_limitation";
+    code: BdaZoneWarningCode;
     message: string;
   }>;
 }
@@ -113,6 +146,32 @@ const BDA_ZONES: Zone[] = [
     permittedUses: ["Mixed use as per BDA regulations", "As approved by BDA"],
     restrictions: ["Development requires BDA approval", "Specific restrictions apply"],
     zoneCode: "S",
+  },
+  {
+    id: "mixed_use",
+    name: "Mixed Use",
+    description: "Areas allowing residential, commercial, and institutional uses",
+    permittedUses: [
+      "Residential apartments",
+      "Ground-floor commercial",
+      "Offices",
+      "Convenience retail",
+    ],
+    restrictions: ["FAR governed by BDA master plan", "Height restrictions apply"],
+    zoneCode: "M",
+  },
+  {
+    id: "institutional",
+    name: "Institutional",
+    description: "Areas reserved for government, educational, and public facilities",
+    permittedUses: [
+      "Schools and universities",
+      "Hospitals",
+      "Government offices",
+      "Religious institutions",
+    ],
+    restrictions: ["No private commercial use", "Sale to private parties generally not permitted"],
+    zoneCode: "I2",
   },
 ];
 
@@ -228,7 +287,7 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
       return {
         source: "bda-zoning",
         status: "success",
-        statusReason: "seed_data_found",
+        statusReason: getDataSource() === "json" ? "json_data_loaded" : "seed_data_found",
         verification: "verified",
         fetchedAt,
         attempts: 0,
@@ -237,8 +296,10 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
         data: [closest],
         warnings: [
           {
-            code: "seed_data_limitation",
-            message: "BDA zoning data is seeded from official BDA Master Plan for Khordha district only. For exact zoning, verify at BDA office.",
+            code: getDataSource() === "json" ? "json_data_limitation" : "seed_data_limitation",
+            message: getDataSource() === "json"
+              ? `BDA zoning loaded from bda_zones.json. For exact verification, consult ${BDA_ZONES_DATA_URL}`
+              : "BDA zoning data is from inline seed (10 localities). For full coverage of 50+ villages, run: node scripts/probe/bluis-scraper.ts --scrape. Verify exact zoning at BDA office.",
           },
         ],
       };
@@ -246,15 +307,16 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
   }
 
   // If village/locality is provided, filter to that area
-  let results = BDA_SEED_DATA;
+  let results = getZones();
   if (input.village) {
     results = results.filter((row) =>
       row.village.toLowerCase().includes(input.village!.toLowerCase())
     );
   }
   if (input.locality) {
-    results = results.filter((row) =>
-      row.locality.toLowerCase().includes(input.locality!.toLowerCase())
+    const localityLower = input.locality!.toLowerCase();
+    results = results.filter(
+      (row) => row.locality?.toLowerCase().includes(localityLower) ?? false
     );
   }
   if (input.tehsil) {
@@ -266,7 +328,9 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
   return {
     source: "bda-zoning",
     status: results.length > 0 ? "success" : "no_match",
-    statusReason: results.length > 0 ? "seed_data_found" : "seed_data_not_found",
+    statusReason: results.length > 0
+      ? (getDataSource() === "json" ? "json_data_loaded" : "seed_data_found")
+      : "no_data_match",
     verification: "verified",
     fetchedAt,
     attempts: 0,
@@ -275,8 +339,10 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
     data: results,
     warnings: [
       {
-        code: "seed_data_limitation",
-        message: "BDA zoning data is seeded from official BDA Master Plan for Khordha district only. For exact zoning, verify at BDA office.",
+        code: getDataSource() === "json" ? "json_data_limitation" : "seed_data_limitation",
+        message: getDataSource() === "json"
+          ? `BDA zoning loaded from bda_zones.json. For exact verification, consult ${BDA_ZONES_DATA_URL}`
+          : "BDA zoning data is from inline seed (10 localities). For full coverage of 50+ villages, run: node scripts/probe/bluis-scraper.ts --scrape. Verify exact zoning at BDA office.",
       },
     ],
   };
@@ -289,12 +355,14 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
  * This is a placeholder for real point-in-polygon logic.
  */
 function findNearestCentroid(latitude: number, longitude: number): BdaZoneRow | null {
-  if (BDA_SEED_DATA.length === 0) return null;
+  const zones = getZones();
+  if (zones.length === 0) return null;
 
   let minDistance = Infinity;
   let nearest: BdaZoneRow | null = null;
 
-  for (const row of BDA_SEED_DATA) {
+  for (const row of zones) {
+    if (!row.centroid) continue;
     const distance = calculateDistance(
       latitude,
       longitude,
@@ -360,5 +428,117 @@ export function permitsIndustrial(zone: Zone): boolean {
 // --- Health check ---
 
 export async function healthCheck(): Promise<boolean> {
-  return BDA_SEED_DATA.length > 0;
+  return getZones().length > 0;
+}
+
+// --- JSON loader + helpers (parallel to circle-rate pattern) ---
+
+let cachedZones: BdaZoneRow[] | null = null;
+
+function resolveZone(zoneId: string): Zone | null {
+  return BDA_ZONES.find((z) => z.id === zoneId) ?? null;
+}
+
+function getZones(): BdaZoneRow[] {
+  if (cachedZones !== null) return cachedZones;
+  if (existsSync(BDA_ZONES_JSON_PATH)) {
+    try {
+      const jsonContent = readFileSync(BDA_ZONES_JSON_PATH, "utf-8");
+      const parsed = JSON.parse(jsonContent) as BdaZoneJsonRow[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Normalize: resolve string zone id to full Zone object
+        const normalized: BdaZoneRow[] = [];
+        for (const row of parsed) {
+          const zone = resolveZone(row.zone);
+          if (!zone) {
+            console.warn(`⚠️ Skipping ${row.village}: unknown zone id "${row.zone}"`);
+            continue;
+          }
+          normalized.push({
+            village: row.village,
+            tehsil: row.tehsil,
+            locality: row.locality,
+            zone,
+            centroid: row.centroid,
+          });
+        }
+        if (normalized.length > 0) {
+          cachedZones = normalized;
+          return normalized;
+        }
+      }
+    } catch (err) {
+      console.error("⚠️ Failed to load BDA zones JSON, using seed:", (err as Error).message);
+    }
+  }
+  cachedZones = BDA_SEED_DATA;
+  return BDA_SEED_DATA;
+}
+
+/** Reset cache (used by tests). */
+export function _resetCache(): void {
+  cachedZones = null;
+}
+
+/** Get the data source for reporting. */
+export function getDataSource(): "json" | "inline_seed" {
+  return existsSync(BDA_ZONES_JSON_PATH) && cachedZones !== BDA_SEED_DATA
+    ? "json"
+    : "inline_seed";
+}
+
+/**
+ * Lookup zone for a specific village + tehsil pair.
+ * Returns the best match from JSON data or seed fallback.
+ */
+export function getZoneForVillage(
+  village: string,
+  tehsil: string
+): Zone | null {
+  const zones = getZones();
+  const villageLower = village.toLowerCase();
+  const tehsilLower = tehsil.toLowerCase();
+
+  // Exact village + tehsil match
+  const exact = zones.find(
+    (z) =>
+      z.village.toLowerCase() === villageLower &&
+      z.tehsil.toLowerCase() === tehsilLower
+  );
+  if (exact) return exact.zone;
+
+  // Village-only match
+  const villageMatch = zones.find(
+    (z) => z.village.toLowerCase() === villageLower
+  );
+  if (villageMatch) return villageMatch.zone;
+
+  // Tehsil-level fallback (any village)
+  const tehsilMatch = zones.find(
+    (z) => z.tehsil.toLowerCase() === tehsilLower
+  );
+  return tehsilMatch?.zone ?? null;
+}
+
+/**
+ * Lookup zone for a GPS coordinate using nearest-centroid fallback.
+ * Returns the closest zone from any known locality or null if no data.
+ */
+export function getZoneForLocation(lat: number, lng: number): Zone | null {
+  const zones = getZones();
+  if (zones.length === 0) return null;
+
+  let nearest: BdaZoneRow | null = null;
+  let minDist = Infinity;
+
+  for (const row of zones) {
+    if (!row.centroid) continue;
+    const dist = calculateDistance(lat, lng, row.centroid.latitude, row.centroid.longitude);
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = row;
+    }
+  }
+
+  return nearest?.zone ?? null;
 }
