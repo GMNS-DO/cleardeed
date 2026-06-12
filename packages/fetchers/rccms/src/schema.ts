@@ -10,13 +10,12 @@ const SourceResultSchemaBase = z.object({
 });
 
 export const RCCMSCaseSchema = z.object({
-  caseId: z.string(),
+  caseNo: z.string(),
+  plotNo: z.string().optional(),
   caseType: z.string(),
-  petitioner: z.string(),
-  respondent: z.string(),
+  filingDate: z.string().optional(),
   status: z.string(),
-  filingDate: z.string(),
-  nextHearingDate: z.string().optional(),
+  court: z.string(),
 });
 
 export const RCCMSResultDataSchema = z.object({

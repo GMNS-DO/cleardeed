@@ -24,12 +24,27 @@ const SEARCH_PATHS = [
 
 interface RCCMSCase {
   caseNo: string;
+  plotNo?: string;
   caseType: string;
-  filingDate: string;
-  currentStatus: string;
-  subject: string;
-  petitioner: string;
-  respondent: string;
+  filingDate?: string;
+  status: string;
+  court: string;
+  /**
+   * Local extension — not part of the shared @cleardeed/schema contract.
+   * Preserves the subject line (e.g. mutation order, ceiling surplus) the
+   * RCCMS portal renders in the table, since it is useful context for the
+   * reasoner and for future buyer report display. Stripped before being
+   * mapped to the V2 contract envelope.
+   */
+  subject?: string;
+  /**
+   * Local extension — not part of the shared @cleardeed/schema contract.
+   * Petitioner/respondent names that the portal does render today. Kept
+   * here so we don't lose data we already have; the V2 contract omits
+   * party names by design (KI-002). Add to the shared schema in a
+   * follow-up if the reasoner actually needs them.
+   */
+  parties?: Array<{ name: string; role: "petitioner" | "respondent" }>;
 }
 
 interface RCCMSInput {
@@ -235,7 +250,7 @@ export async function fetch(input: RCCMSInput): Promise<RCCMSResult> {
     }
 
     const resultHtml = await page.content();
-    const { cases, total } = parseRccmsTable(resultHtml);
+    const { cases, total } = parseRccmsTable(resultHtml, plotNo);
 
     if (total > 0) {
       await browser.close();
@@ -327,7 +342,7 @@ export async function fetch(input: RCCMSInput): Promise<RCCMSResult> {
 
 // ── Table parser ─────────────────────────────────────────────────────────────────
 
-export function parseRccmsTable(html: string): { cases: RCCMSCase[]; total: number } {
+export function parseRccmsTable(html: string, plotNo?: string): { cases: RCCMSCase[]; total: number } {
   const rows = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) ?? [];
   const cases: RCCMSCase[] = [];
   const dataRows = rows.slice(1); // skip header
@@ -340,21 +355,28 @@ export function parseRccmsTable(html: string): { cases: RCCMSCase[]; total: numb
 
     const caseNo = extract(cells[0] ?? "");
     const caseType = extract(cells[1] ?? "");
-    const filingDate = extract(cells[2] ?? "");
-    const currentStatus = extract(cells[3] ?? "");
+    const rawFilingDate = extract(cells[2] ?? "");
+    const status = extract(cells[3] ?? "");
     const subject = extract(cells[4] ?? "");
+    const petitioner = extract(cells[5] ?? "");
+    const respondent = extract(cells[6] ?? "");
 
     // Skip empty/no-case rows
     if (!caseNo || caseNo.includes("no record") || caseNo.includes("No Cases")) continue;
 
+    const parties: Array<{ name: string; role: "petitioner" | "respondent" }> = [];
+    if (petitioner) parties.push({ name: petitioner, role: "petitioner" });
+    if (respondent) parties.push({ name: respondent, role: "respondent" });
+
     cases.push({
       caseNo,
       caseType: caseType || "Revenue Case",
-      filingDate,
-      currentStatus: currentStatus || "Unknown",
-      subject,
-      petitioner: extract(cells[5] ?? ""),
-      respondent: extract(cells[6] ?? ""),
+      filingDate: rawFilingDate || undefined,
+      status: status || "Unknown",
+      court: "RCCMS Odisha",
+      subject: subject || undefined,
+      ...(plotNo ? { plotNo } : {}),
+      ...(parties.length > 0 ? { parties } : {}),
     });
   }
 
