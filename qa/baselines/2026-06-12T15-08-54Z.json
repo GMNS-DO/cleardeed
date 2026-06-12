@@ -1,0 +1,149 @@
+{
+  "run_id": "2026-06-12T15-08-54Z",
+  "run_at": "2026-06-12T15:08:54.734Z",
+  "sample_size": 5,
+  "concurrency": 1,
+  "api_url": "http://localhost:3000",
+  "seed": null,
+  "inputs_file": "/tmp/known-good-inputs.json",
+  "duration_ms": 127748,
+  "per_plot": [
+    {
+      "tahasil": "Bhubaneswar",
+      "village": "Mendhasala",
+      "plot_no": "415",
+      "fetcher_statuses": {
+        "bda-zoning": "no_match",
+        "bhulekh": "success",
+        "cersai": "failed",
+        "circle-rate": "success",
+        "ecourts": "failed",
+        "igr-ec": "success",
+        "rccms": "failed"
+      },
+      "latency_ms": 54329,
+      "html_size": 87590
+    },
+    {
+      "tahasil": "Bhubaneswar",
+      "village": "Mendhasala",
+      "plot_no": "D/88",
+      "fetcher_statuses": {},
+      "latency_ms": 8190,
+      "html_size": 0
+    },
+    {
+      "tahasil": "Bhubaneswar",
+      "village": "Mendhasala",
+      "plot_no": "415/2",
+      "fetcher_statuses": {},
+      "latency_ms": 7001,
+      "html_size": 0
+    },
+    {
+      "tahasil": "Bhubaneswar",
+      "village": "Mendhasala",
+      "plot_no": "415A",
+      "fetcher_statuses": {},
+      "latency_ms": 7508,
+      "html_size": 0
+    },
+    {
+      "tahasil": "Bhubaneswar",
+      "village": "Mendhasala",
+      "plot_no": "88",
+      "fetcher_statuses": {
+        "bda-zoning": "no_match",
+        "bhulekh": "success",
+        "cersai": "failed",
+        "circle-rate": "success",
+        "ecourts": "failed",
+        "igr-ec": "success",
+        "rccms": "failed"
+      },
+      "latency_ms": 50720,
+      "html_size": 94108
+    }
+  ],
+  "per_tehsil": {
+    "Bhubaneswar": {
+      "plots": 5,
+      "bhulekh_ok": 2,
+      "bhunaksha_ok": 0,
+      "igr_ec_ok": 2,
+      "cersai_ok": 0,
+      "ecourts_ok": 0,
+      "rccms_ok": 0,
+      "circle_rate_ok": 2,
+      "bda_zoning_ok": 0,
+      "nominatim_ok": 0
+    }
+  },
+  "per_fetcher": {
+    "bhulekh": {
+      "ok": 2,
+      "source_down": 0,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "bhunaksha": {
+      "ok": 0,
+      "source_down": 0,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "igr-ec": {
+      "ok": 2,
+      "source_down": 0,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "cersai": {
+      "ok": 0,
+      "source_down": 2,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "ecourts": {
+      "ok": 0,
+      "source_down": 2,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "rccms": {
+      "ok": 0,
+      "source_down": 2,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "circle-rate": {
+      "ok": 2,
+      "source_down": 0,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "bda-zoning": {
+      "ok": 0,
+      "source_down": 0,
+      "no_data": 2,
+      "parse_error": 0,
+      "invalid_input": 0
+    },
+    "nominatim": {
+      "ok": 0,
+      "source_down": 0,
+      "no_data": 0,
+      "parse_error": 0,
+      "invalid_input": 0
+    }
+  },
+  "p50_latency_ms": 8190,
+  "p95_latency_ms": 54329
+}
