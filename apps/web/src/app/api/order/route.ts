@@ -7,19 +7,34 @@
  * Output: { orderId, amount, currency, receipt }
  */
 import { NextRequest, NextResponse } from "next/server";
+import { assertRazorpaySafe, getRazorpayKeys } from "@/lib/razorpay-config";
 
 const RAZORPAY_AMOUNT_PAISE = 100; // ₹1
 
 export async function POST(req: NextRequest) {
-  const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  // Safety guard: refuse to call Razorpay with a live key in non-production
+  // environments, or with no key at all. The guard throws a descriptive
+  // Error; we translate that to HTTP 503.
+  let mode: "test" | "live";
+  try {
+    mode = assertRazorpaySafe();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 503 });
+  }
 
-  if (!keyId || !keySecret) {
+  const keys = getRazorpayKeys();
+
+  console.log(`[/api/order] Razorpay mode: ${mode} (NODE_ENV=${process.env.NODE_ENV})`);
+  if (!keys) {
+    // Defensive: assertRazorpaySafe would have thrown above. If we reach
+    // this line, the env changed between the two calls.
     return NextResponse.json(
-      { error: "RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not configured" },
-      { status: 500 }
+      { error: "Razorpay keys disappeared mid-request (env race condition)" },
+      { status: 503 },
     );
   }
+  const { keyId, keySecret } = keys;
 
   let body: { email?: string; plotDescription?: string };
   try {
