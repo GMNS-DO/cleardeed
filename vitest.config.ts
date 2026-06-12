@@ -35,6 +35,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@/*": path.resolve(__dirname, "./apps/web/src/*"),
+      "@/lib/db": path.resolve(__dirname, "./apps/web/src/lib/db"),
+      "@/lib/report-access": path.resolve(__dirname, "./apps/web/src/lib/report-access"),
+      "@/lib/track": path.resolve(__dirname, "./apps/web/src/lib/track"),
+      "@/lib/email": path.resolve(__dirname, "./apps/web/src/lib/email"),
+      "@/lib/payment": path.resolve(__dirname, "./apps/web/src/lib/payment"),
+      "@/lib/pipeline": path.resolve(__dirname, "./apps/web/src/lib/pipeline/index"),
       "@cleardeed/land-classifier": path.resolve(__dirname, "agents/land-classifier/index.ts"),
       "@cleardeed/fetcher-nominatim": path.resolve(__dirname, "packages/fetchers/nominatim/src/index.ts"),
       "@cleardeed/fetcher-bhunaksha": path.resolve(__dirname, "packages/fetchers/bhunaksha/src/index.ts"),

@@ -88,6 +88,20 @@ export interface DbReport {
   validation_findings: unknown[];
   error_message: string | null;
   source_summary: Record<string, unknown>;
+  expires_at: string | null;
+  revoked_at: string | null;
+}
+
+/**
+ * Pure helper: is this report past its paid validity window?
+ * - revokedAt set → expired (admin revoked)
+ * - expiresAt NULL → never expires (legacy / pre-Sprint 5 reports)
+ * - expiresAt in the past → expired
+ */
+export function isReportExpired(report: { expires_at: string | null; revoked_at: string | null }, now: Date = new Date()): boolean {
+  if (report.revoked_at) return true;
+  if (!report.expires_at) return false;
+  return new Date(report.expires_at).getTime() <= now.getTime();
 }
 
 export interface CreateReportParams {
@@ -224,6 +238,30 @@ export async function getReport(reportId: string): Promise<{ report: DbReport | 
 
   if (error) throw new Error(`get_report failed: ${error.message}`);
   return data as { report: DbReport | null; sources: unknown[] };
+}
+
+/**
+ * Bump a report's expires_at by 60 days. Used by the pay-to-refresh flow.
+ * Does NOT re-run the fetcher pipeline — just refreshes the timestamp so the
+ * cached report body stays valid.
+ *
+ * The update is best-effort; if it fails (table column missing, no row, etc.)
+ * we still want the webhook to return 200 so Razorpay doesn't retry forever.
+ */
+export async function bumpReportExpiry(reportId: string): Promise<{ expiresAt: string | null }> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("reports")
+    .update({ expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString() })
+    .eq("id", reportId)
+    .select("expires_at")
+    .single();
+
+  if (error) {
+    console.warn(`[bumpReportExpiry] ${reportId}: ${error.message}`);
+    return { expiresAt: null };
+  }
+  return { expiresAt: (data as { expires_at?: string } | null)?.expires_at ?? null };
 }
 
 /**

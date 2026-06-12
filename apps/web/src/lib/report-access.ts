@@ -65,3 +65,39 @@ export function addReportAccessTokensToHtml(html: string, reportId: string): str
     `href="/api/report/${reportId}/pdf?token=${encodedToken}"`
   );
 }
+
+/**
+ * Inject a small "Expires on: <date>" line into the report's brand header.
+ * Screen-only — the print stylesheet in the consumer-report-writer already
+ * collapses the meta block on the printed page; this line is added inside
+ * `.meta` so it inherits that behaviour.
+ *
+ * Returns the HTML unchanged if it does not look like a ClearDeed report
+ * (e.g. an error report), or if expiresAt is null/empty.
+ */
+export function injectReportExpiryIntoHtml(html: string, expiresAt: string | null | undefined): string {
+  if (!expiresAt) return html;
+  if (!html.includes("Property Due-Diligence Report")) return html;
+
+  const formatted = formatIndianDate(expiresAt);
+  if (!formatted) return html;
+
+  // The brand header has `<div>Generated: ...</div>` as the second meta item;
+  // we inject the "Expires on" line right after it. This marker is stable
+  // because the consumer-report-writer always renders it in the same order.
+  const expiresLine = `<div class="report-expires">Expires on: ${formatted}</div>`;
+  return html.replace(
+    /<div>Generated:[\s\S]*?<\/div>/,
+    (match) => `${match}\n    ${expiresLine}`
+  );
+}
+
+function formatIndianDate(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
