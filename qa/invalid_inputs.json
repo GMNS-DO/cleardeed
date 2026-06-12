@@ -1,0 +1,275 @@
+[
+  {
+    "_meta": "Khordha input-validation negative tests. The first 17 entries pre-existed and follow the fetcher-focused shape used by Sprint 1 contract tests; entries with the 'khordha_corpus' tag below are the V1 corpus-scope inputs added on 2026-06-12."
+  },
+  {
+    "fetcher": "bhulekh",
+    "description": "Empty identifier string for plot search — should map to invalid_input",
+    "input": { "searchMode": "Plot", "identifier": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "bhulekh",
+    "description": "Unknown plot number — should map to no_data after a successful HTTP round-trip",
+    "input": { "searchMode": "Plot", "identifier": "0000/NONEXISTENT" },
+    "expected_status": "no_data"
+  },
+  {
+    "fetcher": "bhunaksha",
+    "description": "GPS outside Khordha district — should map to invalid_input",
+    "input": { "lat": 13.0827, "lon": 80.2707, "layer": "khurda_bhubaneswar" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "bhunaksha",
+    "description": "WFS layer that doesn't exist — should map to source_down",
+    "input": { "lat": 20.2961, "lon": 85.8245, "layer": "nonexistent_layer" },
+    "expected_status": "source_down"
+  },
+  {
+    "fetcher": "ecourts",
+    "description": "Empty party name — should map to invalid_input",
+    "input": { "partyName": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "ecourts",
+    "description": "Unsupported district code — should map to no_data or source_down",
+    "input": { "partyName": "Test", "districtCode": "000" },
+    "expected_status": "no_data"
+  },
+  {
+    "fetcher": "igr-ec",
+    "description": "Unknown SRO — should map to invalid_input",
+    "input": { "partyName": "Test", "district": "Khordha", "sro": "NONSENSE_SRO" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "igr-ec",
+    "description": "fromYear > toYear — should map to invalid_input",
+    "input": { "partyName": "Test", "fromYear": 2030, "toYear": 2020 },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "cersai",
+    "description": "Empty party name — should map to invalid_input",
+    "input": { "partyName": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "cersai",
+    "description": "searchBy=asset but no assetDescription — should map to invalid_input",
+    "input": { "partyName": "Test", "searchBy": "asset" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "rccms",
+    "description": "Empty case search key — should map to invalid_input",
+    "input": { "caseNo": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "circle-rate",
+    "description": "Unknown mouza + tehsil combo — should map to no_data",
+    "input": { "mouza": "ZZZ_NONEXISTENT", "tehsil": "Bhubaneswar", "kisam": "Residential" },
+    "expected_status": "no_data"
+  },
+  {
+    "fetcher": "circle-rate",
+    "description": "Empty mouza — should map to invalid_input",
+    "input": { "mouza": "", "tehsil": "Bhubaneswar", "kisam": "Residential" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "bda-zoning",
+    "description": "Unknown village + tehsil combo — should map to no_data",
+    "input": { "village": "ZZZ_NONEXISTENT", "tehsil": "Bhubaneswar" },
+    "expected_status": "no_data"
+  },
+  {
+    "fetcher": "bda-zoning",
+    "description": "Empty tehsil — should map to invalid_input",
+    "input": { "village": "Patia", "tehsil": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "nominatim",
+    "description": "Empty query — should map to invalid_input",
+    "input": { "q": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "nominatim",
+    "description": "GPS outside India — should map to no_data",
+    "input": { "q": "0,0" },
+    "expected_status": "no_data"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-001",
+    "description": "Village name not in Bhulekh dropdown for any Khordha tahasil.",
+    "input": { "tahasil": "Bhubaneswar", "village": "NoSuchVillage", "searchMode": "Plot", "identifier": "1" },
+    "expected_error": "village_not_in_khordha_dropdown"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-002",
+    "description": "Plot identifier is empty string.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "" },
+    "expected_error": "identifier_empty"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-003",
+    "description": "Plot identifier is whitespace only.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "  " },
+    "expected_error": "identifier_whitespace_only"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-004",
+    "description": "Plot identifier contains characters not allowed in Bhulekh plot numbers.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "abc!@#" },
+    "expected_error": "identifier_contains_invalid_chars"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-005",
+    "description": "Plot number likely out of range for Mendhasala village.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "999999999" },
+    "expected_error": "plot_not_found_in_bhulekh"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-006",
+    "description": "Tenant search mode requires non-empty owner/tenant name.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Tenant", "identifier": "" },
+    "expected_error": "identifier_empty_for_tenant_search"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-007",
+    "description": "Khatiyan number 0 is not a valid Bhulekh khatiyan.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Khatiyan", "identifier": "0" },
+    "expected_error": "khatiyan_number_invalid"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-008",
+    "description": "Negative plot numbers are not valid.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "-1" },
+    "expected_error": "plot_number_negative"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-009",
+    "description": "Cuttack is a separate district — not supported in V1 corpus.",
+    "input": { "tahasil": "Cuttack", "village": "SomeVillage", "searchMode": "Plot", "identifier": "1" },
+    "expected_error": "tahasil_not_in_khordha_district"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-010",
+    "description": "Sangram is on the NOT FOUND list — not yet digitized in Bhulekh.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Sangram", "searchMode": "Plot", "identifier": "1" },
+    "expected_error": "village_not_digitized_in_bhulekh"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-011",
+    "description": "Tahasil must be selected.",
+    "input": { "tahasil": "", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415" },
+    "expected_error": "tahasil_empty"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-012",
+    "description": "Village must be selected from dropdown.",
+    "input": { "tahasil": "Bhubaneswar", "village": "", "searchMode": "Plot", "identifier": "415" },
+    "expected_error": "village_empty"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-013",
+    "description": "searchMode must be one of: Plot, Khatiyan, Tenant.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "InvalidMode", "identifier": "415" },
+    "expected_error": "search_mode_not_valid_enum"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-014",
+    "description": "Fraction plot number must have numeric denominator.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415/abc" },
+    "expected_error": "identifier_fraction_non_numeric"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-015",
+    "description": "Fraction denominator cannot be zero.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415/0" },
+    "expected_error": "identifier_fraction_zero_denominator"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-016",
+    "description": "Village code 41 is SHARED (Mandara in Kordha/3, Ranapur in Balianta/8).",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mandara", "searchMode": "Plot", "identifier": "41" },
+    "expected_error": "village_code_ambiguous_uses_wrong_tahasil"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-017",
+    "description": "Bhulekh plot numbers support max 2 slash-separated components.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415/415/415/415" },
+    "expected_error": "identifier_too_many_slashes"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-018",
+    "description": "Identifier contains HTML/script tags — must be sanitized.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Tenant", "identifier": "<script>alert(1)</script>" },
+    "expected_error": "identifier_xss_injection"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-019",
+    "description": "Identifier is null instead of string.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": null },
+    "expected_error": "identifier_null"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-020",
+    "description": "GPS outside valid WGS84 range.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415", "gps": { "lat": 91, "lon": 181 } },
+    "expected_error": "gps_out_of_range"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-021",
+    "description": "GPS must be numbers, not strings.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415", "gps": { "lat": "20.0", "lon": "85.0" } },
+    "expected_error": "gps_string_not_number"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-022",
+    "description": "Haripur is a village name, not a tahasil name. (Confuses village/tahasil.)",
+    "input": { "tahasil": "Haripur", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415" },
+    "expected_error": "tahasil_not_recognized"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-023",
+    "description": "V1 input form only accepts English village names.",
+    "input": { "tahasil": "Bhubaneswar", "village": "ମେଣ୍ଢାଶାଳ", "searchMode": "Plot", "identifier": "415" },
+    "expected_error": "village_odia_script_not_supported_in_v1"
+  },
+  {
+    "_tag": "khordha_corpus",
+    "id": "INV-024",
+    "description": "Owner name required for ownership matching.",
+    "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415", "claimedOwnerName": "" },
+    "expected_error": "claimed_owner_name_empty"
+  }
+]

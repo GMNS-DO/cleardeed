@@ -96,4 +96,16 @@ Three changes made in Sprint 3: (1) CERSAI's `performBasicOcr()` stub (which thr
 
 ---
 
-*Last revised: 2026-05-26. Commercial activities isolated to `COMMERCIAL_TRACK.md`. Implementation PIs 1–3 are product/engineering only.*
+*Last revised: 2026-06-12. PI-V (Validation) inserted between PI 1 and PI 2. Implementation PIs 1–3 are product/engineering only.*
+
+## D-029: Pre-pipeline input validation gate (Sprint V4, 2026-06-12).
+
+A pure input validator at `apps/web/src/lib/validation/pre-payment.ts` runs *before* the Razorpay paywall and rejects invalid (tahasil, village, plot, email) combinations with HTTP 400 + an actionable error message a buyer can act on. The gate uses the hardcoded `KHRDHA_VILLAGES` array (1,477 villages) and the 10 tahasil names — no live portal calls. Reason: a buyer who pays ₹1 and *then* learns the village doesn't exist is paying for nothing. Cheap pre-payment rejection is the only correct shape. The expensive check (plot exists in Bhulekh) still happens post-payment with auto-refund via Razorpay if the plot isn't there.
+
+## D-030: RCCMS pipeline-level skip; fetcher code intact (Sprint V1.1 hotfix + V3 honesty, 2026-06-12).
+
+`rccms.odisha.gov.in` Playwright portal probe hangs indefinitely (>3min) in the production network, blocking the entire pipeline. Fix: pipeline at `apps/web/src/lib/pipeline/index.ts` hardcodes a `failed`/`manual_required` result with `statusReason: "rccms_probe_skipped_sprint6_todo"` — does NOT call the fetcher's `fetch()`. The fetcher's real code at `packages/fetchers/rccms/src/index.ts` (Playwright + 4-path probe + table parser) remains intact for re-enablement. The report shows a "verify revenue court cases manually" note. Tracked in `BACKLOG.md` for Sprint 6/PI-V V2 fix. The schema divergence between the fetcher's interface (`packages/fetchers/rccms/src/index.ts:100`) and the Zod schema in `src/schema.ts` is logged as KI-002 in `qa/known_issues.md`.
+
+## D-031: PI-V (Validation) inserted between PI 1 and PI 2 (2026-06-12).
+
+A 4-sprint, 8-week Validation PI (`PI-V`, Sprints V1–V4) is inserted between PI 1 close (Sprint 5 done) and PI 2 multi-district launch. The validation harness built here (input taxonomy, ground-truth corpus, per-fetcher contract schemas, section-level validators, shadow runner, pre-payment gate) is reusable for Cuttack / Puri / Ganjam / Sambalpur in PI 2. Cuttack launch is gated on PI-V V4 exit criteria being met: ≥95% of valid Khordha inputs produce a report where every section either has correct data or typed degradation, and 50-plot regression suite is green in CI. Reason: launching multi-district with unvalidated Khordha scrapers multiplies the validation surface by 5. Validate once, in Khordha, then ship the playbook.

@@ -1,0 +1,266 @@
+{
+  "$schema": "./degradation_matrix.schema.md",
+  "version": "1.0",
+  "lastUpdated": "2026-06-12",
+  "description": "Typed-degradation matrix. Each cell describes what the report HTML should contain when the named fetcher is wired in the V1.1 pipeline but returns the named failure mode. The consumer-facing text is short enough to fit a banner / warning / info box. The `section_id` is where the message is expected to appear. The `degradation_tag` is the typed tag the section_validators accept as a substitute for the missing data point.",
+  "fetchers": {
+    "bhulekh": {
+      "label": "Bhulekh RoR (bhulekh.ori.nic.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-plot", "section-owner", "section-land"],
+      "source_down": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhulekh_down",
+        "consumer_message": "Bhulekh unavailable — retry in 1 hour"
+      },
+      "no_data": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhulekh_no_data",
+        "consumer_message": "Plot not found in this village"
+      },
+      "invalid_input": {
+        "section_id": "pre-payment",
+        "degradation_tag": "bhulekh_invalid_input",
+        "consumer_message": "Please check the tehsil, village, and plot number and try again"
+      },
+      "parse_error": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhulekh_parse_error",
+        "consumer_message": "Bhulekh returned malformed data — manual check required"
+      }
+    },
+    "bhunaksha": {
+      "label": "Bhunaksha GeoServer WFS (mapserver.odisha4kgeo.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-plot"],
+      "source_down": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhunaksha_down",
+        "consumer_message": "Revenue map unavailable — using GPS only for location"
+      },
+      "no_data": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhunaksha_no_data",
+        "consumer_message": "No revenue map record found for this plot in this village"
+      },
+      "invalid_input": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhunaksha_invalid_input",
+        "consumer_message": "Plot coordinates did not match any revenue map feature"
+      },
+      "parse_error": {
+        "section_id": "section-plot",
+        "degradation_tag": "bhunaksha_parse_error",
+        "consumer_message": "Revenue map returned malformed feature data — manual boundary check required"
+      }
+    },
+    "nominatim": {
+      "label": "Nominatim (openstreetmap.org)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-plot"],
+      "source_down": {
+        "section_id": "section-plot",
+        "degradation_tag": "nominatim_down",
+        "consumer_message": "Location geocoder unavailable — tahasil and district may be unverified"
+      },
+      "no_data": {
+        "section_id": "section-plot",
+        "degradation_tag": "nominatim_no_data",
+        "consumer_message": "GPS coordinates could not be resolved to a village"
+      },
+      "invalid_input": {
+        "section_id": "pre-payment",
+        "degradation_tag": "nominatim_invalid_input",
+        "consumer_message": "GPS coordinates are out of range — please re-enter the location"
+      },
+      "parse_error": {
+        "section_id": "section-plot",
+        "degradation_tag": "nominatim_parse_error",
+        "consumer_message": "Geocoder returned malformed data — manual location check required"
+      }
+    },
+    "ecourts": {
+      "label": "eCourts (services.ecourts.gov.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-encumbrance"],
+      "source_down": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "ecourts_down",
+        "consumer_message": "Court case search unavailable — verify manually on services.ecourts.gov.in"
+      },
+      "no_data": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "ecourts_no_data",
+        "consumer_message": "No court cases found for this owner in the searched court complexes"
+      },
+      "invalid_input": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "ecourts_invalid_input",
+        "consumer_message": "Owner name could not be parsed — please re-enter the full legal name"
+      },
+      "parse_error": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "ecourts_parse_error",
+        "consumer_message": "Court portal returned a malformed result — manual search required"
+      }
+    },
+    "igr-ec": {
+      "label": "IGR Odisha Encumbrance Certificate (igrodisha.gov.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-encumbrance"],
+      "source_down": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_unavailable",
+        "consumer_message": "IGR Odisha unavailable — visit the Sub-Registrar office to obtain the EC"
+      },
+      "no_data": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_no_data",
+        "consumer_message": "No encumbrance certificate entries returned for this plot in the IGR database"
+      },
+      "invalid_input": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_invalid_input",
+        "consumer_message": "Plot or owner identifier could not be used to search IGR records"
+      },
+      "parse_error": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_parse_error",
+        "consumer_message": "IGR returned malformed EC data — request a certified copy at the SRO"
+      }
+    },
+    "cersai": {
+      "label": "CERSAI Charge Search (cersai.org.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-encumbrance"],
+      "source_down": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "cersai_unavailable",
+        "consumer_message": "CERSAI mortgage registry unavailable — retry later or visit the bank"
+      },
+      "no_data": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "cersai_no_data",
+        "consumer_message": "No mortgage or charge records found against this owner in CERSAI"
+      },
+      "invalid_input": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "cersai_invalid_input",
+        "consumer_message": "Owner name could not be matched in CERSAI — please verify spelling"
+      },
+      "parse_error": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "cersai_parse_error",
+        "consumer_message": "CERSAI captcha OCR could not resolve the search — manual check required"
+      }
+    },
+    "rccms": {
+      "label": "RCCMS Odisha Revenue Court (rccms.odisha.gov.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-encumbrance"],
+      "v11_special_handling": "V1.1 hotfix (2026-06-12): RCCMS Playwright probe hangs >3min, pipeline skips and marks status='partial', verification='manual_required'. Report ships in ~60s. Buyers see the 'manual_required' note.",
+      "source_down": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "rccms_manual_required",
+        "consumer_message": "Revenue court search unavailable — verify revenue cases manually at rccms.odisha.gov.in"
+      },
+      "no_data": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "rccms_no_data",
+        "consumer_message": "No revenue court cases found for this plot in RCCMS"
+      },
+      "invalid_input": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "rccms_invalid_input",
+        "consumer_message": "Plot or party identifier could not be used to search RCCMS"
+      },
+      "parse_error": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "rccms_parse_error",
+        "consumer_message": "RCCMS portal returned a malformed result — manual search required"
+      }
+    },
+    "circle-rate": {
+      "label": "IGR Odisha Benchmark Valuation Portal (regis.odisha.gov.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-benchmark"],
+      "source_down": {
+        "section_id": "section-benchmark",
+        "degradation_tag": "circle_rate_outside_dataset",
+        "consumer_message": "Circle rate unavailable — verify the official rate at regis.odisha.gov.in"
+      },
+      "no_data": {
+        "section_id": "section-benchmark",
+        "degradation_tag": "circle_rate_outside_dataset",
+        "consumer_message": "Village not in our circle-rate dataset — verify at IGR Odisha"
+      },
+      "invalid_input": {
+        "section_id": "section-benchmark",
+        "degradation_tag": "circle_rate_invalid_input",
+        "consumer_message": "Village / tehsil could not be matched to circle-rate data — verify the spelling"
+      },
+      "parse_error": {
+        "section_id": "section-benchmark",
+        "degradation_tag": "circle_rate_parse_error",
+        "consumer_message": "Circle-rate data could not be parsed — verify the official rate at IGR Odisha"
+      }
+    },
+    "bda-zoning": {
+      "label": "BDA Master Plan zone (bdaodisha.gov.in)",
+      "wired_in_v11": true,
+      "is_primary_for_sections": ["section-land"],
+      "source_down": {
+        "section_id": "section-land",
+        "degradation_tag": "bda_zoning_down",
+        "consumer_message": "BDA zone data unavailable — confirm permitted use with the BDA"
+      },
+      "no_data": {
+        "section_id": "section-land",
+        "degradation_tag": "bda_zoning_no_data",
+        "consumer_message": "BDA zone not found in our dataset for this village — confirm permitted use with the BDA"
+      },
+      "invalid_input": {
+        "section_id": "section-land",
+        "degradation_tag": "bda_zoning_invalid_input",
+        "consumer_message": "Village / tehsil could not be matched to BDA zone data"
+      },
+      "parse_error": {
+        "section_id": "section-land",
+        "degradation_tag": "bda_zoning_parse_error",
+        "consumer_message": "BDA zone data could not be parsed — confirm permitted use with the BDA"
+      }
+    },
+    "larr": {
+      "label": "LARR land acquisition risk (revenue.odisha.gov.in + eCourts LA filter)",
+      "wired_in_v11": false,
+      "is_primary_for_sections": ["section-larr"],
+      "v11_special_handling": "LARR fetcher is built and unit-tested (packages/fetchers/larr/src/) but is NOT called in the V1.1 pipeline. See qa/larr_honesty.md for the recommendation to keep the section honest in V1.1 by showing the RTI-fallback state.",
+      "source_down": {
+        "section_id": "section-larr",
+        "degradation_tag": "larr_not_wired",
+        "consumer_message": "Land acquisition check unavailable — file an RTI to the District Collector to confirm no Section 11 notification exists"
+      },
+      "no_data": {
+        "section_id": "section-larr",
+        "degradation_tag": "larr_not_wired",
+        "consumer_message": "No land acquisition cases found — file an RTI to the District Collector to confirm"
+      },
+      "invalid_input": {
+        "section_id": "section-larr",
+        "degradation_tag": "larr_not_wired",
+        "consumer_message": "Seller or village name could not be searched — file an RTI to the District Collector"
+      },
+      "parse_error": {
+        "section_id": "section-larr",
+        "degradation_tag": "larr_not_wired",
+        "consumer_message": "Land acquisition data could not be parsed — file an RTI to the District Collector"
+      }
+    }
+  },
+  "failure_modes": {
+    "source_down": "Fetcher returned a network error, 5xx response, or threw an unhandled exception. Status == 'failed' or status == 'error'.",
+    "no_data": "Fetcher returned a successful response (status == 'success') but the payload was empty or had no records matching the search.",
+    "invalid_input": "Fetcher rejected the input as malformed before running. This is a pre-payment user error — surface it in the input form, not in the report.",
+    "parse_error": "Fetcher returned a successful HTTP response but the parser could not extract structured data. Status == 'partial' with parser error."
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "plot_id": "P031",
+  "description": "Scaffold plot #31 — Balianta/Krupa. Pattern: d_prefix, kisam: agricultural, BDA zone: commercial. Founder to verify manually.",
+  "added_at": "2026-06-12",
+  "verified_by": "pending",
+  "location": {
+    "latitude": 20.17,
+    "longitude": 85.21
+  },
+  "coverage": {
+    "tahasil": "Balianta",
+    "tahasil_code": "8",
+    "village": "Krupa",
+    "pattern_category": "d_prefix",
+    "plot_no": "D/131",
+    "bda_zone": "commercial",
+    "kisam_class": "agricultural"
+  },
+  "fetchers": {
+    "bhulekh": null,
+    "bhunaksha": null,
+    "ecourts": null,
+    "igr-ec": null,
+    "cersai": null,
+    "rccms": null,
+    "circle-rate": null,
+    "bda-zoning": null,
+    "nominatim": null
+  },
+  "expected_outcomes": null,
+  "sources_visited": {
+    "bhulekh": "https://bhulekh.ori.nic.in/RoRView.aspx",
+    "bhunaksha": "https://bhunaksha.ori.nic.in/bhunaksha/rwms/wfs",
+    "ecourts": "https://services.ecourts.gov.in/ecourtindia_v6/",
+    "igr-ec": "https://igrodisha.gov.in/ecsearch",
+    "cersai": "https://cersai.org.in/",
+    "rccms": "https://rccms.odisha.gov.in/",
+    "circle-rate": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+    "bda-zoning": "https://bluis.in/",
+    "nominatim": "https://nominatim.openstreetmap.org/search"
+  },
+  "transcript_path": "./transcript.md"
+}

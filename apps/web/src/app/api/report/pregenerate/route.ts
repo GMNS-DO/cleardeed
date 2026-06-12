@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults } from "@/lib/db";
 import { addReportAccessTokensToHtml } from "@/lib/report-access";
+import { validateInputPrePayment } from "@/lib/validation/pre-payment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,26 @@ export async function POST(req: NextRequest) {
   if (!tehsilVal || !villageVal || !villageCodeVal || !searchMode || !identifier) {
     return NextResponse.json(
       { error: "Missing required fields" },
+      { status: 400 }
+    );
+  }
+
+  // ── Sprint V4: pre-payment validation gate ───────────────────────────────
+  // Pure input validation, no live portal calls. Runs before pipeline + DB
+  // writes so the buyer sees an actionable error at the cheapest possible
+  // moment, not after a 45-60s Bhulekh call.
+  const validation = validateInputPrePayment({
+    tehsil: tehsilVal,
+    tehsilValue: tehsilValue ?? tehsilVal,
+    village: villageVal,
+    villageCode: villageCodeVal,
+    searchMode,
+    identifier,
+    email,
+  });
+  if (!validation.ok) {
+    return NextResponse.json(
+      { error: validation.error, code: "invalid_input" },
       { status: 400 }
     );
   }

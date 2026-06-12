@@ -1,0 +1,211 @@
+{
+  "plot_id": "P001",
+  "description": "Mendhasala, Bhubaneswar — Plot 415. The anchor case — end-to-end-verified during Sprint 3. Single tenant, agricultural kisam, residential BDA zone. Use this for happy-path contract tests.",
+  "added_at": "2026-05-20",
+  "verified_by": "founder",
+  "location": {
+    "latitude": 20.305,
+    "longitude": 85.77
+  },
+  "coverage": {
+    "tahasil": "Bhubaneswar",
+    "tahasil_code": "2",
+    "village": "Mendhasala",
+    "pattern_category": "numeric",
+    "plot_no": "415",
+    "bda_zone": "residential",
+    "kisam_class": "agricultural"
+  },
+  "fetchers": {
+    "bhulekh": {
+      "plotNo": "415",
+      "khataNo": "105/2",
+      "village": "Mendhasala",
+      "tenants": [
+        {
+          "tenantName": "Ramesh Chandra Mohanty",
+          "fatherHusbandName": "Gopinath Mohanty",
+          "surveyNo": "415",
+          "area": 0.15,
+          "unit": "acre",
+          "landClass": "agricultural_single",
+          "share": "1/1"
+        }
+      ],
+      "lastUpdated": "2026-05-15",
+      "__contract": {
+        "source": "bhulekh",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bhulekh.ori.nic.in/RoRView.aspx",
+        "latencyMs": 1200
+      }
+    },
+    "bhunaksha": {
+      "plotNo": "415",
+      "village": "Mendhasala",
+      "tahasil": "Bhubaneswar",
+      "area": 0.000607,
+      "areaUnit": "sq_km",
+      "featureId": "BDA-MENDHA-415",
+      "layer": "PLOT",
+      "__contract": {
+        "source": "bhunaksha",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bhunaksha.ori.nic.in/bhunaksha/rwms/wfs",
+        "latencyMs": 1200
+      }
+    },
+    "ecourts": {
+      "cases": [],
+      "total": 0,
+      "__contract": {
+        "source": "ecourts",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://services.ecourts.gov.in/ecourtindia_v6/",
+        "latencyMs": 1200
+      }
+    },
+    "igr-ec": {
+      "ecAvailable": true,
+      "entries": [
+        {
+          "docType": "Sale Deed",
+          "docNo": "1234/2024",
+          "regDate": "2024-08-12",
+          "party1": "Gopinath Mohanty",
+          "party2": "Ramesh Chandra Mohanty",
+          "propertyDesc": "Plot 415, Khata 105/2, Mendhasala",
+          "consideration": "₹18,00,000"
+        }
+      ],
+      "sro": "Bhubaneswar No. I",
+      "district": "Khordha",
+      "__contract": {
+        "source": "igr-ec",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://igrodisha.gov.in/ecsearch",
+        "latencyMs": 1200
+      }
+    },
+    "cersai": {
+      "searchBy": "party",
+      "partyName": "Ramesh Chandra Mohanty",
+      "result": "no_charges_found",
+      "outcome": "clear",
+      "__contract": {
+        "source": "cersai",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://cersai.org.in/",
+        "latencyMs": 1200
+      }
+    },
+    "rccms": {
+      "cases": [],
+      "total": 0,
+      "__contract": {
+        "source": "rccms",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://rccms.odisha.gov.in/",
+        "latencyMs": 1200
+      }
+    },
+    "circle-rate": {
+      "rows": [
+        {
+          "mouza": "Mendhasala",
+          "tehsil": "Bhubaneswar",
+          "kisam": "Residential",
+          "ratePerAcre": 0,
+          "ratePerSqft": 1800,
+          "sourceUrl": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+          "lastUpdated": "2024-06-01",
+          "rateType": "peri-urban"
+        }
+      ],
+      "__contract": {
+        "source": "circle-rate",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+        "latencyMs": 1200
+      }
+    },
+    "bda-zoning": {
+      "rows": [
+        {
+          "tehsil": "Bhubaneswar",
+          "village": "Mendhasala",
+          "zone": {
+            "id": "residential",
+            "name": "Residential",
+            "description": "Predominantly residential use; conversion to non-residential requires BDA approval",
+            "permittedUses": [
+              "dwelling",
+              "small_shop"
+            ],
+            "restrictions": [
+              "no_heavy_industry"
+            ],
+            "zoneCode": "R-1"
+          },
+          "centroid": {
+            "latitude": 20.305,
+            "longitude": 85.77
+          }
+        }
+      ],
+      "__contract": {
+        "source": "bda-zoning",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bluis.in/",
+        "latencyMs": 1200
+      }
+    },
+    "nominatim": {
+      "displayName": "Mendhasala, Bhubaneswar, Khordha, Odisha, India",
+      "village": "Mendhasala",
+      "tahasil": "Bhubaneswar",
+      "district": "Khordha",
+      "state": "Odisha",
+      "postcode": "752054",
+      "latitude": 20.305,
+      "longitude": 85.77,
+      "__contract": {
+        "source": "nominatim",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://nominatim.openstreetmap.org/search",
+        "latencyMs": 1200
+      }
+    }
+  },
+  "expected_outcomes": {
+    "watch_outs": [
+      {
+        "flag": "Conversion required",
+        "severity": "medium",
+        "description": "Plot is recorded as agricultural (single crop) — conversion to residential required before construction."
+      }
+    ],
+    "summary": {
+      "owner_name": "Ramesh Chandra Mohanty",
+      "land_class": "agricultural",
+      "area_acres": 0.15,
+      "is_buildable": false,
+      "is_encumbered": false
+    }
+  },
+  "sources_visited": [
+    "https://bhulekh.ori.nic.in/RoRView.aspx",
+    "https://bhunaksha.ori.nic.in/bhunaksha/rwms/wfs",
+    "https://igrodisha.gov.in/ecsearch"
+  ],
+  "transcript_path": "./transcript.md"
+}

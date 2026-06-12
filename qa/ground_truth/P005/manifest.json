@@ -1,0 +1,195 @@
+{
+  "plot_id": "P005",
+  "description": "Sundarpada, Bhubaneswar — Plot 89A. Alphanumeric plot pattern (numeric + alpha suffix). Tests the alpha-suffix parser. Agricultural kisam in a residential BDA zone — conversion required.",
+  "added_at": "2026-05-30",
+  "verified_by": "founder",
+  "location": {
+    "latitude": 20.235,
+    "longitude": 85.805
+  },
+  "coverage": {
+    "tahasil": "Bhubaneswar",
+    "tahasil_code": "2",
+    "village": "Sundarpada",
+    "pattern_category": "alphanumeric",
+    "plot_no": "89A",
+    "bda_zone": "residential",
+    "kisam_class": "agricultural"
+  },
+  "fetchers": {
+    "bhulekh": {
+      "plotNo": "89A",
+      "khataNo": "245",
+      "village": "Sundarpada",
+      "tenants": [
+        {
+          "tenantName": "Krushna Chandra Pradhan",
+          "fatherHusbandName": "Hadibandhu Pradhan",
+          "surveyNo": "89A",
+          "area": 0.18,
+          "unit": "acre",
+          "landClass": "agricultural_single",
+          "share": "1/1"
+        }
+      ],
+      "lastUpdated": "2026-04-20",
+      "__contract": {
+        "source": "bhulekh",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bhulekh.ori.nic.in/RoRView.aspx",
+        "latencyMs": 1200
+      }
+    },
+    "bhunaksha": {
+      "plotNo": "89A",
+      "village": "Sundarpada",
+      "tahasil": "Bhubaneswar",
+      "area": 0.000729,
+      "areaUnit": "sq_km",
+      "__contract": {
+        "source": "bhunaksha",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bhunaksha.ori.nic.in/bhunaksha/rwms/wfs",
+        "latencyMs": 1200
+      }
+    },
+    "ecourts": {
+      "cases": [],
+      "total": 0,
+      "__contract": {
+        "source": "ecourts",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://services.ecourts.gov.in/ecourtindia_v6/",
+        "latencyMs": 1200
+      }
+    },
+    "igr-ec": {
+      "ecAvailable": true,
+      "entries": [],
+      "sro": "Bhubaneswar No. I",
+      "district": "Khordha",
+      "__contract": {
+        "source": "igr-ec",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://igrodisha.gov.in/ecsearch",
+        "latencyMs": 1200
+      }
+    },
+    "cersai": {
+      "searchBy": "party",
+      "partyName": "Krushna Chandra Pradhan",
+      "result": "no_charges_found",
+      "outcome": "clear",
+      "__contract": {
+        "source": "cersai",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://cersai.org.in/",
+        "latencyMs": 1200
+      }
+    },
+    "rccms": {
+      "cases": [],
+      "total": 0,
+      "__contract": {
+        "source": "rccms",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://rccms.odisha.gov.in/",
+        "latencyMs": 1200
+      }
+    },
+    "circle-rate": {
+      "rows": [
+        {
+          "mouza": "Sundarpada",
+          "tehsil": "Bhubaneswar",
+          "kisam": "Residential",
+          "ratePerAcre": 0,
+          "ratePerSqft": 1600,
+          "sourceUrl": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+          "lastUpdated": "2024-06-01",
+          "rateType": "peri-urban"
+        }
+      ],
+      "__contract": {
+        "source": "circle-rate",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+        "latencyMs": 1200
+      }
+    },
+    "bda-zoning": {
+      "rows": [
+        {
+          "tehsil": "Bhubaneswar",
+          "village": "Bhubaneswar",
+          "locality": "Sundarpada",
+          "zone": {
+            "id": "residential",
+            "name": "Residential",
+            "description": "Predominantly residential",
+            "permittedUses": [
+              "dwelling"
+            ],
+            "restrictions": [],
+            "zoneCode": "R-2"
+          },
+          "centroid": {
+            "latitude": 20.235,
+            "longitude": 85.805
+          }
+        }
+      ],
+      "__contract": {
+        "source": "bda-zoning",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bluis.in/",
+        "latencyMs": 1200
+      }
+    },
+    "nominatim": {
+      "displayName": "Sundarpada, Bhubaneswar, Khordha, Odisha, India",
+      "village": "Sundarpada",
+      "tahasil": "Bhubaneswar",
+      "district": "Khordha",
+      "state": "Odisha",
+      "postcode": "751002",
+      "latitude": 20.235,
+      "longitude": 85.805,
+      "__contract": {
+        "source": "nominatim",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://nominatim.openstreetmap.org/search",
+        "latencyMs": 1200
+      }
+    }
+  },
+  "expected_outcomes": {
+    "watch_outs": [
+      {
+        "flag": "Conversion required",
+        "severity": "medium",
+        "description": "Agricultural kisam — conversion order needed before residential construction."
+      }
+    ],
+    "summary": {
+      "owner_name": "Krushna Chandra Pradhan",
+      "land_class": "agricultural",
+      "area_acres": 0.18,
+      "is_buildable": false,
+      "is_encumbered": false
+    }
+  },
+  "sources_visited": [
+    "https://bhulekh.ori.nic.in/RoRView.aspx"
+  ],
+  "transcript_path": "./transcript.md"
+}

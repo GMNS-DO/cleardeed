@@ -1,0 +1,195 @@
+{
+  "plot_id": "P002",
+  "description": "Patia, Bhubaneswar — Plot 1024. Urban commercial zone, residential kisam, no encumbrance. Easy to manually verify at Patia square. Tests the BDA-commercial + kisam-residential combination.",
+  "added_at": "2026-05-22",
+  "verified_by": "founder",
+  "location": {
+    "latitude": 20.2746,
+    "longitude": 85.8404
+  },
+  "coverage": {
+    "tahasil": "Bhubaneswar",
+    "tahasil_code": "2",
+    "village": "Patia",
+    "pattern_category": "numeric",
+    "plot_no": "1024",
+    "bda_zone": "commercial",
+    "kisam_class": "residential"
+  },
+  "fetchers": {
+    "bhulekh": {
+      "plotNo": "1024",
+      "khataNo": "201/1",
+      "village": "Patia",
+      "tenants": [
+        {
+          "tenantName": "Sanjay Kumar Sahoo",
+          "fatherHusbandName": "Late Babuli Sahoo",
+          "surveyNo": "1024",
+          "area": 0.05,
+          "unit": "acre",
+          "landClass": "residential_single",
+          "share": "1/1"
+        }
+      ],
+      "lastUpdated": "2026-05-10",
+      "__contract": {
+        "source": "bhulekh",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bhulekh.ori.nic.in/RoRView.aspx",
+        "latencyMs": 1200
+      }
+    },
+    "bhunaksha": {
+      "plotNo": "1024",
+      "village": "Patia",
+      "tahasil": "Bhubaneswar",
+      "area": 0.000202,
+      "areaUnit": "sq_km",
+      "featureId": "BDA-PATIA-1024",
+      "layer": "PLOT",
+      "__contract": {
+        "source": "bhunaksha",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bhunaksha.ori.nic.in/bhunaksha/rwms/wfs",
+        "latencyMs": 1200
+      }
+    },
+    "ecourts": {
+      "cases": [],
+      "total": 0,
+      "__contract": {
+        "source": "ecourts",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://services.ecourts.gov.in/ecourtindia_v6/",
+        "latencyMs": 1200
+      }
+    },
+    "igr-ec": {
+      "ecAvailable": true,
+      "entries": [],
+      "sro": "Bhubaneswar No. I",
+      "district": "Khordha",
+      "__contract": {
+        "source": "igr-ec",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://igrodisha.gov.in/ecsearch",
+        "latencyMs": 1200
+      }
+    },
+    "cersai": {
+      "searchBy": "party",
+      "partyName": "Sanjay Kumar Sahoo",
+      "result": "no_charges_found",
+      "outcome": "clear",
+      "__contract": {
+        "source": "cersai",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://cersai.org.in/",
+        "latencyMs": 1200
+      }
+    },
+    "rccms": {
+      "cases": [],
+      "total": 0,
+      "__contract": {
+        "source": "rccms",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://rccms.odisha.gov.in/",
+        "latencyMs": 1200
+      }
+    },
+    "circle-rate": {
+      "rows": [
+        {
+          "mouza": "Patia",
+          "tehsil": "Bhubaneswar",
+          "kisam": "Residential",
+          "ratePerAcre": 0,
+          "ratePerSqft": 3500,
+          "sourceUrl": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+          "lastUpdated": "2024-06-01",
+          "rateType": "urban"
+        }
+      ],
+      "__contract": {
+        "source": "circle-rate",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+        "latencyMs": 1200
+      }
+    },
+    "bda-zoning": {
+      "rows": [
+        {
+          "tehsil": "Bhubaneswar",
+          "village": "Bhubaneswar",
+          "locality": "Patia",
+          "zone": {
+            "id": "commercial",
+            "name": "Commercial",
+            "description": "Commercial uses permitted; residential also allowed with BDA approval",
+            "permittedUses": [
+              "shop",
+              "office",
+              "hotel"
+            ],
+            "restrictions": [
+              "no_heavy_industry"
+            ],
+            "zoneCode": "C-1"
+          },
+          "centroid": {
+            "latitude": 20.2746,
+            "longitude": 85.8404
+          }
+        }
+      ],
+      "__contract": {
+        "source": "bda-zoning",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://bluis.in/",
+        "latencyMs": 1200
+      }
+    },
+    "nominatim": {
+      "displayName": "Patia, Bhubaneswar, Khordha, Odisha, India",
+      "village": "Patia",
+      "tahasil": "Bhubaneswar",
+      "district": "Khordha",
+      "state": "Odisha",
+      "postcode": "751024",
+      "latitude": 20.2746,
+      "longitude": 85.8404,
+      "__contract": {
+        "source": "nominatim",
+        "status": "ok",
+        "fetchedAt": "2026-05-20T10:00:00.000Z",
+        "sourceUrl": "https://nominatim.openstreetmap.org/search",
+        "latencyMs": 1200
+      }
+    }
+  },
+  "expected_outcomes": {
+    "watch_outs": [],
+    "summary": {
+      "owner_name": "Sanjay Kumar Sahoo",
+      "land_class": "residential",
+      "area_acres": 0.05,
+      "is_buildable": true,
+      "is_encumbered": false
+    }
+  },
+  "sources_visited": [
+    "https://bhulekh.ori.nic.in/RoRView.aspx"
+  ],
+  "transcript_path": "./transcript.md"
+}

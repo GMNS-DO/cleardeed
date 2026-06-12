@@ -110,3 +110,39 @@ Yes — all five financial exposure sources wired, per-tehsil EC instructions, C
 ---
 
 *Last touched: 2026-06-12*
+
+---
+
+## This week's user behavior (the only thing that ships)
+
+**PI-V — Sprint V1 (Week 1–2)**
+
+> **A test runner can enumerate every valid Khordha input combination and the QA harness knows what the right answer is for 50 of them.**
+
+**Sprint V1 exit criteria:**
+- [x] 4,389 valid Khordha input combinations enumerated in `qa/khordha_inputs.json`
+- [x] 50 ground-truth plot scaffolds created with manifest schema and manual verification instructions
+- [x] 24 corpus-scope negative test cases in `qa/invalid_inputs.json`
+- [x] Input taxonomy script `scripts/enumerate_inputs.mjs` regenerates inputs deterministically
+- [x] Coverage matrix `qa/_corpus_coverage.md` shows per-tahasil × pattern × BDA zone × kisam class coverage
+
+**Pre-existing work still shipping:**
+- `generateReportV11` pipeline working end-to-end (~60s for Mendhasala/415)
+- 6-report sections rendering correctly per user behavior in CURRENT_FOCUS.md
+- Print-optimized CSS, 60-day expiry, verify-yourself links, conversion funnel instrumentation all intact
+- RCCMS probe disabled with manual_required note (hotfix applied)
+
+**Blocked on founder work:** Manual verification of 50 ground-truth plots across live portals (~15–20 hours). The harness is ready and tests 617 pass — ground-truth corpus needs population.
+
+---
+
+## PI-V Validation (Sprints V1–V4)
+
+Inserted between PI 1 (Sprints 1–5) and PI 2 (Sprints 6–10). Deploy a validation-first approach before Cuttack launch.
+
+**V1** (this sprint): Input taxonomy + ground truth corpus.  
+**V2**: Per-fetcher contract tests.  
+**V3**: Section-level validators + degradation matrix.  
+**V4**: Shadow runner + invalid input gate + CI regression suite.
+
+Cuttack launch gates on PI-V V4: ≥95% valid inputs produce correct/typed-degraded reports, 50-plot regression suite green.

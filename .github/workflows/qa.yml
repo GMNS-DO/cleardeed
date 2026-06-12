@@ -1,0 +1,132 @@
+name: QA Regression
+
+# Sprint V4 — runs on every PR to main.
+#
+# Three layers of regression coverage, in order of cost:
+#   1. 50-plot ground-truth regression suite (V1 corpus, deterministic)
+#   2. Fetcher contract tests (V2 — schema-shape, parsing, error handling)
+#   3. Section validators (V3 — cross-source, per-section structural)
+#
+# Plus the V4 pre-payment input gate.
+#
+# Caches pnpm + node_modules for fast feedback.
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: {}
+
+jobs:
+  qa:
+    name: QA Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      # Skip live portal calls in CI — fetchers should not hit the network
+      CLEARDEED_OFFLINE: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Cache turbo/pnpm store
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            node_modules
+            apps/web/node_modules
+            packages/*/node_modules
+            agents/*/node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Layer 1: full test suite (ground-truth + fetcher contracts + sections) ──
+      - name: Run full test suite
+        id: tests
+        continue-on-error: true
+        run: pnpm test --run --reporter=json --outputFile=qa/test_results.json
+
+      # ── Layer 2: pre-payment validation gate (V4) ──────────────────────
+      - name: Run pre-payment input gate test
+        id: gate
+        continue-on-error: true
+        run: pnpm test --run --reporter=json --outputFile=qa/gate_results.json qa/invalid_input_gate.test.ts
+
+      # ── Summarize results ──────────────────────────────────────────────
+      - name: Summarize test results
+        if: always()
+        run: |
+          set +e
+          node qa/ci_summarize.mjs
+          echo "summary_exit=$?"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const summaryPath = 'qa/ci_summary.md';
+            if (!fs.existsSync(summaryPath)) {
+              console.log('No summary file; skipping PR comment');
+              return;
+            }
+            const body = fs.readFileSync(summaryPath, 'utf-8');
+            // Find the bot's previous comment (if any) to keep the thread clean
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.startsWith('## QA regression'));
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail job if tests failed
+        if: steps.tests.outcome == 'failure' || steps.gate.outcome == 'failure'
+        run: |
+          echo "::error::QA regression tests failed. See PR comment for details."
+          exit 1
+
+      - name: Upload test results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-results
+          path: |
+            qa/test_results.json
+            qa/gate_results.json
+            qa/ci_summary.md
+          if-no-files-found: ignore

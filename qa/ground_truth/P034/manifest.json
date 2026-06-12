@@ -1,0 +1,43 @@
+{
+  "plot_id": "P034",
+  "description": "Scaffold plot #34 — Bolgarh/Kudi. Pattern: numeric, kisam: residential, BDA zone: green_belt. Founder to verify manually.",
+  "added_at": "2026-06-12",
+  "verified_by": "pending",
+  "location": {
+    "latitude": 20.38,
+    "longitude": 85.54
+  },
+  "coverage": {
+    "tahasil": "Bolgarh",
+    "tahasil_code": "5",
+    "village": "Kudi",
+    "pattern_category": "numeric",
+    "plot_no": "134",
+    "bda_zone": "green_belt",
+    "kisam_class": "residential"
+  },
+  "fetchers": {
+    "bhulekh": null,
+    "bhunaksha": null,
+    "ecourts": null,
+    "igr-ec": null,
+    "cersai": null,
+    "rccms": null,
+    "circle-rate": null,
+    "bda-zoning": null,
+    "nominatim": null
+  },
+  "expected_outcomes": null,
+  "sources_visited": {
+    "bhulekh": "https://bhulekh.ori.nic.in/RoRView.aspx",
+    "bhunaksha": "https://bhunaksha.ori.nic.in/bhunaksha/rwms/wfs",
+    "ecourts": "https://services.ecourts.gov.in/ecourtindia_v6/",
+    "igr-ec": "https://igrodisha.gov.in/ecsearch",
+    "cersai": "https://cersai.org.in/",
+    "rccms": "https://rccms.odisha.gov.in/",
+    "circle-rate": "https://www.regis.odisha.gov.in/Benchmark/BMV_Search.aspx",
+    "bda-zoning": "https://bluis.in/",
+    "nominatim": "https://nominatim.openstreetmap.org/search"
+  },
+  "transcript_path": "./transcript.md"
+}
