@@ -14,24 +14,29 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { generateReportV11 } from "@/lib/pipeline";
-import { createReport, updateReportResults, supabaseAdmin } from "@/lib/db";
+import { createReport, updateReportResults, supabaseAdmin, bumpReportExpiry } from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
+import { trackEvent } from "@/lib/track";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface CheckoutSession {
-  tehsil: string;
-  tehsilValue: string;
-  village: string;
-  villageCode: string;
-  searchMode: string;
-  identifier: string;
+  tehsil?: string;
+  tehsilValue?: string;
+  village?: string;
+  villageCode?: string;
+  searchMode?: string;
+  identifier?: string;
   claimedOwnerName?: string;
   email?: string;
   whatsapp?: string;
   preGeneratedReportId?: string | null;
+  /** "refresh" for pay-to-refresh; absent (or anything else) for first purchase. */
+  kind?: string;
+  /** Set when kind === "refresh" — the report whose expires_at should be bumped. */
+  reportId?: string;
 }
 
 async function getCheckoutSession(orderId: string): Promise<CheckoutSession | null> {
@@ -140,6 +145,29 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // ── Pay-to-refresh fast path: bump expires_at, skip pipeline + email ──────
+  if (session.kind === "refresh" && session.reportId) {
+    const { expiresAt } = await bumpReportExpiry(session.reportId);
+    try {
+      await supabaseAdmin().from("audit_log").insert({
+        report_id: session.reportId,
+        event_type: "report_refreshed",
+        event_data: { orderId, expiresAt },
+      });
+    } catch (auditErr) {
+      console.warn("[/api/webhook/razorpay] audit_log insert failed (refresh):", auditErr);
+    }
+    console.info(`[/api/webhook/razorpay] Refresh: bumped expires_at to ${expiresAt ?? "unknown"} for report ${session.reportId}`);
+    return NextResponse.json({
+      handled: true,
+      kind: "refresh",
+      reportId: session.reportId,
+      reportUrl: buildReportUrl(session.reportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
+      status: "refreshed",
+      expiresAt,
+    });
+  }
+
   // ── Fast path: report was pre-generated during checkout ─────────────────
   if (session.preGeneratedReportId) {
     console.info(`[/api/webhook/razorpay] Looking for pre-generated report: ${session.preGeneratedReportId}`);
@@ -158,6 +186,12 @@ export async function POST(req: NextRequest) {
             reportHtml,
           });
         }
+        // Funnel: webhook confirmed payment
+        await trackEvent({
+          eventName: "payment_success",
+          reportId: session.preGeneratedReportId,
+          metadata: { orderId, fastPath: true, amount: event.payload?.order?.entity?.amount ?? 0 },
+        });
         return NextResponse.json({
           handled: true,
           reportId: session.preGeneratedReportId,
@@ -259,6 +293,15 @@ export async function POST(req: NextRequest) {
     } else {
       console.warn(`[/api/webhook/razorpay] Email failed for ${reportId}: ${emailResult.error}`);
     }
+  }
+
+  // Funnel: webhook confirmed payment and report generated
+  if (reportId) {
+    await trackEvent({
+      eventName: "payment_success",
+      reportId,
+      metadata: { orderId, amount: event.payload?.order?.entity?.amount ?? 0, hasError: Boolean(reportError) },
+    });
   }
 
   return NextResponse.json({

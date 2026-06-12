@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db";
+import { trackEvent } from "@/lib/track";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,6 +86,21 @@ export async function POST(req: NextRequest) {
     }
 
     console.info(`[/api/checkout] Session stored for order ${orderId}`);
+
+    // Funnel: buyer clicked "Get report" and Razorpay is about to open
+    await trackEvent({
+      eventName: "checkout_open",
+      reportId: null,
+      metadata: {
+        orderId: orderId as string,
+        village: village as string,
+        tehsil: tehsil as string,
+        searchMode: searchMode as string,
+        hasEmail: Boolean(email),
+        hasPreGeneratedReport: Boolean((body as { preGeneratedReportId?: string }).preGeneratedReportId),
+      },
+    });
+
     return NextResponse.json({ stored: true });
   } catch (err) {
     // Supabase not configured — this is acceptable for demo/dev environments

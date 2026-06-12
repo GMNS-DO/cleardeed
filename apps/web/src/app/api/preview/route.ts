@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { fetch as bhulekhFetch } from "@cleardeed/fetcher-bhulekh";
+import { trackEvent } from "@/lib/track";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -121,6 +122,18 @@ export async function POST(req: NextRequest) {
 
     // Estimate GPS pin from tehsil center (placeholder — Bhunaksha WFS resolution is S2)
     const mapPin = `${body.tehsil}, ${body.village}`;
+
+    // Track successful preview view
+    await trackEvent({
+      eventName: "preview_view",
+      reportId: null,
+      metadata: {
+        village: body.village,
+        tehsil: body.tehsil,
+        kisamStandardized,
+        plotFound: true,
+      },
+    });
 
     return NextResponse.json({
       plotFound: true,

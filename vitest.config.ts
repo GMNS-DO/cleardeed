@@ -26,10 +26,15 @@ export default defineConfig({
       "agents/output-auditor/src/**/*.test.ts",
       "agents/land-classifier/**/*.test.ts",
       "packages/pdf-renderer/src/**/*.test.ts",
+      "apps/web/src/lib/track.test.ts",
+      "apps/web/src/lib/db.expiry.test.ts",
+      "apps/web/src/lib/report-access.test.ts",
+      "apps/web/src/app/api/reports/[id]/refresh/route.test.ts",
     ],
   },
   resolve: {
     alias: {
+      "@/*": path.resolve(__dirname, "./apps/web/src/*"),
       "@cleardeed/land-classifier": path.resolve(__dirname, "agents/land-classifier/index.ts"),
       "@cleardeed/fetcher-nominatim": path.resolve(__dirname, "packages/fetchers/nominatim/src/index.ts"),
       "@cleardeed/fetcher-bhunaksha": path.resolve(__dirname, "packages/fetchers/bhunaksha/src/index.ts"),

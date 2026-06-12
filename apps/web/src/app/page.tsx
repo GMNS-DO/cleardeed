@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { BhulekhInputForm } from "@/components/BhulekhInputForm";
+import { FunnelTracker } from "@/components/FunnelTracker";
 
 const steps = [
   {
@@ -29,6 +30,7 @@ const whatWeCheck = [
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f7f7f2] text-[#17231d]">
+      <FunnelTracker event="landing_view" />
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
         <div className="text-xl font-bold tracking-normal text-[#163d33]">ClearDeed</div>

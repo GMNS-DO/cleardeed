@@ -23,6 +23,7 @@ import { generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults, getReport, supabaseAdmin } from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
+import { trackEvent } from "@/lib/track";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -164,6 +165,12 @@ export async function POST(req: NextRequest) {
             });
             emailSent = emailResult.success;
           }
+          // Funnel: client-side payment success, fast path
+          await trackEvent({
+            eventName: "payment_success",
+            reportId: resolvedPreGeneratedReportId,
+            metadata: { orderId: razorpay_order_id, fastPath: true },
+          });
           return NextResponse.json({
             reportId: resolvedPreGeneratedReportId,
             reportUrl: buildReportUrl(resolvedPreGeneratedReportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
@@ -194,6 +201,14 @@ export async function POST(req: NextRequest) {
           reportHtml: html,
         });
         emailSent = emailResult.success;
+      }
+      // Funnel: client-side payment success, html-in-session fast path
+      if (resolvedPreGeneratedReportId) {
+        await trackEvent({
+          eventName: "payment_success",
+          reportId: resolvedPreGeneratedReportId,
+          metadata: { orderId: razorpay_order_id, htmlInSession: true },
+        });
       }
       return NextResponse.json({
         reportId: resolvedPreGeneratedReportId ?? null,
@@ -297,6 +312,15 @@ export async function POST(req: NextRequest) {
     if (!result.success) {
       console.warn(`[/api/payment/success] Email failed for ${reportId}: ${result.error}`);
     }
+  }
+
+  // Funnel: client-side payment success, slow path
+  if (reportId) {
+    await trackEvent({
+      eventName: "payment_success",
+      reportId,
+      metadata: { orderId: razorpay_order_id, hasError: Boolean(reportError) },
+    });
   }
 
   return NextResponse.json({

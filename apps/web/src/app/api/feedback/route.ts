@@ -9,6 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db";
+import { trackEvent } from "@/lib/track";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,13 @@ export async function POST(req: NextRequest) {
     } catch {
       // Feedback storage failure does not block the response
     }
+
+    // Funnel: in-report panel feedback
+    await trackEvent({
+      eventName: "feedback_submitted",
+      reportId: body.reportId,
+      metadata: { section: body.section, vote: body.vote },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
