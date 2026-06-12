@@ -462,16 +462,25 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   }
 
   // ── Step 2d: RCCMS — revenue court case search ─────────────────────────────
-  // Sprint 6 TODO: re-enable once Playwright portal probe is reliable (currently hangs in production).
-  // Skip the slow probe and mark as manual_required; the report includes a note that buyer should check RCCMS.
-  let rccmsResult: Awaited<ReturnType<typeof rccmsFetch>> | null = {
-    source: "rccms",
-    status: "failed",
-    statusReason: "rccms_probe_skipped_sprint6_todo",
-    verification: "manual_required",
-    fetchedAt: new Date().toISOString(),
-    error: "RCCMS portal probe is temporarily disabled; please verify revenue court cases manually at rccms.odisha.gov.in",
-  } as Awaited<ReturnType<typeof rccmsFetch>>;
+  // Bounded to 5s so the portal probe (which can hang >3min in the production
+  // network per D-030) cannot stall the report. If the probe completes within
+  // the budget we use its result; otherwise we return a manual_required stub.
+  let rccmsResult: Awaited<ReturnType<typeof rccmsFetch>> | null = null;
+  try {
+    rccmsResult = await rccmsFetchWithTimeout(
+      rccmsFetch,
+      {
+        district: "Khordha",
+        tahasil: input.tehsil,
+        village: input.village,
+        khataNo: bhulekhData?.khataNo,
+        plotNo: input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo,
+      },
+      5000
+    );
+  } catch {
+    rccmsResult = rccmsTimeoutStub();
+  }
 
   // ── Step 2e: Circle Rate (BMV) — floor band for Section 7 ──────────────────
   // Sprint 4: feeds "What is it worth" floor/directional/ceiling layout.
@@ -704,6 +713,49 @@ function buildSourceResult(
     ...(r.data ? { data: r.data } : {}),
     ...(r.error ? { error: String(r.error) } : {}),
   } as unknown as SourceResult];
+}
+
+/**
+ * RCCMS fetcher input shape — re-declared locally so the timeout helper
+ * can be exported and unit-tested without dragging the full fetcher type
+ * tree into the test's import graph.
+ */
+type RccmsFetcherInput = Parameters<typeof rccmsFetch>[0];
+type RccmsFetcherResult = Awaited<ReturnType<typeof rccmsFetch>>;
+
+/**
+ * Race the RCCMS fetcher against a hard timeout. Used by the V1.1 pipeline
+ * (Step 2d) so a hung portal probe (D-030) cannot stall the report past
+ * its 60s budget. The fetcher argument is passed in (not imported) to make
+ * the timeout contract testable in isolation.
+ */
+export async function rccmsFetchWithTimeout(
+  fetcher: (input: RccmsFetcherInput) => Promise<RccmsFetcherResult>,
+  input: RccmsFetcherInput,
+  timeoutMs: number
+): Promise<RccmsFetcherResult> {
+  return Promise.race([
+    fetcher(input),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("rccms_timeout")), timeoutMs)
+    ),
+  ]);
+}
+
+/**
+ * Manual-required stub returned when the RCCMS probe exceeds its budget.
+ * Casts to the fetcher's return type to keep the pipeline call site uniform
+ * (the downstream `buildSourceResult` only reads a handful of fields).
+ */
+export function rccmsTimeoutStub(): RccmsFetcherResult {
+  return {
+    source: "rccms",
+    status: "failed",
+    statusReason: "rccms_timeout",
+    verification: "manual_required",
+    fetchedAt: new Date().toISOString(),
+    error: "RCCMS portal probe exceeded 5s budget; verify revenue court cases manually at rccms.odisha.gov.in",
+  } as unknown as RccmsFetcherResult;
 }
 
 function summarizeEcourtsStatus(
