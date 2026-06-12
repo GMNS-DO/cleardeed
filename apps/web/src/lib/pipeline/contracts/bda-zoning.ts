@@ -74,6 +74,12 @@ export const BdaZoningContract = z.discriminatedUnion("status", [
     status: z.literal("parse_error"),
     error: ContractError,
   }),
+  // Plot is outside the BDA planning area (e.g., a village not in BDA's
+  // Master Plan jurisdiction). Neutral outcome — not a failure.
+  ContractEnvelopeBase.extend({
+    source: z.literal("bda-zoning"),
+    status: z.literal("out_of_scope"),
+  }),
 ]);
 export type BdaZoningContract = z.infer<typeof BdaZoningContract>;
 

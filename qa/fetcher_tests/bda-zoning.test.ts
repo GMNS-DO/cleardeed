@@ -148,3 +148,50 @@ describe("BDA Zoning — negative cases", () => {
     });
   }
 });
+
+/**
+ * The fetcher distinguishes three logical states:
+ *   1. Plot inside the BDA planning area, zone found     → status "success"
+ *   2. Plot outside the BDA planning area (a non-BDA village / tehsil)  →
+ *      status "out_of_scope" with verification "n/a". This is a *neutral*
+ *      outcome (BDA doesn't plan here, so check the local Tahsildar) —
+ *      NOT a failure that should surface as "Source failed".
+ *   3. Internal lookup error / unknown zone              → status "no_match"
+ */
+describe("BDA Zoning — out_of_scope status (plots outside BDA planning area)", () => {
+  it("returns status=success with verification=verified for a known BDA-planning locality (Patia)", async () => {
+    const { fetch, _resetCache } = await import("../../packages/fetchers/bda-zoning/src/index");
+    _resetCache();
+    const result = await fetch({ village: "Bhubaneswar", locality: "Patia", tehsil: "Bhubaneswar" });
+    expect(result.status).toBe("success");
+    expect(result.verification).toBe("verified");
+    expect(result.data.length).toBeGreaterThan(0);
+    expect(result.data[0]?.zone?.id).toBeTruthy();
+  });
+
+  it("returns status=out_of_scope with verification=n/a for a tehsil that has no BDA planning coverage", async () => {
+    const { fetch, _resetCache } = await import("../../packages/fetchers/bda-zoning/src/index");
+    _resetCache();
+    // Sambalpur is outside the BDA planning area entirely. The fetcher must
+    // report "out_of_scope" (a neutral, expected outcome) rather than
+    // "no_match" (which the pipeline and report writer treat as a degraded
+    // source).
+    const result = await fetch({ village: "Burla", tehsil: "Sambalpur" });
+    expect(result.status).toBe("out_of_scope");
+    expect(result.verification).toBe("n/a");
+    expect(result.statusReason).toBe("outside_bda_planning_area");
+    expect(result.data).toEqual([]);
+  });
+
+  it("returns status=out_of_scope when the village is in the BDA dataset but the supplied tehsil is outside BDA's planning area", async () => {
+    const { fetch, _resetCache } = await import("../../packages/fetchers/bda-zoning/src/index");
+    _resetCache();
+    // Mendhasala exists in the seed data under tehsil "Bhubaneswar". Asking
+    // for it under tehsil "Khordha" (a non-BDA planning tehsil) is the
+    // "out-of-scope lookup" scenario described in the task: a plot whose
+    // village is in Khordha district but not in the BDA's Master Plan.
+    const result = await fetch({ village: "Mendhasala", tehsil: "Khordha" });
+    expect(result.status).toBe("out_of_scope");
+    expect(result.verification).toBe("n/a");
+  });
+});

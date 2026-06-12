@@ -1110,6 +1110,25 @@ function buildBdaZoneCard(
   input: BdaZoneCardInput
 ): string {
   const rows: any[] = Array.isArray(bdaZoneData?.data) ? bdaZoneData.data : [];
+
+  // Out-of-scope: BDA Master Plan doesn't cover this village/tehsil. Render a
+  // *neutral* note (not a failure card) telling the buyer to check the local
+  // Tahsildar. Previously this case was indistinguishable from a generic
+  // "no_match" failure and the buyer saw a degraded/source-failed message.
+  if (rows.length === 0 && bdaZoneData?.status === "out_of_scope") {
+    return `<div class="bda-card bda-card-neutral">
+      <div class="bda-card-head">
+        <span class="bda-card-label">BDA Master Plan zone</span>
+        <span class="bda-card-zone">Outside BDA planning area</span>
+      </div>
+      <div class="bda-card-meta">${escapeHtml(input.village ?? "This village")}, ${escapeHtml(input.tahasil ?? "")}</div>
+      <p class="bda-card-desc">This plot is outside the Bhubaneswar Development Authority (BDA) planning area, so BDA's Master Plan zone classification does not apply. Land-use zoning for this location is administered by the local Tahsildar / Revenue Department. Ask the Tahsildar office for the current land-use classification and any applicable building restrictions before you pay.</p>
+      <div class="source-line">
+        <span>Source: BDA Master Plan &mdash; <a href="https://bdaodisha.gov.in/" target="_blank" rel="noopener">bdaodisha.gov.in</a> (verify coverage at BDA)</span>
+      </div>
+    </div>`;
+  }
+
   if (rows.length === 0) return "";
 
   const firstRow = rows[0];
