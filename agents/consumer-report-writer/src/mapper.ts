@@ -62,6 +62,35 @@ export interface Tier2Input {
   } | null;
   /** Legal-approved consumer disclaimer text */
   disclaimerText: string;
+  /** Sprint 4: Circle-rate (IGR BMV) data — floor band for Section 7. */
+  circleRateData?: {
+    source?: string;
+    status?: string;
+    data?: Array<{
+      mouza?: string;
+      tehsil?: string;
+      kisam?: string;
+      ratePerAcre?: number;
+      ratePerSqft?: number;
+      ratePerDecimal?: number;
+      rateType?: string;
+      lastUpdated?: string;
+      sourceUrl?: string;
+    }>;
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
+  /** Sprint 4: BDA Master Plan zone data — feeds Section 3 "What you can build". */
+  bdaZoneData?: {
+    source?: string;
+    status?: string;
+    data?: Array<{
+      tehsil?: string;
+      village?: string;
+      locality?: string;
+      zone?: { id?: string; name?: string; description?: string; zoneCode?: string };
+    }>;
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
   /** V1.2: Adjacent plot analysis (ceiling plan T-056) */
   adjacentPlots?: {
     adjacentPlots: Array<{
@@ -141,6 +170,9 @@ export const ConsumerReportGenInputSchema = z.object({
   sourceStatus: z.record(z.string()).optional().default({}),
   sourceDetails: z.record(z.any()).optional().default({}),
   disclaimerText: z.string().optional().default(""),
+  // Sprint 4 — passed through from pipeline; renderer uses .any() for flexibility.
+  circleRateData: z.any().optional(),
+  bdaZoneData: z.any().optional(),
 });
 
 export type ConsumerReportGenInputData = z.infer<typeof ConsumerReportGenInputSchema>;
@@ -415,6 +447,11 @@ export function mapToReportInput(
       ])
     ),
     disclaimerText: tier2.disclaimerText,
+    // Sprint 4 — pass through to renderer for Section 7 (What is it worth) and
+    // Section 3 (BDA zone). Both fields are validated as .any() at the schema
+    // level so we don't lose runtime shape tolerance.
+    circleRateData: tier2.circleRateData ?? null,
+    bdaZoneData: tier2.bdaZoneData ?? null,
   };
 }
 

@@ -55,6 +55,7 @@ export const RestrictionTypeSchema = z.enum([
   "conversion_high_difficulty", // Double-crop land — food security protection
   "prohibited_construction",   // Construction strictly prohibited
   "sub_plot",          // Sub-divided plot (D/88 pattern) — requires BDA layout approval
+  "bda_zone_mismatch",  // BDA master plan zone is incompatible with intended use
 ]);
 
 export const LandRestrictionSchema = z.object({
@@ -81,6 +82,9 @@ export const LandClassifierInputSchema = z.object({
   overlayFlags: z.record(z.boolean()).optional(),
   // Location context for fee estimation
   proximityTo: z.enum(["municipality", "nh_500m", "state_hwy_250m", "planned_area", "rural"]).optional(),
+  // BDA master plan zone (injected by pipeline from @cleardeed/fetcher-bda-zoning)
+  bdaZone: z.string().optional(),
+  bdaTehsil: z.string().optional(),
 });
 
 export type OdishaKisam = z.infer<typeof OdishaKisamSchema>;
@@ -106,6 +110,8 @@ export const LandClassifierResultSchema = z.object({
   overallRestrictionCount: z.number(),
   hasCriticalRestriction: z.boolean(),
   prohibitedPlotCount: z.number(),
+  bdaZone: z.string().optional(),
+  bdaZoneNote: z.string().optional(),
 });
 
 export type LandClassifierResult = z.infer<typeof LandClassifierResultSchema>;

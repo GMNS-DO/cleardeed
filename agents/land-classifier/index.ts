@@ -211,7 +211,7 @@ export function classifyLand(input: LandClassifierInput): LandClassifierResult {
     };
   }
 
-  const { plots, gpsCoordinates, village, overlayFlags, proximityTo } = parsed.data;
+  const { plots, gpsCoordinates, village, overlayFlags, proximityTo, bdaZone, bdaTehsil } = parsed.data;
   const { lat, lng } = gpsCoordinates;
 
   const externalFlags = overlayFlags
@@ -346,6 +346,37 @@ export function classifyLand(input: LandClassifierInput): LandClassifierResult {
     });
   }
 
+  // ── BDA master plan zone (injected by pipeline from fetcher-bda-zoning) ──
+  let bdaZoneNote: string | undefined;
+  if (bdaZone) {
+    const normalized = bdaZone.toLowerCase().replace(/[\s-]+/g, "_");
+    if (normalized === "green_belt") {
+      restrictions.push({
+        type: "bda_zone_mismatch", severity: "critical",
+        description: `BDA master plan zone for ${village ?? "this village"}${bdaTehsil ? ` (${bdaTehsil} tehsil)` : ""}: Green Belt. Construction is generally prohibited in green-belt zones under the BDA Master Plan. The buyer should not assume residential or commercial development is permitted here.`,
+        citation: "BDA Master Plan (current revision); Odisha Development Authorities Act, 1982",
+        action: "Verify zone on the BDA Bhubaneswar Master Plan map (bdaodisha.gov.in). If the plot is being marketed for housing despite green-belt zoning, the seller may be misrepresenting — ask for a BDA NOC before any payment.",
+        source: `BDA master plan zone: ${bdaZone}`,
+      });
+      bdaZoneNote = "Green Belt — construction generally prohibited under BDA Master Plan.";
+    } else if (normalized === "institutional") {
+      restrictions.push({
+        type: "bda_zone_mismatch", severity: "warning",
+        description: `BDA master plan zone for ${village ?? "this village"}${bdaTehsil ? ` (${bdaTehsil} tehsil)` : ""}: Institutional. Plots in institutional zones are typically reserved for government, educational, and public-facility use; private commercial or residential sale is generally not permitted.`,
+        citation: "BDA Master Plan; institutional-zone transfer restrictions",
+        action: "Confirm with the seller and the BDA whether private sale of an institutional-zone plot is permitted. If you proceed, get a written BDA confirmation.",
+        source: `BDA master plan zone: ${bdaZone}`,
+      });
+      bdaZoneNote = "Institutional zone — private sale may be restricted.";
+    } else if (normalized === "industrial") {
+      bdaZoneNote = "Industrial zone — residential construction not permitted under BDA Master Plan.";
+    } else if (normalized === "residential" || normalized === "commercial" || normalized === "mixed_use" || normalized === "special") {
+      bdaZoneNote = `BDA zone: ${bdaZone} — compatible with intended use.`;
+    } else {
+      bdaZoneNote = `BDA zone: ${bdaZone} (unrecognised label — verify with BDA).`;
+    }
+  }
+
   const totalArea = plots.reduce((s, p) => s + p.areaAcres, 0);
   const hasCrit = restrictions.some(r => r.severity === "critical");
   const prohibitedCount = plotClassifications.filter(p => p.category === "prohibited").length;
@@ -354,6 +385,7 @@ export function classifyLand(input: LandClassifierInput): LandClassifierResult {
   explanation += `Dominant Kisam: ${KISAM_ENGLISH[dominant]} (${KISAM_CATEGORY_LABEL[dominantCategory]}). `;
   if (prohibitedCount > 0) explanation += `${prohibitedCount} prohibited plot(s) detected — see restrictions. `;
   if (restrictions.some(r => r.type === "clu_required")) explanation += `CLU certificate required for agricultural plots. `;
+  if (bdaZoneNote) explanation += `${bdaZoneNote} `;
 
   return {
     primaryKisam: dominant,

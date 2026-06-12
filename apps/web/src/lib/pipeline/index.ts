@@ -26,6 +26,8 @@ import { ecourtsFetch } from "@cleardeed/fetcher-ecourts";
 import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
 import { cersaiFetch } from "@cleardeed/fetcher-cersai";
 import { fetch as rccmsFetch } from "@cleardeed/fetcher-rccms";
+import { fetch as circleRateFetch } from "@cleardeed/fetcher-circle-rate";
+import { fetch as bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
 import type { SourceResult } from "@cleardeed/orchestrator";
 
 export type { Tier2Input };
@@ -473,6 +475,42 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     console.warn("[pipeline/v11] RCCMS fetch error:", err instanceof Error ? err.message : err);
   }
 
+  // ── Step 2e: Circle Rate (BMV) — floor band for Section 7 ──────────────────
+  // Sprint 4: feeds "What is it worth" floor/directional/ceiling layout.
+  // JSON-backed local lookup keyed on mouza + tehsil + kisam. No scraping.
+  let circleRateResult: Awaited<ReturnType<typeof circleRateFetch>> | null = null;
+  try {
+    const primaryKisam =
+      bhulekhData?.tenants?.[0]?.landClassEnglish ??
+      bhulekhData?.tenants?.[0]?.landClass ??
+      "Residential";
+    // Map Bhulekh/land-classifier kisam names to the IGR kisam labels used in the JSON
+    const normalisedKisam =
+      /agricultural|agricultur/i.test(primaryKisam) ? "Agricultural" :
+      /commercial|byabasaika/i.test(primaryKisam) ? "Commercial" :
+      /industrial/i.test(primaryKisam) ? "Industrial" :
+      "Residential";
+    circleRateResult = await circleRateFetch({
+      mouza: bhulekhData?.village ?? input.village,
+      tehsil: input.tehsil,
+      kisam: normalisedKisam,
+    });
+  } catch (err) {
+    console.warn("[pipeline/v11] circle-rate fetch error:", err instanceof Error ? err.message : err);
+  }
+
+  // ── Step 2f: BDA Master Plan zoning — feeds Section 3 "What you can build" ──
+  // Sprint 4: classifies plot into residential/commercial/industrial/green_belt/etc.
+  let bdaZoningResult: Awaited<ReturnType<typeof bdaZoningFetch>> | null = null;
+  try {
+    bdaZoningResult = await bdaZoningFetch({
+      village: bhulekhData?.village ?? input.village,
+      tehsil: input.tehsil,
+    });
+  } catch (err) {
+    console.warn("[pipeline/v11] bda-zoning fetch error:", err instanceof Error ? err.message : err);
+  }
+
   // ── Step 3: A5 OwnershipReasoner ───────────────────────────────────────────
   // Only run ownership comparison if a seller name was provided.
   // When no name is provided, skip comparison and show Bhulekh owners directly.
@@ -508,10 +546,14 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
         landClassOdia: t.landClassOdia ?? undefined,
         landClassEnglish: t.landClassEnglish ?? t.landClass ?? undefined,
       }));
+      // Pull the first BDA zone row (if any) so the land classifier can surface
+      // green-belt/institutional mismatches and add BDA-zone context to its explanation.
+      const bdaZoneRow = bdaZoningResult?.data?.[0];
       landClassifier = classifyLand({
         plots,
         gpsCoordinates: { lat: 0, lng: 0 },  // V1.1 doesn't use GPS
         village: bhulekhData.village ?? input.village,
+        ...(bdaZoneRow?.zone?.id ? { bdaZone: bdaZoneRow.zone.id, bdaTehsil: input.tehsil } : {}),
       });
     } catch (err) {
       console.error("[pipeline/v11] A6 LandClassifier error:", err);
@@ -527,6 +569,8 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     ...buildSourceResult("igr-ec", igrEcResult),
     ...buildSourceResult("cersai", cersaiResult),
     ...buildSourceResult("rccms", rccmsResult),
+    ...buildSourceResult("circle-rate", circleRateResult),
+    ...buildSourceResult("bda-zoning", bdaZoningResult),
   ];
 
   // ── Step 4b: EncumbranceReasoner (A7) ───────────────────────────────────────
@@ -565,6 +609,10 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     encumbranceReasoner: encumbranceReasonerResult ?? null,
     regulatoryScreener: null,
     disclaimerText: DEFAULT_DISCLAIMER,
+    // Sprint 4: pass through market-value and BDA zoning data so the report
+    // can render Section 7 (What is it worth) and Section 3 (BDA zone) panels.
+    circleRateData: circleRateResult ?? null,
+    bdaZoneData: bdaZoningResult ?? null,
   };
 
   const igrLink = {
