@@ -9,9 +9,23 @@
 
 ## This week's user behavior (the only thing that ships)
 
-**Sprint 5 — Week 8**
+**Sprint 6 — Week 9 — SHIPPED**
 
-> **A buyer in Khordha can pay ₹1, view a 6-section report in the browser, download a print-optimized PDF, refresh the URL within 60 days for free, and re-pay ₹1 to refresh after expiry.**
+> **A buyer in Khordha can pay ₹1 and get a report where at most 1 of 6 sections ends in a hard `failed` status.** Typed degradation (RCCMS timeout, BDA out of scope, CERSAI "no charges found") is acceptable; silent failure is not.
+
+**Sprint 6 exit criteria (all done):**
+- [x] RCCMS re-enabled in pipeline with 5s timeout (replaces D-030 hardcoded stub) — `ad6c66a`
+- [x] CERSAI "no charges found" returns `status: "success"` with `data.total = 0` (positive signal, not failure) — `d943f59`
+- [x] BDA-zoning distinguishes "out of BDA jurisdiction" from "no_match" (neutral, not failure) — `cdffdb8`
+- [x] eCourts district code fix (`8` not `561`) shipped — `23268cd`
+- [x] All four fixes gated by tests in `qa/fetcher_tests/`; 1231 tests pass (2 pre-existing bhunaksha failures unrelated)
+
+**Still open from Sprint 6 scope:**
+- [ ] IGR EC query range: 5 years → 1 year (1-line edit at `apps/web/src/lib/pipeline/index.ts:443`)
+- [ ] Founder registers operational IGR citizen account at `Admin/Login/NEW/NewUser.aspx` (15 min, blocking IGR EC V2 build per D-034)
+- [ ] Credentials stored in Vercel: `IGR_CITIZEN_LOGIN_ID`, `IGR_CITIZEN_PASSWORD`
+
+**Next: PI-V Sprint V2 (per-fetcher contract tests).** See `BLOCKER3_PLAN_2026-06-12.md` for context.
 
 ---
 
