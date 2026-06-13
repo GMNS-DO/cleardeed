@@ -225,7 +225,7 @@ describe("igrEcFetch", () => {
       toYear: 2026,
     });
 
-    const expectedFromYear = 2026 - 30;
+    const expectedFromYear = 2026 - 1;
     expect(result.data?.searchPeriod?.from).toBe(String(expectedFromYear));
   });
 

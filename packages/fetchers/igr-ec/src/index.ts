@@ -480,6 +480,15 @@ export async function igrEcFetch(
   input: IGRECInput,
   _options?: IGR_EC_FetchOptions
 ): Promise<IGRECResult> {
+  // V2: If credentials are available, use the automated login + EC search path
+  if (process.env.IGR_CITIZEN_LOGIN_ID && process.env.IGR_CITIZEN_PASSWORD) {
+    console.log("[IGR EC] Using V2 automated path with real credentials");
+    const { igrEcFetchV2 } = await import("./index.v2");
+    return igrEcFetchV2(input, _options);
+  }
+
+  // V1: Fallback to manual instructions
+  console.log("[IGR EC] Using V1 manual instructions (no credentials)");
   const fetchedAt = new Date().toISOString();
   const {
     partyName,
@@ -494,8 +503,8 @@ export async function igrEcFetch(
     ? { sro, sroCode: "", district }
     : resolveSRO(sro);
 
-  // Default fromYear to 30 years back (standard due-diligence window)
-  const effectiveFromYear = fromYear ?? toYear - 30;
+  // Default fromYear to 1 year back (per D-033 - last 1 year is the launch window)
+  const effectiveFromYear = fromYear ?? toYear - 1;
 
   const inputsTried = [
     {
@@ -699,3 +708,6 @@ export async function healthCheck(): Promise<boolean> {
     return false;
   }
 }
+
+// Export V2 for testing
+export { igrEcFetchV2 } from "./index.v2";

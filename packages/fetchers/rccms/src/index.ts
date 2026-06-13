@@ -67,10 +67,11 @@ interface ProbeResult {
  * Returns the first working endpoint found.
  */
 async function probePortal(): Promise<ProbeResult | null> {
-  for (const path of SEARCH_PATHS) {
+  // Use Promise.race with 3s timeout to avoid hanging on slow portal
+  const probePromises = SEARCH_PATHS.map(async (path) => {
     try {
       const res = await fetch(`${RCCMS_BASE}${path}`, {
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(3_000),
         headers: { "User-Agent": USER_AGENT },
       });
       if (res.ok || res.status === 401) {
@@ -78,11 +79,23 @@ async function probePortal(): Promise<ProbeResult | null> {
         const hasSearchForm = /input|select|form|search/i.test(html);
         return { url: `${RCCMS_BASE}${path}`, status: res.status, hasSearchForm, html };
       }
+      return null;
     } catch {
-      // try next path
+      return null;
     }
-  }
-  return null;
+  });
+
+  // Return first successful result within overall 3s budget
+  return await Promise.race([
+    (async () => {
+      for (const promise of probePromises) {
+        const result = await promise;
+        if (result) return result;
+      }
+      return null;
+    })(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_000))
+  ]);
 }
 
 /**
@@ -214,12 +227,18 @@ export async function fetch(input: RCCMSInput): Promise<RCCMSResult> {
   let browser: import("playwright").Browser | null = null;
   try {
     const { chromium } = await import("playwright");
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      timeout: 5_000 // Launch timeout
+    });
     const page = await browser.newPage();
     await page.setExtraHTTPHeaders({ "User-Agent": USER_AGENT });
 
-    await page.goto(probe.url, { waitUntil: "domcontentloaded", timeout: 20_000 });
-    await page.waitForTimeout(1_000);
+    await page.goto(probe.url, {
+      waitUntil: "domcontentloaded",
+      timeout: 3_000 // Reduce from 20s to 3s
+    });
+    await page.waitForTimeout(500); // Reduce from 1s to 500ms
 
     // Try to fill district/tahasil search fields
     const districtField = page.locator("select[name*='District'], select[id*='District'], select[id*='district']").first();
@@ -246,7 +265,7 @@ export async function fetch(input: RCCMSInput): Promise<RCCMSResult> {
       // Click search
       const searchBtn = page.locator("input[type='submit'][value*='Search'], button:has-text('Search'), input[type='submit'][value*='Search']").first();
       await searchBtn.click().catch(() => {});
-      await page.waitForTimeout(3_000);
+      await page.waitForTimeout(1_000); // Reduce from 3s to 1s
     }
 
     const resultHtml = await page.content();
@@ -386,12 +405,20 @@ export function parseRccmsTable(html: string, plotNo?: string): { cases: RCCMSCa
 // ── Health check ────────────────────────────────────────────────────────────────
 
 export async function healthCheck(): Promise<{ ok: boolean; message?: string }> {
-  const probe = await probePortal();
-  if (!probe) {
-    return { ok: false, message: "RCCMS portal unreachable" };
-  }
-  if (probe.status === 401) {
-    return { ok: false, message: "RCCMS portal requires login" };
-  }
-  return { ok: true, message: `RCCMS portal accessible at ${probe.url}` };
+  // Use Promise.race to ensure healthCheck doesn't hang the process
+  return await Promise.race([
+    (async () => {
+      const probe = await probePortal();
+      if (!probe) {
+        return { ok: false, message: "RCCMS portal unreachable" };
+      }
+      if (probe.status === 401) {
+        return { ok: false, message: "RCCMS portal requires login" };
+      }
+      return { ok: true, message: `RCCMS portal accessible at ${probe.url}` };
+    })(),
+    new Promise<{ ok: boolean; message: string }>((resolve) =>
+      setTimeout(() => resolve({ ok: false, message: "RCCMS health check timeout" }), 3_000)
+    )
+  ]);
 }

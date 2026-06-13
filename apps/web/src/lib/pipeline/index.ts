@@ -440,7 +440,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       partyName: ownerNames[0] ?? "",
       district: "Khordha",
       sro: input.tehsil,
-      fromYear: new Date().getFullYear() - 5,
+      fromYear: new Date().getFullYear() - 1, // 1-year range per D-033
       toYear: new Date().getFullYear(),
     });
   } catch (err) {
