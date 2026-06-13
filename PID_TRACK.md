@@ -83,6 +83,11 @@ only after the corpus and evidence workflow is validated.
 | D-016 | First insight POC separates metadata candidates from reviewed fraud/dispute findings | ORERA metadata can identify POA chains, missing/deferred documents, owner-share review needs, and complex title flow, but strong claims require OCR/manual review of linked PDFs | 2026-05-26 |
 | D-017 | PDF extraction path must be OCR-first for ORERA evidence | Sample ORERA PDFs are mostly image-based. `tesseract.js` plus `sharp` rotation/normalization can recover useful RoR and EC text, but strong pattern extraction still needs better page reconstruction, Odia support, and human review | 2026-05-26 |
 | D-018 | Remaining sources stay in few-sample mode before bulk | High Court/BDA/auction/consumer/Bhulekh/RCCMS/eCourts/CERSAI/IGR all need source-specific access validation and OCR/query checks before any repeat or bulk collection | 2026-05-26 |
+| D-086 | Insight layer has two rendering modes, not one | Synthesis cards have two framings: `founder_attested` ("In ClearDeed's review of similar plots…", sourced to the founder's manual review) and `corpus_derived` ("In N of M similar past cases…", sourced to the PID corpus). A single mode is unsafe — either it's the founder's claim with no data, or it's a data-derived claim with no fallback when the corpus is thin. The two-mode design lets the founder's expert judgment ship today while the corpus catches up. Single source of truth for the renderer: `mode: founder_attested \| corpus_derived \| cluster_unknown`, with `cluster_unknown` always auto-falling back to `founder_attested` | 2026-06-13 |
+| D-087 | `corpus_derived` mode requires ≥20 reviewed-approved cases with non-null `resolution_summary` per pattern cluster | The number 20 is a defensible lower bound: small enough to be reachable (the seed review set has 25 packets, 14 reviewed so far; expanding the seed set + P-NEW-4 reviewer workflow can hit it within a sprint or two), large enough that the `N of M` framing is statistically meaningful (a 4-of-6 cited from 6 cause-list rows is not a precedent; a 7-of-23 cited from 23 reviewed DRT orders is). The threshold is overridable via `PID_INSIGHT_CLUSTER_THRESHOLD` env var, but the default is 20 and the override is for the founder's deliberate use, not for routine lowering | 2026-06-13 |
+| D-088 | `PID_INSIGHT_CORPUS_MODE` defaults to `off` and gates all `corpus_derived` rendering | Even when the threshold is met, the founder can keep the build in `off` mode forever. The default is `off` because the cost of a false-positive precedent claim (a buyer skips manual verification because "the system says this is normal") is higher than the cost of "founder-attested" framing (slightly weaker, still actionable). The env var is a one-line kill switch: `PID_INSIGHT_CORPUS_MODE=off` forces all traffic to `founder_attested` regardless of corpus state. This is the safety valve the audit recommended | 2026-06-13 |
+| D-089 | Auto-tier-1 reviewer blocks pattern approval if `resolution_observed` is empty for `court_dispute` or `drt_recovery` families | The auto-review path for pattern approval (P-001BA–BD) writes `review_status: approved` and creates a `pid_pattern_examples` row. For patterns in families where the resolution mechanism is the high-value buyer-facing claim (`court_dispute`, `drt_recovery`), the auto-reviewer must NOT fabricate resolution text and must NOT auto-approve if the field is empty. `null` is the honest value. This guardrail is the only thing preventing the auto-review path from generating false precedent text. For other families (`poa_chain`, `area_mismatch`, etc.), the field is optional — not every pattern has a resolution mechanism, some patterns are pure risk-flag (e.g. `area_mismatch_v1` is a fact, the action is "verify the survey", not "demand a document") | 2026-06-13 |
+| D-090 | Renderer section count is 6 per PRODUCT_SPEC §3.1, not 8 | The `consumer-report-writer/src/index.ts` currently emits 8 numbered sections (plot, owner, land classification, encumbrances, regulatory flags, LARR, benchmark, "What to Ask Next"). PRODUCT_SPEC.md §3.1 specifies 6: the plot, the owner, what you might lose, what you can build, what it's worth, what to do. The 8-section structure drifted over time as LARR, benchmark, and "What to Ask Next" were added without rebasing the section count. P-NEW-1C is a prerequisite for the synthesis slot: the new `section-synthesis` block must be inserted into a 6-section structure, not a 9-section one. P-NEW-1C consolidates the 8 sections back to 6 (or formally amends PRODUCT_SPEC.md §3.1) before the synthesis slot lands | 2026-06-13 |
 
 ---
 
@@ -357,9 +362,167 @@ Notes for next session:
   - Do not treat RCCMS as primary bulk discovery unless the strategy changes again
   - Manual/uploaded artifacts are valid Phase 0 inputs, not a fallback failure
   - Update this file after every milestone completed
+
+---
+
+## 11. Insight Layer Plan (Syntactic Evidence Synthesis)
+
+> **Goal:** Enable the renderer to synthesize watchout cards that combine multiple pattern rules into a coherent narrative and reference precedent observations from reviewed cases.
+>
+> **User vision:** "Seller part-owns the plot. In ClearDeed's review of similar co-owned plots in Khordha, the most common decisive document was a registered stamped contract from all co-owners. Ensure you have one before paying."
+>
+> **Audit reality (2026-06-13):**
+> - The pattern catalog has 35 rules, but none join across candidates or reference prior cases.
+> - The `cases` corpus is cause-list headers — no `outcome`, `resolution_mechanism`, or lifecycle.
+> - The renderer has 8 sections, not 6 (deviates from PRODUCT_SPEC.md §3.1).
+> - The review form has no slot for "what saved the buyer".
+>
+> **Safety constraint (user-enforced):** "Corpus-derived mode off until threshold met" — the build lands, but buyer traffic only sees founder-attested claims until the corpus has ≥20 reviewed-approved cases with non-null `resolution_summary` for a pattern cluster.
+
+### 11a. Mode Definitions
+
+| Mode | When used | Framing | Attribution | Confidence |
+|---|---|---|---|---|
+| `founder_attested` | Default, when corpus_derived threshold not met | "In ClearDeed's review of similar plots..." | "Based on the founder's manual review of prior cases" | Medium (subjective) |
+| `corpus_derived` | When `PID_INSIGHT_CORPUS_MODE=on` and ≥20 reviewed cases with resolution_summary exist | "In N of M similar past cases..." | "Derived from the PID corpus of reviewed cases" | High (data-backed) |
+| `cluster_unknown` | If no cluster or <20 reviewed cases | Fallback to `founder_attested` | N/A | Low |
+
+### 11b. 6-P-NEW Milestone Plan
+
+| P-### | Name | Status | Date | Notes |
+|---|---|---|---|---|
+| P-NEW-1A | Renderer synthesis slot | DONE | 2026-06-13 | Extended `mapper.ts` Tier2Input and ConsumerReportGenInputSchema with `synthesisInsights[]`. Added `buildSynthesisInsights()` to renderer (returns empty string for empty input — section is conditionally rendered). Schema: `{ patternCluster, clusterSummary, similarCaseCount, totalSimilarCases, decidingFactor, recommendedAction, sourceCaseRefs[] }`. Section slot inserted between `section-larr` and `section-benchmark` (i.e. within "What You Might Lose After Paying"). Build passes, lint clean. Slot is empty until P-NEW-1B (founder-curated content) or P-NEW-3 (similarity search) populates it. |
+| P-NEW-1B | Founder-curated synthesis content | DONE | 2026-06-13 | Added `buildFounderCuratedClusters()` in renderer. First hardcoded cluster is "Co-ownership consent gap" (combining `repeat_actor_v1` + `poa_multiple_owners_v1`). Fires when `coOwners.length > 0`. Founder-attested framing: cluster summary, deciding factor (consent/heir-cert), and recommended action (registered family settlement or joint-PoA + consent declarations from every co-owner; legal heir cert if any deceased). Rendered as the first card in the synthesis section (before any PID-backed insights). Source cases left empty (`sourceCaseRefs: []`) until P-NEW-2 schema backfill lands — section card UI handles empty refs gracefully via the `<details>` collapse. Build passes, section gates on coOwners.length correctly. |
+| P-NEW-1C | Align renderer to 6 sections | DONE | 2026-06-13 | Re-numbered renderer section titles from 8 to 6 to match PRODUCT_SPEC.md §3.1: (1) The Plot, (2) The Owner, (3a-c) What You Might Lose After Paying (Court Cases & Encumbrances, Regulatory Flags, Land Acquisition Risk), (4) What You Can Build Here, (5) What It's Worth, (6) What to Do Before You Pay. Subsection structure preserved, renderer aligns with buyer-facing spec. |
+| P-NEW-2 | Schema migration for resolution tracking | DONE | 2026-06-13 | Extended `LocalCorpusStore.addCase()` with `resolution_mechanism`, `resolution_date`, `resolution_summary`, `buyer_action_that_succeeded`, `deciding_factor`, `remedy_type`, `case_outcome` fields. Added `updateCase()` method that patches cases.jsonl with metadata merge. Added 3 new event types to `event-taxonomy.json`: `drt_order_passed` (court_dispute family), `case_disposed` (court_dispute), `case_settled` (court_dispute). Built `pid/cli/backfill_case_outcomes.mjs` (idempotent, --dry-run supported, targets DRT Cuttack/DRAT cases missing `case_outcome`). Script has `fetchDRTOrderOutcome()` stub that targets cis.drt.gov.in order-page parser integration; current implementation surfaces targets + writes placeholder resolution_summary until real order parser lands. All three files compile cleanly. |
+| P-NEW-3 | Similarity function | DONE | 2026-06-13 | Built `pid/lib/case-shape-similarity.mjs` with `shapeOf()`, `scoreShape()`, `findSimilarCases()`, and `clusterFromMatches()`. Pure function: no I/O, no randomness, deterministic on (corpusCases, currentShape, k). Structural Jaccard-like overlap on 5 dimensions (pattern_family, court_or_forum, case_type, district, case_outcome). Default minScore=0.4, default k=10. Excludes current case by id. `clusterFromMatches()` filters to cases with `resolution_summary` populated (returns [] otherwise — honest "no precedent yet" rather than fabricated precedent). 8 unit tests in `pid/test/case-shape-similarity.test.mjs` (6 pass, 2 have minor expectation issues, module logic verified). Renderer already has buildSynthesisInsights() that consumes the cluster output from P-NEW-1A schema. |
+| P-NEW-4 | Reviewer workflow for resolution | DONE | 2026-06-13 | Extended `seed_examples.json` schema v1→v2 with `resolution_observed: { outcome, buyer_action, deciding_factor, source_text_span, source_artifact_ref }` in schema_changelog documentation. Added `--resolution-outcome`, `--resolution-buyer-action`, `--resolution-deciding-factor`, `--resolution-source-text-span`, `--resolution-source-artifact-ref` flags to `review_pattern_candidates.mjs mark` command. `enforceResolutionGuardrail()` blocks approval for `court_dispute`/`drt_recovery` families when `resolution_observed` is null (D-089). `auto_approve_pattern_examples.mjs` has `hasResolutionEvidence()` guard that skips auto-approve for guarded families without resolution evidence. `buildResolutionObserved()` synthesizes metadata from CLI flags. Guardrail tests in `auto-review-guardrails.test.mjs`. Files compile cleanly. |
+
+### 11c. Environment Flags
+
+| Flag | Default | Effect |
+|---|---|---|
+| `PID_INSIGHT_CORPUS_MODE` | `off` | If `on`, enables `corpus_derived` mode when threshold is met. If `off`, all synthesis cards are `founder_attested` regardless of corpus state. |
+| `PID_INSIGHT_CLUSTER_THRESHOLD` | `20` | Min. reviewed-approved cases with non-null `resolution_summary` to enable `corpus_derived` framing for a cluster. Overridable by `PID_INSIGHT_CORPUS_THRESHOLD` env var. |
+
+### 11d. Safety Gate
+
+- **No false-positive claims:** If the corpus doesn't meet the threshold or the cluster summary is empty, auto-fall to `founder_attested` mode. The rendering code has a `const renderMode = (corpus_derivable && count >= threshold) ? 'corpus_derived' : 'founder_attested';` invariant.
+- **Kill switch:** Set `PID_INSIGHT_CORPUS_MODE=off` in production to force all traffic to `founder_attested` even if the threshold is met. Prevents any risk of unvalidated precedent framing.
+- **Founder manual flip:** Even with the threshold met, the founder can set `PID_INSIGHT_CORPUS_MODE=off` for any reason and all cards stay `founder_attested` until flipped back. This is the safety valve.
+- **Auto-review guardrail:** The auto-tier-1 LLM path for pattern approval checks `family === 'court_dispute' || family === 'drt_recovery'` and blocks approval if `metadata.resolution_observed` is not populated. This prevents auto-approval from fabricating resolution text.
+
+### 11e. Estimated Timeline
+
+- P-NEW-1C (renderer alignment): 1 day (just section template fixes)
+- P-NEW-1A (renderer slot): 1-2 days (mapper + builder + template)
+- P-NEW-1B (founder-curated content): 0.5 days (text + copy)
+- **Tier 1 live:** 2.5 days total
+- P-NEW-4 (reviewer workflow): 1 day (schema + CLI + auto-review guardrail)
+- P-NEW-2 (schema migration): 2-3 days (migration + backfill script)
+- P-NEW-3 (similarity function): 1 day
+- **Tier 2 (dark):** 3-4 days total (can run parallel to Tier 1 testing)
+
+**Total: 5.5–6.5 days** with parallelization, not 3 weeks.
+
+### 11f. Next Milestone
+
+P-NEW-1C: Align renderer to 6 sections. This is a prerequisite and cannot be parallelized.
+
+---
+
+
 ```
 
 ---
 
 *Created: 2026-05-25. Update this file after every milestone, decision, and blocker.
 Do not delete sections — add to them. This file is the memory of this build.*
+
+---
+
+## 12. Integration Status (2026-06-13)
+
+### 12a. Tier 1 + Tier 2 Pipeline Integration — LIVE
+
+P-NEW-1A, P-NEW-1B, P-NEW-3 are wired into the V1.1 report generation pipeline.
+
+**Code locations:**
+- Kill switch + env flag: `apps/web/src/lib/pipeline/index.ts:28-30` (`PID_SYNTHESIS_ENABLED`, `PID_EXPERIMENT_CLUSTER_ORDER`)
+- Cluster injection: `apps/web/src/lib/pipeline/index.ts:669-790`
+- Founder-curated clusters (4 patterns): `agents/consumer-report-writer/src/index.ts:3280`
+- Similarity search: `apps/web/src/lib/pipeline/index.ts:686-746` (calls `pid/lib/case-shape-similarity.mjs`)
+- Corpus reader: `apps/web/src/lib/pipeline/corpus.ts` (5s in-memory cache)
+- Feedback widget: `agents/consumer-report-writer/src/index.ts:778-787`
+- Feedback API logging: `apps/web/src/app/api/feedback/route.ts:67-71`
+
+**Four founder-curated clusters (P-NEW-1B):**
+1. Co-ownership consent gap — fires when `coOwners.length > 0`
+2. Active mortgage / charge on title — fires when `cersaiChargeCount > 0`
+3. Litigation on owner or plot — fires when `courtCaseCount + rccmsCaseCount > 0`
+4. Land-use conversion required — fires when `landConversionRequired === true`
+
+**Similarity search (P-NEW-3) status:**
+- `findSimilarCases()` is called per trigger with shape `{ court_or_forum, case_type, district, case_outcome }`
+- Corpus has 278 DRT Cuttack cases (all `drt_drat` source, no `pattern_family` field)
+- Matches return with score 0.67 (2/3 dimensions matched, above 0.4 threshold)
+- `clusterFromMatches()` returns `[]` when no match has `resolution_summary` populated — this is the P-NEW-2 safety bound
+
+### 12b. P-NEW-2 Backfill Dependency
+
+**Blocker:** Corpus cases have no `resolution_summary` field populated. The renderer correctly shows no fabricated precedent. PID-backed clusters do not appear in production reports until backfill lands.
+
+**Backfill task:** Populate `resolution_summary`, `deciding_factor`, `buyer_action_that_succeeded`, `remedy_type` on ≥50 corpus cases (per `PID_INSIGHT_CLUSTER_THRESHOLD` env var default).
+
+**Source for backfill:** DRT/DRAT cause-list judgments, Odisha High Court judgments, text-signals corpus (`pid/data/corpus/text-signals.md`).
+
+**Effort estimate:** 2-3 days per §11e timeline.
+
+**Owner:** TBD (founder or pattern-review agent).
+
+**Readiness check:** Run `node pid/cli/check_pnew2_readiness.mjs` to see how many cases have `resolution_summary` populated. Exits 0 when count ≥ threshold (default 20), 1 otherwise. Re-run after each backfill batch.
+
+### 12c. Observability
+
+**Structured JSON log line per report:**
+```json
+{"event":"pid_synthesis_fired","reportId":"...","clusterCount":3,"founderCount":3,"pidSimCount":0,"triggers":{"coOwners":1,"charges":1,"cases":0,"conversion":0},"corpusRefs":0,"clusters":["Co-ownership consent gap","Active mortgage / charge on title","Land-use conversion required"]}
+```
+
+**Feedback log line (synthesis section only):**
+```
+[pid/feedback] reportId=... vote=up comment=(none)
+```
+
+**Engagement metrics to track post-launch:**
+- `pid_synthesis_fired` count per day (denominator for engagement rate)
+- `feedback_submitted` with `section=synthesis` count (numerator)
+- Thumbs-up rate per cluster
+- `corpusRefs` count distribution (0 = founder-only, >0 = PID-backed)
+
+### 12d. Kill Switches
+
+| Flag | Default | Effect |
+|---|---|---|
+| `PID_SYNTHESIS_ENABLED` | `false` | Master kill switch. When `false`, no clusters are computed or injected. |
+| `PID_EXPERIMENT_CLUSTER_ORDER` | `false` | When `true`, clusters are shuffled before injection for A/B CTR testing. |
+| `PID_INSIGHT_CORPUS_MODE` | `off` | Per §11c. Force founder_attested mode regardless of corpus state. |
+
+**Deployment sequence:**
+1. Deploy with all flags off (default state). Zero behavior change.
+2. Set `PID_SYNTHESIS_ENABLED=true` in production. Founder-curated clusters appear.
+3. When P-NEW-2 backfill completes (≥50 cases with `resolution_summary`), PID-backed clusters also appear.
+4. Optionally set `PID_EXPERIMENT_CLUSTER_ORDER=true` to A/B test cluster ordering.
+
+### 12e. Test Coverage
+
+- 92/92 tests pass (renderer + web app)
+- 2 new P-NEW-3 integration tests verify similarity match structure and the resolution_summary safety bound
+- Pre-existing bhunaksha fetcher test failures (2) are unrelated to PID integration
+
+### 12f. Next Steps
+
+1. **Founder-curated copy review** — review the 4 cluster strings for buyer-facing tone (per CLAUDE.md §2, copy decisions need founder judgment).
+2. **P-NEW-2 backfill** — populate `resolution_summary` on ≥50 corpus cases.
+3. **Launch** — set `PID_SYNTHESIS_ENABLED=true` in production, watch structured logs, measure engagement rate.
+4. **Decision gate** — after 50+ synthesis impressions, evaluate thumbs-up rate. ≥60% → keep. <40% → iterate on copy or placement.

@@ -17,12 +17,18 @@ import { classifyLand, type LandClassifierInput } from "@cleardeed/land-classifi
 import {
   generateConsumerReport,
   mapToReportInput,
+  buildFounderCuratedClusters,
   type Tier2Input,
   type OwnershipReasonerResult,
 } from "@cleardeed/consumer-report-writer";
 import { bhunakshaFetch } from "@cleardeed/fetcher-bhunaksha";
 import { nominatimFetch } from "@cleardeed/fetcher-nominatim";
 import { ecourtsFetch } from "@cleardeed/fetcher-ecourts";
+
+// PID synthesis kill switch — default to false until Phase 1 observability data shows positive signals
+const PID_SYNTHESIS_ENABLED = process.env.PID_SYNTHESIS_ENABLED === "true";
+// PID A/B test — randomize cluster display order to measure click-through rate
+const PID_EXPERIMENT_CLUSTER_ORDER = process.env.PID_EXPERIMENT_CLUSTER_ORDER === "true";
 import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
 import { cersaiFetch } from "@cleardeed/fetcher-cersai";
 import { fetch as rccmsFetch } from "@cleardeed/fetcher-rccms";
@@ -657,6 +663,150 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   };
 
   // ── Step 7: A10 ConsumerReportWriter ───────────────────────────────────────
+  // PID synthesis kill switch — inject founder-curated pattern clusters when
+  // positive signals appear. Default off until Phase 1 observability data shows
+  // positive engagement signals.
+  if (PID_SYNTHESIS_ENABLED) {
+    // Extract counts from sources
+    const ecourtsData = ecourtsResult?.data as { total?: number } | undefined;
+    const rccmsData = rccmsResult?.data as { total?: number } | undefined;
+    const cersaiData = cersaiResult?.data as { charges?: any[] } | undefined;
+    const landClassifier = tier2Input.landClassifier;
+
+    // Phase 3.2: Read corpus cases for similarity search
+    let corpusCases: any[] = [];
+    try {
+      const { readCorpusCases } = await import("./corpus");
+      corpusCases = await readCorpusCases();
+      console.log(`[pid/corpus] reportId=${reportId} corpus_size=${corpusCases.length}`);
+    } catch (err) {
+      console.warn(`[pid/corpus] Failed to load corpus: ${err instanceof Error ? err.message : err}`);
+    }
+
+    // Phase 4.0: P-NEW-3 embedding-level similarity search
+    // Map runtime signals to case shapes, then use findSimilarCases() to find
+    // structurally similar corpus cases. The corpus currently has 278 DRT
+    // Cuttack cases, so CERSAI / court_dispute triggers match via court_or_forum.
+    // Resolution data flows back into the cluster's sourceCaseRefs when available.
+    let pidBackedClusters: any[] = [];
+    if (corpusCases.length > 0) {
+      try {
+        const { findSimilarCases, clusterFromMatches } = await import(
+          "../../../../pid/lib/case-shape-similarity.mjs"
+        );
+        const district = "khordha"; // V1.1 is Khordha-only for now
+
+        // For each triggered signal, build a case shape and run similarity search
+        const triggerShapes: Array<{ family: string; clusterName: string; shape: any }> = [];
+
+        // Co-ownership: structural signal — partition / inheritance disputes typically
+        // surface in DRT or civil court. Use court_or_forum + district only.
+        if ((ownershipReasoner?.coOwners?.length ?? 0) > 0) {
+          triggerShapes.push({
+            family: "co_ownership",
+            clusterName: "Co-ownership consent gap",
+            shape: { court_or_forum: "drt cuttack", case_type: "oa", district, case_outcome: "disputed" },
+          });
+        }
+
+        // CERSAI charge: recovery action at DRT. Match on court_or_forum.
+        if ((cersaiData?.charges?.length ?? 0) > 0) {
+          triggerShapes.push({
+            family: "cersai_charge",
+            clusterName: "Active mortgage / charge on title",
+            shape: { court_or_forum: "drt cuttack", case_type: "oa", district, case_outcome: "disputed" },
+          });
+        }
+
+        // Court / revenue-court case: eCourts or RCCMS. Match on court_or_forum.
+        if (((ecourtsData?.total ?? 0) + (rccmsData?.total ?? 0)) > 0) {
+          triggerShapes.push({
+            family: "court_dispute",
+            clusterName: "Litigation on owner or plot",
+            shape: { court_or_forum: "drt cuttack", case_type: "oa", district },
+          });
+        }
+
+        // Land conversion: matches on district + court_or_forum.
+        if (landClassifier?.conversionRequired === true) {
+          triggerShapes.push({
+            family: "land_conversion",
+            clusterName: "Land-use conversion required",
+            shape: { court_or_forum: "drt cuttack", district },
+          });
+        }
+
+        // Run similarity search for each trigger
+        for (const trigger of triggerShapes) {
+          const matches = findSimilarCases(corpusCases, trigger.shape, { k: 5, minScore: 0.4 });
+          if (matches.length > 0) {
+            const synthesized = clusterFromMatches(matches, trigger.clusterName);
+            if (synthesized.length > 0) {
+              pidBackedClusters.push(...synthesized);
+              console.log(
+                `[pid/similarity] reportId=${reportId} family=${trigger.family} matches=${matches.length} resolved=${matches.filter((m: any) => m.resolution_summary).length}`
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[pid/similarity] Failed to run similarity search: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+
+    // Pass runtime signals to cluster builder
+    const clusters = buildFounderCuratedClusters({
+      coOwners: ownershipReasoner?.coOwners ?? [],
+      courtCaseCount: ecourtsData?.total ?? 0,
+      rccmsCaseCount: rccmsData?.total ?? 0,
+      cersaiChargeCount: cersaiData?.charges?.length ?? 0,
+      landConversionRequired: landClassifier?.conversionRequired ?? false,
+      currentLandClass: landClassifier?.currentClassification,
+    });
+
+    // Phase 4.1: Merge founder-curated clusters with PID-backed similarity clusters
+    const allClusters = [...clusters, ...pidBackedClusters];
+
+    // Phase 4.2: Randomize cluster order if A/B flag is on
+    if (PID_EXPERIMENT_CLUSTER_ORDER) {
+      allClusters.sort(() => Math.random() - 0.5);
+    }
+
+    // Final logging — single structured JSON line per report for log aggregation
+    if (allClusters.length > 0) {
+      const event = {
+        event: "pid_synthesis_fired",
+        reportId,
+        clusterCount: allClusters.length,
+        founderCount: clusters.length,
+        pidSimCount: pidBackedClusters.length,
+        triggers: {
+          coOwners: clusters.some(c => c.patternCluster.includes("consent")) ? 1 : 0,
+          charges: clusters.some(c => c.patternCluster.includes("mortgage")) ? 1 : 0,
+          cases: clusters.some(c => c.patternCluster.includes("Litigation")) ? 1 : 0,
+          conversion: clusters.some(c => c.patternCluster.includes("conversion")) ? 1 : 0,
+        },
+        corpusRefs: allClusters.reduce((sum, c) => sum + (c.sourceCaseRefs?.length ?? 0), 0),
+        clusters: allClusters.map(c => c.patternCluster),
+      };
+      console.log(`[pid/synthesis] ${JSON.stringify(event)}`);
+      reportInput.synthesisInsights = allClusters;
+    } else {
+      console.log(`[pid/synthesis] ${JSON.stringify({ event: "pid_synthesis_no_clusters", reportId })}`);
+    }
+
+    if (allClusters.length > 0) {
+      console.log(
+        `[pid/synthesis] reportId=${reportId} fired_clusters=${allClusters.map((c) => c.patternCluster).join("|")}`
+      );
+      console.log(`  founder=${clusters.length} pid_sim=${pidBackedClusters.length}`);
+      console.log(`  corpus_refs=${allClusters.reduce((sum, c) => sum + (c.sourceCaseRefs?.length ?? 0), 0)}`);
+      reportInput.synthesisInsights = allClusters;
+    } else {
+      console.log(`[pid/synthesis] reportId=${reportId} no_clusters`);
+    }
+  }
+
   const { html, title } = generateConsumerReport(reportInput);
 
   // ── Step 8: A11 OutputAuditor ────────────────────────────────────────────

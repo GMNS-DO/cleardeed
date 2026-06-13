@@ -64,6 +64,13 @@ export async function POST(req: NextRequest) {
       metadata: { section: body.section, vote: body.vote },
     });
 
+    // Add PID-specific logging for synthesis section
+    if (body.section === "synthesis") {
+      console.log(
+        `[pid/feedback] reportId=${body.reportId} vote=${body.vote} comment=${body.comment || "(none)"}`
+      );
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

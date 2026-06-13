@@ -4,7 +4,7 @@
  * Verifies that generateConsumerReport() produces valid HTML with all 6 sections.
  */
 import { describe, it, expect } from "vitest";
-import { generateConsumerReport, generateWhatsAppForward, mapToReportInput } from "./index";
+import { generateConsumerReport, generateWhatsAppForward, mapToReportInput, buildFounderCuratedClusters } from "./index";
 import { transliterateOdiaWithConfidence } from "./lib";
 import { CONSUMER_REPORT_FIXTURE } from "../fixtures/golden-path";
 import { auditReport } from "../../output-auditor/src/index";
@@ -1462,6 +1462,121 @@ describe("A10 ConsumerReportWriter", () => {
       const linkMatcher = (href: string) =>
         new RegExp(`<a [^>]*(?:class="verify-link"[^>]*href="${href}"|href="${href}"[^>]*class="verify-link")`);
       expect(section).toMatch(linkMatcher("https:\\/\\/mapserver\\.odisha4kgeo\\.in[^\"]*"));
+    });
+  });
+
+  describe("buildFounderCuratedClusters", () => {
+    it("fires clusters on co-owners + cersai charges + cases + conversion", () => {
+      const ctx = {
+        coOwners: ["Ramesh", "Suresh", "Mahesh"],
+        cersaiChargeCount: 2,
+        courtCaseCount: 1,
+        rccmsCaseCount: 3,
+        landConversionRequired: true,
+        currentLandClass: "Agricultural",
+      };
+
+      const clusters = buildFounderCuratedClusters(ctx);
+
+      // Should fire on 4 signals: coOwners, cersai, courts, conversion
+      expect(clusters.length).toBe(4);
+      expect(clusters.map((c) => c.patternCluster)).toStrictEqual([
+        "Co-ownership consent gap",
+        "Active mortgage / charge on title",
+        "Litigation on owner or plot",
+        "Land-use conversion required",
+      ]);
+
+      // Check co-ownership cluster
+      const coOwnerCluster = clusters.find((c) => c.patternCluster.includes("consent"));
+      expect(coOwnerCluster?.clusterSummary).toContain("3 co-owner(s)");
+      expect(coOwnerCluster?.similarCaseCount).toBe(0);
+
+      // Check CERSAI cluster
+      const chargeCluster = clusters.find((c) => c.patternCluster.includes("mortgage"));
+      expect(chargeCluster?.clusterSummary).toContain("2 charge record(s)");
+      expect(chargeCluster?.clusterSummary).toContain("Undisclosed charges are a common route to fraudulent second-sales");
+
+      // Check court cluster
+      const courtCluster = clusters.find((c) => c.patternCluster.includes("Litigation"));
+      expect(courtCluster?.clusterSummary).toContain("1 eCourts case(s) and 3 RCCMS revenue-court case(s)");
+
+      // Check conversion cluster
+      const conversionCluster = clusters.find((c) => c.patternCluster.includes("conversion"));
+      expect(conversionCluster?.clusterSummary).toContain("requires a formal land-use conversion order");
+    });
+
+    it("doesn't fire clusters when signals are clear", () => {
+      const ctx = {
+        coOwners: [],
+        cersaiChargeCount: 0,
+        courtCaseCount: 0,
+        rccmsCaseCount: 0,
+        landConversionRequired: false,
+      };
+
+      const clusters = buildFounderCuratedClusters(ctx);
+      expect(clusters.length).toBe(0);
+    });
+  });
+
+  describe("P-NEW-3 similarity search integration", () => {
+    it("runs similarity search against corpus and returns matches with score", async () => {
+      const { findSimilarCases } = await import(
+        "../../../pid/lib/case-shape-similarity.mjs"
+      );
+      const { readJsonl } = await import(
+        "../../../pid/lib/corpus-store.mjs"
+      );
+
+      const casesPath = new URL(
+        "../../../pid/data/corpus/cases.jsonl",
+        import.meta.url
+      ).pathname;
+      const cases = (await readJsonl(casesPath)) as any[];
+
+      // Co-ownership trigger: court_or_forum + case_type + district
+      const shape = {
+        court_or_forum: "drt cuttack",
+        case_type: "oa",
+        district: "khordha",
+        case_outcome: "disputed",
+      };
+      const matches = findSimilarCases(cases, shape, { k: 5, minScore: 0.4 });
+
+      // Should return matches (corpus has 278 DRT Cuttack cases)
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches[0]).toHaveProperty("case_id");
+      expect(matches[0]).toHaveProperty("case_number");
+      expect(matches[0]).toHaveProperty("score");
+      expect(matches[0].score).toBeGreaterThanOrEqual(0.4);
+    });
+
+    it("clusterFromMatches returns empty when no resolution_summary (P-NEW-2 safety bound)", async () => {
+      const { findSimilarCases, clusterFromMatches } = await import(
+        "../../../pid/lib/case-shape-similarity.mjs"
+      );
+      const { readJsonl } = await import(
+        "../../../pid/lib/corpus-store.mjs"
+      );
+
+      const casesPath = new URL(
+        "../../../pid/data/corpus/cases.jsonl",
+        import.meta.url
+      ).pathname;
+      const cases = (await readJsonl(casesPath)) as any[];
+
+      const shape = {
+        court_or_forum: "drt cuttack",
+        case_type: "oa",
+        district: "khordha",
+      };
+      const matches = findSimilarCases(cases, shape, { k: 5, minScore: 0.4 });
+      const synthesized = clusterFromMatches(matches, "Test cluster");
+
+      // P-NEW-2 backfill is not done yet — corpus has no resolution_summary.
+      // The safety bound must produce an empty cluster rather than fabricated precedent.
+      expect(synthesized.length).toBe(0);
     });
   });
 });

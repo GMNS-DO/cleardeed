@@ -19,6 +19,30 @@
     "current_pending_artifact_count": 5,
     "current_pending_review_count": 6
   },
+  "schema_changelog": [
+    {
+      "version": 2,
+      "date": "2026-06-13",
+      "description": "Add resolution_observed metadata for reviewer workflow",
+      "fields": [
+        {
+          "field": "metadata.resolution_observed",
+          "type": "object | null",
+          "default": null,
+          "applies_to": ["reviews"],
+          "pattern_families": ["court_dispute", "drt_recovery", "poa_chain", "area_mismatch", "identity_mismatch"],
+          "fields": {
+            "outcome": "string | null — e.g. 'buyer_won_case', 'settlement_reached', 'case_pending'",
+            "buyer_action": "string | null — e.g. 'produced_will', 'filed_counterclaim', 'settled'",
+            "deciding_factor": "string | null — e.g. 'original_sale_deed', 'mutation_history_gap'",
+            "source_text_span": "string — raw text span from artifact",
+            "source_artifact_ref": "string — artifact id"
+          },
+          "rule": "Required for court_dispute/drt_recovery families (D-089), optional for others. Auto-review blocks approval if empty."
+        }
+      ]
+    }
+  ],
   "candidate_examples": [
     {
       "example_id": "SEED-BHULEKH-001",

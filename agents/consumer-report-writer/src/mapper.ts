@@ -104,6 +104,21 @@ export interface Tier2Input {
     filteredFromTarget: number;
     status: string;
   } | null;
+  /** P-NEW-1A: Pattern intelligence synthesis insights */
+  synthesisInsights?: Array<{
+    patternCluster: string;
+    clusterSummary: string;
+    similarCaseCount: number;
+    totalSimilarCases: number;
+    decidingFactor: string;
+    recommendedAction: string;
+    sourceCaseRefs: Array<{
+      caseId: string;
+      caseNo: string;
+      outcome?: string;
+      buyerAction?: string;
+    }>;
+  }>;
 }
 
 /** A5 OwnershipReasoner output (inlined to avoid cross-package import). */
@@ -173,6 +188,8 @@ export const ConsumerReportGenInputSchema = z.object({
   // Sprint 4 — passed through from pipeline; renderer uses .any() for flexibility.
   circleRateData: z.any().optional(),
   bdaZoneData: z.any().optional(),
+  // P-NEW-1A: Pattern intelligence synthesis insights
+  synthesisInsights: z.array(z.any()).optional().default([]),
 });
 
 export type ConsumerReportGenInputData = z.infer<typeof ConsumerReportGenInputSchema>;
@@ -452,6 +469,8 @@ export function mapToReportInput(
     // level so we don't lose runtime shape tolerance.
     circleRateData: tier2.circleRateData ?? null,
     bdaZoneData: tier2.bdaZoneData ?? null,
+    // P-NEW-1A: Pattern intelligence synthesis insights
+    synthesisInsights: tier2.synthesisInsights ?? [],
   };
 }
 

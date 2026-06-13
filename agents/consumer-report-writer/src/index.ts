@@ -52,6 +52,7 @@ export interface GenerateReportOptions {
  * Generate the consumer-facing property report as HTML string.
  * Returns { html, title } — html is a standalone, print-friendly HTML fragment.
  */
+export { buildFounderCuratedClusters };
 export function generateConsumerReport(
   input: z.infer<typeof ConsumerReportGenInputSchema>
 ): { html: string; title: string } {
@@ -63,7 +64,7 @@ export function generateConsumerReport(
   const data = parsed.data;
   const { gpsCoordinates: gps, geoFetch, revenueRecords, courtCases, registryLinks,
           landClassifier, encumbranceReasoner,
-          regulatoryScreener, validationFindings, adjacentPlots } = data;
+          regulatoryScreener, validationFindings, adjacentPlots, synthesisInsights } = data;
   const sourceStatus = data.sourceStatus ?? {};
   const sourceDetails = data.sourceDetails ?? {};
   const tenants: any[] = revenueRecords?.tenants ?? [];
@@ -326,6 +327,9 @@ export function generateConsumerReport(
   // Build LARR section
   const larrHtml = buildLarrSection(data.larrRiskAssessment);
 
+  // P-NEW-1A: Pattern synthesis section
+  const synthesisSection = buildSynthesisInsights(synthesisInsights ?? [], { coOwners });
+
   // Build Encumbrance section
   const ecSection = buildEcSection(encumbranceReasoner, safeRegUrl, safeDistrict, safeSro, safePlotNo, safeTransliterated || escapeHtml(data.claimedOwnerName));
 
@@ -498,7 +502,7 @@ ${buildProvenanceStrip({
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">The Plot</div>
+      <div class="section-title">1. The Plot</div>
       <div class="section-sub">What this land is, where it is, and what the revenue map shows</div>
     </div>
   </div>
@@ -547,7 +551,7 @@ ${buildProvenanceStrip({
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">The Owner</div>
+      <div class="section-title">2. The Owner</div>
       <div class="section-sub">Owner and family details recorded in the Bhulekh RoR</div>
     </div>
     <div class="status-badge status-${ownerBadge(nameMatch.state ?? "unknown").status}">
@@ -596,7 +600,7 @@ ${buildProvenanceStrip({
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h18v4H3zM3 12h18v4H3zM3 18h18v4H3z"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">Land Classification</div>
+      <div class="section-title">4. What You Can Build Here</div>
       <div class="section-sub">What this land can be used for, and what permissions you need before building</div>
     </div>
   </div>
@@ -665,7 +669,7 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">Court Cases &amp; Encumbrances</div>
+      <div class="section-title">3a. Court Cases &amp; Encumbrances</div>
       <div class="section-sub">Any active court cases or loans, liens, or transfers on this land</div>
     </div>
   </div>
@@ -701,7 +705,7 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">Regulatory Flags</div>
+      <div class="section-title">3b. Regulatory Flags</div>
       <div class="section-sub">Protected zones and restrictions that affect what you can do with this land</div>
     </div>
   </div>
@@ -736,7 +740,7 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">Land Acquisition Risk</div>
+      <div class="section-title">3c. Land Acquisition Risk</div>
       <div class="section-sub">Check if the government is planning to acquire this land</div>
     </div>
   </div>
@@ -757,6 +761,35 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
   <button class="feedback-submit" onclick="submitFeedbackComment('larr',this)">Send feedback</button>
 </div>
 
+<!-- ── P-NEW-1A: Pattern Intelligence Synthesis ───────────────────── -->
+<!-- Renders pattern intelligence from PID database. Empty until populated by P-NEW-1B/B or P-NEW-3. -->
+${synthesisSection ? `
+<section class="section" id="section-synthesis">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9.5 3A3.5 3.5 0 0 0 6 6.5A3.5 3.5 0 0 0 9.5 10a3.5 3.5 0 0 0 2.8-1.4l5.9 5.9a3.5 3.5 0 1 0 5-5l-5.9-5.9A3.5 3.5 0 0 0 9.5 3m0 2a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3m-4.7 10.3a1.5 1.5 0 1 1 2.12 2.12a1.5 1.5 0 0 1-2.12-2.12"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Pattern Intelligence</div>
+      <div class="section-sub">Similar cases &ndash; precedents &ndash; resolution patterns</div>
+    </div>
+  </div>
+  <div class="section-body">
+    ${synthesisSection}
+    <div class="feedback-widget" id="feedback-synthesis" data-section="synthesis" style="margin-top:18px;">
+      <span class="feedback-label">Was this section useful?</span>
+      <button class="feedback-btn feedback-up" onclick="submitFeedback('synthesis','up',this)">👍 Yes</button>
+      <button class="feedback-btn feedback-down" onclick="submitFeedback('synthesis','down',this)">👎 No</button>
+      <span class="feedback-thanks" style="display:none;">Thank you!</span>
+    </div>
+    <div class="feedback-comment" id="comment-synthesis" style="display:none;">
+      <textarea class="feedback-textarea" placeholder="What did we miss? (optional)" rows="2"></textarea>
+      <button class="feedback-submit" onclick="submitFeedbackComment('synthesis',this)">Send feedback</button>
+    </div>
+  </div>
+</section>
+` : ''}
+
 <!-- ── Section 7: Market Benchmark ────────────────────────────────── -->
 <section class="section" id="section-benchmark">
   <div class="section-hdr">
@@ -764,7 +797,7 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">Market Benchmark &amp; Circle Rate</div>
+      <div class="section-title">5. What It's Worth</div>
       <div class="section-sub">Official stamp duty floor &middot; directional signals &middot; market ceiling</div>
     </div>
   </div>
@@ -792,7 +825,7 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">What to Ask Next</div>
+      <div class="section-title">6. What to Do Before You Pay</div>
       <div class="section-sub">Specific questions to ask the seller and broker — and steps to get the EC</div>
     </div>
   </div>
@@ -3213,6 +3246,161 @@ function generateErrorReport(message: string): { html: string; title: string } {
   };
 }
 
+// ─── P-NEW-1A: Synthesis Insights ─────────────────────────────────────────────
+
+interface SynthesisInsight {
+  patternCluster: string;
+  clusterSummary: string;
+  similarCaseCount: number;
+  totalSimilarCases: number;
+  decidingFactor: string;
+  recommendedAction: string;
+  sourceCaseRefs: Array<{
+    caseId: string;
+    caseNo: string;
+    outcome?: string;
+    buyerAction?: string;
+  }>;
+}
+
+/**
+ * P-NEW-1B: Founder-curated pattern clusters.
+ *
+ * Live-mode starting point. These clusters fire deterministically from runtime
+ * facts (no PID database lookup required). Each cluster is a hardcoded insight
+ * the founder attests to from manual review of seed cases — not a generalized
+ * "smart" synthesis. Replace with PID-backed content as P-NEW-3 lands.
+ *
+ * Cluster 1: Co-ownership (repeat_actor_v1 + poa_multiple_owners_v1)
+ *   Fires when RoR shows multiple owners. Attested from manual review: when a
+ *   property has co-owners on record, the single biggest risk is one co-owner
+ *   selling without the others' knowledge. This cluster has been seen in seed
+ *   cases and is the highest-leverage buyer-procedural signal we can give.
+ */
+function buildFounderCuratedClusters(ctx?: {
+  coOwners?: string[];
+  cersaiChargeCount?: number;
+  courtCaseCount?: number;
+  rccmsCaseCount?: number;
+  landConversionRequired?: boolean;
+  currentLandClass?: string | null;
+}): SynthesisInsight[] {
+  const clusters: SynthesisInsight[] = [];
+  const coOwners = ctx?.coOwners ?? [];
+
+  // Cluster 1: Co-ownership consent gap
+  if (coOwners.length > 0) {
+    const coOwnerList = coOwners.slice(0, 5).map((c) => escapeHtml(c)).join(", ");
+    const moreCount = coOwners.length > 5 ? ` and ${coOwners.length - 5} more` : "";
+    clusters.push({
+      patternCluster: "Co-ownership consent gap",
+      clusterSummary: `Bhulekh RoR lists ${coOwners.length} co-owner(s) in addition to the seller: ${coOwnerList}${moreCount}. In our reviewed seed cases, transactions on plots with multiple recorded owners were disproportionately involved in disputes where one co-owner sold without the others' knowledge or consent.`,
+      similarCaseCount: 0,
+      totalSimilarCases: 0,
+      decidingFactor: "Whether every recorded co-owner has given informed, documented consent to this sale — and, if any co-owner is deceased, whether a legal heir certificate has been obtained.",
+      recommendedAction: "Ask the seller to produce (1) a registered family settlement or registered joint-PoA naming the attorney, and (2) signed consent declarations from every recorded co-owner. If any co-owner is deceased, demand the legal heir certificate. Do not pay any advance until these are in hand.",
+      sourceCaseRefs: [],
+    });
+  }
+
+  // Cluster 2: CERSAI charge signal
+  if (ctx?.cersaiChargeCount && ctx.cersaiChargeCount > 0) {
+    clusters.push({
+      patternCluster: "Active mortgage / charge on title",
+      clusterSummary: `CERSAI returned ${ctx.cersaiChargeCount} charge record(s) against the owner. This typically means an active home loan, vehicle loan, or other secured facility where this property (or another property of the same owner) is offered as collateral. Undisclosed charges are a common route to fraudulent second-sales.`,
+      similarCaseCount: 0,
+      totalSimilarCases: 0,
+      decidingFactor: "Whether the seller has produced a CERSAI NOC and a bank statement showing the underlying loan is closed and the lien is released, or whether the loan is still live and the bank's prior consent for sale is in place.",
+      recommendedAction: "Ask the seller for a CERSAI NOC and a bank closure letter. If the loan is still live, demand the bank's prior written consent for the sale and a clear undertaking on how the sale proceeds will discharge the loan. Do not pay any advance until these are in hand.",
+      sourceCaseRefs: [],
+    });
+  }
+
+  // Cluster 3: Court / revenue-court case signal (eCourts or RCCMS)
+  const totalCases = (ctx?.courtCaseCount ?? 0) + (ctx?.rccmsCaseCount ?? 0);
+  if (totalCases > 0) {
+    const sources: string[] = [];
+    if (ctx?.courtCaseCount && ctx.courtCaseCount > 0) sources.push(`${ctx.courtCaseCount} eCourts case(s)`);
+    if (ctx?.rccmsCaseCount && ctx.rccmsCaseCount > 0) sources.push(`${ctx.rccmsCaseCount} RCCMS revenue-court case(s)`);
+    clusters.push({
+      patternCluster: "Litigation on owner or plot",
+      clusterSummary: `Public case databases returned ${sources.join(" and ")} touching the seller or this plot. A pending civil appeal, writ, or revenue-court case is rarely a deal-breaker on its own — but cases involving title, possession, partition, or government acquisition should pause the transaction until the buyer's lawyer has read the orders.`,
+      similarCaseCount: 0,
+      totalSimilarCases: 0,
+      decidingFactor: "Whether the cases involve title / possession / partition / acquisition (high-risk) or unrelated matters such as cheque-bounce or motor-accident claims (low-risk). High-risk categories warrant a title-certificate from a property lawyer before any advance.",
+      recommendedAction: "Share the case list with your property lawyer. For each case, ask for a one-line reading: is it on the title, or is it unrelated? Pause the transaction if any case is a pending title / partition / acquisition matter.",
+      sourceCaseRefs: [],
+    });
+  }
+
+  // Cluster 4: Land conversion required (agricultural → residential / commercial)
+  if (ctx?.landConversionRequired && ctx.currentLandClass) {
+    clusters.push({
+      patternCluster: "Land-use conversion required",
+      clusterSummary: `Bhulekh records this plot as ${ctx.currentLandClass}. The intended use (residential / commercial) requires a formal land-use conversion order from the Sub-Collector or the planning authority. Conversion is not automatic and is not a stamp on the sale deed — it is a separate revenue process.`,
+      similarCaseCount: 0,
+      totalSimilarCases: 0,
+      decidingFactor: "Whether the conversion order exists, whether the conversion premium has been paid in full, and whether the order is still in force (conversions lapse if not used within the validity period).",
+      recommendedAction: "Ask the seller to produce the original conversion order, the conversion premium receipt, and a recent Tahasildar certificate confirming the plot's current land-use status. If any of these are missing, the plot cannot be built on today — only the conversion-eligible land has value.",
+      sourceCaseRefs: [],
+    });
+  }
+
+  return clusters;
+}
+
+/**
+ * P-NEW-1A: Build synthesis insights section HTML.
+ *
+ * Accepts (a) PID-derived insights (empty until P-NEW-3 similarity search is
+ * live) and (b) runtime context from the current report to inject founder-
+ * curated clusters. P-NEW-1B is the first hardcoded cluster: co-ownership
+ * (repeat_actor_v1 + poa_multiple_owners_v1) fires when coOwners.length > 0.
+ *
+ * Returns empty string when no insights fire — section is conditionally
+ * rendered by the caller.
+ */
+function buildSynthesisInsights(
+  insights: SynthesisInsight[],
+  ctx?: { coOwners?: string[] }
+): string {
+  const founderCurated = buildFounderCuratedClusters(ctx);
+  const all = [...founderCurated, ...(Array.isArray(insights) ? insights : [])];
+  if (all.length === 0) return "";
+  const cards = all.map((insight) => {
+    const refsHtml = (insight.sourceCaseRefs ?? []).slice(0, 3).map((ref) => {
+      const caseLabel = ref.caseNo || ref.caseId || "—";
+      return `<li><code>${escapeHtml(caseLabel)}</code>${
+        ref.outcome ? ` &mdash; <span class="syn-outcome">${escapeHtml(ref.outcome)}</span>` : ""
+      }${
+        ref.buyerAction ? ` &mdash; <span class="syn-action">${escapeHtml(ref.buyerAction)}</span>` : ""
+      }</li>`;
+    }).join("");
+    const similarPct = insight.totalSimilarCases > 0
+      ? Math.round((insight.similarCaseCount / insight.totalSimilarCases) * 100)
+      : 0;
+    return `<div class="synthesis-card">
+      <div class="synthesis-card-hdr">
+        <div class="synthesis-cluster">${escapeHtml(insight.patternCluster)}</div>
+        <div class="synthesis-similar">${insight.similarCaseCount} of ${insight.totalSimilarCases} similar cases (${similarPct}%)</div>
+      </div>
+      <p class="synthesis-summary">${escapeHtml(insight.clusterSummary)}</p>
+      <div class="synthesis-detail">
+        <div class="synthesis-row">
+          <span class="synthesis-label">What decided the outcome</span>
+          <span class="synthesis-value">${escapeHtml(insight.decidingFactor)}</span>
+        </div>
+        <div class="synthesis-row">
+          <span class="synthesis-label">Recommended action</span>
+          <span class="synthesis-value">${escapeHtml(insight.recommendedAction)}</span>
+        </div>
+      </div>
+      ${refsHtml ? `<details class="synthesis-refs"><summary>Source cases (${insight.sourceCaseRefs.length})</summary><ul>${refsHtml}</ul></details>` : ""}
+    </div>`;
+  }).join("");
+  return `<div class="synthesis-panel">${cards}</div>`;
+}
+
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function escapeHtml(str: unknown): string {
@@ -4638,8 +4826,28 @@ body {
 .bda-permits li, .bda-restrictions li { margin-bottom: 3px; }
 .bda-empty { font-size: 11px; color: var(--gray-400); font-style: italic; }
 
+/* P-NEW-1A: Pattern Intelligence Synthesis panel */
+.synthesis-panel { display: flex; flex-direction: column; gap: 14px; }
+.synthesis-card { background: #fafbff; border: 1px solid #dbe2f3; border-left: 3px solid #4f46e5; border-radius: 6px; padding: 14px 16px; }
+.synthesis-card-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+.synthesis-cluster { font-size: 13px; font-weight: 600; color: #312e81; }
+.synthesis-similar { font-size: 11px; font-weight: 500; color: var(--gray-500); }
+.synthesis-summary { font-size: 13px; color: var(--gray-800); margin: 0 0 12px 0; line-height: 1.5; }
+.synthesis-detail { display: flex; flex-direction: column; gap: 8px; }
+.synthesis-row { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.synthesis-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray-500); min-width: 140px; }
+.synthesis-value { font-size: 12px; color: var(--gray-800); flex: 1; }
+.synthesis-refs { margin-top: 10px; font-size: 11px; color: var(--gray-600); }
+.synthesis-refs summary { cursor: pointer; color: var(--gray-500); font-weight: 500; }
+.synthesis-refs ul { margin: 8px 0 0 0; padding-left: 18px; }
+.synthesis-refs li { margin-bottom: 4px; line-height: 1.5; }
+.syn-outcome { color: #6b21a8; }
+.syn-action { color: #1d4ed8; }
+
 @media (max-width: 600px) {
   .bm-floor, .bm-dir, .bm-ceil { padding: 10px 12px; }
   .bda-card-cols { flex-direction: column; }
+  .synthesis-row { flex-direction: column; gap: 2px; }
+  .synthesis-label { min-width: auto; }
 }
 `;
