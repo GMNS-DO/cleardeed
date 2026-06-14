@@ -480,11 +480,15 @@ export async function igrEcFetch(
   input: IGRECInput,
   _options?: IGR_EC_FetchOptions
 ): Promise<IGRECResult> {
-  // V2: If credentials are available, use the automated login + EC search path
-  if (process.env.IGR_CITIZEN_LOGIN_ID && process.env.IGR_CITIZEN_PASSWORD) {
-    console.log("[IGR EC] Using V2 automated path with real credentials");
+  // V2 automated login is deferred from the Khordha launch (D-037). The
+  // IGR portal's OTP-gated login plus captcha solver plus Playwright session
+  // coupling is brittle to operate reliably. The V1 manual-instructions path
+  // below is the launch path. V2 lives in index.v2.ts for a future sprint
+  // when we have the operational maturity to run automated EC end-to-end.
+  if (false && process.env.IGR_CITIZEN_LOGIN_ID && process.env.IGR_CITIZEN_PASSWORD) {
+    // Re-enable by flipping this guard when V2 is in the launch path.
     const { igrEcFetchV2 } = await import("./index.v2");
-    return igrEcFetchV2(input, _options);
+    return igrEcFetchV2(input);
   }
 
   // V1: Fallback to manual instructions

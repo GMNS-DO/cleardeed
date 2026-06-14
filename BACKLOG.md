@@ -28,6 +28,22 @@
 
 ---
 
+## Bhunaksha Plot Report fetcher — what's left (2026-06-14)
+
+**Status:** V2 fetcher shipped and covered by 59 contract tests against a live-verified P051 ground-truth manifest. Captures khatiyan, thana, mouza, tehsil, district, area triple (acres/decimal/hectare), full owner block, and the cadastral map image (base64 SVG) in ~8s. See `DECISIONS.md` D-036.
+
+**Open items, in priority order:**
+
+- **Embed the captured cadastral map image in the rendered PDF report.** The fetcher returns `mapImageBase64` (588 KB SVG for Mendhasala 181/10454) but the consumer-report renderer at `agents/consumer-report-writer/` does not yet embed it. Should appear in Section 1 (The plot) above the satellite-view. *Parked because:* the fetcher is a sibling cross-check, not the primary source — Section 1 already has the polygon + satellite view. Worth ~1 buyer-trust lift.
+- **Plot-report map image in the web HTML view.** Same image, served via the existing token-scoped `/report/{id}` page. The web view should show the captured SVG, not just the polygon outline. *Parked because:* same reason — polygon + satellite covers the trust job.
+- **Faster screenshot path for the contract-test suite.** The fetcher's smoke test takes ~8s because Playwright launches a fresh chromium per call. The contract test suite is fast because it uses a static HTML fixture, but a per-plot live smoke at CI scale (~50 plots) would take ~7 minutes. *Parked because:* only matters when the regression suite goes fully live in CI (V4 exit). For now, one anchor case (P051) per PR is enough.
+- **Cross-source consistency check: Bhunaksha Plot Report vs Bhulekh ROR vs Bhunaksha Polygon.** Three sources of truth for the same plot; the V3 section validator at `qa/section_validators/section-1.test.ts` does not yet assert that the three agree on at least 4 of 5 identifying fields (plotNo, khatiyanNo, mouza, tehsil, district). *Parked because:* requires the P051 manifest to be filled in for the other 49 ground-truth plots (founder manual work, V2 → V3 transition).
+- **GIS-code table coverage for all 1,477 Khordha villages.** The lookup table at `packages/fetchers/bhunaksha-plot-report/src/gis-codes.ts` is bootstrapped from a subset (Mendhasala + a few neighbours tested live). For the fetcher to be useful at scale, every village in `KHRDHA_VILLAGES` needs its giscode. *Parked because:* villages outside the table return `invalid_input` (typed degradation), not a crash. The buyer sees a "verify plot report at the Tehsil" note. Acceptable until the fetcher goes from "anchor case" to "default Khordha coverage" in V3.
+- **Multi-district GIS-code tables (Cuttack, Puri, Ganjam, Sambalpur).** Same as above, for the other 4 districts. *Parked because:* multi-district is blocked on V4 exit anyway. Will batch this with the Cuttack launch.
+- **Bhulekh Plot Report ROR cross-check rule.** The ROR-vs-plot-report disagreement rule ("if Bhulekh area ≠ Bhunaksha area, surface a watch-out") is not yet encoded in `FRAUD_PATTERNS.md`. *Parked because:* a single-source mismatch is not yet a proven fraud pattern. Wait for the V3 cross-source validator to flag ≥3 such cases organically before promoting to the playbook.
+
+---
+
 ## Parked from initial strategy review (2026-05-14)
 
 ### Visual & data overlays (PI 3+ candidates)
@@ -101,3 +117,18 @@ This file is the relief valve. Use it ruthlessly. The point is to keep `CURRENT_
 ---
 
 *Reviewed: 2026-05-14. Next review: end of Sprint 5.*
+
+---
+
+## IGR EC V2 automated login — operational maturity (2026-06-14, D-037)
+
+**Status:** V2 fetcher code is shipped and unit-tested but not loaded by V1 dispatch. The launch path is V1's manual-instructions surface. The V2 code at `packages/fetchers/igr-ec/src/index.v2.ts` is preserved for unit tests and the smoke script `scripts/smoke/igr-ec-otp-smoke.mjs`.
+
+**Why parked:**
+- IGR login is OTP-gated per session, captcha top-1 is ~50-60%, top-8 ~80% with the smart solver — single-attempt success is too low for a buyer-facing path
+- Playwright session must stay alive from captcha solve through OTP submit; can't survive across CI/dev tools
+- A failed automated EC fetch returning `status: "partial"` is operationally worse than the V1 "go to the SRO and ask for these documents" surface, which is what a buyer would do anyway
+
+**Re-enable trigger (V2 → launch path):** 50+ buyer reports, captcha top-1 ≥85% (target hit), and an OTP input channel that doesn't require a live Playwright session (e.g. a tiny web UI where the founder pastes the OTP once per day; or a 2Captcha-type relay that returns an IGR-issued cookie without OTP).
+
+**Next step:** Park the V2 dispatcher, keep the captcha solver + smoke script. Revisit at the 50-report review.

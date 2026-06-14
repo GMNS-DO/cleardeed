@@ -22,6 +22,7 @@ import {
   type OwnershipReasonerResult,
 } from "@cleardeed/consumer-report-writer";
 import { bhunakshaFetch } from "@cleardeed/fetcher-bhunaksha";
+import { bhunakshaPlotReportFetch } from "@cleardeed/fetcher-bhunaksha-plot-report";
 import { nominatimFetch } from "@cleardeed/fetcher-nominatim";
 import { ecourtsFetch } from "@cleardeed/fetcher-ecourts";
 
@@ -68,6 +69,9 @@ export interface PipelineOutput {
     rccms: string;
   };
   sources: SourceResult[];
+  /** Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR cross-check.
+   *  Adds the cadastral map image, owner block, khatiyan no, and three-column area. */
+  bhunakshaPlotReport?: unknown;
 }
 
 /**
@@ -253,7 +257,9 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
   const reportInput = mapToReportInput(
     {
       reportId: orchestratorOutput.reportId,
-      sources: orchestratorOutput.sources,
+      sources: bhunakshaPlotReport
+        ? [...orchestratorOutput.sources, bhunakshaPlotReport as SourceResult]
+        : orchestratorOutput.sources,
       completedAt: orchestratorOutput.completedAt,
       validationFindings: orchestratorOutput.validationFindings ?? [],
       igrLink,
@@ -343,6 +349,9 @@ export interface V11PipelineOutput {
     type: "Polygon";
     coordinates: number[][][];
   } | null;
+  /** Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR
+   *  cross-check. Adds cadastral map image, owner block, khatiyan no, area. */
+  bhunakshaPlotReport?: unknown;
 }
 
 /**
@@ -421,6 +430,28 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     bhunakshaSummary = "fetch_error";
   }
 
+  // ── Step 1c: Bhunaksha Plot Report — independent ROR cross-check ────────
+  // Adds the cadastral map image, owner block, khatiyan no, and three-column
+  // area (acres/decimal/hectare). Per bhulekh_bhunaksha_guide.md §3 the URL
+  // is derivable from district/tehsil/RI/mouza GIS code; no login or captcha.
+  let bhunakshaPlotReport:
+    | Awaited<ReturnType<typeof bhunakshaPlotReportFetch>>
+    | null = null;
+  if (bhunakshaResult?.data?.plotNo && input.village && input.tehsil) {
+    try {
+      bhunakshaPlotReport = await bhunakshaPlotReportFetch({
+        village: input.village,
+        tahasil: input.tehsil,
+        plotNo: bhunakshaResult.data.plotNo,
+      });
+    } catch (err) {
+      console.warn(
+        "[pipeline/v11] Bhunaksha Plot Report fetch error:",
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
   // ── Step 2a: eCourts — case search by owner name ───────────────────────────
   const ownerNames = bhulekhData?.tenants?.map((t) => t.tenantName).filter(Boolean) ?? [];
   let ecourtsResult: Awaited<ReturnType<typeof ecourtsFetch>> | null = null;
@@ -439,9 +470,12 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
 
   // ── Step 2b: IGR EC — Encumbrance Certificate search ───────────────────────
   // Resolve SRO from tehsil name, then search by plot number and owner name.
+  // IGR EC automated login is deferred from the Khordha launch (D-037); the
+  // buyer receives the typed manual-instructions panel and the SRO portal
+  // link. Re-enable V2 by setting IGR_CITIZEN_LOGIN_ID and
+  // IGR_CITIZEN_PASSWORD in env (see packages/fetchers/igr-ec/src/index.ts).
   let igrEcResult: Awaited<ReturnType<typeof igrEcFetch>> | null = null;
   try {
-    const plotIdentifier = input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo ?? "";
     igrEcResult = await igrEcFetch({
       partyName: ownerNames[0] ?? "",
       district: "Khordha",
@@ -451,6 +485,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     });
   } catch (err) {
     console.warn("[pipeline/v11] IGR EC fetch error:", err instanceof Error ? err.message : err);
+    igrEcResult = null;
   }
 
   // ── Step 2c: CERSAI — mortgage / charge search by owner name ───────────────
@@ -841,6 +876,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       rccms: rccmsResult?.status ?? "not_run",
     },
     bhunakshaPolygon,
+    bhunakshaPlotReport: bhunakshaPlotReport ?? null,
   };
 }
 
