@@ -328,6 +328,48 @@ export const BhunakshaResult = SourceResultBase.extend({
 
 export type BhunakshaResult = z.infer<typeof BhunakshaResult>;
 
+// Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent cross-check
+// of the ROR. Adds the cadastral map image, owner block, khatiyan, and
+// three-column area (acres/decimal/hectare). The URL is derivable from the
+// district/tehsil/RI/mouza GIS code; no login or captcha.
+export const BhunakshaPlotReportResult = SourceResultBase.extend({
+  source: z.literal("bhunaksha_plot_report"),
+  data: z
+    .object({
+      plotNo: z.string(),
+      khatiyanNo: z.string().nullable().optional(),
+      thana: z.string().nullable().optional(),
+      thanaNo: z.string().nullable().optional(),
+      mouza: z.string().nullable().optional(),
+      tehsil: z.string().nullable().optional(),
+      tehsilNo: z.string().nullable().optional(),
+      district: z.string().nullable().optional(),
+      area: z
+        .object({
+          acres: z.number().nullable().optional(),
+          decimal: z.number().nullable().optional(),
+          hectare: z.number().nullable().optional(),
+        })
+        .optional(),
+      owner: z
+        .object({
+          name: z.string().nullable().optional(),
+          father: z.string().nullable().optional(),
+          caste: z.string().nullable().optional(),
+          address: z.string().nullable().optional(),
+        })
+        .nullable()
+        .optional(),
+      mapImageBase64: z.string().nullable().optional(),
+      mapScale: z.string().nullable().optional(),
+      gisCode: z.string().optional(),
+      sourceUrl: z.string().optional(),
+    })
+    .optional(),
+});
+
+export type BhunakshaPlotReportResult = z.infer<typeof BhunakshaPlotReportResult>;
+
 // eCourts (case search)
 export const CaseParty = z.object({
   name: z.string(),
@@ -539,6 +581,7 @@ export const SourceResult = z.discriminatedUnion("source", [
   NominatimResult,
   IGRECResult,
   CERSAIResult,
+  BhunakshaPlotReportResult,
 ]);
 
 export type SourceResult = z.infer<typeof SourceResult>;

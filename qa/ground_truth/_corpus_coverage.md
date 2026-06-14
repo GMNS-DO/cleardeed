@@ -1,9 +1,14 @@
 # Ground-Truth Corpus Coverage Matrix
 
-> Generated: 2026-06-12
-> Total plots: 50 | Verified: 5 | Pending: 45
+> Generated: 2026-06-14
+> Total plots: 51 | Verified: 6 | Pending: 45
+>
+> **P051 added 2026-06-14** — anchor case for the new Bhunaksha Plot Report
+> fetcher (plotreportOR.jsp). Captured live, not founder-verified. P001-P050
+> unchanged. See `qa/ground_truth/P051/transcript.md` for the live-fetch
+> walkthrough.
 
-This matrix shows the 50-plot ground-truth corpus coverage of the 10-tahasil Khordha
+This matrix shows the 51-plot ground-truth corpus coverage of the 10-tahasil Khordha
 space, sliced by plot pattern, BDA zone, and kisam class. **Empty cells are gaps** the
 founder must fill in subsequent manual-verification sessions.
 
@@ -56,15 +61,16 @@ founder must fill in subsequent manual-verification sessions.
 
 ---
 
-## Verified Plots (5)
+## Verified Plots (6)
 
 | Plot ID | Tahasil | Village | Plot # | Pattern | Verified |
 |---|---|---|---|---|---|
-| P001 | Bhubaneswar | Mendhasala | 415 | numeric | yes |
-| P002 | Bhubaneswar | Patia | 1024 | numeric | yes |
-| P003 | Bhubaneswar | Chandrasekharpur | D/588 | d_prefix | yes |
-| P004 | Bhubaneswar | Khandagiri | 127/2 | fraction | yes |
-| P005 | Bhubaneswar | Sundarpada | 89A | alphanumeric | yes |
+| P001 | Bhubaneswar | Mendhasala | 415 | numeric | yes (founder) |
+| P002 | Bhubaneswar | Patia | 1024 | numeric | yes (founder) |
+| P003 | Bhubaneswar | Chandrasekharpur | D/588 | d_prefix | yes (founder) |
+| P004 | Bhubaneswar | Khandagiri | 127/2 | fraction | yes (founder) |
+| P005 | Bhubaneswar | Sundarpada | 89A | alphanumeric | yes (founder) |
+| P051 | Bhubaneswar | Mendhasala | 181/10454 | fraction | auto (live plotreportOR.jsp fetch) |
 
 ---
 

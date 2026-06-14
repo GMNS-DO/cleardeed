@@ -190,6 +190,9 @@ export const ConsumerReportGenInputSchema = z.object({
   bdaZoneData: z.any().optional(),
   // P-NEW-1A: Pattern intelligence synthesis insights
   synthesisInsights: z.array(z.any()).optional().default([]),
+  // Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR
+  // cross-check. Contains cadastral map image (base64), owner block, khatiyan.
+  bhunakshaPlotReport: z.any().optional().nullable(),
 });
 
 export type ConsumerReportGenInputData = z.infer<typeof ConsumerReportGenInputSchema>;
@@ -214,6 +217,7 @@ export function mapToReportInput(
   const igrEc = sources.find((s) => s.source === "igr-ec");
   const cersai = sources.find((s) => s.source === "cersai");
   const larr = sources.find((s) => s.source === ("larr" as string));
+  const bhunakshaPlotReport = sources.find((s) => s.source === "bhunaksha_plot_report");
 
   const nominatimData = nominatim?.data as {
     displayName?: string;
@@ -443,6 +447,7 @@ export function mapToReportInput(
     sourceStatus: {
       nominatim: nominatim?.status ?? "not_run",
       bhunaksha: bhunaksha?.status ?? "not_run",
+      bhunaksha_plot_report: bhunakshaPlotReport?.status ?? "not_run",
       bhulekh: bhulekh?.status ?? "not_run",
       bhulekh_back_page: (bhulekhBackPage?.status as string) ?? "not_applicable",
       ecourts: ecourts?.status ?? "not_run",
@@ -471,6 +476,10 @@ export function mapToReportInput(
     bdaZoneData: tier2.bdaZoneData ?? null,
     // P-NEW-1A: Pattern intelligence synthesis insights
     synthesisInsights: tier2.synthesisInsights ?? [],
+    // Bhunaksha Plot Report — passed through to renderer; renderer can embed
+    // the cadastral map image in Section 1 and add cross-check lines in
+    // Sections 2 and 5 when present.
+    bhunakshaPlotReport: bhunakshaPlotReport?.data ?? null,
   };
 }
 

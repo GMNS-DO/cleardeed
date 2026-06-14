@@ -305,6 +305,7 @@ Product implementation is done. All remaining work is commercial — see `COMMER
 **Exit criteria:**
 - [x] All 8 wired fetchers have Zod contract schemas
 - [x] All 8 fetchers have golden-path test files (496 tests pass)
+- [x] 9th fetcher (Bhunaksha Plot Report, plotreportOR.jsp) added 2026-06-14 (D-036) — 59 V2 contract tests, P051 live-verified ground truth, ~8s end-to-end
 - [x] Per-fetcher accuracy report: % plots where extracted value matches ground truth, by field
 - [ ] CERSAI OCR ≥85% captcha accuracy with retry logic
 - [ ] All known issues in `qa/known_issues.md` either fixed or have planned fix sprint

@@ -70,7 +70,7 @@ async function probePortal(): Promise<ProbeResult | null> {
   // Use Promise.race with 3s timeout to avoid hanging on slow portal
   const probePromises = SEARCH_PATHS.map(async (path) => {
     try {
-      const res = await fetch(`${RCCMS_BASE}${path}`, {
+      const res = await globalThis.fetch(`${RCCMS_BASE}${path}`, {
         signal: AbortSignal.timeout(3_000),
         headers: { "User-Agent": USER_AGENT },
       });

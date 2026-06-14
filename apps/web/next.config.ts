@@ -12,6 +12,7 @@ const nextConfig = {
     "@cleardeed/fetcher-igr-ec",
     "@cleardeed/fetcher-cersai",
     "@cleardeed/fetcher-rccms",
+    "@cleardeed/fetcher-bhunaksha-plot-report",
   ],
   outputFileTracingRoot: path.join(__dirname, "../.."),
   outputFileTracingIncludes: {

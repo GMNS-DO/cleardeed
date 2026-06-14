@@ -38,23 +38,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // report_feedback.report_id is UUID NOT NULL; demo / non-UUID URLs (e.g.
+    // CLD-DEMO-...) cannot be stored as-is. Skip the insert for non-UUID IDs
+    // rather than failing silently — track them via the funnel event below.
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isUuid = uuidRe.test(body.reportId);
+
     // Store feedback in Supabase if configured
-    try {
-      const { error } = await supabaseAdmin()
-        .from("report_feedback")
-        .insert({
-          report_id: body.reportId,
-          section: body.section,
-          vote: body.vote,
-          comment: body.comment?.slice(0, 1000) ?? null,
-          created_at: new Date().toISOString(),
-        });
-      if (error && error.code !== "PGRST204") {
-        // Table may not exist yet — log and continue
-        console.warn("[/api/feedback] Supabase insert failed:", error.message);
+    if (isUuid) {
+      try {
+        const { error } = await supabaseAdmin()
+          .from("report_feedback")
+          .insert({
+            report_id: body.reportId,
+            section: body.section,
+            vote: body.vote,
+            comment: body.comment?.slice(0, 1000) ?? null,
+            created_at: new Date().toISOString(),
+          });
+        if (error && error.code !== "PGRST204") {
+          // Table may not exist yet — log and continue
+          console.warn("[/api/feedback] Supabase insert failed:", error.message);
+        }
+      } catch {
+        // Feedback storage failure does not block the response
       }
-    } catch {
-      // Feedback storage failure does not block the response
+    } else {
+      console.log(
+        `[/api/feedback] non-UUID reportId (${body.reportId}); feedback not stored, only tracked as funnel event`
+      );
     }
 
     // Funnel: in-report panel feedback

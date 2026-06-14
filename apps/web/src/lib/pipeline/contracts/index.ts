@@ -12,6 +12,7 @@
 export * from "./types";
 export * as Bhulekh from "./bhulekh";
 export * as Bhunaksha from "./bhunaksha";
+export * as BhunakshaPlotReport from "./bhunaksha-plot-report";
 export * as Ecourts from "./ecourts";
 export * as IgrEc from "./igr-ec";
 export * as Cersai from "./cersai";

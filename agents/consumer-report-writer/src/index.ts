@@ -223,6 +223,13 @@ export function generateConsumerReport(
     selectTopInsights(riskInsights.positive, 2)
   );
   const rorPlotTablePanel = buildRoRPlotTablePanel(revenueRecords?.plotRows ?? [], plotNo);
+  // Bhunaksha Plot Report (D-036) — captcha-free per-plot ground-truth cross-check.
+  // Renders the rendered cadastral map (base64 SVG) as a third visualization in
+  // Section 1, alongside the polygon and satellite. Guard against oversized
+  // payloads to keep the report HTML light.
+  const bhunakshaMapPanel = buildBhunakshaMapPanel(
+    (data.bhunakshaPlotReport as { mapImageBase64?: string | null } | null)?.mapImageBase64 ?? null
+  );
   const rorBackPagePanel = buildRoRBackPagePanel(
     revenueRecords?.backPage,
     [
@@ -529,6 +536,7 @@ ${buildProvenanceStrip({
     </div>
     ${rorCompletenessPanel}
     ${rorPlotTablePanel}
+    ${bhunakshaMapPanel}
   </div>
 </section>
 
@@ -865,17 +873,33 @@ function submitFeedbackComment(section, btn) {
   var comment = textarea ? textarea.value : '';
   var widget = document.getElementById('feedback-' + section);
   var rid = getReportId();
-  var data = new FormData();
-  data.append('reportId', rid || 'demo');
-  data.append('section', section);
-  data.append('vote', widget.querySelector('.active-up') ? 'up' : 'down');
-  if (comment.trim()) data.append('comment', comment);
-  navigator.sendBeacon && navigator.sendBeacon('/api/feedback', JSON.stringify(Object.fromEntries(data)));
+  var payload = JSON.stringify({
+    reportId: rid || 'demo',
+    section: section,
+    vote: widget.querySelector('.active-up') ? 'up' : 'down',
+    comment: comment.trim() || null,
+  });
+  // sendBeacon requires a Blob with a content-type for the server to parse it
+  // as JSON; fall back to fetch with keepalive when sendBeacon is missing.
+  var sent = false;
+  if (navigator.sendBeacon) {
+    try {
+      sent = navigator.sendBeacon('/api/feedback', new Blob([payload], { type: 'application/json' }));
+    } catch (e) { sent = false; }
+  }
+  if (!sent) {
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(function() {});
+  }
   btn.textContent = 'Sent!';
   btn.disabled = true;
   setTimeout(function() {
     commentDiv.style.display = 'none';
-    widget.querySelectorAll('.feedback-btn').forEach(function(b) { b.classList.remove('active-up','active-down'); b.textContent = b.textContent; });
+    widget.querySelectorAll('.feedback-btn').forEach(function(b) { b.classList.remove('active-up','active-down'); });
     widget.querySelector('.feedback-thanks').style.display = 'none';
     btn.textContent = 'Send feedback';
     btn.disabled = false;
@@ -2731,6 +2755,28 @@ function buildRoRScreenshotFigure(label: string, image: unknown): string {
   </figure>`;
 }
 
+/**
+ * Render the Bhunaksha Plot Report (D-036) cadastral map as a third
+ * visualization in Section 1 (alongside polygon + satellite).
+ * The fetcher returns the rendered plotreportOR.jsp as a base64-encoded SVG.
+ * Guard against the ~588 KB payload growing and against stale fetches that
+ * returned an empty string. Returns "" if there's nothing to render.
+ */
+function buildBhunakshaMapPanel(mapImageBase64: string | null | undefined): string {
+  const raw = String(mapImageBase64 ?? "").trim();
+  if (!raw) return "";
+  // The fetcher stores the SVG already base64-encoded. Prefix the data URI
+  // unless the upstream already wrapped it.
+  const src = raw.startsWith("data:image/") ? raw : `data:image/svg+xml;base64,${raw}`;
+  if (src.length > 1_500_000) {
+    return `<div class="ror-screenshot-too-large"><strong>Cadastral map (Bhunaksha)</strong><span>Map captured but too large to embed in the inline report.</span></div>`;
+  }
+  return `<figure class="bhunaksha-map">
+    <img src="${escapeHtml(src)}" alt="Bhunaksha cadastral map for this plot" loading="lazy" style="max-width:100%;height:auto;display:block;" />
+    <figcaption>Cadastral map (Bhunaksha) — rendered from the Odisha revenue plot report</figcaption>
+  </figure>`;
+}
+
 function buildRoRPlotTablePanel(plotRows: any[], selectedPlotNo: unknown): string {
   if (!Array.isArray(plotRows) || plotRows.length === 0) return "";
 
@@ -4079,6 +4125,28 @@ body {
   padding: 8px;
   background: var(--gray-50);
 }
+/* Bhunaksha Plot Report cadastral map (D-036) — third visualization in Section 1. */
+.bhunaksha-map {
+  margin: 12px 0 0 0;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
+}
+.bhunaksha-map img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 480px;
+  object-fit: contain;
+  background: var(--gray-50);
+}
+.bhunaksha-map figcaption {
+  display: block;
+  padding: 6px 8px;
+  color: var(--gray-500);
+  font-size: 11px;
+}
 .selected-source-row {
   background: var(--blue-50);
 }
@@ -4455,6 +4523,85 @@ body {
   letter-spacing: 0.03em;
 }
 .demo-banner a { color: var(--amber-700); text-decoration: underline; }
+
+/* Feedback widget — in-report panel, Sprint 1 per engineering constitution */
+.feedback-widget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 6px 0 2px;
+  border-top: 1px dotted var(--gray-200);
+  font-size: 12px;
+  color: var(--gray-600);
+  justify-content: flex-end;
+}
+.feedback-label { margin-right: 4px; white-space: nowrap; }
+.feedback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--gray-600);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  line-height: 1;
+}
+.feedback-btn:hover { background: var(--gray-100); border-color: var(--gray-400); }
+.feedback-btn.active-up {
+  background: var(--green-50);
+  border-color: var(--green-200);
+  color: var(--green-700);
+}
+.feedback-btn.active-down {
+  background: var(--red-50);
+  border-color: var(--red-200);
+  color: var(--red-700);
+}
+.feedback-btn:disabled { opacity: 0.6; cursor: default; }
+.feedback-thanks { font-size: 11px; color: var(--green-700); margin-left: 2px; }
+.feedback-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  max-width: 420px;
+  margin-left: auto;
+}
+.feedback-comment textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+  line-height: 1.4;
+}
+.feedback-comment textarea:focus { outline: 2px solid var(--gray-400); outline-offset: 1px; }
+.feedback-submit {
+  align-self: flex-end;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  background: var(--white);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.feedback-submit:hover { background: var(--gray-100); border-color: var(--gray-400); }
+.feedback-submit:disabled { opacity: 0.6; cursor: default; }
 
 /* Misc */
 .small-print { font-size: 11px; color: var(--gray-400); }

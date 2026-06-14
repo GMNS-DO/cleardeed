@@ -5,6 +5,7 @@ packages:
   - 'packages/pdf-renderer'
   - 'packages/fetchers/nominatim'
   - 'packages/fetchers/bhunaksha'
+  - 'packages/fetchers/bhunaksha-plot-report'
   - 'packages/fetchers/ecourts'
   - 'packages/fetchers/bhulekh'
   - 'packages/fetchers/high-court'

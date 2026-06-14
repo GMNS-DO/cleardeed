@@ -80,9 +80,13 @@ Same report, layered for different readers:
 | ROR front + back page (Khata, Plot, area, kisam, satwa) | Bhulekh Odisha | S1 |
 | Plot pin on base map | Google Maps / Mapbox | S2 |
 | Plot boundary on map view | Bhunaksha WFS / cadastral | S2 |
+| Cadastral map image (per-plot report) | Bhunaksha Plot Report (plotreportOR.jsp) | V2 (PI-V) |
+| Plot report cross-check (khatiyan, thana, mouza, tehsil, district, area triple, owner block) | Bhunaksha Plot Report (plotreportOR.jsp) | V2 (PI-V) |
 | Satellite view with boundary overlay | Google Maps / Mapbox satellite | S2 |
 | Street view (where available) | Google Street View | S2 |
 | Adjacent plot kisam overlay | Bhunaksha (4–8 adjacent polygons) | S11 (PI 3) |
+
+**Why two Bhunaksha fetchers:** the polygon fetcher answers *"where is it on the map?"* (WFS geometry). The plot-report fetcher answers *"what does the official record say?"* — khatiyan, thana, mouza, tehsil, district, three-column area (acres / decimal / hectare), full owner block (name / father / caste / address), and the cadastral map image (base64 SVG). The two run independently and cross-check the ROR. Where they agree, confidence is high. Where they disagree, the ROR wins and the buyer should verify at the Tehsil. No login, no captcha — the only captcha-free live path to a ground-truth-bound owner block for a specific plot. See `DECISIONS.md` D-036.
 
 ### 4.2 The owner
 

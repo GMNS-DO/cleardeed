@@ -167,6 +167,34 @@
     "expected_status": "invalid_input"
   },
   {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "ecourts",
+    "description": "doubleFetch=true with captcha_failed outcome — should map to no_data",
+    "input": { "partyName": "Test Name", "districtCode": "8", "doubleFetch": true },
+    "expected_status": "no_data"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "rccms",
+    "description": "Empty district string — should map to invalid_input",
+    "input": { "district": "", "tahasil": "Bhubaneswar", "village": "Mendhasala" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "rccms",
+    "description": "Village not in Khordha district — should map to invalid_input",
+    "input": { "district": "Khordha", "tahasil": "Bhubaneswar", "village": "Cuttack City" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "rccms",
+    "description": "Plot exists in Khordha but portal_unreachable — should map to source_down",
+    "input": { "district": "Khordha", "tahasil": "Bhubaneswar", "village": "Mendhasala", "plotNo": "415" },
+    "expected_status": "source_down"
+  },
+  {
     "fetcher": "circle-rate",
     "description": "Unknown mouza + tehsil combo — should map to no_data",
     "input": { "mouza": "ZZZ_NONEXISTENT", "tehsil": "Bhubaneswar", "kisam": "Residential" },

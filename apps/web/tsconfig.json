@@ -20,6 +20,7 @@
       "@cleardeed/fetcher-nominatim": ["../../packages/fetchers/nominatim/src/index.ts"],
       "@cleardeed/fetcher-bhulekh": ["../../packages/fetchers/bhulekh/src/index.ts"],
       "@cleardeed/fetcher-bhunaksha": ["../../packages/fetchers/bhunaksha/src/index.ts"],
+      "@cleardeed/fetcher-bhunaksha-plot-report": ["../../packages/fetchers/bhunaksha-plot-report/src/index.ts"],
       "@cleardeed/fetcher-ecourts": ["../../packages/fetchers/ecourts/src/index.ts"],
       "@cleardeed/fetcher-igr-ec": ["../../packages/fetchers/igr-ec/src/index.ts"],
       "@cleardeed/fetcher-cersai": ["../../packages/fetchers/cersai/src/index.ts"],

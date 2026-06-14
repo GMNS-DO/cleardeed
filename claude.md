@@ -77,6 +77,9 @@ These have been considered and rejected. Do not propose them again without chang
 - **PID Pattern scoring without case validation.** Patterns below PROBABLE tier are internal-only; they do not appear in buyer-facing reports. Geographic blacklisting by place name is explicitly prohibited.
 - **Bhulekh Mirror touching /app code.** The mirror is a separate `/crawl` directory (off-limits to main app work). Only integration point is the `high_priority_recheck` INSERT after paid report generation.
 - **Generic multi-district before Khordha is validated.** Mirror and PID expand to 4 more districts only after Phase 1 produces ≥15 validated cases and ≥3 VALIDATED patterns.
+- **Bhunaksha Plot Report fetcher as a Bhulekh replacement.** The plot-report fetcher (D-036) is a captcha-free cross-check, not a substitute for the Bhulekh ROR. Pipeline wraps it in typed degradation; the ROR remains the primary source. If the two disagree, the ROR wins, and the buyer should verify at the Tehsil.
+- **Generic GIS-code table for all 1,477 Khordha villages up front.** The lookup table at `packages/fetchers/bhunaksha-plot-report/src/gis-codes.ts` is bootstrapped from a subset. Villages outside the table return `invalid_input` (typed degradation), not a crash. Full coverage batches with the Cuttack launch in PI 2.
+- **Bhunaksha Plot Report map image embedded in the PDF / web report today.** The fetcher returns `mapImageBase64` (588 KB SVG), but the consumer-report renderer does not yet embed it. Section 1 (The plot) is already covered by polygon + satellite. Embedding is a small trust lift, parked in `BACKLOG.md`.
 
 ## 9. Tech baseline (assumed, change in DECISIONS.md if you deviate)
 
@@ -85,7 +88,7 @@ These have been considered and rejected. Do not propose them again without chang
 - **Email:** Resend or equivalent transactional provider. Email is a copy/backup, not the only delivery surface.
 - **PDF:** Server-rendered from the same HTML as the web report. Print-optimized CSS.
 - **Storage:** Persistent token-scoped URLs. 60-day report validity, pay-to-refresh option.
-- **Data sources:** Bhulekh ROR (existing fetcher), IGR Odisha EC, eCourts, RCCMS, CERSAI, Bhunaksha. Concierge first, automation second.
+- **Data sources:** Bhulekh ROR (existing fetcher), IGR Odisha EC, eCourts, RCCMS, CERSAI, Bhunaksha (polygon WFS + per-plot report). Concierge first, automation second. The Bhunaksha Plot Report fetcher (`plotreportOR.jsp`) is the only captcha-free live path to a ground-truth-bound owner block for a specific plot — see `DECISIONS.md` D-036.
 - **LLM use:** Translation and copy-shaping only. Never authoritative outputs. Fully automated — no founder review gate.
 
 ## 10. The fundable narrative (for context, not for chest-thumping in code)
@@ -115,10 +118,10 @@ Pre-seed conversations open only after PI 3 is complete. See `COMMERCIAL_TRACK.m
 | Pattern Intelligence Database (build spec + handoff) | `PID_CLAUDE_CODE_INSTRUCTIONS.md` + `PID_TRACK.md` |
 | Buyer conversation log (3/week non-negotiable) | `CUSTOMER_DEVELOPMENT.md` |
 
-*DECISIONS.md also contains D-024 (Bhulekh Mirror) and D-025 (PID) — read them before working on either track.
+*DECISIONS.md also contains D-024 (Bhulekh Mirror), D-025 (PID), and D-036 (Bhunaksha Plot Report fetcher) — read them before working on either track.
 
 Anything not in one of those files probably does not belong in the repo as a markdown file. Code goes in code. Decisions go in `DECISIONS.md`. History does not need a home.
 
 ---
 
-*Last revised: 2026-05-25. Bhulekh Mirror and PID integrated into strategy (D-024, D-025). Commercial activities isolated to `COMMERCIAL_TRACK.md`. Implementation PIs 1–3 are engineering-only.*
+*Last revised: 2026-06-14. Bhunaksha Plot Report fetcher (V2) shipped (D-036): sibling to the existing Bhunaksha polygon fetcher, returns the rendered per-plot report from `plotreportOR.jsp` (text fields + owner block + cadastral map image), covered by 59 V2 contract tests against a live-verified P051 ground-truth manifest. IGR EC captcha accuracy also solved with 3-way ddddocr ensemble + adaptive K (D-035). Bhulekh Mirror and PID remain integrated into strategy (D-024, D-025). Commercial activities isolated to `COMMERCIAL_TRACK.md`. Implementation PIs 1–3 are engineering-only.*

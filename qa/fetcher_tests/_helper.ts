@@ -38,6 +38,7 @@ export interface GroundTruthManifest {
   fetchers: {
     bhulekh?: Record<string, unknown>;
     bhunaksha?: Record<string, unknown>;
+    bhunaksha_plot_report?: Record<string, unknown>;
     ecourts?: Record<string, unknown>;
     "igr-ec"?: Record<string, unknown>;
     cersai?: Record<string, unknown>;
@@ -101,6 +102,7 @@ export function fetcherSlice(
   fetcher:
     | "bhulekh"
     | "bhunaksha"
+    | "bhunaksha_plot_report"
     | "ecourts"
     | "igr-ec"
     | "cersai"
@@ -151,6 +153,7 @@ export interface InvalidInputCase {
   fetcher:
     | "bhulekh"
     | "bhunaksha"
+    | "bhunaksha_plot_report"
     | "ecourts"
     | "igr-ec"
     | "cersai"
