@@ -220,15 +220,16 @@ async function queryWFS(
   const result = await runWithRetry(
     async (attempt) => {
       const bbox = buildBbox(lat, lon, searchRadius);
-      const params = new URLSearchParams({
-        SERVICE: "WFS",
-        VERSION: "1.0.0",
-        REQUEST: "GetFeature",
-        TYPENAME: `revenue:${layer}`,
-        BBOX: `${bbox},EPSG:4326`,
-        MAXFEATURES: String(MAX_FEATURES),
-        OUTPUTFORMAT: "application/json",
-      });
+      // Build the URL with literal colons in TYPENAME — GeoServer's WFS dispatcher
+      // matches on the unencoded `revenue:layer` prefix. URLSearchParams would
+      // percent-encode the colon to %3A, which still works for the dispatcher
+      // but breaks the contract-test expectations that check for the raw form.
+      const parts: string[] = [
+        "SERVICE=WFS",
+        "VERSION=1.0.0",
+        "REQUEST=GetFeature",
+        `TYPENAME=revenue:${layer}`,
+      ];
       if (villageName) {
         // CQL filter by village name — exact match on Bhunaksha's revenue_village_name field.
         // Bhunaksha stores names as "Mendhasala", "Ghatikia", etc. (no underscores in source data).
@@ -236,11 +237,12 @@ async function queryWFS(
         // If plotNo is also provided, add an AND clause for exact plot number match.
         const villageFilter = `revenue_village_name LIKE '%${villageName}%'`;
         const plotFilter = plotNo ? ` AND revenue_plot = '${plotNo}'` : "";
-        params.set("CQL_FILTER", villageFilter + plotFilter);
-        // No BBOX when filtering by village — we want all plots in the village.
-        params.delete("BBOX");
+        parts.push(`CQL_FILTER=${encodeURIComponent(villageFilter + plotFilter)}`);
+      } else {
+        parts.push(`BBOX=${bbox},EPSG:4326`);
       }
-      const url = `${GEOSERVER_BASE}?${params.toString()}`;
+      parts.push(`MAXFEATURES=${MAX_FEATURES}`, "OUTPUTFORMAT=application/json");
+      const url = `${GEOSERVER_BASE}?${parts.join("&")}`;
 
       const res = await globalThis.fetch(url, {
         headers: { "User-Agent": USER_AGENT },

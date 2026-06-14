@@ -9,7 +9,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@cleardeed/schema": path.resolve(__dirname, "packages/schema/src/index.ts"),
+      "@cleardeed/schema": path.resolve(__dirname, "../../schema/src/index.ts"),
     },
   },
 });
