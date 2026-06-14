@@ -69,3 +69,100 @@ export type IgrEcContract = z.infer<typeof IgrEcContract>;
 
 /** Re-export the existing fetcher result type so schema and type stay in sync. */
 export type { IGRECResult };
+
+// ─── Adapter ──────────────────────────────────────────────────────────────────
+
+function buildError(code: string, message: string, details?: Record<string, string>) {
+  return { code, message, ...(details ? { details } : {}) } satisfies z.infer<typeof ContractError>;
+}
+
+const NO_DATA_CODES = [
+  "no_ec_found", "not_digitized", "no_encumbrance",
+  "portal_no_records",
+];
+const SOURCE_DOWN_CODES = [
+  "portal_error", "fetch_failed", "network_error",
+  "portal_unreachable", "sro_required",
+];
+const INVALID_INPUT_CODES = [
+  "invalid_input", "unsupported_district", "unsupported_sro",
+  "village_not_in_khordha",
+];
+const PARSE_ERROR_CODES = [
+  "parse", "html_parse", "unexpected",
+];
+
+function classifyIgrEcFailure(statusReason: string | undefined): z.infer<typeof ContractStatus> {
+  const lower = (statusReason ?? "").toLowerCase();
+  if (NO_DATA_CODES.some((c) => lower.includes(c))) return "no_data";
+  if (PARSE_ERROR_CODES.some((c) => lower.includes(c))) return "parse_error";
+  if (INVALID_INPUT_CODES.some((c) => lower.includes(c))) return "invalid_input";
+  if (SOURCE_DOWN_CODES.some((c) => lower.includes(c))) return "source_down";
+  return "source_down";
+}
+
+export function mapIgrEcToContract(
+  result: IGRECResult,
+  fetchedAt: string,
+): IgrEcContract {
+  const latencyMs =
+    (result as unknown as { latencyMs?: number }).latencyMs ??
+    (result.inputsTried?.length ? result.inputsTried.length * 1000 : 0);
+
+  // IGR EC is primarily a "manual instructions" deliverable in V1 — the
+  // fetcher surfaces `data.instructions` (a structured how-to) and
+  // `data.ecAvailable` (whether the SRO-issued EC exists at all). Both
+  // paths are treated as `ok` because the report renders them as
+  // structured buyer-facing copy, not as a typed failure.
+  if (result.status === "success" && result.data) {
+    const d = result.data;
+    return {
+      status: "ok",
+      source: "igr-ec",
+      data: {
+        ecAvailable: d.ecAvailable,
+        ecDocumentRef: d.ecDocumentRef,
+        entries: d.entries,
+        searchPeriod: d.searchPeriod,
+        sro: d.sro,
+        district: d.district,
+        fee: d.fee,
+        feeCurrency: d.feeCurrency,
+        instructions: d.instructions,
+      },
+      fetchedAt,
+      sourceUrl: "https://igrodisha.gov.in/",
+      latencyMs,
+    };
+  }
+
+  // `partial` with no data is still a buyer-visible negative result — the
+  // fetcher returned instructions but no EC, so surface as `no_data`.
+  if (result.status === "partial" && !result.data) {
+    return {
+      status: "no_data",
+      source: "igr-ec",
+      error: buildError(
+        "no_ec_found",
+        result.statusReason ?? "No EC available for this property — verify at the SRO.",
+      ),
+      fetchedAt,
+      sourceUrl: "https://igrodisha.gov.in/",
+      latencyMs,
+    };
+  }
+
+  // Everything else: map by statusReason vocabulary.
+  const status = classifyIgrEcFailure(result.statusReason);
+  return {
+    status,
+    source: "igr-ec",
+    error: buildError(
+      status,
+      result.statusReason ?? result.error ?? "IGR EC lookup failed",
+    ),
+    fetchedAt,
+    sourceUrl: "https://igrodisha.gov.in/",
+    latencyMs,
+  };
+}

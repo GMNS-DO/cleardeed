@@ -20,3 +20,4 @@ export * as Rccms from "./rccms";
 export * as CircleRate from "./circle-rate";
 export * as BdaZoning from "./bda-zoning";
 export * as Nominatim from "./nominatim";
+export * from "./status-bridge";
