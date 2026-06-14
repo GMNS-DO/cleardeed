@@ -110,4 +110,52 @@ describe("nominatim fetcher", () => {
     expect(second.data.sourceFetchedAt).toBe(first.fetchedAt);
     expect(second.data.cacheServedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
+
+  it("treats county as village when state_district supplies the district (rural shape)", () => {
+    // P051 live response shape: county=Chandaka, state_district=Khordha, no village key.
+    const result = buildResult(
+      {
+        display_name: "Chandaka, Khordha, Odisha, 752054, India",
+        address: {
+          county: "Chandaka",
+          state_district: "Khordha",
+          state: "Odisha",
+          postcode: "752054",
+          country: "India",
+          country_code: "in",
+        },
+      },
+      "success"
+    );
+
+    expect(result.data.village).toBe("Chandaka");
+    expect(result.data.district).toBe("Khordha");
+    expect(result.data.state).toBe("Odisha");
+    expect(result.verification).toBe("verified");
+    expect(result.statusReason).toBe("address_resolved");
+  });
+
+  it("prefers state_district for district when county equals state_district (urban shape)", () => {
+    // Bhubaneswar live response shape: county=Khordha, state_district=Khordha, city=Bhubaneswar.
+    const result = buildResult(
+      {
+        display_name: "Bhubaneswar, Khordha, Odisha, 751013, India",
+        address: {
+          suburb: "Ward 12",
+          city: "Bhubaneswar Municipal Corporation",
+          county: "Khordha",
+          state_district: "Khordha",
+          state: "Odisha",
+          postcode: "751013",
+          country: "India",
+          country_code: "in",
+        },
+      },
+      "success"
+    );
+
+    expect(result.data.village).toBe("Ward 12");
+    expect(result.data.district).toBe("Khordha");
+    expect(result.verification).toBe("verified");
+  });
 });

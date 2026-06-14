@@ -93,10 +93,14 @@ export function buildResult(
 ): z.infer<typeof NominatimResult> {
   const addr = raw.address;
 
-  const village =
-    addr.village || addr.suburb || addr.locality || addr.town || null;
-  const tahasil = addr.taluka || addr.taluk || addr.municipality || null;
-  const district = addr.county || addr.state_district || null;
+  const county = addr.county || null;
+  const stateDistrict = addr.state_district || null;
+  let village = addr.village || addr.suburb || addr.locality || addr.town || addr.hamlet || addr.neighbourhood || null;
+  let tahasil = addr.taluka || addr.taluk || addr.municipality || null;
+  if (!village && county && stateDistrict && county.toLowerCase() !== stateDistrict.toLowerCase()) {
+    village = county;
+  }
+  const district = village === county ? stateDistrict : (county || stateDistrict || null);
   const state = addr.state || null;
   const postcode = addr.postcode || null;
   const category = addr.land_class || null;
