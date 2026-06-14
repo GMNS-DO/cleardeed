@@ -1,0 +1,53 @@
+{
+  "run_id": "bhulekh-bhunaksha-corpus-baseline",
+  "run_at": "2026-06-14T00:00:00.000Z",
+  "scope": "Khordha district — 4,389 enumerated valid inputs in qa/khordha_inputs.json",
+  "ci_slice_size": 5,
+  "full_corpus_size": 4389,
+  "fetchers": {
+    "bhulekh": {
+      "expected_status_distribution": {
+        "ok": "~60% — Bhulekh ROR returns a typed record for ~2,600 of 4,389 inputs",
+        "no_data": "~25% — plot exists but ROR is blank or the village is not yet digitized",
+        "source_down": "~10% — Bhulekh portal timeout/5xx, captcha-blocked, or network error",
+        "invalid_input": "~5% — village not in dictionary, search mode not supported, malformed identifier"
+      },
+      "contract_envelope_assertion": "Every result, regardless of status, must pass BhulekhContract.safeParse()",
+      "ok_structural_invariants": [
+        "data.plotNo is a non-empty string",
+        "data.village is a non-empty string",
+        "data.tenants is a non-empty array",
+        "every tenant has non-empty tenantName and area > 0"
+      ]
+    },
+    "bhunaksha": {
+      "expected_status_distribution": {
+        "ok": "~80% — WFS returns a polygon for ~3,500 of 4,389 inputs (only those with GPS coordinates)",
+        "no_data": "~10% — village not in layer",
+        "partial": "~5% — polygon found but truncated by MAX_FEATURES=500 or no containing polygon for the point",
+        "source_down": "~5% — GeoServer 5xx, network timeout, or WFS response validation failure"
+      },
+      "contract_envelope_assertion": "Every result, regardless of status, must pass BhunakshaContract.safeParse()",
+      "ok_structural_invariants": [
+        "data.plotNo, data.village, data.tahasil are strings (may be empty when BBOX-only)",
+        "If data.polygon is present, it has at least 4 vertices (closed ring)"
+      ],
+      "requires_gps": true
+    }
+  },
+  "cross_source_invariants": {
+    "check_6_village_match": "When both Bhulekh and Bhunaksha return ok, normalized(bhulekh.village) === normalized(bhunaksha.village)",
+    "check_8_share_sum": "When Bhulekh returns ok, sum of parse(share) fractions across all tenants equals 1.0 (within 0.001 tolerance)"
+  },
+  "negative_case_coverage": {
+    "bhulekh": 8,
+    "bhunaksha": 10,
+    "total": 18,
+    "file": "qa/invalid_inputs.json (tag: fetcher_contract_v2_2026-06-14)"
+  },
+  "regression_threshold": {
+    "contract_envelope_pass_rate": "100% — every input must produce a Zod-valid contract envelope, no exceptions",
+    "cross_source_invariant_failure_rate": "0% — when both fetchers return ok, no village or share-sum mismatch",
+    "ci_offline_skip": "When CLEARDEED_OFFLINE=1, only the first 5 inputs are exercised. Locally or in nightly, set RUN_FULL_CORPUS=1 to exercise all 4,389 inputs."
+  }
+}

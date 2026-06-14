@@ -27,6 +27,104 @@
     "expected_status": "source_down"
   },
   {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Whitespace-only plot identifier — should map to invalid_input",
+    "input": { "searchMode": "Plot", "identifier": "   " },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Plot number with special characters — should map to invalid_input",
+    "input": { "searchMode": "Plot", "identifier": "<script>415</script>" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Search mode is 'Tenant' (not yet implemented) — should map to invalid_input",
+    "input": { "searchMode": "Tenant", "identifier": "Bikash Mohapatra" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Village not in Khordha district — should map to invalid_input",
+    "input": { "searchMode": "Plot", "identifier": "415", "village": "Cuttack City" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Valid-looking plot, but village not yet digitized in Bhulekh — should map to no_data or invalid_input",
+    "input": { "searchMode": "Plot", "identifier": "1", "village": "UnknownVillageXyz" },
+    "expected_status": "no_data"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Khatiyan search with empty identifier — should map to invalid_input",
+    "input": { "searchMode": "Khatiyan", "identifier": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhulekh",
+    "description": "Khatiyan search with non-numeric identifier — should map to invalid_input",
+    "input": { "searchMode": "Khatiyan", "identifier": "abc/def" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Lat/lon at (0, 0) — outside Khordha — should map to invalid_input or no_data",
+    "input": { "lat": 0, "lon": 0, "layer": "khurda_bhubaneswar" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Village name outside Khordha district — should map to invalid_input",
+    "input": { "lat": 20.2961, "lon": 85.8245, "villageName": "Cuttack City", "layer": "khurda_bhubaneswar" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Plot number that doesn't exist in the village layer — should map to no_data",
+    "input": { "lat": 20.2961, "lon": 85.8245, "villageName": "Mendhasala", "plotNo": "99999/99999", "layer": "khurda_bhubaneswar" },
+    "expected_status": "no_data"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Lat out of range (>90) — should map to invalid_input",
+    "input": { "lat": 95.0, "lon": 85.8245, "layer": "khurda_bhubaneswar" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Lon out of range (<-180) — should map to invalid_input",
+    "input": { "lat": 20.2961, "lon": -185.0, "layer": "khurda_bhubaneswar" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Plot number that exists in village but villageName is empty — should fall back to BBOX",
+    "input": { "lat": 20.2961, "lon": 85.8245, "villageName": "", "plotNo": "415", "layer": "khurda_bhubaneswar" },
+    "expected_status": "ok"
+  },
+  {
+    "_tag": "fetcher_contract_v2_2026-06-14",
+    "fetcher": "bhunaksha",
+    "description": "Valid GPS in Bhubaneswar with no plot number — should return ok with BBOX-based polygon",
+    "input": { "lat": 20.2961, "lon": 85.8245, "layer": "khurda_bhubaneswar" },
+    "expected_status": "ok"
+  },
+  {
     "fetcher": "ecourts",
     "description": "Empty party name — should map to invalid_input",
     "input": { "partyName": "" },
@@ -271,5 +369,23 @@
     "description": "Owner name required for ownership matching.",
     "input": { "tahasil": "Bhubaneswar", "village": "Mendhasala", "searchMode": "Plot", "identifier": "415", "claimedOwnerName": "" },
     "expected_error": "claimed_owner_name_empty"
+  },
+  {
+    "fetcher": "bhunaksha_plot_report",
+    "description": "Empty plot number — should map to invalid_input",
+    "input": { "village": "Mendhasala", "tahasil": "Bhubaneswar", "plotNo": "" },
+    "expected_status": "invalid_input"
+  },
+  {
+    "fetcher": "bhunaksha_plot_report",
+    "description": "Unknown giscode — should map to no_data after a successful HTTP round-trip",
+    "input": { "village": "Mendhasala", "tahasil": "Bhubaneswar", "plotNo": "181/10454", "gisCodeOverride": { "districtCode": "21", "tehsilCode": "01", "riCode": "11", "mouzaCode": "99999" } },
+    "expected_status": "no_data"
+  },
+  {
+    "fetcher": "bhunaksha_plot_report",
+    "description": "Empty tahasil — should map to invalid_input (giscode lookup requires both tahasil and village)",
+    "input": { "village": "Mendhasala", "tahasil": "", "plotNo": "181/10454" },
+    "expected_status": "invalid_input"
   }
 ]
