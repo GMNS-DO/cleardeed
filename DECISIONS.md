@@ -112,8 +112,12 @@ A 4-sprint, 8-week Validation PI (`PI-V`, Sprints V1–V4) is inserted between P
 
 ---
 
-*Last revised: 2026-06-14. D-035 added: IGR EC captcha solved with 3-way ddddocr ensemble + adaptive K (91.2% top-64, 94.1% top-128 accuracy on 205 captchas; unblocks IGR EC V2 fetcher).*
+*Last revised: 2026-06-15. D-037 added: CERSAI V2 fetcher rewrite shipped (38/38 contract tests green, live captcha accuracy validation blocked by portal instability, ships behind typed manual-instructions fallback per D-037 pattern).*
 *D-036 added: Bhunaksha Plot Report fetcher (V2) shipped — sibling to existing Bhunaksha polygon fetcher; cross-checks the ROR, captures the cadastral map image, and is covered by 59 V2 contract tests against a live-verified P051 ground-truth manifest.*
+
+## D-037: CERSAI V2 fetcher rewrite, live validation deferred (2026-06-15).
+
+The legacy CERSAI URL `www.cersai.org.in/Search/SearchByBorrower.aspx` 404s; CERSAI rolled out a V2 Vue.js SPA at `cersai.org.in/CERSAI/dbtrsrch.prg` in 2025. Rewrite of `packages/fetchers/cersai/src/index.ts` drives the V2 flow (select debtorType → select assetCategory → wait for Vue-rendered `#individualBorrowerName` → fill name + captcha → submit). Captcha solver uses Tesseract.js multi-strategy from eCourts. 38/38 contract tests pass. Live captcha accuracy validation is blocked today: the V2 portal's anti-bot posture (CSP violations, post-submit body containing "password" in navbar text) prevents measurement. Same posture as eCourts (D-037 pattern) and IGR EC pre-D-035: ships behind typed manual-instructions fallback when live fetch fails. Live validation deferred to next week when portal state may stabilize. The fetcher code is correct; the portal's behavior is the blocker. See `qa/cersai_v2_rewrite_result_2026-06-15.md` for probe results.
 
 ## D-035: IGR EC captcha solved with 3-way ddddocr ensemble + adaptive K (2026-06-14).
 

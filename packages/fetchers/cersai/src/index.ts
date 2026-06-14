@@ -22,7 +22,10 @@ import { createWorker } from "tesseract.js";
 import type { CERSAIResult } from "@cleardeed/schema";
 
 const BASE_URL = "https://www.cersai.org.in";
-const SEARCH_URL = `${BASE_URL}/Search/SearchByBorrower.aspx`;
+// CERSAI rolled out a V2 portal at cersai.org.in/CERSAI/ in 2025. The legacy
+// www.cersai.org.in/Search/SearchByBorrower.aspx now 404s; the canonical
+// debtor-based search lives at dbtrsrch.prg under the V2 SPA.
+const SEARCH_URL = `${BASE_URL}/CERSAI/dbtrsrch.prg`;
 const USER_AGENT = "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)";
 const PARSER_VERSION = "cersai-party-table-v1";
 
@@ -165,6 +168,8 @@ export async function cleanup(): Promise<void> {
 
 /**
  * Navigate to CERSAI public borrower search page and return the page.
+ * V2 is a Vue.js SPA — wait for the form to mount, not just for any
+ * input/select to appear (the V2 page has hidden inputs in the header).
  */
 async function openSearchPage(page: Page): Promise<boolean> {
   try {
@@ -172,11 +177,11 @@ async function openSearchPage(page: Page): Promise<boolean> {
       waitUntil: "domcontentloaded",
       timeout: TIMEOUT_MS,
     });
-    await page.waitForTimeout(800);
-
-    // Check if the page actually loaded — look for the search form
-    const hasForm = await page.locator("input, select").first().isVisible().catch(() => false);
-    return hasForm;
+    // V2 SPA — wait for Vue to mount the actual form controls.
+    await page.waitForSelector("#debtorType", { timeout: 15_000 });
+    await page.waitForSelector("#assetCategory", { timeout: 5_000 });
+    await page.waitForTimeout(500);
+    return true;
   } catch (err) {
     console.error("[cersai] failed to open search page:", err instanceof Error ? err.message : String(err));
     return false;
@@ -199,37 +204,51 @@ async function attemptSearch(
   try {
     // Reload fresh page for each search attempt
     await page.goto(SEARCH_URL, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+    // V2 SPA — wait for Vue to mount and render the form
+    await page.waitForSelector("#debtorType", { timeout: 15_000 });
     await page.waitForTimeout(800);
 
-    // Look for the name input field — exact selectors vary by CERSAI version
-    // Try common field patterns
-    const nameField = page.locator("input[name*='Name'], input[name*='name'], input[id*='Name'], input[id*='name']").first();
-    const nameFieldVisible = await nameField.isVisible().catch(() => false);
+    // V2 requires selecting debtorType + assetCategory first; the name
+    // input is conditionally rendered by Vue after both are chosen.
+    const debtorTypeValue: Record<string, string> = {
+      individual: "IND",
+      company: "COM",
+      firm: "PRF",
+    };
+    const assetCategoryValue = "1"; // Immovable — what a property search needs
+
+    const debtorValue = debtorTypeValue[partyType] ?? "IND";
+    const debtorTypeSelect = page.locator("#debtorType");
+    if (!(await debtorTypeSelect.isVisible().catch(() => false))) {
+      return { outcome: "search_error", charges: [], errorMessage: "cersai_v2_form_not_rendered" };
+    }
+    await debtorTypeSelect.selectOption(debtorValue);
+    await page.waitForTimeout(500);
+
+    const assetCategorySelect = page.locator("#assetCategory");
+    if (!(await assetCategorySelect.isVisible().catch(() => false))) {
+      return { outcome: "search_error", charges: [], errorMessage: "cersai_v2_form_not_rendered" };
+    }
+    await assetCategorySelect.selectOption(assetCategoryValue);
+    await page.waitForTimeout(800);
+
+    // Now the name input should be visible (Vue v-if gated on the two
+    // selects being non-empty). CERSAI renders different name fields
+    // per debtor type; the individual-debtor flow uses
+    // #individualBorrowerName (name="Name Of Debtor").
+    const nameField = page.locator(
+      "#individualBorrowerName, input[name*='Name'], input[id*='Name'], input[id*='name']"
+    ).first();
+    const nameFieldVisible = await nameField.isVisible({ timeout: 5_000 }).catch(() => false);
 
     if (!nameFieldVisible) {
-      // Try to find any text input that looks like a name field
-      const textInputs = await page.locator("input[type='text']").all();
-      const relevantInput = textInputs.find(async (inp) => {
-        const label = await inp.getAttribute("placeholder") ?? "";
-        return /name|borrower|party/i.test(label);
-      });
+      const bodyText = await page.evaluate(() => document.body.innerText);
+      const pageHash = sha256(bodyText);
 
-      if (!relevantInput) {
-        // Check if the page has a different structure or is behind login
-        const bodyText = await page.evaluate(() => document.body.innerText);
-        const pageHash = sha256(bodyText);
-
-        if (/login|sign in|user.*password|authenticate/i.test(bodyText)) {
-          return { outcome: "search_error", charges: [], errorMessage: "cerai_portal_requires_login", pageHash };
-        }
-
-        // Try fallback: look for any text input with autocomplete
-        const anyTextInput = page.locator("input[type='text']").first();
-        const hasAnyInput = await anyTextInput.isVisible().catch(() => false);
-        if (!hasAnyInput) {
-          return { outcome: "search_error", charges: [], errorMessage: "cersai_search_form_not_found", pageHash };
-        }
+      if (/login|sign in|user.*password|authenticate/i.test(bodyText)) {
+        return { outcome: "search_error", charges: [], errorMessage: "cerai_portal_requires_login", pageHash };
       }
+      return { outcome: "search_error", charges: [], errorMessage: "cersai_v2_name_input_not_rendered", pageHash };
     }
 
     // Enter the party name
@@ -461,8 +480,13 @@ export function classifyCersaiPage(
     return { outcome: "search_error", errorMessage: "cersai_server_error" };
   }
 
-  // Login gate (before no-records so login pages don't look like no-results)
-  if (/login|sign in|authenticate/i.test(lowerText) && !/search.*results?/i.test(lowerText)) {
+  // Login gate — V2 navbar always has the word "Login" as a top-nav link, so
+  // match more specifically: actual login pages have password + forgot-password
+  // indicators, not just the word "Login" appearing in chrome.
+  if (
+    /password|forgot\s*password|sign\s*in\s*to\s*your\s*account|please\s*log\s*in\s*to\s*continue/i.test(lowerText) &&
+    !/search.*results?/i.test(lowerText)
+  ) {
     return { outcome: "search_error", errorMessage: "cersai_portal_requires_login" };
   }
 
