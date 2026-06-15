@@ -60,6 +60,7 @@ export const IGRECData = z.object({
   fee: z.number().optional(),
   feeCurrency: z.string().optional(),
   applicationNo: z.string().optional(),
+  instructions: z.string().optional(),
 });
 export type IGRECData = z.infer<typeof IGRECData>;
 
@@ -585,6 +586,7 @@ export async function igrEcFetch(
         searchPeriod: { from: String(effectiveFromYear), to: String(toYear) },
         sro: resolvedSRO.sro,
         district,
+        instructions: JSON.stringify(instructions),
       },
       error: "IGR Odisha requires login. Use manual instructions.",
     };
@@ -688,6 +690,7 @@ export async function igrEcFetch(
       searchPeriod: { from: String(effectiveFromYear), to: String(toYear) },
       sro: resolvedSRO.sro,
       district,
+      instructions: JSON.stringify(instructions),
     },
     error: attemptError ?? portalStatus,
   };

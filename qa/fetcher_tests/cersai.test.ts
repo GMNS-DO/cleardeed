@@ -143,8 +143,11 @@ describe("CERSAI status mapping", () => {
             newPage: vi.fn().mockResolvedValue({
               goto: vi.fn().mockResolvedValue(undefined),
               waitForTimeout: vi.fn().mockResolvedValue(undefined),
+              waitForSelector: vi.fn().mockResolvedValue(undefined),
               locator: vi.fn().mockImplementation((selector: string) => ({
                 first: vi.fn().mockImplementation(function (this: any) { return this; }),
+                last: vi.fn().mockImplementation(function (this: any) { return this; }),
+                count: vi.fn().mockResolvedValue(0),
                 isVisible: vi.fn().mockImplementation(() => Promise.resolve(isVisibleFor(selector))),
                 click: vi.fn().mockResolvedValue(undefined),
                 fill: vi.fn().mockResolvedValue(undefined),
