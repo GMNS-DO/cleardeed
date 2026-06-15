@@ -55,9 +55,11 @@ export default function PrivacyPolicyPage() {
 
             <h2 className="mt-6 text-lg font-bold">3. Data Retention</h2>
             <p className="mt-2 text-sm leading-6">
-              Property intelligence reports and associated data are retained for <strong>24 months</strong> from the date of generation.
-              After 24 months, report data is deleted unless required for legal compliance or active dispute resolution.
-              You may request deletion of your data at any time by contacting us (see Section 10).
+              Reports and feedback are retained for <strong>60 days</strong> from generation (the report-validity window for refresh decisions).
+              Lead requests are retained for <strong>12 months</strong> for fraud-pattern analysis.
+              After these periods, or upon a deletion request, records are removed within <strong>30 days</strong>.
+              You may request deletion of your data at any time by contacting us (see Section 10) or by submitting
+              a deletion request via <code className="rounded bg-[#f7f7f2] px-1.5 py-0.5">POST /api/user/delete</code> with your phone number.
             </p>
 
             <h2 className="mt-6 text-lg font-bold">4. Data Sharing</h2>
