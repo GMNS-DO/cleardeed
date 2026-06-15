@@ -47,6 +47,7 @@ export default defineConfig({
       "qa/degradation_matrix.test.ts",
       "qa/ground_truth_expansion.test.ts",
       "qa/cersai_captcha_accuracy.test.ts",
+      "qa/ecourts_parser_harness.test.ts",
       "qa/invalid_input_gate.test.ts",
       "qa/auto-review-guardrails.test.ts",
     ],
