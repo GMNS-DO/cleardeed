@@ -53,6 +53,7 @@ export default defineConfig({
       "qa/invalid_input_gate.test.ts",
       "qa/auto-review-guardrails.test.ts",
       "qa/perf-baseline.test.mjs",
+      "qa/load-test.test.mjs",
     ],
   },
   resolve: {
