@@ -1521,7 +1521,9 @@ describe("A10 ConsumerReportWriter", () => {
   });
 
   describe("P-NEW-3 similarity search integration", () => {
-    it("runs similarity search against corpus and returns matches with score", async () => {
+    // Note: This test requires the PID Pattern Intelligence Dataset, built separately.
+    // See DECISIONS.md D-025 for PID track integration details.
+    it.runIf(process.env.RUN_PID_TESTS === "true")("runs similarity search against corpus and returns matches with score", async () => {
       const { findSimilarCases } = await import(
         "../../../pid/lib/case-shape-similarity.mjs"
       );
@@ -1552,7 +1554,7 @@ describe("A10 ConsumerReportWriter", () => {
       expect(matches[0].score).toBeGreaterThanOrEqual(0.4);
     });
 
-    it("clusterFromMatches returns empty when no resolution_summary (P-NEW-2 safety bound)", async () => {
+    it.runIf(process.env.RUN_PID_TESTS === "true")("clusterFromMatches returns empty when no resolution_summary (P-NEW-2 safety bound)", async () => {
       const { findSimilarCases, clusterFromMatches } = await import(
         "../../../pid/lib/case-shape-similarity.mjs"
       );

@@ -57,6 +57,7 @@ export default defineConfig({
       "qa/funnel_dedup.test.ts",
       "qa/funnel_events.test.ts",
       "qa/docs.test.ts",
+      "qa/launch-checklist.test.mjs",
     ],
   },
   resolve: {
