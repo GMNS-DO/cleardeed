@@ -1,10 +1,12 @@
 /**
- * Conversion funnel instrumentation.
+ * Conversion funnel instrumentation + lightweight error monitoring.
  *
- * Writes one row per funnel event to the `report_events` table.
+ * Writes one row per event to the `report_events` table.
  * Failures are logged and swallowed — tracking must never break the user flow.
  *
- * Stages: landing_view, preview_view, checkout_open, payment_success, report_delivered, feedback_submitted.
+ * Funnel stages: landing_view, preview_view, checkout_open, payment_success,
+ *                report_delivered, feedback_submitted.
+ * Error events (A.4.1): error_caught, api_500.
  */
 import { supabaseAdmin } from "./db";
 
@@ -14,7 +16,9 @@ export type FunnelEventName =
   | "checkout_open"
   | "payment_success"
   | "report_delivered"
-  | "feedback_submitted";
+  | "feedback_submitted"
+  | "error_caught"
+  | "api_500";
 
 export interface TrackEventInput {
   eventName: FunnelEventName;
@@ -37,4 +41,35 @@ export async function trackEvent(input: TrackEventInput): Promise<void> {
   } catch (err) {
     console.warn(`[track] report_events insert threw for ${input.eventName}:`, err instanceof Error ? err.message : String(err));
   }
+}
+
+/**
+ * Capture a caught error for monitoring (A.4.1).
+ *
+ * Lightweight alternative to Sentry — uses the same `report_events`
+ * table as funnel events with event_name='error_caught'. Writes
+ * a row with: { name, message, stack, route, reportId, ts }.
+ *
+ * Failures are logged and swallowed — error tracking must never
+ * break the user flow.
+ */
+export async function trackError(
+  err: unknown,
+  context: { route?: string; reportId?: string | null; extra?: Record<string, unknown> } = {}
+): Promise<void> {
+  const name = err instanceof Error ? err.name : "UnknownError";
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  await trackEvent({
+    eventName: "error_caught",
+    reportId: context.reportId ?? null,
+    metadata: {
+      name,
+      message,
+      stack: stack ? stack.split("\n").slice(0, 10).join("\n") : undefined,
+      route: context.route,
+      ts: new Date().toISOString(),
+      ...context.extra,
+    },
+  });
 }

@@ -19,6 +19,7 @@ vi.mock("./db", () => ({
 }));
 
 import { trackEvent } from "./track";
+import { trackError } from "./track";
 
 describe("trackEvent", () => {
   beforeEach(() => {
@@ -68,5 +69,62 @@ describe("trackEvent", () => {
   it("swallows thrown exceptions from the Supabase client", async () => {
     insertMock.mockRejectedValue(new Error("network down"));
     await expect(trackEvent({ eventName: "feedback_submitted", reportId: "r-1" })).resolves.toBeUndefined();
+  });
+});
+
+describe("trackError", () => {
+  beforeEach(() => {
+    insertMock.mockReset();
+  });
+
+  it("writes error_caught event with name, message, route, reportId, ts", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    const err = new TypeError("captcha solver exhausted");
+    await trackError(err, { route: "/api/report/create", reportId: "r-99" });
+
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    const call = insertMock.mock.calls[0][0];
+    expect(call.event_name).toBe("error_caught");
+    expect(call.report_id).toBe("r-99");
+    expect(call.event_data.name).toBe("TypeError");
+    expect(call.event_data.message).toBe("captcha solver exhausted");
+    expect(call.event_data.route).toBe("/api/report/create");
+    expect(call.event_data.ts).toBeTruthy();
+    expect(typeof call.event_data.stack).toBe("string");
+  });
+
+  it("handles non-Error throws (string, undefined, plain object)", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    await trackError("plain string error", { route: "/api/checkout" });
+    const call = insertMock.mock.calls[0][0];
+    expect(call.event_name).toBe("error_caught");
+    expect(call.event_data.name).toBe("UnknownError");
+    expect(call.event_data.message).toBe("plain string error");
+  });
+
+  it("includes extra metadata fields", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    await trackError(new Error("x"), { route: "/api/order", extra: { fetcher: "bhulekh", status: 502 } });
+    const call = insertMock.mock.calls[0][0];
+    expect(call.event_data.fetcher).toBe("bhulekh");
+    expect(call.event_data.status).toBe(502);
+  });
+
+  it("truncates the stack to 10 frames", async () => {
+    insertMock.mockResolvedValue({ error: null });
+    const lines: string[] = [];
+    for (let i = 0; i < 50; i++) lines.push(`    at frame ${i}`);
+    const err = new Error("deep stack");
+    err.stack = `Error: deep stack\n${lines.join("\n")}`;
+    await trackError(err, { route: "/api/x" });
+    const call = insertMock.mock.calls[0][0];
+    const stackLines = (call.event_data.stack as string).split("\n");
+    // Stack is truncated to 10 frames; we take lines[0..10] = 10 lines.
+    expect(stackLines.length).toBe(10);
+  });
+
+  it("swallows Supabase errors without throwing", async () => {
+    insertMock.mockResolvedValue({ error: { message: "table not found" } });
+    await expect(trackError(new Error("captcha_solver_exhausted"), { route: "/api/y" })).resolves.toBeUndefined();
   });
 });

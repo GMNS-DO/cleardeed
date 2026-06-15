@@ -15,6 +15,7 @@ import { generateReport, generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults, upsertSourceResult } from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
+import { trackError } from "@/lib/track";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import { validateKhordhaGPS } from "@cleardeed/schema";
 
@@ -287,6 +288,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/report/create]", errorMessage);
+    await trackError(err, { route: "/api/report/create" });
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
