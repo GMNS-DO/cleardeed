@@ -126,14 +126,19 @@ Approved departure from PI-V's "no new features" hard rule. Reuses PI-V's 50-plo
 - [x] A.2.4: RCCMS reliability improvement (RCCMS now uses Bhulekh Back Page as ground-truth cross-check; 92% confidence)
 - [x] A.2.5: Live smoke battery (`qa/all_fetchers_live_smoke.test.ts`, runs all 14 fetchers in sequence with status/CRASH/latency reporting)
 
-**A.3 User experience (3/4)**
+**A.3 User experience (4/4)**
 - [x] A.3.1: User copy simplification (Section 3a lead-in: EC = "loan + transfer history")
 - [x] A.3.2: Mobile optimization (480px media query: 15px text, 44px tap targets, stacked cards)
 - [x] A.3.3: Visual hierarchy — *no change needed* (existing summary panel + status-grid + watchout/ok card split already implements §4 of CLAUDE.md)
-- [ ] A.3.4: Edge case reports — pending
+- [x] A.3.4: Edge case reports (P055–P064: 10 new ground-truth edge cases covering fragmented families, benami transfers, multiple mortgages, court-pending disputes, with expected degradation per case)
 
-**A.4 Infrastructure reliability (0/6)**
-- [ ] A.4.1–6: error monitoring, rate limiting, DB backups, staging env, perf baseline, load test — all pending (all infrastructure work; flagged by audit as not blocking buyer behavior)
+**A.4 Infrastructure reliability (6/6)**
+- [x] A.4.1: Error monitoring (`trackError()` writes structured errors to `report_events` table with event_name=error_caught; wired into /api/report/create, /api/preview)
+- [x] A.4.2: Rate limiting (in-memory token bucket on /api/preview: 10 req/60s per IP; 9/9 unit tests pass)
+- [x] A.4.3: DB backups (`infra/supabase/backup.sh` — daily pg_dump with 7-day retention, 3/3 tests pass)
+- [x] A.4.4: Staging environment (`infra/STAGING.md` SOP + `.github/workflows/preview-smoke.yml` for per-PR auto-smoke)
+- [x] A.4.5: Perf baseline (`qa/perf-baseline.mjs` measures home/preview/report-create p95 with targets 500ms/8s/120s)
+- [x] A.4.6: Load test (`qa/load-test.mjs` 50-concurrent hammer; exit 0 on p95≤3s and 0 failures)
 
 **A.5 Pre-launch polish (0/4)**
 - [ ] A.5.1–4: pending
