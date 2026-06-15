@@ -67,4 +67,42 @@ Cuttack launch gates on V4 exit: ≥95% valid inputs produce correct/typed-degra
 
 ---
 
-*Last touched: 2026-06-14*
+## PI-V.5 — IGR Public-Data Integration (D-038, 2026-06-15)
+
+Approved departure from PI-V's "no new features" hard rule. Reuses PI-V's 50-plot ground-truth corpus and shadow-runner infrastructure. 3 sprints × 2 weeks. See `/.claude/plans/piped-splashing-fog.md` for the full plan.
+
+**Sprint V5a (Weeks 1-2) — Bug fix + consideration wire + igr-sro — SHIPPED 2026-06-15**
+- [x] Fix V1 IGR-EC instructions bug: add `instructions` to `IGRECData` schema, assign in both return paths, render in `consumer-report-writer` (D-040)
+- [x] Wire IGR-EC `consideration` into Section 5 directional band
+- [x] Create `@cleardeed/fetcher-igr-sro` package (4 SROs: Bhubaneswar/Jatni/Balipatna/Banapur)
+- [x] Wire igr-sro into V1 pipeline as Step 2c + buildSourceResult + contract barrel
+- [x] Exit: 1 fetcher live, 1 bug fix shipped, 1 wire shipped, 1404 tests pass
+
+**Sprint V5b (Weeks 3-4) — igr-bmv + stamp-duty + igr-daily-bulletin**
+- [x] Create `@cleardeed/fetcher-igr-bmv` (replaces circle-rate seed when live) — package shipped 2026-06-15
+- [x] Create `@cleardeed/fetcher-stamp-duty` (cross-check seller's quoted price vs government expectation) — package shipped 2026-06-15
+- [x] Create `@cleardeed/fetcher-igr-daily-bulletin` (24h cache, registration velocity) — package shipped 2026-06-15
+- [x] Add stamp-duty + igr-daily-bulletin contract files (`apps/web/src/lib/pipeline/contracts/{stamp-duty,igr-daily-bulletin}.ts`) + barrel exports
+- [x] Add 3 fetchers to `pnpm-workspace.yaml` + vitest aliases (`@cleardeed/fetcher-igr-bmv`, `…-stamp-duty`, `…-igr-daily-bulletin`)
+- [x] Wire 3 fetchers into V11 pipeline (`Step 2f`/`2g`/`2h`) + `buildSourceResult` + `tier2Input`
+- [x] Extend `buildBenchmarkSection` with 3 new sub-cards (IGR BMV floor, stamp-duty total, IGR daily-bulletin velocity)
+- [x] Run live smoke against `igrodisha.gov.in` for all 3 fetchers — typed-degraded, see `V5B_LIVE_SMOKE_RESULT_2026-06-15.md`
+- [ ] Pre-fill P005/P010/P015 manifests (founder) — pending
+- [ ] Re-run live smoke when portal is known-good (1 success path)
+- [ ] PDF render verification of V5b sub-cards
+- [ ] Exit: 3 fetchers live, ≥1347 tests pass, 4 ground-truth plots pass
+
+**Sprint V5c (Weeks 5-6) — public-dashboard + govt-fee + igr-certified-copy (Phase 1)**
+- [ ] Create `@cleardeed/fetcher-public-dashboard` (district activity)
+- [ ] Create `@cleardeed/fetcher-govt-fee` (permanent cache, official fee schedule)
+- [ ] Create `@cleardeed/fetcher-igr-certified-copy` (Section 57 Book 1/2 index-card only — no captcha, no paid-per-doc)
+- [ ] Add Section 2 sub-card "Previous sale deed (open index entry)" with explicit §57 transparency note
+- [ ] Add Section 6 "Official fees" table
+- [ ] Pre-fill P020 manifest (founder) — 5 ground-truth plots total
+- [ ] Exit: 7 fetchers live, ≥1367 tests pass, 5 ground-truth plots pass
+
+**Founder work on critical path:** 5 plots × 2-3 hrs/plot = 10-15 hrs over 6 weeks. Can be parallelized with engineering.
+
+---
+
+*Last touched: 2026-06-15*

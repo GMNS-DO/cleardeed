@@ -341,13 +341,25 @@ export function generateConsumerReport(
   const ecSection = buildEcSection(encumbranceReasoner, safeRegUrl, safeDistrict, safeSro, safePlotNo, safeTransliterated || escapeHtml(data.claimedOwnerName));
 
   // Sprint 4 — Section 7 (What is it worth — floor / directional / ceiling)
-  const benchmarkSection = buildBenchmarkSection(data.circleRateData ?? null, {
-    village: plotVillage,
-    tahasil: plotTahasil,
-    district: plotDistrict,
-    plotNo,
-    acres: plotArea?.acres ?? null,
-  });
+  const igrEcEntries = (encumbranceReasoner as any)?.igrEcEntries ?? [];
+  // Sprint V5b — pass through 3 new IGR public-data sources so buildBenchmarkSection
+  // can render 3 new sub-cards (BMV floor, stamp-duty total, district velocity).
+  const benchmarkSection = buildBenchmarkSection(
+    data.circleRateData ?? null,
+    {
+      village: plotVillage,
+      tahasil: plotTahasil,
+      district: plotDistrict,
+      plotNo,
+      acres: plotArea?.acres ?? null,
+    },
+    igrEcEntries,
+    {
+      igrBmv: (data as any).igrBmvData ?? null,
+      stampDuty: (data as any).stampDutyData ?? null,
+      igrDailyBulletin: (data as any).igrDailyBulletinData ?? null,
+    }
+  );
 
   // Sprint 4 — BDA zone card (rendered inside Section 3)
   const bdaZoneCard = buildBdaZoneCard(data.bdaZoneData ?? null, {
@@ -978,21 +990,49 @@ function buildEcSection(
   let stepsHtml: string;
 
   if (encumbranceResult?.instructions && typeof encumbranceResult.instructions === "string") {
-    // Instructions is a plain-text string — split into list items
-    const lines = encumbranceResult.instructions
-      .split(/\n+/)
-      .map((l: string) => l.trim())
-      .filter(Boolean);
-    stepsHtml = lines
-      .map((line: string) => {
-        // Make URLs clickable in the text
-        const urlPattern = /https?:\/\/[^\s]+/g;
-        const linked = line.replace(urlPattern, (url: string) =>
-          `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
-        );
-        return `<li>${linked}</li>`;
-      })
-      .join("\n");
+    // Instructions may be either a plain-text newline-delimited string (legacy)
+    // or a JSON-encoded ManualInstructions object with {steps, contactSRO, ...}.
+    let parsed: { steps?: string[]; contactSRO?: string; estimatedFee?: string; expectedTime?: string; notes?: string[] } | null = null;
+    const raw = encumbranceResult.instructions.trim();
+    if (raw.startsWith("{")) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = null;
+      }
+    }
+
+    if (parsed && Array.isArray(parsed.steps) && parsed.steps.length > 0) {
+      const stepItems = parsed.steps
+        .map((step) => {
+          const urlPattern = /https?:\/\/[^\s]+/g;
+          const linked = step.replace(urlPattern, (url) =>
+            `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
+          );
+          return `<li>${linked}</li>`;
+        })
+        .join("\n");
+      const meta: string[] = [];
+      if (parsed.estimatedFee) meta.push(`<strong>Estimated fee:</strong> ${escapeHtml(parsed.estimatedFee)}`);
+      if (parsed.expectedTime) meta.push(`<strong>Expected time:</strong> ${escapeHtml(parsed.expectedTime)}`);
+      if (parsed.contactSRO) meta.push(`<strong>Contact:</strong> ${escapeHtml(parsed.contactSRO)}`);
+      stepsHtml = stepItems + (meta.length > 0 ? `\n<li class="igr-meta">${meta.join(" · ")}</li>` : "");
+    } else {
+      // Plain-text fallback (legacy shape)
+      const lines = raw
+        .split(/\n+/)
+        .map((l: string) => l.trim())
+        .filter(Boolean);
+      stepsHtml = lines
+        .map((line: string) => {
+          const urlPattern = /https?:\/\/[^\s]+/g;
+          const linked = line.replace(urlPattern, (url: string) =>
+            `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
+          );
+          return `<li>${linked}</li>`;
+        })
+        .join("\n");
+    }
   } else {
     // Fallback steps when no instructions provided
     const districtSroStep = isVerifiedDisplayValue(safeDistrict) && isVerifiedDisplayValue(safeSro)
@@ -1079,9 +1119,180 @@ function sqftToPerAcre(ratePerSqft: number): number {
   return Math.round(ratePerSqft * 43560);
 }
 
+/**
+ * Render the directional band with IGR EC entries if available.
+ * Shows a warning if the entries indicate potential encumbrances (sales, mortgages, liens).
+ * Falls back to the default "not fetched" message if no IGR EC data is available.
+ */
+function renderIgrEcDirectionalBand(
+  igrEcEntries?: Array<{
+    partyName?: string;
+    status?: string;
+    warning?: { code: string; message: string };
+  }>
+): string {
+  if (!igrEcEntries || igrEcEntries.length === 0) {
+    return `<div class="bm-band-value">Not fetched in this run</div>
+    <p class="bm-note">Recent IGR transaction prices in the same mouza would give a directional band. This data is not yet wired into the report.</p>`;
+  }
+
+  // Group entries by status for a clean summary
+  const sales = igrEcEntries.filter((e) =>
+    e.status?.toLowerCase().includes("sale") ||
+    e.status?.toLowerCase().includes("transfer")
+  );
+  const encumbrances = igrEcEntries.filter((e) =>
+    e.status?.toLowerCase().includes("mortgage") ||
+    e.status?.toLowerCase().includes("lien") ||
+    e.status?.toLowerCase().includes("charge")
+  );
+
+  const summary: string[] = [];
+  summary.push(`<strong>${igrEcEntries.length}</strong> encumbrance record${igrEcEntries.length === 1 ? "" : "s"} found in IGR EC`);
+  if (sales.length > 0) {
+    summary.push(`<strong>${sales.length}</strong> sale/transfer`);
+  }
+  if (encumbrances.length > 0) {
+    summary.push(`<strong style="color: #c62828;">${encumbrances.length}</strong> mortgage/lien/charge`);
+  }
+
+  return `<div class="bm-band-value">${summary.join(" &middot; ")}</div>
+  <p class="bm-note">IGR EC data shows recent transaction history for this plot. <a href="https://igrodisha.gov.in/ecsearch" target="_blank" rel="noopener">Verify at igrodisha.gov.in &rarr;</a></p>`;
+}
+
+// ─── Sprint V5b — IGR public-data sub-cards ──────────────────────────────────
+//
+// Three new sub-cards rendered under Section 5 (What is it worth) as a single
+// "Government expectations" panel with three nested cards:
+//   1. IGR BMV floor (live or fallback) — replaces the JSON seed when the
+//      ViewFeeValue.aspx endpoint is reachable.
+//   2. Stamp duty + BMV-floor cross-check — shows the government-expected
+//      total payable; flag bmvFloorApplied when seller under-quoted.
+//   3. District velocity (last N days) — buyer market-pulse signal.
+//
+// The panel is fully typed-degraded: if all three sub-cards are unavailable
+// the panel collapses (empty string) so the existing 3-band layout is
+// unchanged for buyers whose run hit portal downtime.
+
+interface V5bSubCardInput {
+  igrBmv?: any;
+  stampDuty?: any;
+  igrDailyBulletin?: any;
+}
+
+function renderV5bSubCards(v5b: V5bSubCardInput | null | undefined): string {
+  if (!v5b) return "";
+
+  // ── Sub-card 1: IGR BMV live floor ───────────────────────────────────────
+  let bmvHtml = "";
+  const bmv = v5b.igrBmv;
+  if (bmv && (bmv.status === "success" || bmv.status === "partial")) {
+    const rows: any[] = Array.isArray(bmv.data?.rows) ? bmv.data.rows : [];
+    if (rows.length > 0) {
+      const r = rows[0];
+      const ratePerSqft = Number(r.ratePerSqft ?? 0);
+      const ratePerAcre = Number(r.ratePerAcre ?? 0);
+      const display = ratePerAcre > 0
+        ? `${formatInr(ratePerAcre)} per acre`
+        : ratePerSqft > 0
+        ? `${formatInr(ratePerSqft)} per sqft`
+        : "rate not parsed";
+      bmvHtml = `<div class="v5b-subcard v5b-subcard-ok">
+        <div class="v5b-subcard-label">Live IGR BMV floor</div>
+        <div class="v5b-subcard-value">${escapeHtml(display)}</div>
+        <div class="v5b-subcard-meta">${escapeHtml(r.mouza ?? "—")} &middot; ${escapeHtml(r.sro ?? "—")} &middot; ${escapeHtml(r.kisam ?? "—")}</div>
+        <p class="v5b-subcard-note">Live from <a href="https://igrodisha.gov.in/ViewFeeValue.aspx/GetMRVal" target="_blank" rel="noopener">regis.odisha.gov.in/BMV</a> — official government floor for stamp-duty.</p>
+      </div>`;
+    }
+  }
+  if (!bmvHtml) {
+    bmvHtml = `<div class="v5b-subcard v5b-subcard-neutral">
+      <div class="v5b-subcard-label">Live IGR BMV floor</div>
+      <div class="v5b-subcard-value">Not fetched in this run</div>
+      <p class="v5b-subcard-note">Using the offline circle-rate seed. The live endpoint is currently unreachable. <a href="https://igrodisha.gov.in/ViewFeeValue.aspx/GetMRVal" target="_blank" rel="noopener">Verify at regis.odisha.gov.in &rarr;</a></p>
+    </div>`;
+  }
+
+  // ── Sub-card 2: Stamp duty + BMV-floor cross-check ─────────────────────
+  let stampHtml = "";
+  const sd = v5b.stampDuty;
+  if (sd && (sd.status === "success" || sd.status === "partial") && sd.data?.breakup) {
+    const b = sd.data.breakup;
+    const total = Number(b.totalPayable ?? 0);
+    const sd_ = Number(b.stampDuty ?? 0);
+    const reg = Number(b.registrationFee ?? 0);
+    const cess = Number(b.cess ?? 0);
+    const applied = Number(b.appliedMarketValue ?? 0);
+    const requested = Number(b.requestedMarketValue ?? 0);
+    const floor = !!b.bmvFloorApplied;
+    const watchoutCls = floor ? "v5b-subcard-watchout" : "v5b-subcard-ok";
+    const basis = String(b.calculationBasis ?? "");
+    stampHtml = `<div class="v5b-subcard ${watchoutCls}">
+      <div class="v5b-subcard-label">Government stamp duty</div>
+      <div class="v5b-subcard-value">${formatInr(total)} <span class="v5b-subcard-total-suffix">total payable</span></div>
+      <div class="v5b-subcard-meta">Stamp ${formatInr(sd_)} &middot; Reg ${formatInr(reg)} &middot; Cess ${formatInr(cess)}</div>
+      <div class="v5b-subcard-meta">Applied market value: ${formatInr(applied)}${floor ? ` <span class="v5b-subcard-flag">⚠ BMV floor applied (seller quoted ${formatInr(requested)})</span>` : ""}</div>
+      <p class="v5b-subcard-note">${escapeHtml(basis)}. ${floor ? "If the seller agreed to a price below the BMV, the government will compute stamp duty on the higher figure — factor that into your negotiation." : "The seller's quoted price is at or above the official floor — no floor adjustment."}</p>
+    </div>`;
+  }
+  if (!stampHtml) {
+    stampHtml = `<div class="v5b-subcard v5b-subcard-neutral">
+      <div class="v5b-subcard-label">Government stamp duty</div>
+      <div class="v5b-subcard-value">Not computed in this run</div>
+      <p class="v5b-subcard-note">The stamp-duty endpoint was unreachable and the local fallback was not run (e.g. missing area). Verify the duty with the SRO before paying: <a href="https://igrodisha.gov.in/StampDutyCalc.aspx/GetDoMRVal" target="_blank" rel="noopener">regis.odisha.gov.in/StampDuty</a>.</p>
+    </div>`;
+  }
+
+  // ── Sub-card 3: District velocity ───────────────────────────────────────
+  let velocityHtml = "";
+  const bull = v5b.igrDailyBulletin;
+  if (bull && (bull.status === "success" || bull.status === "partial") && bull.data?.summary) {
+    const s = bull.data.summary;
+    const totalDeeds = Number(s.totalDeeds ?? 0);
+    const avgPerDay = Number(s.avgDeedsPerDay ?? 0);
+    const range = bull.data.dateRange;
+    const rangeLabel = range?.from && range?.to
+      ? `${escapeHtml(range.from)} → ${escapeHtml(range.to)}`
+      : "last 7 days";
+    velocityHtml = `<div class="v5b-subcard v5b-subcard-ok">
+      <div class="v5b-subcard-label">District velocity</div>
+      <div class="v5b-subcard-value">${totalDeeds.toLocaleString("en-IN")} <span class="v5b-subcard-total-suffix">deeds registered</span></div>
+      <div class="v5b-subcard-meta">Avg ${avgPerDay.toLocaleString("en-IN")} per day &middot; ${rangeLabel}</div>
+      <p class="v5b-subcard-note">Live from <a href="https://igrodisha.gov.in/ORServiceNew.aspx/GetDataFromDB" target="_blank" rel="noopener">IGR daily bulletin</a>. Active districts signal liquidity — easier to exit, easier to verify prices.</p>
+    </div>`;
+  }
+  if (!velocityHtml) {
+    velocityHtml = `<div class="v5b-subcard v5b-subcard-neutral">
+      <div class="v5b-subcard-label">District velocity</div>
+      <div class="v5b-subcard-value">Not fetched in this run</div>
+      <p class="v5b-subcard-note">IGR daily bulletin endpoint was unreachable. Check the IGR portal for current district activity.</p>
+    </div>`;
+  }
+
+  return `<div class="bm-govt">
+    <div class="bm-govt-head">Government expectations</div>
+    <div class="v5b-subcards">
+      ${bmvHtml}
+      ${stampHtml}
+      ${velocityHtml}
+    </div>
+  </div>`;
+}
+
 function buildBenchmarkSection(
   circleRateData: any,
-  input: BenchmarkSectionInput
+  input: BenchmarkSectionInput,
+  igrEcEntries?: Array<{
+    partyName?: string;
+    status?: string;
+    warning?: { code: string; message: string };
+    // Add other IGR-EC fields if needed
+  }>,
+  v5b?: {
+    igrBmv?: any;
+    stampDuty?: any;
+    igrDailyBulletin?: any;
+  } | null
 ): string {
   const rows: BenchmarkRateRow[] = Array.isArray(circleRateData?.data)
     ? circleRateData.data
@@ -1100,14 +1311,14 @@ function buildBenchmarkSection(
       </div>
       <div class="bm-dir">
         <div class="bm-band-label">Directional &mdash; Recent transactions</div>
-        <div class="bm-band-value">Not fetched in this run</div>
-        <p class="bm-note">Recent IGR transaction prices in the same mouza would give a directional band. This data is not yet wired into the report.</p>
+        ${renderIgrEcDirectionalBand(igrEcEntries)}
       </div>
       <div class="bm-ceil">
         <div class="bm-band-label">Ceiling &mdash; Market comparables</div>
         <div class="bm-band-value">Verify with local broker</div>
         <p class="bm-note">Ask a local broker or property agent for 2-3 recent sale prices within 500m of this plot. Market rates typically run 1.5&ndash;3&times; the floor for well-located plots.</p>
       </div>
+      ${renderV5bSubCards(v5b)}
       <div class="source-line">
         <span>Source: IGR Odisha Benchmark Valuation Portal &mdash; <a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener">regis.odisha.gov.in</a></span>
       </div>
@@ -1141,14 +1352,14 @@ function buildBenchmarkSection(
     </div>
     <div class="bm-dir">
       <div class="bm-band-label">Directional &mdash; Recent transactions</div>
-      <div class="bm-band-value">Not fetched in this run</div>
-      <p class="bm-note">Recent IGR transaction prices in the same mouza would give a directional band. This data is not yet wired into the report.</p>
+      ${renderIgrEcDirectionalBand(igrEcEntries)}
     </div>
     <div class="bm-ceil">
       <div class="bm-band-label">Ceiling &mdash; Market comparables</div>
       <div class="bm-band-value">Verify with local broker</div>
       <p class="bm-note">Ask a local broker or property agent for 2-3 recent sale prices within 500m of this plot. Market rates typically run 1.5&ndash;3&times; the floor for well-located plots.</p>
     </div>
+    ${renderV5bSubCards(v5b)}
     <div class="source-line">
       <span>Source: IGR Odisha Benchmark Valuation Portal &mdash; last updated ${sourceDate} &mdash; <a href="https://regis.odisha.gov.in/Benchmark/BMV_Search.aspx" target="_blank" rel="noopener">regis.odisha.gov.in</a></span>
     </div>
@@ -4854,6 +5065,30 @@ body {
   .bm-dir { border-left-color: #b45309 !important; }
   .bm-ceil { border-left-color: #1d4ed8 !important; }
 
+  /* Sprint V5b — print styles for the government expectations sub-cards. */
+  .bm-govt {
+    background: #f9fafb !important;
+    border: 1px solid #888888 !important;
+    border-left: 4px solid #888888 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .v5b-subcard {
+    background: #ffffff !important;
+    border: 1px solid #888888 !important;
+    border-left: 3px solid #888888 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .v5b-subcard-ok { border-left-color: #15803d !important; }
+  .v5b-subcard-neutral { border-left-color: #6b7280 !important; }
+  .v5b-subcard-watchout { border-left-color: #b91c1c !important; }
+  .v5b-subcard-flag {
+    background: #ffffff !important;
+    color: #b91c1c !important;
+    border: 1px solid #b91c1c !important;
+  }
+
   /* BDA zone card → simple block, no fancy color. */
   .bda-card {
     background: #f9fafb !important;
@@ -4950,6 +5185,79 @@ body {
 .bm-rate-type { font-weight: 600; color: var(--amber-700); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 .bm-note { font-size: 12px; color: var(--gray-600); margin-top: 8px; line-height: 1.5; }
 .bm-verify-link { font-weight: 600; color: var(--green-700); }
+
+/* Sprint V5b — Government expectations sub-cards (BMV floor, stamp-duty, velocity) */
+.bm-govt {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--gray-500);
+}
+.bm-govt-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-700);
+  margin-bottom: 10px;
+}
+.v5b-subcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.v5b-subcard {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--gray-200);
+  border-left: 3px solid var(--gray-300);
+}
+.v5b-subcard-ok { border-left-color: var(--green-600); background: #f0fdf4; }
+.v5b-subcard-neutral { border-left-color: var(--gray-400); background: var(--gray-50); }
+.v5b-subcard-watchout { border-left-color: #b91c1c; background: #fef2f2; }
+.v5b-subcard-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+}
+.v5b-subcard-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.v5b-subcard-total-suffix {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+.v5b-subcard-meta {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+.v5b-subcard-flag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 700;
+}
+.v5b-subcard-note {
+  font-size: 11px;
+  color: var(--gray-600);
+  margin-top: 6px;
+  line-height: 1.45;
+}
+.v5b-subcard-note a { color: var(--blue-700); text-decoration: underline; }
 
 /* Section 3: BDA zone card */
 .bda-card {

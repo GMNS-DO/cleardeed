@@ -31,10 +31,17 @@ const PID_SYNTHESIS_ENABLED = process.env.PID_SYNTHESIS_ENABLED === "true";
 // PID A/B test — randomize cluster display order to measure click-through rate
 const PID_EXPERIMENT_CLUSTER_ORDER = process.env.PID_EXPERIMENT_CLUSTER_ORDER === "true";
 import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
+import { lookupSRO as igrSroLookup } from "@cleardeed/fetcher-igr-sro";
 import { cersaiFetch } from "@cleardeed/fetcher-cersai";
 import { fetch as rccmsFetch } from "@cleardeed/fetcher-rccms";
 import { fetch as circleRateFetch } from "@cleardeed/fetcher-circle-rate";
 import { fetch as bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
+// Sprint V5b — IGR public-data fetchers (PI-V.5). Typed-degradation siblings to
+// the existing circle-rate / igr-ec pipeline calls. The renderer sub-cards are
+// added in `agents/consumer-report-writer/src/index.ts` buildBenchmarkSection.
+import { igrBmvFetch } from "@cleardeed/fetcher-igr-bmv";
+import { stampDutyFetch } from "@cleardeed/fetcher-stamp-duty";
+import { igrDailyBulletinFetch } from "@cleardeed/fetcher-igr-daily-bulletin";
 import type { SourceResult } from "@cleardeed/orchestrator";
 
 export type { Tier2Input };
@@ -488,7 +495,17 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     igrEcResult = null;
   }
 
-  // ── Step 2c: CERSAI — mortgage / charge search by owner name ───────────────
+  // ── Step 2c: IGR SRO — Sub-Registrar Office lookup ────────────────────────
+  // Resolve SRO contact details + EC portal URL for the manual instructions panel.
+  // This is a pure data lookup (no network call) so it never fails; we pass
+  // a warning to the renderer if the SRO is not found.
+  const igrSroResult = igrSroLookup({
+    district: "Khordha",
+    tahasil: input.tehsil,
+    sroName: undefined, // Let resolver match from tahasil
+  });
+
+  // ── Step 2d: CERSAI — mortgage / charge search by owner name ───────────────
   let cersaiResult: Awaited<ReturnType<typeof cersaiFetch>> | null = null;
   if (ownerNames.length > 0) {
     try {
@@ -502,7 +519,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     }
   }
 
-  // ── Step 2d: RCCMS — revenue court case search ─────────────────────────────
+  // ── Step 2e: RCCMS — revenue court case search ─────────────────────────────
   // Bounded to 5s so the portal probe (which can hang >3min in the production
   // network per D-030) cannot stall the report. If the probe completes within
   // the budget we use its result; otherwise we return a manual_required stub.
@@ -557,6 +574,68 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     });
   } catch (err) {
     console.warn("[pipeline/v11] bda-zoning fetch error:", err instanceof Error ? err.message : err);
+  }
+
+  // ── Step 2g: IGR BMV (Benchmark Valuation) — live floor band, replaces circle-rate ──
+  // Sprint V5b: when the live endpoint is reachable, BMV replaces the JSON seed
+  // for Section 5 ("What is it worth"). The renderer falls back to circle-rate
+  // automatically when BMV is source_down.
+  let igrBmvResult: Awaited<ReturnType<typeof igrBmvFetch>> | null = null;
+  try {
+    igrBmvResult = await igrBmvFetch({
+      sro: input.tehsil,
+      village: bhulekhData?.village ?? input.village,
+      kisam:
+        bhulekhData?.tenants?.[0]?.landClassEnglish ??
+        bhulekhData?.tenants?.[0]?.landClass ??
+        "Residential",
+    });
+  } catch (err) {
+    console.warn("[pipeline/v11] igr-bmv fetch error:", err instanceof Error ? err.message : err);
+  }
+
+  // ── Step 2h: Stamp Duty — government-expected payable + BMV-floor cross-check ──
+  // Sprint V5b: cross-checks the buyer's quoted price against the
+  // government-expected stamp duty. If bmvFloorApplied=true, the government
+  // bumped the market value up to the BMV — that's a Section 5 watch-out.
+  // Market value is derived from a typical Bhubaneswar plot (10 decimal) at the
+  // circle-rate floor; the buyer can override it after seeing the report.
+  let stampDutyResult: Awaited<ReturnType<typeof stampDutyFetch>> | null = null;
+  try {
+    const areaAcres = bhulekhData?.tenants?.[0]?.area ?? 0;
+    const primaryKisam =
+      bhulekhData?.tenants?.[0]?.landClassEnglish ??
+      bhulekhData?.tenants?.[0]?.landClass ??
+      "Residential";
+    const circleRateSqft = primaryKisam.match(/commercial|byabasaika/i)
+      ? 3500
+      : primaryKisam.match(/agricultural|agricultur/i)
+      ? 250
+      : 1500;
+    const impliedMarketValue = Math.round(areaAcres * 43560 * circleRateSqft);
+    if (impliedMarketValue > 0) {
+      stampDutyResult = await stampDutyFetch({
+        sro: input.tehsil,
+        marketValue: impliedMarketValue,
+        deedType: "Sale",
+      });
+    }
+  } catch (err) {
+    console.warn("[pipeline/v11] stamp-duty fetch error:", err instanceof Error ? err.message : err);
+  }
+
+  // ── Step 2i: IGR Daily Bulletin — district registration velocity signal ──
+  // Sprint V5b: 24h cache. Velocity card on Section 5 ("X deeds registered in
+  // Khordha in the last 7 days") gives the buyer a market-pulse sense of how
+  // active the area is. Returns source_down on any failure — not buyer-visible.
+  let igrDailyBulletinResult: Awaited<ReturnType<typeof igrDailyBulletinFetch>> | null = null;
+  try {
+    igrDailyBulletinResult = await igrDailyBulletinFetch({});
+  } catch (err) {
+    console.warn(
+      "[pipeline/v11] igr-daily-bulletin fetch error:",
+      err instanceof Error ? err.message : err
+    );
   }
 
   // ── Step 3: A5 OwnershipReasoner ───────────────────────────────────────────
@@ -615,10 +694,14 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     ...orchestratorOutput.sources,
     ...buildSourceResult("ecourts", ecourtsResult),
     ...buildSourceResult("igr-ec", igrEcResult),
+    ...buildSourceResult("igr-sro", igrSroResult),
     ...buildSourceResult("cersai", cersaiResult),
     ...buildSourceResult("rccms", rccmsResult),
     ...buildSourceResult("circle-rate", circleRateResult),
     ...buildSourceResult("bda-zoning", bdaZoningResult),
+    ...buildSourceResult("igr-bmv", igrBmvResult),
+    ...buildSourceResult("stamp-duty", stampDutyResult),
+    ...buildSourceResult("igr-daily-bulletin", igrDailyBulletinResult),
   ];
 
   // ── Step 4b: EncumbranceReasoner (A7) ───────────────────────────────────────
@@ -627,12 +710,16 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   let encumbranceReasonerResult: Awaited<ReturnType<typeof reasonEncumbrance>> | null = null;
   try {
     const ownerName = bhulekhData?.tenants?.[0]?.tenantName ?? "Seller";
-    const instructions = buildECInstructionsText(
-      input.tehsil,
-      input.village,
-      input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo ?? bhulekhData?.khataNo ?? "",
-      ownerName
-    );
+    // If the IGR-EC fetcher returned instructions (V1 bug fix), use them; else fall back to hardcoded text
+    const fetchedInstructions = igrEcResult?.data?.instructions;
+    const instructions = fetchedInstructions
+      ? typeof fetchedInstructions === "string" ? fetchedInstructions : JSON.stringify(fetchedInstructions)
+      : buildECInstructionsText(
+          input.tehsil,
+          input.village,
+          input.searchMode === "Plot" ? input.identifier : bhulekhData?.tenants?.[0]?.surveyNo ?? bhulekhData?.khataNo ?? "",
+          ownerName
+        );
     encumbranceReasonerResult = {
       status: (igrEcResult?.status === "success" && cersaiResult?.status === "success") ? "clear" : "manual_required",
       instructions,
@@ -664,6 +751,11 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     // can render Section 7 (What is it worth) and Section 3 (BDA zone) panels.
     circleRateData: circleRateResult ?? null,
     bdaZoneData: bdaZoningResult ?? null,
+    // Sprint V5b: pass through IGR public-data so the renderer can render
+    // 3 new sub-cards under Section 5 (BMV floor, stamp-duty total, velocity).
+    igrBmvData: igrBmvResult ?? null,
+    stampDutyData: stampDutyResult ?? null,
+    igrDailyBulletinData: igrDailyBulletinResult ?? null,
   };
 
   const igrLink = {

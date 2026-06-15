@@ -91,6 +91,49 @@ export interface Tier2Input {
     }>;
     warnings?: Array<{ code?: string; message?: string }>;
   } | null;
+  /** Sprint V5b: IGR BMV (live circle rate) — replaces the JSON seed when live. */
+  igrBmvData?: {
+    source?: string;
+    status?: string;
+    data?: { rows?: Array<Record<string, unknown>> };
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
+  /** Sprint V5b: Stamp-duty breakup — Section 5 sub-card showing what the
+   *  government expects the buyer to pay, plus a watch-out if the BMV floor
+   *  was applied (seller under-quoted the price). */
+  stampDutyData?: {
+    source?: string;
+    status?: string;
+    data?: {
+      breakup?: {
+        stampDuty?: number;
+        registrationFee?: number;
+        cess?: number;
+        totalPayable?: number;
+        calculationBasis?: string;
+        appliedMarketValue?: number;
+        requestedMarketValue?: number;
+        bmvFloorApplied?: boolean;
+      };
+    };
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
+  /** Sprint V5b: IGR daily bulletin — Section 5 velocity sub-card
+   *  ("X deeds registered in Khordha in the last N days"). 24h cache. */
+  igrDailyBulletinData?: {
+    source?: string;
+    status?: string;
+    data?: {
+      days?: Array<Record<string, unknown>>;
+      dateRange?: { from?: string; to?: string };
+      summary?: {
+        totalDeeds?: number;
+        totalConsideration?: number;
+        avgDeedsPerDay?: number;
+      };
+    };
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
   /** V1.2: Adjacent plot analysis (ceiling plan T-056) */
   adjacentPlots?: {
     adjacentPlots: Array<{
@@ -188,6 +231,10 @@ export const ConsumerReportGenInputSchema = z.object({
   // Sprint 4 — passed through from pipeline; renderer uses .any() for flexibility.
   circleRateData: z.any().optional(),
   bdaZoneData: z.any().optional(),
+  // Sprint V5b — IGR public-data sub-cards for Section 5.
+  igrBmvData: z.any().optional(),
+  stampDutyData: z.any().optional(),
+  igrDailyBulletinData: z.any().optional(),
   // P-NEW-1A: Pattern intelligence synthesis insights
   synthesisInsights: z.array(z.any()).optional().default([]),
   // Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR
@@ -474,6 +521,10 @@ export function mapToReportInput(
     // level so we don't lose runtime shape tolerance.
     circleRateData: tier2.circleRateData ?? null,
     bdaZoneData: tier2.bdaZoneData ?? null,
+    // Sprint V5b — IGR public-data sub-cards for Section 5.
+    igrBmvData: tier2.igrBmvData ?? null,
+    stampDutyData: tier2.stampDutyData ?? null,
+    igrDailyBulletinData: tier2.igrDailyBulletinData ?? null,
     // P-NEW-1A: Pattern intelligence synthesis insights
     synthesisInsights: tier2.synthesisInsights ?? [],
     // Bhunaksha Plot Report — passed through to renderer; renderer can embed

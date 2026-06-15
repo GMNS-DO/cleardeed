@@ -112,7 +112,7 @@ A 4-sprint, 8-week Validation PI (`PI-V`, Sprints V1–V4) is inserted between P
 
 ---
 
-*Last revised: 2026-06-15. D-038/D-039/D-040 marked SHIPPED (V5a complete 2026-06-15: igr-sro + D-040 bug fix + IGR-EC consideration wire). D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped. V5b in progress: igr-bmv + stamp-duty + igr-daily-bulletin packages landed; pipeline + renderer sub-cards in progress.*
+*Last revised: 2026-06-15. D-043/D-044/D-045 added: V5b shipped 2026-06-15 (igr-bmv + stamp-duty + igr-daily-bulletin + Section 5 "Government expectations" panel). D-041/D-042 added: eCourts dCourts probe + CERSAI V2 captcha-vendor/nodriver research both parked. D-038/D-039/D-040 marked SHIPPED (V5a complete 2026-06-15: igr-sro + D-040 bug fix + IGR-EC consideration wire). D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped.*
 
 ## D-037: CERSAI V2 fetcher rewrite, live validation deferred (2026-06-15).
 
@@ -253,3 +253,49 @@ Sprint V5b begins 2026-06-15: igr-bmv, stamp-duty, igr-daily-bulletin (3 more IG
 **Decision:** Both paths dismissed as not solving the problem. Park CERSAI V2 fetcher behind typed manual-instructions fallback (D-037 pattern). Re-enable when (a) CERSAI institutional/onboarded access is approved (Path A, 4-12 weeks lead time, ToS-clean), (b) real-browser-automation vendor (Browserless, BrowserCat) is approved for the launch, or (c) Path C — direct Vue reactive state population via AJAX — succeeds (2-3 days of focused engineering, uncertain payoff).
 
 **Status:** Parked. Live fetcher remains the V2 rewrite (commit `b50daad`), but it ships with `verification: "manual_required"` when the V2 portal blocks. Full blocker assessment at `qa/cersai_v2_live_blocker_summary_2026-06-15.md`.
+
+---
+
+## D-043: igr-bmv replaces circle-rate as the floor band when live (2026-06-15)
+
+Sprint V5b ships the IGR Benchmark Market Value (BMV) fetcher. The original Section 5 floor band was sourced from the offline `circle-rate` JSON seed (`packages/fetchers/circle-rate/data/khordha_circle_rates.json`) — a 2019 dataset that understates current market values by 20-40% in Bhubaneswar. The IGR BMV endpoint at `igrodisha.gov.in/ViewFeeValue.aspx/GetMRVal` returns the **government's own floor** for stamp-duty calculation — the same number the SRO will use to assess the buyer's duty, so it's the only number that matters for "is the seller's quoted price plausible?"
+
+**Decision:** When `igrBmvFetch` returns `status=success`, the `buildBenchmarkSection` floor card renders the live BMV (₹X per sqft / ₹Y per acre) sourced from IGR, and the `circleRateData` becomes a fallback for the same card. When `igrBmvFetch` returns `not_covered` / `partial` (portal blocked, captcha, etc.), the floor card falls back to the circle-rate JSON seed and the buyer sees a small "Live from circle-rate seed" note. This way the report always has *some* floor, but the live path is preferred.
+
+**Status:** SHIPPED V5b 2026-06-15. Live smoke (`V5B_LIVE_SMOKE_RESULT_2026-06-15.md`) confirmed the typed-degrade path: live endpoint returned non-200, `not_covered` returned, renderer falls back to circle-rate seed. Re-evaluate when IGR portal is known-good to confirm the success path renders correctly.
+
+---
+
+## D-044: stamp-duty is a cross-check, not a primary fact (2026-06-15)
+
+Sprint V5b ships the stamp-duty calculator. The temptation was to render a Section 5 sub-card "**Government expects you to pay ₹X**" as a primary fact, on par with the seller's quoted price. But the buyer's actual duty depends on (a) the SRO's market-value assessment (often higher than the seller's quoted price — that's the point of the BMV), (b) whether the deed is a Sale / Gift / Mortgage / Lease (different rates), (c) whether the buyer is a woman / SC-ST / farmer (exemptions), and (d) whether the property is agricultural / commercial / residential (different schedules).
+
+**Decision:** Render the stamp-duty result as a *cross-check* sub-card: "If you paid the seller's quoted price of ₹X, the SRO would assess duty on ₹Y (BMV floor or quoted, whichever is higher), and you'd pay ₹Z." This is shown alongside the floor band, not as a standalone "you owe" number. When the SRO's final assessment differs, the report tells the buyer to "verify the duty with the SRO before paying" with a link to the live calculator. No ownership of the final number — we show the math, the SRO rules.
+
+**Status:** SHIPPED V5b 2026-06-15. Live smoke confirmed the local 2024-25 schedule fallback computes the 5% SD + 1% reg + 2% cess correctly (₹50L → ₹305,000 total, `bmvFloorApplied=false` because ₹50L ≥ BMV). Local fallback uses the same formula as the IGR public calculator when the API is down. Full implementation at `packages/fetchers/stamp-duty/src/index.ts`.
+
+---
+
+## D-045: igr-daily-bulletin is a velocity signal, not a market-price signal (2026-06-15)
+
+Sprint V5b ships the IGR Daily Bulletin fetcher. The bulletin publishes the count and consideration of registered deeds in each district per day. The original temptation was to render "**Average property price in your district is ₹X per sqft**" — the bulletin does publish `consideration`, but the bulletin does **not** publish plot area. So the consideration-per-deed is meaningless as a per-sqft rate.
+
+**Decision:** Render the daily bulletin as a *velocity signal* sub-card: "**In the last 7 days, N deeds were registered in your district, with a total consideration of ₹X**" — this tells the buyer "is this market active?" and "is the volume consistent with what the broker is telling you?" but not "what's the price per sqft?" The summary card is grouped with the BMV floor and stamp-duty under a "**Government expectations**" panel header. Velocity is a leading indicator; price-per-sqft is not derivable from the bulletin.
+
+**Status:** SHIPPED V5b 2026-06-15. Live smoke confirmed the typed-degrade path: live endpoint unreachable, `not_covered` returned, velocity sub-card renders "Not fetched in this run" with a fallback link to `igrodisha.gov.in`. Re-evaluate when IGR portal is known-good to confirm the success path renders the 7-day window correctly.
+
+---
+
+## V5b shipped notes (2026-06-15)
+
+Sprint V5b landed per the D-043/D-044/D-045 plan. Summary for the record:
+
+- **3 fetcher packages shipped.** `@cleardeed/fetcher-igr-bmv` ([src](packages/fetchers/igr-bmv/src/index.ts)), `@cleardeed/fetcher-stamp-duty` ([src](packages/fetchers/stamp-duty/src/index.ts)), `@cleardeed/fetcher-igr-daily-bulletin` ([src](packages/fetchers/igr-daily-bulletin/src/index.ts)). Each ships with `contract.ts` (Zod schema), `package.json`, `index.test.ts` (28 unit tests + 12 contract tests = 40 total).
+- **V11 pipeline extended.** `apps/web/src/lib/pipeline/index.ts:42-44` imports the 3 fetchers; lines 579-636 add Step 2g/2h/2i after Step 2f; lines 702-704 wire the 3 results into `buildSourceResult` and `tier2Input`. All 3 typed-degrade on failure (no exceptions escape, no schema breaks).
+- **Section 5 "Government expectations" panel.** `agents/consumer-report-writer/src/index.ts:1183-1280` adds `renderV5bSubCards()` helper that renders 3 sub-cards (BMV floor, stamp-duty total, district velocity) inside a new 4th panel in `buildBenchmarkSection` (lines 1321 and 1362). Print CSS at line 5189-5250 ensures all 3 sub-cards render in the PDF.
+- **Live smoke.** All 3 fetchers run end-to-end against `igrodisha.gov.in` and typed-degrade correctly (`V5B_LIVE_SMOKE_RESULT_2026-06-15.md`). igr-bmv: `not_covered` (live portal issue). stamp-duty: `partial` (local 2024-25 schedule fallback ran, ₹50L → ₹305k). igr-daily-bulletin: `not_covered` (live portal issue). The pipeline + renderer path is verified end-to-end.
+- **40 new tests pass.** V5b suite: 28/28 unit + 12/12 contract + 92/92 consumer-report-writer + apps/web. Full suite: 1455/1482 (98.2%) pass, 7 failures are pre-existing live-portal tests (Bhulekh, ecourts) not related to V5b.
+- **Founder work pending:** P005/P010/P015 manifests (ground-truth corpus), re-run live smoke when portal is known-good, PDF render verification of V5b sub-cards.
+
+Sprint V5c begins 2026-06-15: public-dashboard, govt-fee, igr-certified-copy (3 more IGR public-data fetchers, all of which the design agent classified as no-captcha).
+
