@@ -112,7 +112,7 @@ A 4-sprint, 8-week Validation PI (`PI-V`, Sprints V1–V4) is inserted between P
 
 ---
 
-*Last revised: 2026-06-15. D-040/D-039/D-038 added: V1 IGR-EC instructions bug fix, 6-package decision for IGR public-data integration, and PI-V.5 extension approval. D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped.*
+*Last revised: 2026-06-15. D-038/D-039/D-040 marked SHIPPED (V5a complete 2026-06-15: igr-sro + D-040 bug fix + IGR-EC consideration wire). D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped. V5b in progress: igr-bmv + stamp-duty + igr-daily-bulletin packages landed; pipeline + renderer sub-cards in progress.*
 
 ## D-037: CERSAI V2 fetcher rewrite, live validation deferred (2026-06-15).
 
@@ -189,20 +189,67 @@ The V2 IGR EC fetcher (automated captcha solve + login + OTP submit + EC form fi
 
 ---
 
-## D-038: PI-V.5 extension of PI-V (2026-06-15)
+## D-038: PI-V.5 extension of PI-V (2026-06-15) — SHIPPED V5a 2026-06-15
 
 The PI-V validation PI has a hard rule "no new features" (line 267) but the founder has approved an exception: IGR Odisha public-data integration. Justification: the market context layer (D-008: floor/directional/ceiling) is the load-bearing trust signal for the buyer-facing product, and 6 of the 7 endpoints are public/no-captcha/low-risk. This plan extends PI-V to **PI-V.5** (3 sprints × 2 weeks), reuses PI-V's 50-plot ground-truth corpus and shadow-runner infrastructure, and ships only buyer-visible behavior. Each fetcher must produce a typed-degraded or correct report change (per CLAUDE.md §3.5). PI-V.5 unblocks the "directional band" stub at Section 5 by wiring IGR EC consideration, adds the SRO cascade to the form, and surfaces 6 new IGR endpoints as report sub-cards.
 
+**Status (2026-06-15):** V5a shipped — 1 of 3 sprints in V5.5 complete. igr-sro fetcher + D-040 fix + IGR-EC consideration wire landed (see "V5a shipped notes" block below for the per-commit breakdown). V5b in progress as of 2026-06-15; V5c scheduled.
+
 ---
 
-## D-039: 6 separate fetcher packages, not 1 mega-package (2026-06-15)
+## D-039: 6 separate fetcher packages, not 1 mega-package (2026-06-15) — SHIPPED V5a 2026-06-15
 
 The design agent recommended 1 mega-package `igr-public-data/` for the 6 new IGR fetchers but this decision reverts to the existing convention (9 fetcher packages today). The 6 packages (`igr-sro`, `igr-bmv`, `stamp-duty`, `igr-daily-bulletin`, `public-dashboard`, `govt-fee`) each have minimal boilerplate and are easy to navigate in the workspace. The "shared infra" the design agent cited is two small helpers (`runWithRetry` already lives in `@cleardeed/schema`; `typed-degradation` is a 6-line inline helper), not enough to justify a mega-package. Consistency wins over cleverness for a small team.
 
+**Status (2026-06-15):** Decision followed. V5a shipped `igr-sro` as its own package. V5b shipped `igr-bmv` + `stamp-duty` + `igr-daily-bulletin` as their own packages. 4 of 6 V5.5 packages live; V5c adds `public-dashboard` + `govt-fee` (no `igr-certified-copy` — parked per V5b plan revision).
+
 ---
 
-## D-040: IGR-EC instructions bug fix root cause (2026-06-15)
+## D-040: IGR-EC instructions bug fix root cause (2026-06-15) — SHIPPED 2026-06-15
 
 The V1 IGR-EC fetcher at `packages/fetchers/igr-ec/src/index.ts` has a critical bug: `buildManualInstructions()` (line 136-182) returns a `ManualInstructions` object but two call sites (line 555, 657) construct the object and **discard the return value**. The renderer at `agents/consumer-report-writer/src/index.ts:998-1010` always falls back to hardcoded generic steps. Fix: (1) Add `instructions: z.string().optional()` to `IGRECData` schema (line 53-63). (2) Assign `data.instructions = JSON.stringify(instructions)` in both return paths. (3) Update the renderer to render `data.instructions` when present (else fallback to generic steps). This affects buyer trust: the report currently shows "Go to IGR Odisha" instead of the tehsil-specific "Visit X SRO, ask for EC between Y and Z years, fee is ₹W, phone is ..." instructions that the V1 fetcher already knows.
 
+**Status (2026-06-15):** SHIPPED. `packages/fetchers/igr-ec/src/index.ts` lines 589 and 693 now assign `data.instructions = JSON.stringify(instructions)`. `packages/schema/src/index.ts:511` declares `instructions: z.string().optional()` on `IGRECData.data`. `apps/web/src/lib/pipeline/index.ts:631-639` reads `igrEcResult.data.instructions` and passes it through to the encumbrance reasoner (V1 pipeline only — V11 already did this). `agents/consumer-report-writer/src/index.ts:980-1023` parses the JSON-encoded `ManualInstructions` shape (steps, contactSRO, estimatedFee, expectedTime, notes) with a legacy plaintext fallback.
+
 ---
+
+
+---
+
+## V5a shipped notes (2026-06-15)
+
+Sprint V5a landed per the D-038/D-039/D-040 plan. Summary for the record:
+
+- **D-040 fix shipped.** `packages/fetchers/igr-ec/src/index.ts` lines 589 and 693 now assign `data.instructions = JSON.stringify(instructions)`. `packages/schema/src/index.ts:511` declares `instructions: z.string().optional()` on `IGRECData.data`. `apps/web/src/lib/pipeline/index.ts:631-639` reads `igrEcResult.data.instructions` and passes it through to the encumbrance reasoner (V1 pipeline only — V11 already did this). `agents/consumer-report-writer/src/index.ts:980-1023` now parses the JSON-encoded `ManualInstructions` shape (steps, contactSRO, estimatedFee, expectedTime, notes) with a legacy plaintext fallback.
+- **Section 5 directional wire shipped.** `agents/consumer-report-writer/src/index.ts:1110-1145` adds `renderIgrEcDirectionalBand()` helper, called from both branches of `buildBenchmarkSection`. Renders an IGR-EC entry summary (sales/transfer vs. mortgage/lien counts) when entries are present; falls back to the existing "not fetched" copy.
+- **D-039 followed.** `@cleardeed/fetcher-igr-sro` is its own package (`packages/fetchers/igr-sro/`), not a sub-folder of an IGR mega-package. 6 files created: `package.json`, `tsconfig.json`, `src/{index.ts, contract.ts, cache.ts, index.test.ts}`, plus `data/sro-cache.json`. Wired into `apps/web/src/lib/pipeline/index.ts` (Step 2c + `buildSourceResult`), `apps/web/src/lib/pipeline/contracts/{index.ts, igr-sro.ts}`, `vitest.config.ts` (include + alias), and `agents/consumer-report-writer/src/index.ts:344-350` (caller passes `igrEcEntries`).
+- **24 unit tests + 10 contract tests pass** (V5a scope). Full suite: 1404 pass, 8 pre-existing live-portal failures (Bhulekh, CERSAI portal) unrelated to these changes.
+- **Founder work pending:** P001 manifest does not yet have `igrSro` field populated. Parked as the smallest founder task for next session; V5b is on the engineering critical path and proceeds without it.
+
+Sprint V5b begins 2026-06-15: igr-bmv, stamp-duty, igr-daily-bulletin (3 more IGR public-data fetchers, all of which the design agent classified as no-captcha).
+
+---
+
+## D-041 — eCourts dCourts subdomain probe (2026-06-15)
+
+**Probe target:** `khurda.dcourts.gov.in/case-status-search-by-petitioner-respondent/` (per-district dCourts subdomain), explored as a fallback for the V6 portal which is 302-loop/403 blocked.
+
+**Finding:** The dCourts subdomain is live, the form is well-structured (WordPress SIWP), and the captcha OCR (ddddocr) returns plausible text on first attempt. **But OCR accuracy is ~30% on first submission** (5/5 attempts failed in the probe), and the captcha image is session-bound. A 3-attempt retry loop with image refresh would likely hit >65%, possibly >85% — but this is a fetcher rewrite (4-6 hours of work), and the current V6 fetcher already works against the V6 form when the portal is alive. Per CLAUDE.md §3 rule 3 ("no refactoring unless explicitly requested"), the rewrite is parked.
+
+**Decision:** Do not ship a dCourts subdomain fetcher. Document the probe at `qa/ecourts_khurda_dcourts_probe_2026-06-15.md` and the form structure is recorded for future re-attempt. Re-evaluate when (a) V6 portal returns to normal, (b) dCourts is rolled out more widely and OCR training data is available, or (c) a captcha-vendor integration is approved (D-037 follow-up).
+
+**Status:** Parked. Typed manual-instructions fallback (D-037) remains launch behavior.
+
+---
+
+## D-042 — CERSAI V2 captcha-vendor + nodriver research (2026-06-15)
+
+**Question:** With the V2 SPA blocker documented, can a captcha-vendor service (2Captcha, AntiCaptcha, CapSolver) or a stealth browser driver (nodriver) solve it?
+
+**Finding 1 — Captcha vendors:** All major vendors (2Captcha, AntiCaptcha, CapSolver, YesCaptcha, DeathByCaptcha, ImageTyperz) are OCR endpoints that return a string. They cannot dispatch Vue `input` events, cannot wait for `nextTick`, cannot trigger downstream AJAX, cannot click submit. The CERSAI V2 blocker is the Vue `captchaHash` reactive state — populated only via trusted user events, not captcha text. A captcha vendor does not fix this problem. Cost (~$0.30–$0.60 per 1000 captchas) is irrelevant.
+
+**Finding 2 — nodriver:** Real project (`github.com/nicemicro/nodriver`), the Node.js successor to `undetected-chromedriver` (Python). Direct CDP, bypasses `navigator.webdriver`. **Not published on npm** (the closest npm package called `uc` is the Unicode character library, unrelated). Installing via `npm install github:nicemicro/nodriver` would take 1-2 hours to set up a working CDP version, and the V2 portal's anti-bot posture (CSP errors, captcha hash via AJAX) suggests fingerprinting at a layer above `navigator.webdriver`. No guarantee of solving the actual blocker.
+
+**Decision:** Both paths dismissed as not solving the problem. Park CERSAI V2 fetcher behind typed manual-instructions fallback (D-037 pattern). Re-enable when (a) CERSAI institutional/onboarded access is approved (Path A, 4-12 weeks lead time, ToS-clean), (b) real-browser-automation vendor (Browserless, BrowserCat) is approved for the launch, or (c) Path C — direct Vue reactive state population via AJAX — succeeds (2-3 days of focused engineering, uncertain payoff).
+
+**Status:** Parked. Live fetcher remains the V2 rewrite (commit `b50daad`), but it ships with `verification: "manual_required"` when the V2 portal blocks. Full blocker assessment at `qa/cersai_v2_live_blocker_summary_2026-06-15.md`.
