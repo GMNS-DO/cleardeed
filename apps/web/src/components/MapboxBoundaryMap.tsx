@@ -58,7 +58,18 @@ export function MapboxBoundaryMap({ polygon, fallbackCenter, villageName, plotNo
 
     mapRef.current = map;
 
+    // Add a load-timeout guard: if Mapbox takes >8s to fire the 'load' event,
+    // surface a clear error instead of leaving the buyer staring at a spinner
+    // (per A.1.4 map UI bug fix). The setTimeout is cleared on load/error.
+    const LOAD_TIMEOUT_MS = 8_000;
+    const loadTimeout = setTimeout(() => {
+      if (!mapRef.current) return;
+      console.error("[MapboxBoundaryMap] load timeout after 8s");
+      setMapError("Map is taking too long to load. Please refresh the page or try a different network.");
+    }, LOAD_TIMEOUT_MS);
+
     map.on("load", () => {
+      clearTimeout(loadTimeout);
       setMapLoaded(true);
 
       // Add the plot polygon fill
@@ -108,11 +119,13 @@ export function MapboxBoundaryMap({ polygon, fallbackCenter, villageName, plotNo
     });
 
     map.on("error", (e) => {
+      clearTimeout(loadTimeout);
       console.error("[MapboxBoundaryMap] map error:", e.error?.message ?? e);
       setMapError("Map could not load. Please try again.");
     });
 
     return () => {
+      clearTimeout(loadTimeout);
       map.remove();
       mapRef.current = null;
       setMapLoaded(false);
