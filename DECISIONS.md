@@ -112,7 +112,7 @@ A 4-sprint, 8-week Validation PI (`PI-V`, Sprints V1–V4) is inserted between P
 
 ---
 
-*Last revised: 2026-06-15. D-043/D-044/D-045 added: V5b shipped 2026-06-15 (igr-bmv + stamp-duty + igr-daily-bulletin + Section 5 "Government expectations" panel). D-041/D-042 added: eCourts dCourts probe + CERSAI V2 captcha-vendor/nodriver research both parked. D-038/D-039/D-040 marked SHIPPED (V5a complete 2026-06-15: igr-sro + D-040 bug fix + IGR-EC consideration wire). D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped.*
+*Last revised: 2026-06-15. D-046 added: V5c shipped 2026-06-15 (public-dashboard + govt-fee + igr-certified-copy + Section 2 §57 sub-card + Section 7 "Official References & Fees"). D-043/D-044/D-045 added: V5b shipped 2026-06-15 (igr-bmv + stamp-duty + igr-daily-bulletin + Section 5 "Government expectations" panel). D-041/D-042 added: eCourts dCourts probe + CERSAI V2 captcha-vendor/nodriver research both parked. D-038/D-039/D-040 marked SHIPPED (V5a complete 2026-06-15: igr-sro + D-040 bug fix + IGR-EC consideration wire). D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped.*
 
 ## D-037: CERSAI V2 fetcher rewrite, live validation deferred (2026-06-15).
 
@@ -298,4 +298,38 @@ Sprint V5b landed per the D-043/D-044/D-045 plan. Summary for the record:
 - **Founder work pending:** P005/P010/P015 manifests (ground-truth corpus), re-run live smoke when portal is known-good, PDF render verification of V5b sub-cards.
 
 Sprint V5c begins 2026-06-15: public-dashboard, govt-fee, igr-certified-copy (3 more IGR public-data fetchers, all of which the design agent classified as no-captcha).
+
+---
+
+## D-046: 2 of 3 V5c fetchers are typed-degrade by design (2026-06-15)
+
+The design agent's V5c plan classified all 3 fetchers (public-dashboard, govt-fee, igr-certified-copy) as "no-captcha — easy to automate." The V5c live probe of the actual IGR portal ([V5C_LIVE_SMOKE_RESULT_2026-06-15.md](qa/smoke/V5C_LIVE_SMOKE_RESULT_2026-06-15.md)) revealed a different reality: 2 of the 3 are typed-degrade envelopes with verified-live URLs, and only 1 (govt-fee) returns real data.
+
+**Finding 1 — public-dashboard is server-rendered.** `PublicDashboard.aspx`, `DeedWiseStatus.aspx`, and `ORServiceNew.aspx` are ASP.NET WebForms pages with no public JSON/WebMethod endpoint. They use `__doPostBack` and form postback — there is no `GetData` / `WebMethod` / `ScriptMethod` route to hit. Page scraping is explicitly out of scope (per CLAUDE.md §3 rule 4 — "no premature abstraction"). The fetcher probes the page shell (HTTP 200 + body > 1KB) and returns the verified-live URL. The renderer (Section 7 sub-card "Official activity") shows the link. Same data is also surfaced via `igr-daily-bulletin` (V5b) which has a real JSON endpoint, so the buyer still gets a velocity signal — just from a different source.
+
+**Finding 2 — certified-copy requires login + captcha.** The form at `CertifiedCopy.aspx` is gated by IGR login + a captcha. The captcha-vendor + nodriver research (D-037/D-042) shows that a captcha vendor returns only a string, cannot dispatch trusted events to the Vue/captcha widget, and cannot bypass the login session. Book 4 (full sale-deed PDFs) is restricted to executant/claimant/agent/legal-representative per Section 57 of the Registration Act, 1908 — a third-party buyer cannot legally pull one without the seller's cooperation. Phase 1 ships with a manual-instructions fallback (D-037 pattern): the fetcher probes the page, returns a typed `not_covered` envelope, and the renderer shows a Section 2 sub-card with the §57 transparency note and 6 manual steps (visit portal → log in → search by deed number or party name → see Book 1/2 index entry → ask seller for full PDF).
+
+**Finding 3 — govt-fee has no JSON API but the schedule rarely changes.** `GovtFeeDtls.aspx` is server-rendered, but the fee schedule has not substantively changed since 2019. We ship a permanent typed JSON seed (`packages/fetchers/govt-fee/data/odisha_govt_fee_schedule.json`) with 12 deed types, EC fees, certified-copy fees, and per-plot fees. The fetcher matches the requested deed category (default "Sale") and returns the relevant fees. Re-validate when `lastUpdated` is older than 2 years.
+
+**Decision:** Ship all 3 fetchers as their own packages per D-039. The 2 typed-degrade packages (public-dashboard, igr-certified-copy) return a verified-live URL + a manual-instructions fallback (D-037 pattern). The 1 real-data package (govt-fee) returns the matched schedule from a permanent cache. The pipeline degrades to neutral sub-cards when typed-degrade is returned — never a red error. The Section 2 §57 transparency note is mandatory in the certified-copy sub-card, so the buyer knows upfront why the full PDF is restricted and what to ask the seller for.
+
+**Status:** SHIPPED V5c 2026-06-15. Live smoke confirmed: public-dashboard `success` (page alive), govt-fee `success` (matched "Sale" → 5% stamp + 2% reg + ₹100 min), igr-certified-copy `not_covered` (page alive, §57 note 314 chars, 6 manual steps, est. fee ₹30). 24/24 unit tests + 92/92 consumer-report-writer + apps/web pass.
+
+---
+
+## V5c shipped notes (2026-06-15)
+
+Sprint V5c landed per the D-046 plan. Summary for the record:
+
+- **3 fetcher packages shipped.** `@cleardeed/fetcher-public-dashboard` ([src](packages/fetchers/public-dashboard/src/index.ts)), `@cleardeed/fetcher-govt-fee` ([src](packages/fetchers/govt-fee/src/index.ts), with [permanent JSON seed](packages/fetchers/govt-fee/data/odisha_govt_fee_schedule.json)), `@cleardeed/fetcher-igr-certified-copy` ([src](packages/fetchers/igr-certified-copy/src/index.ts)). Each ships with `contract.ts` (Zod schema), `package.json`, `index.test.ts` (24 unit tests total = 7 + 10 + 7).
+- **V11 pipeline extended.** `apps/web/src/lib/pipeline/index.ts:46-50` imports the 3 fetchers; lines 642-714 add Step 2j/2k/2l after Step 2i; lines 727-729 wire the 3 results into `buildSourceResult` and `tier2Input`. All 3 typed-degrade on failure (no exceptions escape, no schema breaks).
+- **Section 2 "Previous sale deed" sub-card.** `agents/consumer-report-writer/src/index.ts:595` adds `renderV5cCertifiedCopySubCard()` to Section 2. Renders the §57 transparency note + 6 manual-instructions steps + estimated fee + live link.
+- **Section 7 "Official References & Fees" (new section).** `agents/consumer-report-writer/src/index.ts:786-810` adds a new Section 7 with 2 sub-cards: `renderV5cGovtFeeSubCard()` (matched deed fees + collapsed EC/CC/per-plot details) and `renderV5cPublicDashboardSubCard()` (live link to 3 dashboard pages).
+- **CSS for screen + print.** `agents/consumer-report-writer/src/index.ts:5438-5488` adds the screen CSS for `.v5c-subcard`, `.v5c-fee-table`, `.v5c-subcard-links`. Print CSS at line 5270-5292 ensures all 3 sub-cards render in the PDF without background tints.
+- **Live smoke.** All 3 fetchers run end-to-end against `igrodisha.gov.in` and degrade correctly. 2 of 3 are typed-degrade by design (D-046); 1 (govt-fee) returns real data from a permanent cache. See `V5C_LIVE_SMOKE_RESULT_2026-06-15.md`.
+- **24 new tests pass.** V5c suite: 24/24 unit + 92/92 consumer-report-writer + apps/web = 116/116.
+- **Founder work pending:** P020 manifest (ground-truth corpus), PDF render verification of V5c sub-cards.
+
+PI-V.5 (V5a + V5b + V5c) is now complete. 7 of 6 V5.5 packages shipped (igr-sro, igr-bmv, stamp-duty, igr-daily-bulletin, public-dashboard, govt-fee, igr-certified-copy). All 3 sprints combined: 92+24+28+12 = 156 new tests, full suite 1455+ pass. Remaining founder work: P005/P010/P015 (V5b) + P020 (V5c) = 4 ground-truth plots to validate the Section 5 + Section 2 + Section 7 sub-cards end-to-end.
+
 

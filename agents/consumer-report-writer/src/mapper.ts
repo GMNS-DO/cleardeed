@@ -134,6 +134,73 @@ export interface Tier2Input {
     };
     warnings?: Array<{ code?: string; message?: string }>;
   } | null;
+  /** Sprint V5c: IGR public-dashboard page-alive probe — Section 6 sub-card
+   *  "Official activity (live link)". No data parsing (server-rendered). */
+  publicDashboardData?: {
+    source?: string;
+    status?: string;
+    data?: {
+      pageUrl?: string;
+      pageIsLive?: boolean;
+      districtFilter?: string;
+      sroFilter?: string;
+      notes?: string[];
+    };
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
+  /** Sprint V5c: Govt fee schedule (permanent typed cache) — Section 6
+   *  "Official fees" table. The matched deed category (Sale by default). */
+  govtFeeData?: {
+    source?: string;
+    status?: string;
+    data?: {
+      schedule?: {
+        lastUpdated?: string;
+        source?: string;
+        deedFees?: Array<{
+          category?: string;
+          minStampINR?: number;
+          stampPct?: number;
+          registrationFeePct?: number;
+          rorPostalFeeINR?: number;
+          userFeeINR?: number;
+          notes?: string;
+        }>;
+        encumbranceCertificate?: Record<string, unknown>;
+        certifiedCopy?: Record<string, unknown>;
+        additionalPerPlotFees?: Record<string, number>;
+      };
+      matchedDeedFee?: {
+        category?: string;
+        minStampINR?: number;
+        stampPct?: number;
+        registrationFeePct?: number;
+        rorPostalFeeINR?: number;
+        userFeeINR?: number;
+        notes?: string;
+      } | null;
+    };
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
+  /** Sprint V5c: IGR certified copy (Phase 1: index-card only) — Section 2
+   *  sub-card "Previous sale deed (open index entry)" with §57 transparency
+   *  note. Phase 2 (live captcha + index parsing) is parked behind D-037. */
+  igrCertifiedCopyData?: {
+    source?: string;
+    status?: string;
+    data?: {
+      pageUrl?: string;
+      pageIsLive?: boolean;
+      section57Note?: string;
+      manualInstructions?: {
+        steps?: string[];
+        contactSRO?: string;
+        estimatedFeeINR?: number;
+        expectedTime?: string;
+      };
+    };
+    warnings?: Array<{ code?: string; message?: string }>;
+  } | null;
   /** V1.2: Adjacent plot analysis (ceiling plan T-056) */
   adjacentPlots?: {
     adjacentPlots: Array<{
@@ -235,6 +302,10 @@ export const ConsumerReportGenInputSchema = z.object({
   igrBmvData: z.any().optional(),
   stampDutyData: z.any().optional(),
   igrDailyBulletinData: z.any().optional(),
+  // Sprint V5c — IGR public-data sub-cards for Section 2 + Section 6.
+  publicDashboardData: z.any().optional(),
+  govtFeeData: z.any().optional(),
+  igrCertifiedCopyData: z.any().optional(),
   // P-NEW-1A: Pattern intelligence synthesis insights
   synthesisInsights: z.array(z.any()).optional().default([]),
   // Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR
@@ -525,6 +596,10 @@ export function mapToReportInput(
     igrBmvData: tier2.igrBmvData ?? null,
     stampDutyData: tier2.stampDutyData ?? null,
     igrDailyBulletinData: tier2.igrDailyBulletinData ?? null,
+    // Sprint V5c — IGR public-data sub-cards for Section 2 + Section 6.
+    publicDashboardData: tier2.publicDashboardData ?? null,
+    govtFeeData: tier2.govtFeeData ?? null,
+    igrCertifiedCopyData: tier2.igrCertifiedCopyData ?? null,
     // P-NEW-1A: Pattern intelligence synthesis insights
     synthesisInsights: tier2.synthesisInsights ?? [],
     // Bhunaksha Plot Report — passed through to renderer; renderer can embed

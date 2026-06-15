@@ -598,6 +598,7 @@ ${buildProvenanceStrip({
     <div class="verify-links">
       ${bhulekhUsable ? buildVerifyLink("https://bhulekh.ori.nic.in/", "Bhulekh", "Open the Bhulekh RoR portal") : ""}
     </div>
+    ${renderV5cCertifiedCopySubCard((data as any).igrCertifiedCopyData ?? null)}
   </div>
 </section>
 
@@ -766,6 +767,28 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
   </div>
   <div class="section-body">
     ${larrHtml}
+  </div>
+</section>
+
+<!-- ── Section 7: Official References & Fees (Sprint V5c) ────────── -->
+<section class="section" id="section-official-refs">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">6. Official References &amp; Fees</div>
+      <div class="section-sub">What the government charges &mdash; fee schedule, official activity links, certified-copy procedure</div>
+    </div>
+  </div>
+  <div class="section-body">
+    ${renderV5cGovtFeeSubCard((data as any).govtFeeData ?? null)}
+    ${renderV5cPublicDashboardSubCard((data as any).publicDashboardData ?? null)}
+    <div class="source-line">
+      <span>Sources: IGR Govt Fee Schedule (permanent cache, last updated ${
+        escapeHtml(((data as any)?.govtFeeData?.data?.schedule?.lastUpdated) ?? "—")
+      }) &middot; IGR Public Dashboard (server-rendered, live link) &middot; IGR Certified Copy Portal (Phase 1 manual lookup)</span>
+    </div>
   </div>
 </section>
 
@@ -1365,6 +1388,159 @@ function buildBenchmarkSection(
     </div>
   </div>`;
 }
+
+// ─── Sprint V5c sub-card renderers (Section 2 + Section 6) ───────────────────
+
+/**
+ * Section 2 sub-card: "Previous sale deed (open index entry)" with §57
+ * transparency note. Renders only when the certified-copy fetcher returned
+ * a payload. Falls back to a manual-instructions block.
+ */
+function renderV5cCertifiedCopySubCard(data: any): string {
+  if (!data) return "";
+  const pageUrl = data?.data?.pageUrl ?? "https://igrodisha.gov.in/CertifiedCopy.aspx";
+  const pageIsLive = Boolean(data?.data?.pageIsLive);
+  const section57Note = data?.data?.section57Note ?? "";
+  const steps: string[] = data?.data?.manualInstructions?.steps ?? [];
+  const fee = data?.data?.manualInstructions?.estimatedFeeINR;
+  const expectedTime = data?.data?.manualInstructions?.expectedTime;
+  const status = data?.status ?? "not_covered";
+
+  const stepsList = steps
+    .map((s) => `<li>${escapeHtml(s)}</li>`)
+    .join("");
+
+  const statusClass = pageIsLive ? "v5c-ok" : "v5c-neutral";
+
+  return `<div class="v5c-subcard v5c-subcard-section2">
+    <div class="v5c-subcard-head">
+      <span class="v5c-subcard-label">Previous sale deed</span>
+      <span class="v5c-subcard-tag ${statusClass}">${pageIsLive ? "Book 1/2 open" : "Manual lookup"}</span>
+    </div>
+    <p class="v5c-subcard-desc">Book 1 and Book 2 of the IGR index are open to any person &mdash; you can see the most recent sale deed for this plot (deed number, date, parties, consideration, market value, stamp duty) without the seller's cooperation. The full PDF (Book 4) is restricted per Section 57 of the Registration Act, 1908 &mdash; ask the seller for a notarised copy or hire a lawyer.</p>
+    <details class="v5c-subcard-details">
+      <summary>How to look this up yourself</summary>
+      <ol class="v5c-subcard-steps">${stepsList}</ol>
+      <div class="v5c-subcard-meta">
+        ${fee != null ? `<span>Estimated fee: <strong>₹${fee}</strong></span>` : ""}
+        ${expectedTime ? `<span>Time: ${escapeHtml(expectedTime)}</span>` : ""}
+        <span>Status: <strong>${escapeHtml(status)}</strong></span>
+      </div>
+      <p class="v5c-subcard-note">${escapeHtml(section57Note)}</p>
+    </details>
+    <div class="source-line">
+      <span>Source: IGR Odisha Certified Copy Portal &mdash; <a href="${escapeHtml(pageUrl)}" target="_blank" rel="noopener">igrodisha.gov.in/CertifiedCopy</a></span>
+    </div>
+  </div>`;
+}
+
+/**
+ * Section 6 sub-card: "Official fees" table from the permanent IGR fee
+ * schedule. Always renders if govt-fee data is present; shows the matched
+ * deed category in detail and the full schedule in a collapsed details.
+ */
+function renderV5cGovtFeeSubCard(data: any): string {
+  if (!data || !data.data?.schedule) return "";
+  const schedule = data.data.schedule;
+  const matched = data.data.matchedDeedFee;
+  const lastUpdated = schedule.lastUpdated ?? "—";
+  const source = schedule.source ?? "https://igrodisha.gov.in/GovtFeeDtls.aspx";
+
+  if (!matched) {
+    return `<div class="v5c-subcard v5c-subcard-section6">
+      <div class="v5c-subcard-head">
+        <span class="v5c-subcard-label">Official fees (Sale deed)</span>
+        <span class="v5c-subcard-tag v5c-neutral">No exact match</span>
+      </div>
+      <p class="v5c-subcard-desc">The IGR fee schedule does not have an exact match for the deed type associated with this transaction. Verify the fees with the SRO before paying.</p>
+      <div class="source-line">
+        <span>Source: IGR Govt Fee Schedule &mdash; last updated ${escapeHtml(lastUpdated)} &mdash; <a href="${escapeHtml(source)}" target="_blank" rel="noopener">igrodisha.gov.in/GovtFeeDtls</a></span>
+      </div>
+    </div>`;
+  }
+
+  const fmtPct = (n: number) => `${n.toFixed(n % 1 === 0 ? 0 : 1)}%`;
+  const feeRows: Array<[string, string]> = [
+    ["Minimum stamp (fixed)", `₹${matched.minStampINR ?? 0}`],
+    ["Stamp duty (% of market value)", fmtPct(matched.stampPct ?? 0)],
+    ["Registration fee (% of market value)", fmtPct(matched.registrationFeePct ?? 0)],
+    ["ROR postal fee", `₹${matched.rorPostalFeeINR ?? 0}`],
+    ["User fee (per plot)", `₹${matched.userFeeINR ?? 0}`],
+  ];
+
+  const ecFee = schedule.encumbranceCertificate ?? {};
+  const ccFee = schedule.certifiedCopy ?? {};
+  const perPlot = schedule.additionalPerPlotFees ?? {};
+
+  return `<div class="v5c-subcard v5c-subcard-section6">
+    <div class="v5c-subcard-head">
+      <span class="v5c-subcard-label">Official fees (${escapeHtml(matched.category ?? "Sale")})</span>
+      <span class="v5c-subcard-tag v5c-ok">Verified ${escapeHtml(lastUpdated)}</span>
+    </div>
+    <p class="v5c-subcard-desc">The IGR Govt Fee Schedule for <strong>${escapeHtml(matched.category ?? "Sale")}</strong> deeds. Use this to verify the fees the SRO quotes you &mdash; the SRO's schedule should match.</p>
+    <table class="v5c-fee-table">
+      <tbody>
+        ${feeRows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td><strong>${escapeHtml(v)}</strong></td></tr>`).join("")}
+      </tbody>
+    </table>
+    ${matched.notes ? `<p class="v5c-subcard-note">${escapeHtml(matched.notes)}</p>` : ""}
+    <details class="v5c-subcard-details">
+      <summary>Other IGR fees (EC, certified copy, per-plot)</summary>
+      <table class="v5c-fee-table">
+        <tbody>
+          <tr><td colspan="2"><strong>Encumbrance Certificate</strong></td></tr>
+          <tr><td>First year search</td><td>₹${ecFee.generalSearchFirstYearINR ?? 0}</td></tr>
+          <tr><td>Each subsequent year</td><td>₹${ecFee.everySubsequentYearINR ?? 0}</td></tr>
+          <tr><td>Application fee</td><td>₹${ecFee.applicationFeeINR ?? 0}</td></tr>
+          <tr><td>User charges (per year, max ₹${ecFee.userChargesMaxINR ?? 0})</td><td>₹${ecFee.userChargesINR ?? 0}</td></tr>
+          <tr><td colspan="2"><strong>Certified Copy</strong></td></tr>
+          <tr><td>Search per party</td><td>₹${ccFee.searchPerPartyINR ?? 0}</td></tr>
+          <tr><td>Inspection fee</td><td>₹${ccFee.inspectionFeeINR ?? 0}</td></tr>
+          <tr><td>Copying per page</td><td>₹${ccFee.copyingFeePerPageINR ?? 0}</td></tr>
+          <tr><td>User charges (per page, max ₹${ccFee.userChargesMaxINR ?? 0})</td><td>₹${ccFee.userChargesPerPageINR ?? 0}</td></tr>
+          <tr><td colspan="2"><strong>Per-plot fees (Sale)</strong></td></tr>
+          <tr><td>Per-plot demarcation</td><td>₹${perPlot.perPlotDemarcationFeeINR ?? 0}</td></tr>
+          <tr><td>ROR postal delivery</td><td>₹${perPlot.rorPostalDeliveryFeeINR ?? 0}</td></tr>
+          <tr><td>Per-khata ROR user fee</td><td>₹${perPlot.perKhataRORUserFeeINR ?? 0}</td></tr>
+        </tbody>
+      </table>
+    </details>
+    <div class="source-line">
+      <span>Source: IGR Govt Fee Schedule &mdash; last updated ${escapeHtml(lastUpdated)} &mdash; <a href="${escapeHtml(source)}" target="_blank" rel="noopener">igrodisha.gov.in/GovtFeeDtls</a></span>
+    </div>
+  </div>`;
+}
+
+/**
+ * Section 6 sub-card: "Official activity (live link)" — a small live-link card
+ * to the IGR public dashboard, deed-wise status, and ORTPSA daily bulletin.
+ * Page is server-rendered (no JSON API); the card just shows the live URL.
+ */
+function renderV5cPublicDashboardSubCard(data: any): string {
+  if (!data) return "";
+  const pageUrl = data?.data?.pageUrl ?? "https://igrodisha.gov.in/PublicDashboard.aspx";
+  const pageIsLive = Boolean(data?.data?.pageIsLive);
+  const status = data?.status ?? "not_covered";
+  const statusClass = pageIsLive ? "v5c-ok" : "v5c-neutral";
+
+  return `<div class="v5c-subcard v5c-subcard-section6-dash">
+    <div class="v5c-subcard-head">
+      <span class="v5c-subcard-label">Official district activity (live)</span>
+      <span class="v5c-subcard-tag ${statusClass}">${pageIsLive ? "Live page" : "Page not fetched"}</span>
+    </div>
+    <p class="v5c-subcard-desc">IGR publishes district-level deed registration activity on the public dashboard (server-rendered, no public JSON API). Use these links to see how many deeds were registered in this district in the last 30 days, broken down by deed type and SRO.</p>
+    <div class="v5c-subcard-links">
+      <a href="${escapeHtml(pageUrl)}" target="_blank" rel="noopener">Public Dashboard</a>
+      <a href="https://igrodisha.gov.in/DeedWiseStatus.aspx" target="_blank" rel="noopener">Deed-Wise Status</a>
+      <a href="https://igrodisha.gov.in/ORServiceNew.aspx" target="_blank" rel="noopener">ORTPSA Daily Bulletin</a>
+    </div>
+    <p class="v5c-subcard-note">The same data is also surfaced in the &ldquo;District velocity&rdquo; sub-card on Section 5, which uses a captcha-free JSON endpoint. The dashboard page is server-rendered and is not parsed automatically.</p>
+    <div class="source-line">
+      <span>Source: IGR Odisha Public Dashboard &mdash; <a href="${escapeHtml(pageUrl)}" target="_blank" rel="noopener">igrodisha.gov.in/PublicDashboard</a> &mdash; status: <strong>${escapeHtml(status)}</strong></span>
+    </div>
+  </div>`;
+}
+
 
 // ─── Section 3 builder: BDA Master Plan zone card ───────────────────────────
 
@@ -5089,6 +5265,28 @@ body {
     border: 1px solid #b91c1c !important;
   }
 
+  /* Sprint V5c — print styles for Section 2 certified-copy + Section 6 official-fees sub-cards */
+  .v5c-subcard {
+    background: #ffffff !important;
+    border: 1px solid #888888 !important;
+    border-left: 3px solid #888888 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .v5c-subcard-section2 { border-left-color: #b45309 !important; }
+  .v5c-subcard-section6 { border-left-color: #15803d !important; }
+  .v5c-subcard-section6-dash { border-left-color: #1d4ed8 !important; }
+  .v5c-subcard-tag { background: #ffffff !important; border: 1px solid #888888 !important; color: #111111 !important; }
+  .v5c-ok { background: #f0fdf4 !important; color: #15803d !important; border-color: #15803d !important; }
+  .v5c-neutral { background: #f9fafb !important; color: #4b5563 !important; border-color: #6b7280 !important; }
+  .v5c-subcard-links a {
+    background: #ffffff !important;
+    border: 1px solid #888888 !important;
+    color: #1d4ed8 !important;
+  }
+  .v5c-fee-table { color: #111111 !important; }
+  .v5c-fee-table td { border-bottom: 1px solid #cccccc !important; color: #111111 !important; }
+
   /* BDA zone card → simple block, no fancy color. */
   .bda-card {
     background: #f9fafb !important;
@@ -5258,6 +5456,61 @@ body {
   line-height: 1.45;
 }
 .v5b-subcard-note a { color: var(--blue-700); text-decoration: underline; }
+
+/* Sprint V5c — Section 2 certified-copy sub-card + Section 6 official-fees sub-cards */
+.v5c-subcard {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--gray-400);
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.v5c-subcard-section2 { border-left-color: var(--amber-600); background: #fffbeb; }
+.v5c-subcard-section6 { border-left-color: var(--green-600); background: #f0fdf4; }
+.v5c-subcard-section6-dash { border-left-color: var(--blue-600); background: var(--blue-50); }
+.v5c-subcard-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 8px; }
+.v5c-subcard-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-700); }
+.v5c-subcard-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.v5c-ok { background: #dcfce7; color: #166534; }
+.v5c-neutral { background: var(--gray-200); color: var(--gray-700); }
+.v5c-subcard-desc { font-size: 12px; color: var(--gray-700); margin: 6px 0 8px; line-height: 1.5; }
+.v5c-subcard-details { font-size: 12px; color: var(--gray-700); margin-top: 8px; }
+.v5c-subcard-details summary { cursor: pointer; color: var(--blue-700); font-weight: 600; }
+.v5c-subcard-steps { margin: 8px 0 0 18px; padding: 0; font-size: 12px; line-height: 1.6; }
+.v5c-subcard-steps li { margin-bottom: 4px; }
+.v5c-subcard-meta { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0 6px; font-size: 11px; color: var(--gray-600); }
+.v5c-subcard-meta strong { color: var(--gray-900); }
+.v5c-subcard-note { font-size: 12px; color: var(--gray-600); margin-top: 8px; line-height: 1.5; }
+.v5c-subcard-note a { color: var(--blue-700); text-decoration: underline; }
+.v5c-subcard-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+.v5c-subcard-links a {
+  display: inline-block;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-700);
+  background: #ffffff;
+  border: 1px solid var(--blue-200);
+  border-radius: 4px;
+  text-decoration: none;
+}
+.v5c-subcard-links a:hover { background: var(--blue-50); }
+.v5c-fee-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+.v5c-fee-table td { padding: 5px 8px; border-bottom: 1px solid var(--gray-200); }
+.v5c-fee-table td:first-child { color: var(--gray-700); }
+.v5c-fee-table td:last-child { text-align: right; color: var(--gray-900); }
+.v5c-fee-table tr td[colspan="2"] { background: var(--gray-100); font-weight: 700; color: var(--gray-800); }
 
 /* Section 3: BDA zone card */
 .bda-card {

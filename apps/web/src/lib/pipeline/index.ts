@@ -42,6 +42,12 @@ import { fetch as bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
 import { igrBmvFetch } from "@cleardeed/fetcher-igr-bmv";
 import { stampDutyFetch } from "@cleardeed/fetcher-stamp-duty";
 import { igrDailyBulletinFetch } from "@cleardeed/fetcher-igr-daily-bulletin";
+// Sprint V5c — IGR public-data fetchers (PI-V.5). Two of three ship as
+// typed-degradation siblings (public-dashboard is server-rendered, certified-copy
+// is captcha+login-gated); govt-fee is a permanent typed cache.
+import { publicDashboardFetch } from "@cleardeed/fetcher-public-dashboard";
+import { govtFeeFetch } from "@cleardeed/fetcher-govt-fee";
+import { igrCertifiedCopyFetch } from "@cleardeed/fetcher-igr-certified-copy";
 import type { SourceResult } from "@cleardeed/orchestrator";
 
 export type { Tier2Input };
@@ -638,6 +644,58 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     );
   }
 
+  // ── Step 2j: IGR Public Dashboard — page-alive probe, server-rendered ──────
+  // Sprint V5c: the public dashboard is server-rendered ASP.NET WebForms
+  // (PublicDashboard.aspx / DeedWiseStatus.aspx / ORServiceNew.aspx) with
+  // no public JSON API. The fetcher probes the page shell + returns the
+  // verified-live URL. Renderer (Section 6 sub-card) shows the live link.
+  // Same data is also captured by igr-daily-bulletin (V5b), which has a
+  // real JSON endpoint — see D-046.
+  let publicDashboardResult: Awaited<ReturnType<typeof publicDashboardFetch>> | null = null;
+  try {
+    publicDashboardResult = await publicDashboardFetch({});
+  } catch (err) {
+    console.warn(
+      "[pipeline/v11] public-dashboard fetch error:",
+      err instanceof Error ? err.message : err
+    );
+  }
+
+  // ── Step 2k: Govt Fee Schedule — permanent typed cache ───────────────────
+  // Sprint V5c: the GovtFeeDtls.aspx page is server-rendered with no JSON API.
+  // The schedule rarely changes (last substantive revision 2019). The fetcher
+  // loads a typed JSON seed at module init and matches the requested deed
+  // category. No network call. Renderer (Section 6 "Official fees" sub-card)
+  // shows the matched fees so the buyer can verify the SRO's quote.
+  let govtFeeResult: Awaited<ReturnType<typeof govtFeeFetch>> | null = null;
+  try {
+    govtFeeResult = await govtFeeFetch({
+      deedCategory: "Sale", // primary case for property purchase
+    });
+  } catch (err) {
+    console.warn(
+      "[pipeline/v11] govt-fee fetch error:",
+      err instanceof Error ? err.message : err
+    );
+  }
+
+  // ── Step 2l: IGR Certified Copy — Phase 1: index-card only, typed-degrade ──
+  // Sprint V5c: the certified-copy form requires login + captcha. Per D-037/D-046,
+  // Phase 1 ships with a manual-instructions fallback (D-037 pattern). The
+  // fetcher probes the page + returns a typed `not_covered` envelope with the
+  // verified-live URL + §57 transparency note. Renderer (Section 2 sub-card)
+  // shows the buyer how to look this up themselves. Book 4 is restricted to
+  // executant/claimnant per Section 57 of the Registration Act, 1908.
+  let igrCertifiedCopyResult: Awaited<ReturnType<typeof igrCertifiedCopyFetch>> | null = null;
+  try {
+    igrCertifiedCopyResult = await igrCertifiedCopyFetch({});
+  } catch (err) {
+    console.warn(
+      "[pipeline/v11] igr-certified-copy fetch error:",
+      err instanceof Error ? err.message : err
+    );
+  }
+
   // ── Step 3: A5 OwnershipReasoner ───────────────────────────────────────────
   // Only run ownership comparison if a seller name was provided.
   // When no name is provided, skip comparison and show Bhulekh owners directly.
@@ -702,6 +760,11 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     ...buildSourceResult("igr-bmv", igrBmvResult),
     ...buildSourceResult("stamp-duty", stampDutyResult),
     ...buildSourceResult("igr-daily-bulletin", igrDailyBulletinResult),
+    // Sprint V5c — IGR public-data fetchers (Phase 1 typed-degrade for
+    // public-dashboard + igr-certified-copy; permanent cache for govt-fee).
+    ...buildSourceResult("public-dashboard", publicDashboardResult),
+    ...buildSourceResult("govt-fee", govtFeeResult),
+    ...buildSourceResult("igr-certified-copy", igrCertifiedCopyResult),
   ];
 
   // ── Step 4b: EncumbranceReasoner (A7) ───────────────────────────────────────
@@ -756,6 +819,10 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     igrBmvData: igrBmvResult ?? null,
     stampDutyData: stampDutyResult ?? null,
     igrDailyBulletinData: igrDailyBulletinResult ?? null,
+    // Sprint V5c — IGR public-data fetchers (Section 2 + Section 6 sub-cards).
+    publicDashboardData: publicDashboardResult ?? null,
+    govtFeeData: govtFeeResult ?? null,
+    igrCertifiedCopyData: igrCertifiedCopyResult ?? null,
   };
 
   const igrLink = {

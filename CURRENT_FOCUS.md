@@ -92,13 +92,18 @@ Approved departure from PI-V's "no new features" hard rule. Reuses PI-V's 50-plo
 - [ ] PDF render verification of V5b sub-cards
 - [ ] Exit: 3 fetchers live, ≥1347 tests pass, 4 ground-truth plots pass
 
-**Sprint V5c (Weeks 5-6) — public-dashboard + govt-fee + igr-certified-copy (Phase 1)**
-- [ ] Create `@cleardeed/fetcher-public-dashboard` (district activity)
-- [ ] Create `@cleardeed/fetcher-govt-fee` (permanent cache, official fee schedule)
-- [ ] Create `@cleardeed/fetcher-igr-certified-copy` (Section 57 Book 1/2 index-card only — no captcha, no paid-per-doc)
-- [ ] Add Section 2 sub-card "Previous sale deed (open index entry)" with explicit §57 transparency note
-- [ ] Add Section 6 "Official fees" table
-- [ ] Pre-fill P020 manifest (founder) — 5 ground-truth plots total
+**Sprint V5c (Weeks 5-6) — public-dashboard + govt-fee + igr-certified-copy (Phase 1) — SHIPPED 2026-06-15**
+- [x] Create `@cleardeed/fetcher-public-dashboard` (page-alive probe, server-rendered; typed-degrade) — package shipped 2026-06-15
+- [x] Create `@cleardeed/fetcher-govt-fee` (permanent typed cache, official fee schedule) — package shipped 2026-06-15
+- [x] Create `@cleardeed/fetcher-igr-certified-copy` (Section 57 Book 1/2 index-card, Phase 1 typed-degrade) — package shipped 2026-06-15
+- [x] Add 3 contract files (`apps/web/src/lib/pipeline/contracts/{public-dashboard,govt-fee,igr-certified-copy}.ts`) + barrel exports
+- [x] Add 3 fetchers to `pnpm-workspace.yaml` + vitest aliases
+- [x] Wire 3 fetchers into V11 pipeline (`Step 2j`/`2k`/`2l`) + `buildSourceResult` + `tier2Input`
+- [x] Add Section 2 sub-card "Previous sale deed (open index entry)" with §57 transparency note
+- [x] Add Section 7 "Official References & Fees" (govt-fee table + public-dashboard live link)
+- [x] Run live smoke against `igrodisha.gov.in` for all 3 — see `V5C_LIVE_SMOKE_RESULT_2026-06-15.md`
+- [ ] Pre-fill P020 manifest (founder) — pending
+- [ ] PDF render verification of V5c sub-cards
 - [ ] Exit: 7 fetchers live, ≥1367 tests pass, 5 ground-truth plots pass
 
 **Founder work on critical path:** 5 plots × 2-3 hrs/plot = 10-15 hrs over 6 weeks. Can be parallelized with engineering.

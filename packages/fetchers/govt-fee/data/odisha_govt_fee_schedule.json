@@ -1,0 +1,139 @@
+{
+  "source": "https://igrodisha.gov.in/GovtFeeDtls.aspx",
+  "lastUpdated": "2024-04-01",
+  "notes": "Permanent cache of IGR Odisha government fee schedule. The schedule rarely changes (last substantive revision: 2019). Re-validate against GovtFeeDtls.aspx when this date is older than 2 years.",
+  "deedFees": [
+    {
+      "category": "Sale",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 60,
+      "userFeeINR": 80,
+      "notes": "Most common deed type for property purchase."
+    },
+    {
+      "category": "Sale with Agreement",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 60,
+      "userFeeINR": 80,
+      "notes": "Sale plus builder/buyer agreement."
+    },
+    {
+      "category": "Gift Immovable Property",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 60,
+      "userFeeINR": 80,
+      "notes": "Gift of land/building to a family member or other party."
+    },
+    {
+      "category": "Gift Movable Property",
+      "minStampINR": 50,
+      "stampPct": 4.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 0,
+      "userFeeINR": 0,
+      "notes": "Gift of vehicles, jewellery, shares, etc."
+    },
+    {
+      "category": "Mortgage with Possession",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 60,
+      "userFeeINR": 80,
+      "notes": "Loan against property where possession transfers to lender."
+    },
+    {
+      "category": "Mortgage without Possession",
+      "minStampINR": 100,
+      "stampPct": 2.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 60,
+      "userFeeINR": 80,
+      "notes": "Loan against property; possession stays with borrower."
+    },
+    {
+      "category": "Lease (≤30 years)",
+      "minStampINR": 50,
+      "stampPct": 2.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 0,
+      "userFeeINR": 0,
+      "notes": "Long-term lease of land/building."
+    },
+    {
+      "category": "Cancellation of Sale",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 0,
+      "userFeeINR": 0,
+      "notes": "Both parties jointly cancel a prior sale deed."
+    },
+    {
+      "category": "Cancellation of Gift",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 0,
+      "userFeeINR": 0,
+      "notes": "Both parties jointly cancel a prior gift deed."
+    },
+    {
+      "category": "Partition",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 60,
+      "userFeeINR": 80,
+      "notes": "Family partition of joint property."
+    },
+    {
+      "category": "Release Deed",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 0,
+      "userFeeINR": 0,
+      "notes": "Co-sharer releases share to another co-sharer."
+    },
+    {
+      "category": "Power of Attorney (POA)",
+      "minStampINR": 100,
+      "stampPct": 5.0,
+      "registrationFeePct": 2.0,
+      "rorPostalFeeINR": 0,
+      "userFeeINR": 0,
+      "notes": "POA relating to immovable property. Note: POA is NOT a substitute for sale deed."
+    }
+  ],
+  "encumbranceCertificate": {
+    "generalSearchFirstYearINR": 25,
+    "everySubsequentYearINR": 15,
+    "otherPropertyINR": 20,
+    "applicationFeeINR": 1,
+    "userChargesINR": 75,
+    "userChargesMaxINR": 250,
+    "notes": "EC fee is per year of search."
+  },
+  "certifiedCopy": {
+    "searchPerPartyINR": 15,
+    "inspectionFeeINR": 10,
+    "copyingFeePerPageINR": 3,
+    "immediateDeliveryINR": 15,
+    "applicationFeeINR": 3,
+    "userChargesPerPageINR": 40,
+    "userChargesMaxINR": 250,
+    "notes": "CC fee depends on number of pages and parties named."
+  },
+  "additionalPerPlotFees": {
+    "perPlotDemarcationFeeINR": 20,
+    "rorPostalDeliveryFeeINR": 40,
+    "perKhataRORUserFeeINR": 80
+  }
+}

@@ -24,4 +24,7 @@ export * as Nominatim from "./nominatim";
 export * as IgrBmv from "./igr-bmv";
 export * as StampDuty from "./stamp-duty";
 export * as IgrDailyBulletin from "./igr-daily-bulletin";
+export * as PublicDashboard from "./public-dashboard";
+export * as GovtFee from "./govt-fee";
+export * as IgrCertifiedCopy from "./igr-certified-copy";
 export * from "./status-bridge";

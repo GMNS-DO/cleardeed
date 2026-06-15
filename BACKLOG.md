@@ -132,3 +132,78 @@ This file is the relief valve. Use it ruthlessly. The point is to keep `CURRENT_
 **Re-enable trigger (V2 → launch path):** 50+ buyer reports, captcha top-1 ≥85% (target hit), and an OTP input channel that doesn't require a live Playwright session (e.g. a tiny web UI where the founder pastes the OTP once per day; or a 2Captcha-type relay that returns an IGR-issued cookie without OTP).
 
 **Next step:** Park the V2 dispatcher, keep the captcha solver + smoke script. Revisit at the 50-report review.
+
+---
+
+## V5-parked items (post-PI-V.5 launch)
+
+### Full certified-copy PDF retrieval (Section 57 + Book 4, 2026-06-15)
+
+**Status:** Phase 1 (index-card only) ships in V5c. Full PDF retrieval is parked.
+
+**Constraints:**
+- Book 4 (sale deeds, gift deeds, partition, release) restricts copies to "executant, claimant, their agent, or legal representative" per Section 57
+- Third-party buyer cannot pull a Book 4 certified copy without cooperation from the seller (notarised POA, death certificate, etc.)
+- The captcha-solver (D-035) and ddddocr ensemble work, but the per-fee model (₹250/user-charge capped) changes the product shape from ₹1 per report to ₹2.5 per report if vendored through ClearDeed
+
+**Phase 2 plan:** User-cooperation flow. ClearDeed tells the buyer to apply and upload the PDF. Degrades the "automated" promise but unblocks the use case. Alternative: B2B-style auth (ClearDeed registers a citizen account, applies on behalf) — but legal liability for Book 4 third-party restriction is unclear.
+
+**Parked in:** `packages/fetchers/igr-certified-copy/` Phase 2; can start only after V5c exit.
+
+### Multi-district SRO cascade beyond Khordha (2026-06-15)
+
+**Status:** V5a seeds `sro-cache.json` with Khordha's 1,477 villages × 5 SROs. Puri/Cuttack/Ganjam/Sambalpur wait until PI 2 with Cuttack launch.
+
+**Constraints:** The hybrid cache must be refreshed with the full 5 districts' SRO lists. `packages/fetchers/igr-ec/src/index.ts:90-102` has only Khordha's 5 SROs — Cuttack/Puri/Ganjam/Sambalpur need their own SRO resolution logic (likely available at `https://igrodisha.gov.in/KnowYourSRO` or equivalent).
+
+**Parked in:** PI 2 Sprint 6–10; batch with multi-district launch.
+
+### Real-time SRO cache refresh (2026-06-15)
+
+**Status:** V5a's cache is bootstrapped and grown on-demand. No cron; missing villages trigger live fetch on miss.
+
+**Constraints:** 1,477 villages is a large set. If IGR adds a village mid-sprint, the cache miss rate goes up. No scheduled job per CLAUDE.md §3.4 (no new abstractions). The on-demand growth is sufficient for PI-V.5 scope.
+
+**Alternative:** If the cache grows to 10,000+ villages, a nightly Vercel cron could prune missing entries. But 1,477 Khordha villages is small enough for on-demand growth.
+
+**Parked in:** If the cache exceeds 5,000 entries after PI 2 launch, add a nightly Vercel function to rebuild it. Otherwise, on-demand growth is fine.
+
+### Certified-copy PDF retrieval via §57 Book 1/2 (no Book 4, 2026-06-15)
+
+**Status:** Phase 1 ships in V5c. This is the Book 1/2-only path — same permissions as the index-card.
+
+**Constraints:** Book 1/2 index entry is open to any person. Returns: `deedNo, regDate, party1, party2, propertyDesc, consideration, marketValue, stampDuty`. The full PDF (Book 4) is gated by Book 4 restrictions.
+
+**Phase 2:** Same as above; extend the Phase 1 fetcher with a PDF download step. The PDF itself is a scanned image + cert page prepended (see deep-research agent `af0fd14df035b7caf` transcript).
+
+**Parked in:** `packages/fetchers/igr-certified-copy/src/index.ts` Phase 2; depends on Book 4 third-party resolution flow.
+
+### Captcha-solver reuse for IGR-EC (D-035 + D-037, 2026-06-15)
+
+**Status:** The ddddocr ensemble at `packages/fetchers/igr-ec/services/captcha-solver/app.py` works, but the V1 dispatch at `packages/fetchers/igr-ec/src/index.ts:488` is `false &&` (D-037: deferred from launch).
+
+**Constraints:** The OTP-gated per-session login is brittle (current IGR state: 50-60% captcha top-1, 80% top-8). The automated fetch would be more reliable if the captcha solver could be reused in a `clearIgrCitizenCookies` workflow that lets the pasted OTP live long enough for the session to stabilize.
+
+**Re-enable trigger:** V2 should be re-enabled when (a) 50+ buyer reports are in the corpus ( operational maturity), (b) the captcha solver hits ≥85% top-1 (target), (c) there's an OTP input channel that doesn't require a live Playwright session (e.g. founder-paste-OTP endpoint).
+
+**Parked in:** 50+ buyer review; the V2 fetcher is complete, only the dispatcher needs flipping.
+
+### Cuttack-flood disclaimer integration with IGR public-dashboard (2026-06-15)
+
+**Status:** V5c's `public-dashboard` fetcher returns district-level metrics. Cuttack flood disclaimer currently lives in `qa/ground_truth/P051/transcript.md` (hardcoded text).
+
+**Constraints:** The flood disclaimer is Cuttack-specific. The public-dashboard endpoint doesn't currently expose flood-specific data (only general deed registration counts).
+
+**Phase 2:** If the public-dashboard endpoint ever exposes flood-related data (e.g. deeds in flood zones), integrate it into the Section 6 warning panel. For now, the hardcoded P051 text is sufficient.
+
+**Parked in:** PI 2 Sprint 6–10 (Cuttack launch); depends on IGR extending the public-dashboard endpoint.
+
+### PID pattern matching for under-declaration (D-025, 2026-06-15)
+
+**Status:** PID build is independent at `/pid` (see D-025 and `PID_TRACK.md`). This pattern is about post-launch data.
+
+**Constraints:** The PID uses the ground-truth corpus to spot patterns. Under-declaration would be spotted as `IGR-EC.consideration < CircleRate.ratePerAcre` with a gap > 10% (magic number; needs actuarial data).
+
+**Phase 2:** After PI-V.5 exit, if the ground-truth corpus has ≥50 plots with IGR-EC data, the PID can add a "likely under-declaration" rule with confidence tiering (INDICATIVE / PROBABLE / VALIDATED).
+
+**Parked in:** PID Phase 2; needs ≥50 plots of IGR-EC data post-launch.
