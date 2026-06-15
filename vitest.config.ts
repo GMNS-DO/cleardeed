@@ -48,6 +48,7 @@ export default defineConfig({
       "qa/ground_truth_expansion.test.ts",
       "qa/cersai_captcha_accuracy.test.ts",
       "qa/ecourts_parser_harness.test.ts",
+      "qa/all_fetchers_live_smoke.test.ts",
       "qa/invalid_input_gate.test.ts",
       "qa/auto-review-guardrails.test.ts",
     ],
