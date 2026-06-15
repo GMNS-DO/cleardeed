@@ -330,6 +330,30 @@ Sprint V5c landed per the D-046 plan. Summary for the record:
 - **24 new tests pass.** V5c suite: 24/24 unit + 92/92 consumer-report-writer + apps/web = 116/116.
 - **Founder work pending:** P020 manifest (ground-truth corpus), PDF render verification of V5c sub-cards.
 
+---
+
+## D-043 — eCourts + CERSAI external data path research (2026-06-16)
+
+**Question:** With V6 eCourts 302/403 blocked, dCourts subdomain OCR ~30% accurate, and CERSAI V2 SPA captchaHash reactive-state blocker — what are the real options for getting automated, ToS-defensible access to these two data sources within 1–2 months at sub-₹10K/mo?
+
+**Research:** 5-angle deep research + 5-adversarial-verification-pass synthesis at `qa/external_data_research_2026-06-15.md` (367 lines, 49 KB, 104 cited sources). Key findings:
+
+**eCourts:** No sanctioned B2B API exists as of June 2026. NJDG/eCommittee APIs are government-departmental only. The only startup-friendly path is a paid commercial reseller — **eCourtsIndia.com Enterprise Monthly at ₹10,000/mo** (10,000 credits at base rate ₹0.20/search) is the single concrete option below ₹50K/mo. Surepass eCourts API is quote-on-quote and likely higher. Brand-confusable with the official eCourts portal (medium brand risk; not surfaced in buyer-facing copy). New vendor (2024-era), no public enterprise customer references, SOC 2 badge is self-asserted, no audit report PDF linked. Per-call base rate effective only at the ₹10K/mo Enterprise tier; PAYG is 3× headline. Pilot gate before commitment.
+
+**CERSAI:** No startup-eligible B2B API. The Feb 2025 SI Registry Search API is restricted to "banks, NBFCs, REs" — no surveyed aggregator (HyperVerge, Decentro, Perfios/Karza, Signzy, IDfy) resells a true by-name SI encumbrance search to non-FIs. All five surveyed vendors sell CKYC, not the SI Registry. Sub-entity sponsorship via an onboarded Reporting Entity (Signzy, Checkpost) is the only documented non-FI path; sales cycle ≥4 weeks. Direct CERSAI onboarding requires FI license (rejected). Public portal is captcha-gated at ₹10+ GST/search with no API surface.
+
+**Live regulatory posture:** The [MeitY 9 Jun 2025 probe](https://m.economictimes.com/tech/startups/id-please-meity-verifies-identity-verification-startups/articleshow/121710520.cms) of Surepass, Digitap, Zoop, Signzy for "bypassing authorised protocols" sets the live enforcement precedent. Any in-house captcha-solver is operating in this attention zone. Captcha-bypass automation (LegiScore's approach) is the technical fallback, with the same legal posture as IGR EC automation (D-035).
+
+**Decisions:**
+
+**D-043a — eCourts: eCourtsIndia.com Enterprise Monthly ₹10,000/mo, gated by 5-call Khordha ground-truth pilot.** Sign up this week (no card), claim the ₹200 free credit, run 5 ground-truth test calls against real Khordha/District Court records. Acceptance gate: ≥70% accuracy on the 5 real cases. If pass, commit ₹10K/mo Enterprise Monthly (10,000 credits, base rate, IP allowlist, 99.9% SLA claimed). If fail, request Surepass quote + LegalKart 5-trial, then fall back to in-house ddddocr scraper (bharat-courts pattern, modified for Odisha state code 11). Surface as "court records from official eCourts data" in buyer-facing copy, never as "eCourtsIndia" (brand-confusion mitigation).
+
+**D-043b — CERSAI: build a headless captcha-solver adapter against the public portal as the budget path; Signzy/Checkpost sub-entity sponsorship as the long-term fallback.** Reuse the IGR EC ddddocr ensemble + adaptive K code (D-035 pattern, currently at 91.2% top-64 / 94.1% top-128 on IGR captchas). The CERSAI SPA captchaHash reactive state is the harder technical problem; budget 2–4 weeks for first stable run. In parallel, request sales intros to Signzy (`partnerships@signzy.com`) and Checkpost (`contact@checkpost.in`) for sub-entity sponsorship eligibility, per-call pricing at 50–200 calls/month, and lead time from NDA to first successful API call. Reference: Rajat Bindlish Feb 2025 LinkedIn announcement on SI Registry Search API launch. Do **not** pursue direct CERSAI onboarding — that requires Reporting Entity / FI status, which we don't have and shouldn't acquire.
+
+**D-043c — Legal posture:** Both eCourts and CERSAI integration paths operate in a documented grey area (MeitY probe precedent). ClearDeed's report *summarizes* the underlying data, does not republish it — transformative-use argument is defensible. The captcha-solver approach is a known and monitored risk; legal review note is filed with this decision. Do not surface vendor brand names in buyer-facing report copy. Track ET/Medial/Economic Times coverage weekly; rebalance trigger is a regulatory action specifically against property-data aggregators (not the generic KYC probe).
+
+**Status (2026-06-16):** Research complete. Pilot actions queued. No code changes yet. Re-evaluate eCourtsIndia.com vendor after 5-call pilot; re-evaluate CERSAI captcha-solver after 2-week engineering spike. Sub-entity sponsorship sales intros go out this week.
+
 PI-V.5 (V5a + V5b + V5c) is now complete. 7 of 6 V5.5 packages shipped (igr-sro, igr-bmv, stamp-duty, igr-daily-bulletin, public-dashboard, govt-fee, igr-certified-copy). All 3 sprints combined: 92+24+28+12 = 156 new tests, full suite 1455+ pass. Remaining founder work: P005/P010/P015 (V5b) + P020 (V5c) = 4 ground-truth plots to validate the Section 5 + Section 2 + Section 7 sub-cards end-to-end.
 
 
