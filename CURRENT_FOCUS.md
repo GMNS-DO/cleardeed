@@ -110,4 +110,37 @@ Approved departure from PI-V's "no new features" hard rule. Reuses PI-V's 50-plo
 
 ---
 
+## A. Audit remediation — 2026-06-15
+
+**A.1 Stable foundation (5/5)**
+- [x] A.1.1: Fix 1 failing cersai test (was a stale assertion after D-040 captcha-solver commit; 38/38 green)
+- [x] A.1.2: Commit uncommitted igr-ec D-040 fix (5 new captcha paths)
+- [x] A.1.3: Resolve untracked files (probe scripts + result docs)
+- [x] A.1.4: Map UI bug fix (z-index + touch target)
+- [x] A.1.5: DPDP technical surface (privacy policy + delete endpoint + retention)
+
+**A.2 Fetcher accuracy (5/5)**
+- [x] A.2.1: Ground-truth corpus 5→15 (10 new verified plots, PID-validated)
+- [x] A.2.2: CERSAI captcha-solver spike (live portal V2, 38/38 contract tests; live captcha accuracy validation blocked by portal stability)
+- [x] A.2.3: eCourts OCR validation harness (P052 P053 cases captured)
+- [x] A.2.4: RCCMS reliability improvement (RCCMS now uses Bhulekh Back Page as ground-truth cross-check; 92% confidence)
+- [x] A.2.5: Live smoke battery (`qa/all_fetchers_live_smoke.test.ts`, runs all 14 fetchers in sequence with status/CRASH/latency reporting)
+
+**A.3 User experience (3/4)**
+- [x] A.3.1: User copy simplification (Section 3a lead-in: EC = "loan + transfer history")
+- [x] A.3.2: Mobile optimization (480px media query: 15px text, 44px tap targets, stacked cards)
+- [x] A.3.3: Visual hierarchy — *no change needed* (existing summary panel + status-grid + watchout/ok card split already implements §4 of CLAUDE.md)
+- [ ] A.3.4: Edge case reports — pending
+
+**A.4 Infrastructure reliability (0/6)**
+- [ ] A.4.1–6: error monitoring, rate limiting, DB backups, staging env, perf baseline, load test — all pending (all infrastructure work; flagged by audit as not blocking buyer behavior)
+
+**A.5 Pre-launch polish (0/4)**
+- [ ] A.5.1–4: pending
+
+**A.6 Launch week (0/1)**
+- [ ] A.6: launch week — pending
+
+---
+
 *Last touched: 2026-06-15*
