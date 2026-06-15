@@ -39,6 +39,7 @@ export default defineConfig({
       "apps/web/src/lib/db.expiry.test.ts",
       "apps/web/src/lib/report-access.test.ts",
       "apps/web/src/lib/razorpay-config.test.ts",
+      "apps/web/src/lib/rate-limit.test.ts",
       "apps/web/src/app/api/reports/[id]/refresh/route.test.ts",
       "apps/web/src/app/api/user/delete/route.test.ts",
       "qa/fetcher_tests/**/*.test.ts",

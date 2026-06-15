@@ -10,7 +10,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { fetch as bhulekhFetch } from "@cleardeed/fetcher-bhulekh";
-import { trackEvent } from "@/lib/track";
+import { trackEvent, trackError } from "@/lib/track";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,20 @@ function maskOwnerName(fullName: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 requests per IP per 60 seconds (A.4.2)
+  const rl = checkRateLimit({
+    ip: getClientIp(req.headers),
+    route: "preview",
+    capacity: 10,
+    refillPerSec: 10 / 60, // 1 token per 6s
+  });
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again.", retryAfter: rl.retryAfter },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json() as PreviewInput;
 
@@ -151,6 +166,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/preview]", message);
+    await trackError(err, { route: "/api/preview" });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
