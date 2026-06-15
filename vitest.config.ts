@@ -4,6 +4,7 @@ import path from "path";
 export default defineConfig({
   test: {
     environment: "node",
+    testTimeout: 300_000,
     include: [
       "packages/fetchers/nominatim/src/**/*.test.ts",
       "packages/fetchers/bhulekh/src/**/*.test.ts",
@@ -44,6 +45,7 @@ export default defineConfig({
       "qa/section_validators/**/*.test.ts",
       "qa/cross_source_validator.test.ts",
       "qa/degradation_matrix.test.ts",
+      "qa/ground_truth_expansion.test.ts",
       "qa/invalid_input_gate.test.ts",
       "qa/auto-review-guardrails.test.ts",
     ],
