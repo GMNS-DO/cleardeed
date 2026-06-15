@@ -1,0 +1,57 @@
+name: Preview Smoke
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  preview-smoke:
+    name: Smoke test the Vercel preview deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Vercel preview deployment
+        # Vercel auto-posts a comment with the preview URL when the
+        # deployment is ready. We poll the PR comments for that URL.
+        # The Vercel bot's comment contains "vercel.app".
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          for i in $(seq 1 30); do
+            URL=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments \
+              --jq '.[] | select(.user.login == "vercel[bot]") | .body' \
+              | grep -oE 'https://[a-z0-9-]+\.vercel\.app' | head -1)
+            if [ -n "$URL" ]; then
+              echo "PREVIEW_URL=$URL" >> $GITHUB_ENV
+              echo "found preview URL: $URL"
+              break
+            fi
+            echo "waiting for Vercel preview URL... attempt $i"
+            sleep 10
+          done
+
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "::error::Vercel preview URL not found in PR comments after 5 minutes"
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run preview smoke
+        env:
+          CLEARDEED_BASE_URL: ${{ env.PREVIEW_URL }}
+          # The preview deployment uses the staging Supabase env vars,
+          # not the production ones. The staging ADMIN_VIEW_TOKEN is
+          # a different secret.
+          ADMIN_VIEW_TOKEN: ${{ secrets.STAGING_ADMIN_VIEW_TOKEN }}
+          REPORT_CREATE_TOKEN: ${{ secrets.STAGING_REPORT_CREATE_TOKEN }}
+        run: node scripts/verify-production-launch.mjs
