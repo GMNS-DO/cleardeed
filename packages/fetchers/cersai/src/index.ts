@@ -235,10 +235,10 @@ async function attemptSearch(
     // Now the name input should be visible (Vue v-if gated on the two
     // selects being non-empty). CERSAI renders different name fields
     // per debtor type; the individual-debtor flow uses
-    // #individualBorrowerName (name="Name Of Debtor").
-    const nameField = page.locator(
-      "#individualBorrowerName, input[name*='Name'], input[id*='Name'], input[id*='name']"
-    ).first();
+    // #individualBorrowerName (name="Name Of Debtor"). Use the id selector
+    // directly so we don't accidentally match a hidden field like
+    // `input[id*='name']` against the CKYC input.
+    const nameField = page.locator("#individualBorrowerName").first();
     const nameFieldVisible = await nameField.isVisible({ timeout: 5_000 }).catch(() => false);
 
     if (!nameFieldVisible) {
@@ -282,29 +282,52 @@ async function attemptSearch(
       await page.waitForTimeout(300);
     }
 
-    // Handle captcha if present
+    // Handle captcha if present — the V2 portal has TWO captcha images on
+    // the page: one in the hidden Login modal (`#jcaptcha` Login), and one
+    // in the search form. The visible one is the one in the search form.
+    // Use the image that is a sibling of `#jcaptcha` (the search captcha
+    // input), or fall back to the last visible image matching captcha.jpg.
     let captchaFailed = false;
-    const captchaImage = page.locator("img[src*='captcha'], img[alt*='captcha'], img[id*='captcha'], canvas[id*='captcha']").first();
-    const captchaVisible = await captchaImage.isVisible().catch(() => false);
+    await page.waitForSelector("img[src*='captcha.jpg']:visible", { timeout: 5_000 }).catch(() => {});
+    let captchaImage = page.locator("img[src*='captcha.jpg']:visible").last();
+    let captchaVisible = await captchaImage.isVisible().catch(() => false);
+    if (!captchaVisible) {
+      // Fallback: pick the captcha near the visible #jcaptcha input
+      const jcaptchaLocator = page.locator("#jcaptcha:visible");
+      const jcaptchaCount = await jcaptchaLocator.count();
+      if (jcaptchaCount > 0) {
+        captchaImage = jcaptchaLocator.locator("xpath=preceding-sibling::img | following-sibling::img").first();
+        captchaVisible = await captchaImage.isVisible().catch(() => false);
+      }
+    }
 
+    // V2 portal: when captcha image is present, the search form is wired
+    // up to require a captcha roundtrip. The hidden Login modal also has
+    // a #jcaptcha input, so the visible filter is critical.
     if (captchaVisible) {
       // Try to solve captcha — read image, attempt basic OCR
       for (let attempt = 0; attempt < MAX_CAPTCHA_ATTEMPTS; attempt++) {
         try {
           const captchaText = await solveCaptchaAttempt(page);
-          const captchaInput = page.locator("input[name*='captcha'], input[id*='captcha']").first();
+          // Pick the visible captcha input only — the page has a hidden
+          // #jcaptcha in the Login modal that matches the broad selector
+          // first and is not editable.
+          const captchaInput = page.locator("input[name*='captcha']:visible, input[id*='captcha']:visible").last();
           await captchaInput.fill(captchaText);
           await page.waitForTimeout(200);
 
-          // Try submit
-          const submitBtn = page.locator("input[type='submit'], button[type='submit'], input[value*='Search'], button:has-text('Search')").first();
+          // Try submit — use the specific .btnsubmit class so we hit the
+          // visible Submit button, not the hidden Login button which also
+          // carries type=submit.
+          const submitBtn = page.locator("button.btnsubmit").first();
           await submitBtn.click();
           await page.waitForTimeout(3_000);
 
-          // Check if captcha was accepted
-          const pageText = await page.evaluate(() => document.body.innerText);
-          if (!/invalid.*captcha|captcha.*wrong|enter valid captcha/i.test(pageText)) {
-            break; // captcha accepted
+          // Check if captcha was accepted — if the form re-rendered
+          // (same form, no result table), captcha was rejected.
+          const postText = await page.evaluate(() => document.body.innerText);
+          if (!/invalid.*captcha|captcha.*wrong/i.test(postText)) {
+            break; // accepted
           }
 
           // Refresh captcha and retry
@@ -317,7 +340,7 @@ async function attemptSearch(
       }
     } else {
       // No captcha visible — submit directly
-      const submitBtn = page.locator("input[type='submit'], button[type='submit'], input[value*='Search'], button:has-text('Search')").first();
+      const submitBtn = page.locator("button.btnsubmit").first();
       await submitBtn.click().catch(async () => {
         // Fallback: press Enter in the name field
         await nameField.press("Enter");
@@ -329,6 +352,12 @@ async function attemptSearch(
     const pageText = await page.evaluate(() => document.body.innerText);
     const pageHtml = await page.content();
     const pageHash = sha256(pageHtml);
+
+    // Log for debugging
+    const tableCount = (pageHtml.match(/<table/g) ?? []).length;
+    const trCount = (pageHtml.match(/<tr/g) ?? []).length;
+    void tableCount;
+    void trCount;
 
     // Classify the outcome
     const { outcome, errorMessage } = classifyCersaiPage(pageText, pageHtml);
@@ -349,24 +378,70 @@ async function attemptSearch(
   }
 }
 
+// ddddocr microservice solver — fastest, most accurate. POSTs base64 image to
+// the local service and returns {text, confidence, candidates}.
+interface DdddOcrResponse {
+  text: string;
+  confidence: number;
+  candidates: string[];
+}
+const CAPTCHASERVICE_URL = process.env.CAPTCHASERVICE_URL ?? "http://localhost:5001";
+const DDDDOCR_TIMEOUT_MS = 10_000;
+
+async function solveWithDdddOcr(imageBase64: string): Promise<DdddOcrResponse> {
+  const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DDDDOCR_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${CAPTCHASERVICE_URL}/solve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: cleanBase64 }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) throw new Error(`ddddocr HTTP ${resp.status}`);
+    return (await resp.json()) as DdddOcrResponse;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
- * Attempt to solve CERSAI captcha using Tesseract.js OCR with multi-strategy preprocessing.
+ * Attempt to solve CERSAI captcha using ddddocr service (fastest) or fallback Tesseract.js OCR.
  */
 async function solveCaptchaAttempt(page: Page): Promise<string> {
-  const captchaImg = page.locator("img[src*='captcha'], img[id*='captcha']").first();
-  const hasCaptcha = await captchaImg.isVisible().catch(() => false);
+  let captchaImg = page.locator("img[src*='captcha.jpg']:visible").last();
+  let hasCaptcha = await captchaImg.isVisible().catch(() => false);
+  if (!hasCaptcha) {
+    // Try adjacent to the visible #jcaptcha input
+    const jcaptchaLocator = page.locator("#jcaptcha:visible");
+    const jcaptchaCount = await jcaptchaLocator.count();
+    if (jcaptchaCount > 0) {
+      captchaImg = jcaptchaLocator.locator("xpath=preceding-sibling::img | following-sibling::img").first();
+      hasCaptcha = await captchaImg.isVisible().catch(() => false);
+    }
+  }
   if (!hasCaptcha) return "";
 
   const dataUrl = await captureCaptchaImage(page, captchaImg);
   if (!dataUrl) throw new Error("captcha_image_capture_failed");
 
+  // Try ddddocr first (fast, accurate)
+  try {
+    const ddddResp = await solveWithDdddOcr(dataUrl);
+    return ddddResp.text;
+  } catch (e) {
+    console.log(`[dddocr-fail] ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  // Fallback to Tesseract.js
   const { text, confidence } = await performOcr(dataUrl, page);
 
   if (!text || confidence < 40) {
     // Try refreshing captcha once
     try {
       await page.locator("a:has-text('Refresh'), a:has-text('reload'), img[src*='Refresh']").first().click();
-      await page.waitForTimeout;
+      await page.waitForTimeout(1_000);
       const newDataUrl = await captureCaptchaImage(page, captchaImg);
       if (newDataUrl) {
         const retry = await performOcr(newDataUrl, page);
@@ -434,24 +509,14 @@ async function performOcr(imageDataUrl: string, page: Page): Promise<{ text: str
 
 /**
  * Capture captcha image from CERSAI page as data URL.
+ * Uses Playwright's screenshot on the locator (no canvas/CORS issues) and
+ * converts the PNG buffer to a data URL.
  */
-async function captureCaptchaImage(page: Page, imageLocator: any): Promise<string | null> {
+async function captureCaptchaImage(_page: Page, imageLocator: { screenshot(): Promise<Buffer> }): Promise<string | null> {
   try {
-    const imgSrc = await imageLocator.getAttribute("src");
-    if (!imgSrc) return null;
-    const fullUrl = imgSrc.startsWith("http") ? imgSrc : `https://www.cersai.org.in${imgSrc}`;
-    return page.evaluate(async (url) => {
-      const img = document.createElement("img");
-      img.crossOrigin = "anonymous";
-      img.src = url;
-      await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; });
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-      return canvas.toDataURL("image/png");
-    }, fullUrl);
+    const buf = await imageLocator.screenshot();
+    if (!buf || buf.length === 0) return null;
+    return `data:image/png;base64,${buf.toString("base64")}`;
   } catch {
     return null;
   }
@@ -480,11 +545,13 @@ export function classifyCersaiPage(
     return { outcome: "search_error", errorMessage: "cersai_server_error" };
   }
 
-  // Login gate — V2 navbar always has the word "Login" as a top-nav link, so
-  // match more specifically: actual login pages have password + forgot-password
-  // indicators, not just the word "Login" appearing in chrome.
+  // Login gate — V2 navbar always has the bare word "Login" as a top-nav
+  // link, so require context: an actual login prompt has a preposition
+  // ("login to access", "sign in to your account") or a "forgot password"
+  // / "authenticate" indicator. Bare "Login" alone from a nav link is
+  // intentionally excluded.
   if (
-    /password|forgot\s*password|sign\s*in\s*to\s*your\s*account|please\s*log\s*in\s*to\s*continue/i.test(lowerText) &&
+    /please\s+log\s*in|log\s*in\s+to|sign\s+in\s+to|forgot\s+password|authenticate/i.test(lowerText) &&
     !/search.*results?/i.test(lowerText)
   ) {
     return { outcome: "search_error", errorMessage: "cersai_portal_requires_login" };
