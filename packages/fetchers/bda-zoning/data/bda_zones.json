@@ -1,0 +1,454 @@
+[
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Patia",
+    "zone": "commercial",
+    "centroid": { "latitude": 20.2746, "longitude": 85.8404 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Jaydev Vihar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2654, "longitude": 85.8543 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Khandagiri",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2428, "longitude": 85.8177 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Dumuduma",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2699, "longitude": 85.8504 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Infocity",
+    "zone": "commercial",
+    "centroid": { "latitude": 20.2701, "longitude": 85.8399 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Baramunda",
+    "zone": "mixed_use",
+    "centroid": { "latitude": 20.2756, "longitude": 85.8476 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "VSS Nagar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2625, "longitude": 85.8475 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Old Town",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2400, "longitude": 85.8350 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Unit 8",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2580, "longitude": 85.8420 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Rasulgarh",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2854, "longitude": 85.8612 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Sampur",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2890, "longitude": 85.8510 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Laxmisagar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2820, "longitude": 85.8590 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Jagamara",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2520, "longitude": 85.8200 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Sundarpada",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2350, "longitude": 85.8050 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Tamando",
+    "zone": "industrial",
+    "centroid": { "latitude": 20.3050, "longitude": 85.8320 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Mancheswar",
+    "zone": "industrial",
+    "centroid": { "latitude": 20.3200, "longitude": 85.8500 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Palasuni",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2950, "longitude": 85.8410 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Dhauli",
+    "zone": "green_belt",
+    "centroid": { "latitude": 20.1920, "longitude": 85.8500 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Bairagi",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2540, "longitude": 85.8380 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhubaneswar",
+    "tehsil": "Bhubaneswar",
+    "locality": "Mahura",
+    "zone": "institutional",
+    "centroid": { "latitude": 20.3180, "longitude": 85.8020 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Mendhasala",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.3050, "longitude": 85.7700 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Chandaka",
+    "tehsil": "Bhubaneswar",
+    "zone": "industrial",
+    "centroid": { "latitude": 20.3500, "longitude": 85.7800 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Chandaka",
+    "tehsil": "Bhubaneswar",
+    "locality": "Chandaka Industrial Estate",
+    "zone": "industrial",
+    "centroid": { "latitude": 20.3550, "longitude": 85.7820 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Nuagaon",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.3000, "longitude": 85.8100 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Sijua",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2900, "longitude": 85.8300 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Gothapada",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2750, "longitude": 85.8500 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Pahali",
+    "tehsil": "Bhubaneswar",
+    "zone": "green_belt",
+    "centroid": { "latitude": 20.1800, "longitude": 85.8400 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Garage",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2700, "longitude": 85.8400 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Panchagaon",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2820, "longitude": 85.8000 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bhingarpur",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.3300, "longitude": 85.7900 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Pubasasan",
+    "tehsil": "Bhubaneswar",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2150, "longitude": 85.8000 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Jatni",
+    "tehsil": "Jatni",
+    "locality": "Jatni Town",
+    "zone": "residential",
+    "centroid": { "latitude": 20.1325, "longitude": 85.9278 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Jatni",
+    "tehsil": "Jatni",
+    "locality": "Jatni Industrial",
+    "zone": "industrial",
+    "centroid": { "latitude": 20.1350, "longitude": 85.9300 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Pokhariput",
+    "tehsil": "Jatni",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2700, "longitude": 85.8400 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Malipur",
+    "tehsil": "Jatni",
+    "zone": "residential",
+    "centroid": { "latitude": 20.1500, "longitude": 85.9000 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bomikhal",
+    "tehsil": "Jatni",
+    "zone": "mixed_use",
+    "centroid": { "latitude": 20.2700, "longitude": 85.8400 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Pithapur",
+    "tehsil": "Jatni",
+    "zone": "residential",
+    "centroid": { "latitude": 20.1700, "longitude": 85.9200 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Balipatna",
+    "tehsil": "Balipatna",
+    "locality": "Balipatna Market",
+    "zone": "commercial",
+    "centroid": { "latitude": 20.2028, "longitude": 85.7985 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Balipatna",
+    "tehsil": "Balipatna",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2050, "longitude": 85.7950 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Jagulaipadar",
+    "tehsil": "Balipatna",
+    "zone": "industrial",
+    "centroid": { "latitude": 20.2153, "longitude": 85.8137 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Benudal",
+    "tehsil": "Balipatna",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2300, "longitude": 85.7900 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Garekan",
+    "tehsil": "Balipatna",
+    "zone": "green_belt",
+    "centroid": { "latitude": 20.2200, "longitude": 85.7700 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Balianta",
+    "tehsil": "Balianta",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2900, "longitude": 85.8800 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Balianta",
+    "tehsil": "Balianta",
+    "locality": "Balianta Bazaar",
+    "zone": "commercial",
+    "centroid": { "latitude": 20.2920, "longitude": 85.8820 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Krupa",
+    "tehsil": "Balianta",
+    "zone": "residential",
+    "centroid": { "latitude": 20.2950, "longitude": 85.8900 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Naranpura",
+    "tehsil": "Balianta",
+    "zone": "residential",
+    "centroid": { "latitude": 20.3000, "longitude": 85.8700 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Banapur",
+    "tehsil": "Banapur",
+    "locality": "Banapur Bazaar",
+    "zone": "commercial",
+    "centroid": { "latitude": 19.9572, "longitude": 85.5293 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Banapur",
+    "tehsil": "Banapur",
+    "zone": "residential",
+    "centroid": { "latitude": 19.9600, "longitude": 85.5300 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Khandagiri",
+    "tehsil": "Bhubaneswar",
+    "locality": "Khandagiri Temple Area",
+    "zone": "special",
+    "centroid": { "latitude": 20.2399, "longitude": 85.8209 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Khurda",
+    "tehsil": "Khordha",
+    "zone": "residential",
+    "centroid": { "latitude": 20.1820, "longitude": 85.6170 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Khurda",
+    "tehsil": "Khordha",
+    "locality": "Khurda Town",
+    "zone": "commercial",
+    "centroid": { "latitude": 20.1850, "longitude": 85.6200 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Begunia",
+    "tehsil": "Khordha",
+    "zone": "residential",
+    "centroid": { "latitude": 20.1900, "longitude": 85.4300 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  },
+  {
+    "village": "Bolagarh",
+    "tehsil": "Khordha",
+    "zone": "residential",
+    "centroid": { "latitude": 20.1500, "longitude": 85.2800 },
+    "sourceUrl": "https://bluis.in/",
+    "sourceDate": "2024-06-01"
+  }
+]

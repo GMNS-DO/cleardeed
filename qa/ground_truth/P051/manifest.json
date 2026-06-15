@@ -1,0 +1,75 @@
+{
+  "plot_id": "P051",
+  "description": "Mendhasala 181/10454, Bhubaneswar Tehsil, Khordha district — captured live against plotreportOR.jsp on 2026-06-14. Used to contract-test the Bhunaksha Plot Report fetcher. Note: this is a *separate* plot from P001 (Plot 415); it is the new anchor for the per-plot report fetcher.",
+  "added_at": "2026-06-14",
+  "verified_by": "auto-verified (live fetch + position-based parser)",
+  "location": {
+    "latitude": 20.296,
+    "longitude": 85.823
+  },
+  "coverage": {
+    "tahasil": "Bhubaneswar",
+    "tahasil_code": "3",
+    "village": "Mendhasala",
+    "ri": "Bhubaneswar",
+    "pattern_category": "fraction",
+    "plot_no": "181/10454",
+    "gis_code": "20021110500",
+    "khatiyan_no": "500",
+    "bda_zone": "residential",
+    "kisam_class": "residential"
+  },
+  "fetchers": {
+    "bhulekh": null,
+    "bhunaksha": null,
+    "bhunaksha_plot_report": {
+      "plotNo": "181/10454",
+      "khatiyanNo": "500",
+      "thana": "2",
+      "thanaNo": "2",
+      "mouza": "ମେଣ୍ଢାଶାଳ",
+      "tehsil": "ଭୁବନେଶ୍ଵର",
+      "tehsilNo": null,
+      "district": "ଖୋର୍ଦ୍ଧା",
+      "area": {
+        "acres": 0,
+        "decimal": 100,
+        "hectare": 0.04046
+      },
+      "owner": {
+        "name": "ଦୀକ୍ଷା ମହାପାତ୍ର",
+        "father": "ସମୀର କୁମାର",
+        "caste": "ବ୍ରାହ୍ମଣ",
+        "address": "ଫ୍ଲାଟ ନମ୍ବର-ଏ ୬୦୧, ବର୍ଷା ରିଭର ଆପାର୍ଟମେଣ୍ଟ, ନିୟର ବାଲିଅନ୍ତା ବ୍ଲକ ଅଫିସ, ପୋଷ୍ଟ-ଗଡଶ୍ରୀରାମପୁର, ଥାନା-ବାଲିଅନ୍ତା,ଭୁବନେଶ୍ବର, ଜିଲ୍ଲା-ଖୋର୍ଦ୍ଧା"
+      },
+      "mapImageBase64": "<captured — 602,836 bytes base64>",
+      "mapScale": "1:500",
+      "gisCode": "20021110500",
+      "sourceUrl": "https://app3bhunakshaodisha.nic.in/bhunaksha/21/plotreportOR.jsp?state=21&giscode=20021110500&plotno=181%2F10454",
+      "__contract": {
+        "source": "bhunaksha_plot_report",
+        "status": "ok",
+        "fetchedAt": "2026-06-14T05:13:00.000Z",
+        "sourceUrl": "https://app3bhunakshaodisha.nic.in/bhunaksha/21/plotreportOR.jsp?state=21&giscode=20021110500&plotno=181%2F10454",
+        "latencyMs": 8000
+      }
+    },
+    "ecourts": null,
+    "igr-ec": null,
+    "cersai": null,
+    "rccms": null,
+    "circle-rate": null,
+    "bda-zoning": null,
+    "nominatim": null
+  },
+  "expected_outcomes": {
+    "bhunaksha_plot_report": {
+      "verification": "verified",
+      "reason": "verified_lookup"
+    }
+  },
+  "sources_visited": [
+    "https://app3bhunakshaodisha.nic.in/bhunaksha/21/plotreportOR.jsp"
+  ],
+  "transcript_path": "./transcript.md"
+}

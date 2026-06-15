@@ -1,9 +1,0 @@
-{
-  "source_url": "https://bhulekh.ori.nic.in/rccms/REVENUECASE/RCCMS-User%20Manual.pdf",
-  "artifact_id": "rccms-user-manual",
-  "artifact_type": "pdf",
-  "http_status": 200,
-  "content_type": "application/pdf",
-  "byte_length": 1540304,
-  "notes": "RCCMS user manual linked from the official login page; useful for understanding case lookup workflows."
-}

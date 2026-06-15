@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-06-15",
+  "districts": [
+    {
+      "district": "Khordha",
+      "sros": [
+        {
+          "sro": "Bhubaneswar",
+          "sroCode": "10",
+          "tahasilPatterns": ["bhubaneswar", "khordha", "balianta", "balugaon", "krushna chandrapur"],
+          "address": "Sub-Registrar Office, Bhubaneswar, Khordha District, Odisha",
+          "contactUrl": "https://igrodisha.gov.in/Contact.aspx",
+          "ecUrl": "https://igrodisha.gov.in/ecsearch",
+          "operatingHours": "10:00 AM - 5:00 PM (Mon-Fri, closed on public holidays)",
+          "estimatedFee": "₹30 (certified copy) + ₹10 (search)",
+          "expectedTime": "2-5 working days for EC issuance"
+        },
+        {
+          "sro": "Jatni",
+          "sroCode": "11",
+          "tahasilPatterns": ["jatni", "jotni"],
+          "address": "Sub-Registrar Office, Jatni, Khordha District, Odisha",
+          "contactUrl": "https://igrodisha.gov.in/Contact.aspx",
+          "ecUrl": "https://igrodisha.gov.in/ecsearch",
+          "operatingHours": "10:00 AM - 5:00 PM (Mon-Fri, closed on public holidays)",
+          "estimatedFee": "₹30 (certified copy) + ₹10 (search)",
+          "expectedTime": "2-5 working days for EC issuance"
+        },
+        {
+          "sro": "Balipatna",
+          "sroCode": "12",
+          "tahasilPatterns": ["balipatna", "begunia"],
+          "address": "Sub-Registrar Office, Balipatna, Khordha District, Odisha",
+          "contactUrl": "https://igrodisha.gov.in/Contact.aspx",
+          "ecUrl": "https://igrodisha.gov.in/ecsearch",
+          "operatingHours": "10:00 AM - 5:00 PM (Mon-Fri, closed on public holidays)",
+          "estimatedFee": "₹30 (certified copy) + ₹10 (search)",
+          "expectedTime": "2-5 working days for EC issuance"
+        },
+        {
+          "sro": "Banapur",
+          "sroCode": "13",
+          "tahasilPatterns": ["banapur", "bolgarh", "chilika"],
+          "address": "Sub-Registrar Office, Banapur, Khordha District, Odisha",
+          "contactUrl": "https://igrodisha.gov.in/Contact.aspx",
+          "ecUrl": "https://igrodisha.gov.in/ecsearch",
+          "operatingHours": "10:00 AM - 5:00 PM (Mon-Fri, closed on public holidays)",
+          "estimatedFee": "₹30 (certified copy) + ₹10 (search)",
+          "expectedTime": "2-5 working days for EC issuance"
+        }
+      ]
+    }
+  ]
+}
