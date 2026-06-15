@@ -171,7 +171,13 @@ export function BhulekhInputForm() {
     }
 
     try {
-      // Step 1: Generate the Bhulekh-backed report before charging.
+      // Kick off pre-generation in parallel with order creation. This is the
+      // 30-60s Bhulekh RoR fetch — it now runs in the background while the
+      // user is completing payment, so the Razorpay modal opens within ~1s
+      // of clicking "Get report" instead of after the full Bhulekh fetch.
+      // If the user pays before pre-gen finishes, the success route will
+      // await the in-flight pre-gen. If pre-gen fails, the success route
+      // falls back to full regeneration (existing behavior, D-040).
       const preGenerationPromise = fetch("/api/report/pregenerate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,25 +203,24 @@ export function BhulekhInputForm() {
         return { reportId: data.reportId, bhunakshaPolygon: data.bhunakshaPolygon ?? null, html: data.html ?? "", title: data.title ?? "" };
       });
       preGenerationPromiseRef.current = preGenerationPromise;
-      const pregenResult = await preGenerationPromise;
-      const generatedReportId = pregenResult.reportId;
-      preGeneratedReportIdRef.current = generatedReportId;
 
-      // Step 2: Create Razorpay order only after RoR-backed report is ready.
+      // Surface the reportId as soon as pre-gen finishes so the success
+      // handler can pass it through. We don't await this here.
+      preGenerationPromise
+        .then((r) => { preGeneratedReportIdRef.current = r.reportId; })
+        .catch(() => { /* surfaced in handler; success route falls back */ });
+
+      // Step 1: Create Razorpay order in parallel with pre-gen. This is
+      // typically <500ms — the gating step for opening the modal.
       const orderRes = await createRazorpayOrder({
         email: form.email,
         plotDescription: `${form.village} · ${form.identifier}`,
       });
 
-      // Step 3: Store checkout session for webhook retrieval.
-      // preGenerate response already has the HTML — use it directly as backup.
-      const preGeneratedHtml = pregenResult.html ?? null;
-      const preGeneratedTitle = pregenResult.title ?? null;
-      const preGeneratedBhunakshaPolygon = pregenResult.bhunakshaPolygon ?? null;
-      if (preGeneratedHtml) {
-        console.info("[BhulekhInputForm] Using HTML from preGenerate response, length:", preGeneratedHtml.length);
-      }
-
+      // Step 2: Persist checkout session. If pre-gen hasn't finished yet,
+      // the preGeneratedReportId field will be null and the success route
+      // will fall back to regeneration. We'll patch the session after
+      // pre-gen finishes if the user is still in the modal.
       const checkoutPayload = {
         orderId: orderRes.orderId,
         tehsil: selectedTehsilLabel,
@@ -227,10 +232,10 @@ export function BhulekhInputForm() {
         claimedOwnerName: form.sellerName || undefined,
         email: form.email,
         whatsapp: form.whatsapp || undefined,
-        preGeneratedReportId: generatedReportId,
-        preGeneratedHtml,
-        preGeneratedTitle,
-        preGeneratedBhunakshaPolygon,
+        preGeneratedReportId: null, // patched below when pre-gen finishes
+        preGeneratedHtml: null,
+        preGeneratedTitle: null,
+        preGeneratedBhunakshaPolygon: null,
       };
       await fetch("/api/checkout", {
         method: "POST",
@@ -238,7 +243,25 @@ export function BhulekhInputForm() {
         body: JSON.stringify(checkoutPayload),
       }).catch((e) => console.warn("[BhulekhInputForm] Checkout session store failed:", e));
 
-      // Step 4: Open Razorpay modal.
+      // When pre-gen finishes, patch the session with the result so the
+      // webhook/success route can use the cached HTML.
+      preGenerationPromise
+        .then((r) => {
+          fetch("/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...checkoutPayload,
+              preGeneratedReportId: r.reportId,
+              preGeneratedHtml: r.html,
+              preGeneratedTitle: r.title,
+              preGeneratedBhunakshaPolygon: r.bhunakshaPolygon,
+            }),
+          }).catch(() => {/* already in modal; fall back to regen if needed */});
+        })
+        .catch(() => {/* pre-gen failed; fall back to regen in success route */});
+
+      // Step 3: Open Razorpay modal — typically within ~1s of click.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const Razorpay = (window as unknown as Record<string, any>).Razorpay as {
         new (options: Record<string, unknown>): {
@@ -275,6 +298,9 @@ export function BhulekhInputForm() {
           console.info("[BhulekhInputForm] Payment success:", response);
           setFormState("generating");
           try {
+            // If pre-gen already finished, use its reportId immediately.
+            // Otherwise await it (with timeout). If it times out, the
+            // success route falls back to full regeneration.
             const resolvedPreGenerated =
               preGeneratedReportIdRef.current != null
                 ? { reportId: preGeneratedReportIdRef.current, bhunakshaPolygon: null as number[][][] | null, html: "", title: "" }
@@ -300,6 +326,7 @@ export function BhulekhInputForm() {
             });
             const data = await result.json() as { reportId?: string; title?: string; html?: string; emailSent?: boolean; error?: string; bhunakshaPolygon?: number[][][] | null };
             console.info("[BhulekhInputForm] payment/success bhunakshaPolygon in response:", data.bhunakshaPolygon != null ? `found (${data.bhunakshaPolygon.length} rings)` : "NULL");
+            const preGeneratedBhunakshaPolygon = null;
             console.info("[BhulekhInputForm] preGeneratedBhunakshaPolygon from pregen:", preGeneratedBhunakshaPolygon != null ? `found` : "NULL");
             if (!result.ok || data.error) {
               console.warn("[BhulekhInputForm] Payment success handler error:", data.error);
@@ -318,7 +345,7 @@ export function BhulekhInputForm() {
               title: data.title ?? "",
               html: data.html ?? "",
               emailSent: data.emailSent ?? false,
-              bhunakshaPolygon: preGeneratedBhunakshaPolygon ?? data.bhunakshaPolygon ?? null,
+              bhunakshaPolygon: data.bhunakshaPolygon ?? null,
             });
           } catch (e) {
             console.warn("[BhulekhInputForm] Payment success callback failed:", e);
