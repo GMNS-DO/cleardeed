@@ -192,6 +192,12 @@ export async function POST(req: NextRequest) {
           reportId: session.preGeneratedReportId,
           metadata: { orderId, fastPath: true, amount: event.payload?.order?.entity?.amount ?? 0 },
         });
+        // Funnel: report delivered to buyer (webhook path)
+        await trackEvent({
+          eventName: "report_delivered",
+          reportId: session.preGeneratedReportId,
+          metadata: { source: "webhook", emailSent: Boolean(session.email), orderId },
+        });
         return NextResponse.json({
           handled: true,
           reportId: session.preGeneratedReportId,
@@ -301,6 +307,12 @@ export async function POST(req: NextRequest) {
       eventName: "payment_success",
       reportId,
       metadata: { orderId, amount: event.payload?.order?.entity?.amount ?? 0, hasError: Boolean(reportError) },
+    });
+    // Funnel: report delivered to buyer (webhook slow path)
+    await trackEvent({
+      eventName: "report_delivered",
+      reportId,
+      metadata: { source: "webhook", orderId, hasError: Boolean(reportError) },
     });
   }
 

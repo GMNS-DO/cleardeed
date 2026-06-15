@@ -54,6 +54,8 @@ export default defineConfig({
       "qa/auto-review-guardrails.test.ts",
       "qa/perf-baseline.test.mjs",
       "qa/load-test.test.mjs",
+      "qa/funnel_dedup.test.ts",
+      "qa/funnel_events.test.ts",
     ],
   },
   resolve: {

@@ -171,6 +171,12 @@ export async function POST(req: NextRequest) {
             reportId: resolvedPreGeneratedReportId,
             metadata: { orderId: razorpay_order_id, fastPath: true },
           });
+          // Funnel: report delivered to buyer (fast path: pre-generated, URL+email ready)
+          await trackEvent({
+            eventName: "report_delivered",
+            reportId: resolvedPreGeneratedReportId,
+            metadata: { emailSent, fastPath: true, orderId: razorpay_order_id },
+          });
           return NextResponse.json({
             reportId: resolvedPreGeneratedReportId,
             reportUrl: buildReportUrl(resolvedPreGeneratedReportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
@@ -320,6 +326,12 @@ export async function POST(req: NextRequest) {
       eventName: "payment_success",
       reportId,
       metadata: { orderId: razorpay_order_id, hasError: Boolean(reportError) },
+    });
+    // Funnel: report delivered to buyer (URL + email ready)
+    await trackEvent({
+      eventName: "report_delivered",
+      reportId,
+      metadata: { emailSent, hasHtml: Boolean(reportHtml), orderId: razorpay_order_id },
     });
   }
 
