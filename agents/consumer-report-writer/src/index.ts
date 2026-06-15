@@ -5559,4 +5559,54 @@ body {
   .synthesis-row { flex-direction: column; gap: 2px; }
   .synthesis-label { min-width: auto; }
 }
+
+/* ─── Mobile readability (≤480px) ─────────────────────────────────
+ * A 10pm-on-Tuesday buyer reads the report on a 360px-wide Android
+ * screen. We need: (1) text ≥15px, (2) tap targets ≥44px, (3) cards
+ * stack vertically, (4) no horizontal overflow on the map tiles.
+ * ────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  body { font-size: 15px; line-height: 1.55; }
+  .container { padding: 12px; }
+  .section-body { padding: 12px 14px; }
+  .section-hdr { padding: 12px 14px; gap: 10px; }
+  .section-title { font-size: 16px; }
+  .section-sub { font-size: 12px; }
+  .section-intro { font-size: 14px; }
+  .page-title { font-size: 22px; line-height: 1.25; }
+  .page-sub { font-size: 14px; }
+  .fin-title { font-size: 14px; }
+  .fin-sub { font-size: 11px; }
+  .fin-badge { font-size: 10px; padding: 3px 7px; }
+  .bq-grid { grid-template-columns: 1fr 1fr; }
+  .bq-item { padding: 10px 12px; min-height: 44px; }
+  .bq-item-title { font-size: 12px; }
+  .bq-item-value { font-size: 14px; }
+  .meta-grid { grid-template-columns: 1fr; gap: 8px; }
+  .meta-row { padding: 6px 0; }
+  .map-frame iframe { height: 220px; }
+  .img-frame img, .img-frame iframe { max-height: 240px; }
+  button, .btn, .feedback-btn, .feedback-submit {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  .feedback-widget { padding: 10px 12px; }
+  .feedback-btn { min-width: 60px; }
+  .verify-link, .prov-link {
+    padding: 8px 12px;
+    min-height: 36px;
+    font-size: 12px;
+  }
+  .v5b-subcard, .bda-card { padding: 10px 12px; }
+  .v5b-subcard-title, .bda-card-title { font-size: 13px; }
+  .source-line, .verify-links { font-size: 11px; }
+  .warning-box { padding: 10px 12px; font-size: 13px; }
+  .feedback-comment textarea { font-size: 14px; padding: 10px; }
+  .preview-banner { padding: 10px 12px; font-size: 12px; }
+  .report-actions { flex-direction: column; gap: 8px; }
+  .report-actions .btn { width: 100%; }
+  table { font-size: 12px; }
+  th, td { padding: 6px 8px; }
+}
 `;
