@@ -143,7 +143,7 @@ export function buildManualInstructions(
 ): ManualInstructions {
   return {
     steps: [
-      `1. Open browser and go to ${IGR_EC_BASE}`,
+      `1. Go to ${IGR_EC_BASE}`,
       `2. Click "Login / Register" in the top-right corner (if not already logged in)`,
       `3. If new user: click "New Registration", fill Name, Mobile, Email, set password, activate via OTP`,
       `4. After login: navigate to "EC Services" → "Encumbrance Certificate" (or "Search EC")`,
@@ -151,7 +151,7 @@ export function buildManualInstructions(
       `6. Select: Search Type = "Party Name" (or "Property Details")`,
       `7. Enter Party Name: "${partyName}"`,
       `8. Set From Date: 01-01-${fromYear}", To Date: 31-12-${toYear}"`,
-      `9. Click "Search" — the system will show matching EC entries`,
+      `9. Click "Search" — the system will show matching EC entries (every sale, mortgage, or lien on this plot for the period you chose)`,
       `10. If records found: click "View" or "Print" on each entry`,
       `11. To obtain a certified EC copy: click "Apply for EC Copy", pay fee online`,
       `12. Fee breakdown: Rs. 10 per party search + Rs. 40 application fee + Rs. 10 per page copy fee`,

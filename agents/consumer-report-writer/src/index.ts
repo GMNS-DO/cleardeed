@@ -691,10 +691,11 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
     </div>
     <div class="section-title-group">
       <div class="section-title">3a. Court Cases &amp; Encumbrances</div>
-      <div class="section-sub">Any active court cases or loans, liens, or transfers on this land</div>
+      <div class="section-sub">Any active court cases, loans, or past transfers on this land</div>
     </div>
   </div>
   <div class="section-body">
+    <p class="section-intro">This section checks for two things that could let you lose the land after you pay: <strong>court cases</strong> (someone is already fighting over it) and <strong>past transfers or loans</strong> (the <em>Encumbrance Certificate</em>, or EC, is the official record of every sale, mortgage, or lien on the plot in the last 30 years).</p>
     ${courtSection} ${rorBackPagePanel} ${mutationReferencePanel} ${ecSection}
     <div class="source-line">
       <span>Court cases: services.ecourts.gov.in, rccms.odisha.gov.in &mdash; Encumbrance Certificate: igrodisha.gov.in</span>
@@ -702,7 +703,7 @@ ${buildAdjacentPlotsPanel(adjacentPlots)}
     <div class="verify-links">
       ${courtSourceStatuses.ecourts === "success" ? buildVerifyLink("https://services.ecourts.gov.in/", "eCourts", "Search for court cases at the eCourts portal") : ""}
       ${courtSourceStatuses.rccms === "success" ? buildVerifyLink("https://rccms.odisha.gov.in/", "RCCMS", "Search for revenue cases at RCCMS Odisha") : ""}
-      ${buildVerifyLink(safeRegUrl, "IGR Odisha", "Obtain Encumbrance Certificate at IGR Odisha")}
+      ${buildVerifyLink(safeRegUrl, "IGR Odisha", "Get the loan + transfer history (EC) from IGR Odisha")}
     </div>
   </div>
 </section>
