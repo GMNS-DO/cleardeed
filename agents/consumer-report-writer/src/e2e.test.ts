@@ -414,3 +414,165 @@ describe("Report generation — Sprint 5 regression", () => {
     assertDegradedRender(html);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Edge case fixtures (audit A.3.4)
+// ---------------------------------------------------------------------------
+
+const WORST_CASE_INPUT = {
+  reportId: "CLD-EDGE-WORST-001",
+  generatedAt: "2026-06-15T10:30:00.000Z",
+  gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+  claimedOwnerName: "Ramesh Mohanty",
+  plotDescription: "Plot 999, Mendhasala, Bhubaneswar",
+  // All 4 dark sources fail
+  geoFetch: { status: "not_found", statusReason: "no parcel returned", layer: "khurda_bhubaneswar" },
+  bhulekhFetch: { status: "not_found", statusReason: "no record" },
+  igrEcFetch: { status: "fetch_failed", statusReason: "captcha_solver_exhausted" },
+  cersaiFetch: { status: "fetch_failed", statusReason: "captcha_solver_exhausted" },
+  ecourtsFetch: { status: "fetch_failed", statusReason: "ecourts_403" },
+  rccmsFetch: { status: "fetch_failed", statusReason: "rccms_timeout" },
+  regScreening: { status: "not_run" },
+  bdaZoning: { status: "not_run" },
+  landClassifier: { status: "not_run" },
+  circleRate: { status: "not_run" },
+  publicDashboard: { status: "not_run" },
+  govtFee: { status: "not_run" },
+  igrCertifiedCopy: { status: "not_run" },
+  ownershipReasoner: null,
+  encumbranceReasoner: { status: "error", instructions: null },
+  regulatoryScreener: null,
+  validationFindings: [],
+};
+
+const BEST_CASE_INPUT = {
+  reportId: "CLD-EDGE-BEST-001",
+  generatedAt: "2026-06-15T10:30:00.000Z",
+  gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+  claimedOwnerName: "Sita Patnaik",
+  plotDescription: "Plot 415, Mendhasala, Bhubaneswar",
+  // All green
+  geoFetch: { status: "success", village: "Mendhasala", tahasil: "Bhubaneswar", plotNo: "415", plotArea: "0.05 acres" },
+  bhulekhFetch: { status: "success", ownerName: "Sita Patnaik", plotNo: "415", khataNo: "1234" },
+  igrEcFetch: { status: "success", entries: [], total: 0 },
+  cersaiFetch: { status: "success", data: { total: 0, charges: [] } },
+  ecourtsFetch: { status: "success", cases: [], total: 0 },
+  rccmsFetch: { status: "success", cases: [], total: 0 },
+  regScreening: { status: "clear", flags: [] },
+  bdaZoning: { status: "success", zone: "residential" },
+  landClassifier: { status: "success", classification: "residential" },
+  circleRate: { status: "success", rate: 4500, unit: "per sqft" },
+  publicDashboard: { status: "success" },
+  govtFee: { status: "success" },
+  igrCertifiedCopy: { status: "success" },
+  ownershipReasoner: { status: "match", confidence: 0.95 },
+  encumbranceReasoner: { status: "clear", instructions: null },
+  regulatoryScreener: { status: "clear", flags: [] },
+  validationFindings: [],
+};
+
+const BOUNDARY_CASE_INPUT = {
+  reportId: "CLD-EDGE-BOUNDARY-001",
+  generatedAt: "2026-06-15T10:30:00.000Z",
+  gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+  claimedOwnerName: "Harihar Jena",
+  plotDescription: "Plot 88, Mendhasala (boundary), Bhubaneswar",
+  // Plot falls on village boundary - both Bhunaksha layers return different tahasils
+  geoFetch: { status: "ambiguous", villages: ["Mendhasala", "Mahimundi"], tahasils: ["Bhubaneswar", "Jatni"] },
+  bhulekhFetch: { status: "success", ownerName: "Harihar Jena", plotNo: "88", khataNo: "4567" },
+  igrEcFetch: { status: "success", entries: [], total: 0 },
+  cersaiFetch: { status: "success", data: { total: 0, charges: [] } },
+  ecourtsFetch: { status: "success", cases: [], total: 0 },
+  rccmsFetch: { status: "success", cases: [], total: 0 },
+  regScreening: { status: "boundary_check_required" },
+  bdaZoning: { status: "boundary" },
+  landClassifier: { status: "boundary" },
+  circleRate: { status: "success", rate: 4500, unit: "per sqft" },
+  ownershipReasoner: { status: "ambiguous", confidence: 0.5 },
+  encumbranceReasoner: { status: "clear", instructions: null },
+  regulatoryScreener: { status: "boundary" },
+  validationFindings: [{ dimension: "village", severity: "warning", description: "Plot falls on village boundary" }],
+};
+
+const MULTI_OWNER_INPUT = {
+  reportId: "CLD-EDGE-MULTI-001",
+  generatedAt: "2026-06-15T10:30:00.000Z",
+  gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+  claimedOwnerName: "Multiple",
+  plotDescription: "Plot 700, Mendhasala, Bhubaneswar",
+  // 5+ co-owners with share fractions
+  geoFetch: { status: "success", village: "Mendhasala", tahasil: "Bhubaneswar", plotNo: "700" },
+  bhulekhFetch: {
+    status: "success",
+    owners: [
+      { name: "Rama Pradhan", share: "1/5" },
+      { name: "Krishna Pradhan", share: "1/5" },
+      { name: "Radha Pradhan", share: "1/5" },
+      { name: "Balram Pradhan", share: "1/5" },
+      { name: "Sudama Pradhan", share: "1/5" },
+    ],
+  },
+  igrEcFetch: { status: "success", entries: [], total: 0 },
+  cersaiFetch: { status: "success", data: { total: 0, charges: [] } },
+  ecourtsFetch: { status: "success", cases: [], total: 0 },
+  rccmsFetch: { status: "success", cases: [], total: 0 },
+  regScreening: { status: "clear", flags: [] },
+  bdaZoning: { status: "success", zone: "residential" },
+  landClassifier: { status: "success", classification: "residential" },
+  circleRate: { status: "success", rate: 4500, unit: "per sqft" },
+  ownershipReasoner: { status: "multi_owner", confidence: 0.8 },
+  encumbranceReasoner: { status: "clear", instructions: null },
+  regulatoryScreener: { status: "clear", flags: [] },
+  validationFindings: [],
+};
+
+describe("Edge case fixtures (A.3.4)", () => {
+  function assertComposes(html: string) {
+    // Edge-case reports must compose into a valid HTML document with
+    // all 6 section anchors. We do not assert field-level content
+    // here because each fixture has different field values.
+    expect(html, "no HTML produced").toBeTruthy();
+    expect(html, "missing DOCTYPE").toContain("<!DOCTYPE html>");
+    expect(html, "missing section 1 anchor").toContain('id="section-plot"');
+    expect(html, "missing section 2 anchor").toContain('id="section-owner"');
+    expect(html, "missing section 3 anchor").toContain('id="section-land"');
+    expect(html, "missing section 4 anchor").toContain('id="section-encumbrance"');
+    expect(html, "missing section 5 anchor").toContain('id="section-adjacent-plots"');
+    expect(html, "missing section 6 anchor").toContain('id="section-benchmark"');
+  }
+
+  it("worst case: all 4 dark sources fail + watch-outs", () => {
+    const { html, title } = generateConsumerReport(WORST_CASE_INPUT as any);
+
+    assertComposes(html);
+    // Title may be "Plot —" when fetcher returns no plotNo; that's
+    // acceptable degradation. We assert it is non-empty.
+    expect(title, "title missing").toBeTruthy();
+    // Must show unavailability caveats
+    expect(html).toMatch(/not verified|unavailable|fetch.failed|could not be/i);
+  });
+
+  it("best case: all green clean title", () => {
+    const { html, title } = generateConsumerReport(BEST_CASE_INPUT as any);
+
+    assertComposes(html);
+    expect(title, "title missing").toContain("Plot 415");
+  });
+
+  it("boundary case: plot on village boundary", () => {
+    const { html, title } = generateConsumerReport(BOUNDARY_CASE_INPUT as any);
+
+    assertComposes(html);
+    // Title may fall back when ambiguous fetcher results, that's OK.
+    expect(title, "title missing").toBeTruthy();
+    // The village-boundary warning should still surface
+    expect(html).toMatch(/verify|warning|verify on ground|tehsil/i);
+  });
+
+  it("multi-owner case: 5+ tenants with share fractions", () => {
+    const { html, title } = generateConsumerReport(MULTI_OWNER_INPUT as any);
+
+    assertComposes(html);
+    expect(title, "title missing").toContain("Plot 700");
+  });
+});

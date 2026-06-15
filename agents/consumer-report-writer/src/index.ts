@@ -3375,8 +3375,24 @@ interface AdjacentPlotsData {
 }
 
 function buildAdjacentPlotsPanel(adjacentData: AdjacentPlotsData | null | undefined): string {
+  // Section anchor always renders so the in-page nav and feedback
+  // widget always have a target. When no data, we surface an
+  // "unavailable" notice instead of dropping the section entirely.
   if (!adjacentData || !adjacentData.adjacentPlots || adjacentData.adjacentPlots.length === 0) {
-    return "";
+    return `<section class="section" id="section-adjacent-plots">
+  <div class="section-hdr">
+    <div class="section-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </div>
+    <div class="section-title-group">
+      <div class="section-title">Neighbouring Plots</div>
+      <div class="section-sub">Plots adjacent to this one (Bhunaksha revenue map)</div>
+    </div>
+  </div>
+  <div class="section-body">
+    <p class="section-intro">No adjacent data available for this plot. The Bhunaksha revenue map did not return neighbouring plots in this run, so we cannot show you what surrounds this land. You can ask the seller or a local surveyor to walk the plot boundary with you.</p>
+  </div>
+</section>`;
   }
 
   const plots = adjacentData.adjacentPlots;
