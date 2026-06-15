@@ -112,12 +112,11 @@ A 4-sprint, 8-week Validation PI (`PI-V`, Sprints V1–V4) is inserted between P
 
 ---
 
-*Last revised: 2026-06-15. D-037 added: CERSAI V2 fetcher rewrite shipped (38/38 contract tests green, live captcha accuracy validation blocked by portal instability, ships behind typed manual-instructions fallback per D-037 pattern).*
-*D-036 added: Bhunaksha Plot Report fetcher (V2) shipped — sibling to existing Bhunaksha polygon fetcher; cross-checks the ROR, captures the cadastral map image, and is covered by 59 V2 contract tests against a live-verified P051 ground-truth manifest.*
+*Last revised: 2026-06-15. D-040/D-039/D-038 added: V1 IGR-EC instructions bug fix, 6-package decision for IGR public-data integration, and PI-V.5 extension approval. D-037 added: CERSAI V2 fetcher rewrite shipped. D-036 added: Bhunaksha Plot Report fetcher (V2) shipped.*
 
 ## D-037: CERSAI V2 fetcher rewrite, live validation deferred (2026-06-15).
 
-The legacy CERSAI URL `www.cersai.org.in/Search/SearchByBorrower.aspx` 404s; CERSAI rolled out a V2 Vue.js SPA at `cersai.org.in/CERSAI/dbtrsrch.prg` in 2025. Rewrite of `packages/fetchers/cersai/src/index.ts` drives the V2 flow (select debtorType → select assetCategory → wait for Vue-rendered `#individualBorrowerName` → fill name + captcha → submit). Captcha solver uses Tesseract.js multi-strategy from eCourts. 38/38 contract tests pass. Live captcha accuracy validation is blocked today: the V2 portal's anti-bot posture (CSP violations, post-submit body containing "password" in navbar text) prevents measurement. Same posture as eCourts (D-037 pattern) and IGR EC pre-D-035: ships behind typed manual-instructions fallback when live fetch fails. Live validation deferred to next week when portal state may stabilize. The fetcher code is correct; the portal's behavior is the blocker. See `qa/cersai_v2_rewrite_result_2026-06-15.md` for probe results.
+The legacy CERSAI URL `www.cersai.org.in/Search/SearchByBorrower.aspx` 404s; CERSAI rolled out a V2 Vue.js SPA at `cersai.org.in/CERSAI/dbtrsrch.prg` in 2025. Rewrite of `packages/fetchers/cersai/src/index.ts` drives the V2 flow (select debtorType → select assetCategory → wait for Vue-rendered `#individualBorrowerName` → fill name + captcha → submit). Captcha solver uses ddddocr microservice. 38/38 contract tests pass. Live captcha accuracy validation is blocked today: the V2 portal's submit pipeline requires the Vue SPA's internal reactive state to be in the right shape (we cannot populate it via Playwright fill / keyboard.type / native input setter — the Vue component instance is not exposed on the DOM and the `dbtrsrch.frg` POST returns the form HTML, not a result). Six probe approaches converge on the same conclusion. Same posture as eCourts (D-037 pattern) and IGR EC pre-D-035: ships behind typed manual-instructions fallback when live fetch fails. Live validation deferred until V2 portal matures or a captcha-solving vendor is integrated. The fetcher code is correct; the V2 SPA's behavior is the blocker. See `qa/cersai_v2_live_smoke_result_2026-06-15.md` for full probe results.
 
 ## D-035: IGR EC captcha solved with 3-way ddddocr ensemble + adaptive K (2026-06-14).
 
@@ -187,3 +186,23 @@ Live smoke test against the portal: ~8s end-to-end, all 9 fields + map image cap
 ## 2026-06-14 — D-037: Defer IGR EC automated login from Khordha launch
 
 The V2 IGR EC fetcher (automated captcha solve + login + OTP submit + EC form fill) is deferred from the Khordha launch. The Khordha launch uses the V1 path: manual-instructions panel in the report with the SRO portal link, not a fetched EC entry. Rationale: the IGR login is OTP-gated per session, captcha accuracy on a single attempt is ~50-60% with the smart solver and ~80% within top-8 candidates, and coupling a long-lived Playwright session to a one-shot OTP-from-user flow is operationally brittle. The buyer is already transacting in the V1 instructions mode (the report tells them which SRO to visit and what to ask for), and the typed-degradation surface is already polished from prior sprints. Re-enable V2 in `packages/fetchers/igr-ec/src/index.ts` by flipping the `false &&` guard at line 486 once the operation matures (after 50+ buyer reports, when the operational cost of a missed captcha is well-understood). The V2 code itself stays in `packages/fetchers/igr-ec/src/index.v2.ts` and is exported for unit tests; it is not loaded by the V1 dispatch. Parked in BACKLOG as "IGR EC V2 operational maturity."
+
+---
+
+## D-038: PI-V.5 extension of PI-V (2026-06-15)
+
+The PI-V validation PI has a hard rule "no new features" (line 267) but the founder has approved an exception: IGR Odisha public-data integration. Justification: the market context layer (D-008: floor/directional/ceiling) is the load-bearing trust signal for the buyer-facing product, and 6 of the 7 endpoints are public/no-captcha/low-risk. This plan extends PI-V to **PI-V.5** (3 sprints × 2 weeks), reuses PI-V's 50-plot ground-truth corpus and shadow-runner infrastructure, and ships only buyer-visible behavior. Each fetcher must produce a typed-degraded or correct report change (per CLAUDE.md §3.5). PI-V.5 unblocks the "directional band" stub at Section 5 by wiring IGR EC consideration, adds the SRO cascade to the form, and surfaces 6 new IGR endpoints as report sub-cards.
+
+---
+
+## D-039: 6 separate fetcher packages, not 1 mega-package (2026-06-15)
+
+The design agent recommended 1 mega-package `igr-public-data/` for the 6 new IGR fetchers but this decision reverts to the existing convention (9 fetcher packages today). The 6 packages (`igr-sro`, `igr-bmv`, `stamp-duty`, `igr-daily-bulletin`, `public-dashboard`, `govt-fee`) each have minimal boilerplate and are easy to navigate in the workspace. The "shared infra" the design agent cited is two small helpers (`runWithRetry` already lives in `@cleardeed/schema`; `typed-degradation` is a 6-line inline helper), not enough to justify a mega-package. Consistency wins over cleverness for a small team.
+
+---
+
+## D-040: IGR-EC instructions bug fix root cause (2026-06-15)
+
+The V1 IGR-EC fetcher at `packages/fetchers/igr-ec/src/index.ts` has a critical bug: `buildManualInstructions()` (line 136-182) returns a `ManualInstructions` object but two call sites (line 555, 657) construct the object and **discard the return value**. The renderer at `agents/consumer-report-writer/src/index.ts:998-1010` always falls back to hardcoded generic steps. Fix: (1) Add `instructions: z.string().optional()` to `IGRECData` schema (line 53-63). (2) Assign `data.instructions = JSON.stringify(instructions)` in both return paths. (3) Update the renderer to render `data.instructions` when present (else fallback to generic steps). This affects buyer trust: the report currently shows "Go to IGR Odisha" instead of the tehsil-specific "Visit X SRO, ask for EC between Y and Z years, fee is ₹W, phone is ..." instructions that the V1 fetcher already knows.
+
+---
