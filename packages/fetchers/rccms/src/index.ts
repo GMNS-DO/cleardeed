@@ -14,6 +14,19 @@ import { createHash } from "node:crypto";
 const RCCMS_BASE = "https://rccms.odisha.gov.in";
 const USER_AGENT = "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)";
 const PARSER_VERSION = "rccms-probe-v1";
+const PROBE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
+// ── In-memory probe cache (A.2.4) ────────────────────────────────────────────────
+// Probe results are sticky for 24h. The portal rarely changes its
+// search-endpoint list, and re-probing on every call is wasteful (and
+// makes the fetcher hang if the portal is intermittently slow).
+// Cache key: "reachable" | "unreachable" + the probe payload.
+// Exposed via `clearProbeCache()` for tests; not for production code.
+let probeCache: { result: ProbeResult | null; expiresAt: number } | null = null;
+
+export function clearProbeCache(): void {
+  probeCache = null;
+}
 
 const SEARCH_PATHS = [
   "/CaseStatus.aspx",
@@ -65,8 +78,24 @@ interface ProbeResult {
 /**
  * Probe the RCCMS portal for accessible search endpoints.
  * Returns the first working endpoint found.
+ *
+ * Cached for 24h (see A.2.4). The probe is the slowest part of the
+ * fetcher path (3 HTTP round-trips to a slow government server) and
+ * the result is sticky for days at a time.
  */
 async function probePortal(): Promise<ProbeResult | null> {
+  // Return cached result if still valid
+  if (probeCache && probeCache.expiresAt > Date.now()) {
+    return probeCache.result;
+  }
+
+  const result = await probePortalFresh();
+
+  probeCache = { result, expiresAt: Date.now() + PROBE_CACHE_TTL_MS };
+  return result;
+}
+
+async function probePortalFresh(): Promise<ProbeResult | null> {
   // Use Promise.race with 3s timeout to avoid hanging on slow portal
   const probePromises = SEARCH_PATHS.map(async (path) => {
     try {

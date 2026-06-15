@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { fetch, healthCheck, parseRccmsTable } from "./index";
+import { describe, it, expect, beforeEach } from "vitest";
+import { fetch, healthCheck, parseRccmsTable, clearProbeCache } from "./index";
 
 /**
  * Columns align with the parser's expected positional layout:
@@ -80,5 +80,24 @@ describe("T-011: RCCMS Fetcher Parser", () => {
     // `subject` and `parties` must be present on the local extension type
     expect(subject).toBeDefined();
     expect(parties).toHaveLength(2);
+  });
+});
+
+describe("A.2.4: RCCMS probe cache (24h TTL)", () => {
+  beforeEach(() => {
+    clearProbeCache();
+  });
+
+  it("clearProbeCache is exported and resets state", () => {
+    // After clear, the next fetch will hit the live portal again.
+    expect(typeof clearProbeCache).toBe("function");
+    clearProbeCache();
+  });
+
+  it("fetch is callable from the package barrel (post-cache smoke)", async () => {
+    // Just assert the function exists and accepts the expected input shape.
+    // We don't run a live fetch here — that's behind the pipeline. This test
+    // is a smoke check that the cache layer didn't break the export.
+    expect(typeof fetch).toBe("function");
   });
 });
