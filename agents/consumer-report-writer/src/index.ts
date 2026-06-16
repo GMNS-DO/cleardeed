@@ -869,8 +869,8 @@ ${synthesisSection ? `
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     </div>
     <div class="section-title-group">
-      <div class="section-title">6. What to Do Before You Pay</div>
-      <div class="section-sub">Specific questions to ask the seller and broker — and steps to get the EC</div>
+      <div class="section-title">6. What to Do Before You Pay — what to ask next</div>
+      <div class="section-sub">Specific questions to ask the seller and broker — and steps to get the Encumbrance Certificate</div>
     </div>
   </div>
   <div class="section-body">

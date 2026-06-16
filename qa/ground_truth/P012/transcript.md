@@ -14,12 +14,12 @@
 ## Auto-run results
 
 ### Bhunaksha Plot Report (D-036)
-- **Status: failed** (elapsed 2355ms)
+- **Status: failed** (elapsed 8067ms)
 - **Error:** no_parsed_fields
 - **GIS code:** 20021110019
 
 ### Bhunaksha Polygon (existing fetcher)
-- **Status: failed** (elapsed 899ms)
+- **Status: failed** (elapsed 1412ms)
 - **Error:** fetch_or_parse_error
 
 ## Founder checklist

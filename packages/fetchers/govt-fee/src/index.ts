@@ -23,7 +23,7 @@ import {
   type GovtFeeResult,
   type GovtFeeSchedule,
   type DeedFee,
-} from "./contract.js";
+} from "./contract.ts";
 
 const PARSER_VERSION = "govt-fee-v1";
 

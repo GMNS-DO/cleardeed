@@ -978,11 +978,13 @@ export async function fetch(input: {
         );
       }
 
-      // Find matching identifier option
+      // Find matching identifier option. Use a tolerant matcher that
+      // handles: (1) internal/NBSP whitespace, (2) compound plot numbers
+      // like "182/3937" when the dropdown only stores the plot segment,
+      // and (3) the inverse case where the user types just the plot
+      // segment but the option stores the full compound.
       const targetIdentifier = requestedMode === "Khatiyan" ? khatiyanNo : plotNo;
-      const match = plotOpts.find(
-        (o) => o.text.trim() === targetIdentifier?.trim() || o.value.trim() === targetIdentifier?.trim()
-      );
+      const match = findMatchingPlotOption(plotOpts, targetIdentifier);
       if (!match) {
         throw Object.assign(
           new Error(`${searchModeValue} "${targetIdentifier}" not found in Bhulekh dropdown.`),
@@ -2000,6 +2002,72 @@ function findMatchingPlotRow<T extends { plotNo: string }>(rows: T[], target: st
 
 function normalizePlotNo(text: string): string {
   return text.replace(/\s+/g, "").trim();
+}
+
+/**
+ * Locate a Bhulekh dropdown option matching the user's typed identifier.
+ *
+ * The Bhulekh ASP.NET dropdown for plot/khatiyan selection
+ * (`#ctl00_ContentPlaceHolder1_ddlBindData`) sometimes renders options
+ * with internal whitespace, NBSP (`\xa0`), or stores only the plot
+ * segment of a compound plot number like "182/3937". A strict `.trim()`
+ * compare misses all three cases and surfaces as
+ * `IDENTIFIER_NOT_FOUND` even though the plot is in the dropdown.
+ *
+ * Three-tier fallback (most specific first):
+ *   1. Exact — normalized equality on text or value, whitespace-stripped.
+ *   2. Compound tail — if target contains "/", match on the segment after
+ *      the last "/". Handles "182/3937" → option "3937".
+ *   3. Pure-digit suffix — if target is digits (length ≥ 2), match any
+ *      option whose normalized text or value ends with it. Handles the
+ *      inverse: target "3937" → option "182/3937". The digit/length guard
+ *      prevents "1" from spuriously matching "182".
+ */
+export function findMatchingPlotOption(
+  opts: DropdownOption[],
+  target: string | undefined
+): DropdownOption | undefined {
+  if (!target) return undefined;
+  const norm = (s: string) => s.replace(/\s+/g, "").trim();
+  const normTarget = norm(target);
+
+  // 1. exact
+  const exact = opts.find(
+    (o) => norm(o.text) === normTarget || norm(o.value) === normTarget
+  );
+  if (exact) return exact;
+
+  // 2. compound: "182/3937" → try "3937" (tail) first, then "182" (head)
+  //    The dropdown may store only the khata portion or only the plot
+  //    portion. Head-match is tried after tail-match because tail is
+  //    usually the more specific identifier the user is targeting.
+  if (normTarget.includes("/")) {
+    const parts = normTarget.split("/").filter(Boolean);
+    const tail = parts[parts.length - 1] ?? "";
+    const head = parts[0] ?? "";
+    if (tail && tail !== normTarget) {
+      const tailMatch = opts.find(
+        (o) => norm(o.text) === tail || norm(o.value) === tail
+      );
+      if (tailMatch) return tailMatch;
+    }
+    if (head && head !== normTarget) {
+      const headMatch = opts.find(
+        (o) => norm(o.text) === head || norm(o.value) === head
+      );
+      if (headMatch) return headMatch;
+    }
+  }
+
+  // 3. pure-digit suffix (length ≥ 2)
+  if (/^\d{2,}$/.test(normTarget)) {
+    const suffixMatch = opts.find(
+      (o) => norm(o.text).endsWith(normTarget) || norm(o.value).endsWith(normTarget)
+    );
+    if (suffixMatch) return suffixMatch;
+  }
+
+  return undefined;
 }
 
 function plotRowArea(row: { areaAcres: string | null; areaDecimals: string | null }): number {

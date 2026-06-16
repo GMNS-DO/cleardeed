@@ -11,7 +11,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SROCacheSchema, type SROCache, type SROInfo } from "./contract.js";
+import { SROCacheSchema, type SROCache, type SROInfo } from "./contract.ts";
 
 // Resolve the cache path relative to this file. In ESM scope, we use
 // import.meta.url to derive __dirname, and fall back to the vitest-provided

@@ -39,6 +39,9 @@ const nextConfig = {
     "@cleardeed/land-classifier",
     "@cleardeed/encumbrance-reasoner",
     "@cleardeed/regulatory-screener",
+    "@cleardeed/fetcher-public-dashboard",
+    "@cleardeed/fetcher-govt-fee",
+    "@cleardeed/fetcher-igr-certified-copy",
   ],
   webpack: (config: { resolve: { alias: Record<string, string> } }) => {
     // Playwright-using fetcher packages are externalized via serverExternalPackages above,
@@ -59,6 +62,9 @@ const nextConfig = {
       "@cleardeed/encumbrance-reasoner": path.resolve(__dirname, "../../agents/encumbrance-reasoner/index.ts"),
       "@cleardeed/regulatory-screener": path.resolve(__dirname, "../../agents/regulatory-screener/index.ts"),
       "@cleardeed/pdf-renderer": path.resolve(__dirname, "../../packages/pdf-renderer/index.ts"),
+      "@cleardeed/fetcher-public-dashboard": path.resolve(__dirname, "../../packages/fetchers/public-dashboard/src/index.ts"),
+      "@cleardeed/fetcher-govt-fee": path.resolve(__dirname, "../../packages/fetchers/govt-fee/src/index.ts"),
+      "@cleardeed/fetcher-igr-certified-copy": path.resolve(__dirname, "../../packages/fetchers/igr-certified-copy/src/index.ts"),
       // Playwright-using packages — DO NOT alias to source; let webpack use node_modules path
       // (serverExternalPackages above ensures they're not bundled and loaded at runtime instead)
       // Note: TypeScript will resolve via tsconfig paths, so imports still work.

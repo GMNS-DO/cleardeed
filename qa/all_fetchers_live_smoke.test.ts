@@ -31,8 +31,8 @@ import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
 import { igrBmvFetch } from "@cleardeed/fetcher-igr-bmv";
 import { stampDutyFetch } from "@cleardeed/fetcher-stamp-duty";
 import { igrDailyBulletinFetch } from "@cleardeed/fetcher-igr-daily-bulletin";
-import { circleRateFetch } from "@cleardeed/fetcher-circle-rate";
-import { bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
+import { fetch as circleRateFetch } from "@cleardeed/fetcher-circle-rate";
+import { fetch as bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
 import { nominatimFetch } from "@cleardeed/fetcher-nominatim";
 
 interface SmokeRun {
@@ -70,7 +70,7 @@ describe.skipIf(process.env.CI === "true")(
         // 1. Nominatim
         {
           const { result, elapsedMs, crashed, errorMessage } = await timeIt("nominatim", () =>
-            nominatimFetch({ lat: 20.296, lon: 85.823, zoom: 17 })
+            nominatimFetch({ gps: { lat: 20.296, lon: 85.823 } })
           );
           if (crashed || !result) {
             smokeRuns.push({ fetcher: "nominatim", status: "CRASH", reason: "threw", latencyMs: elapsedMs, crashed: true, errorMessage });

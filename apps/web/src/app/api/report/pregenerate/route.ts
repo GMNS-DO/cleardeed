@@ -118,8 +118,9 @@ export async function POST(req: NextRequest) {
     ? addReportAccessTokensToHtml(pipelineOutput.html, reportId)
     : (pipelineOutput?.html ?? "");
 
-  // Persist results to DB if persistence is available
-  if (persistenceEnabled && reportId && reportHtml) {
+  // Persist results to DB if persistence is available. Persist on success (HTML ready)
+  // OR on failure (so the payment-success route can short-circuit using the stored error).
+  if (persistenceEnabled && reportId) {
     try {
       await updateReportResults({
         reportId,
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
   console.info(`[/api/report/pregenerate] HTML length: ${reportHtml.length}`);
 
   return NextResponse.json({
-    reportId: htmlReady ? reportId : undefined,
+    reportId: reportId ?? null,
     status: htmlReady ? "generated" : "failed",
     error: htmlReady ? undefined : reportError ?? "Report generation did not produce HTML",
     title: pipelineOutput?.title ?? null,

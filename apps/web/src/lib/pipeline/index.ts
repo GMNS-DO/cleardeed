@@ -414,11 +414,12 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   // This gives us lat/lon to query the Bhunaksha WFS polygon.
   let bhunakshaPolygon: { type: "Polygon"; coordinates: number[][][] } | null = null;
   let bhunakshaSummary = "not_fetched";
+  let bhunakshaResult: Awaited<ReturnType<typeof bhunakshaFetch>> | null = null;
 
   try {
     const villageGps = await resolveVillageGps(input.village, input.tehsil);
     if (villageGps) {
-      const bhunakshaResult = await bhunakshaFetch({
+      bhunakshaResult = await bhunakshaFetch({
         lat: villageGps.lat,
         lon: villageGps.lon,
         layer: "khurda_bhubaneswar", // TODO: resolve per-tehsil layer when confirmed
@@ -883,7 +884,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     // Cuttack cases, so CERSAI / court_dispute triggers match via court_or_forum.
     // Resolution data flows back into the cluster's sourceCaseRefs when available.
     let pidBackedClusters: any[] = [];
-    if (corpusCases.length > 0) {
+    if (corpusCases.length > 0 && process.env.PID_SIMILARITY_ENABLED === "true") {
       try {
         const { findSimilarCases, clusterFromMatches } = await import(
           "../../../../pid/lib/case-shape-similarity.mjs"

@@ -17,7 +17,7 @@
  * district/SRO list. No automated refresh (BACKLOG: SRO cache cron).
  */
 
-import { loadSROCache, _resetCache } from "./cache.js";
+import { loadSROCache, _resetCache } from "./cache.ts";
 import type { SROInfo, SROLookupResult } from "./contract.js";
 
 const PARSER_VERSION = "igr-sro-v1.0.0";

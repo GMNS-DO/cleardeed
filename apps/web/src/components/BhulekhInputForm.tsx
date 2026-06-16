@@ -79,17 +79,6 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-async function waitForPreGeneration(
-  promise: Promise<{ reportId: string; bhunakshaPolygon: number[][][] | null; html: string; title: string } | null> | null,
-  timeoutMs: number
-): Promise<{ reportId: string; bhunakshaPolygon: number[][][] | null; html: string; title: string } | null> {
-  if (!promise) return null;
-  return Promise.race([
-    promise,
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
-  ]);
-}
-
 export function BhulekhInputForm() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formState, setFormState] = useState<FormState>("form");
@@ -193,11 +182,17 @@ export function BhulekhInputForm() {
         }),
       }).then(async (r) => {
         const data = await r.json() as {
-          reportId?: string; status?: string; error?: string;
+          reportId?: string | null; status?: string; error?: string;
           html?: string; title?: string; bhunakshaPolygon?: number[][][] | null
         };
         if (!r.ok || data.status !== "generated" || !data.reportId) {
-          throw new Error(data.error ?? "Could not fetch Bhulekh RoR for this plot. Please retry.");
+          // Even on pregen failure, the server returns a reportId for the persisted DB
+          // record. Capture it so the payment-success route can short-circuit and reuse
+          // the failure error instead of re-running the entire pipeline.
+          const failedReportId = data.reportId ?? null;
+          const err = new Error(data.error ?? "Could not fetch Bhulekh RoR for this plot. Please retry.");
+          (err as Error & { reportId?: string | null }).reportId = failedReportId;
+          throw err;
         }
         console.info("[BhulekhInputForm] Pre-generation response:", data.status, "reportId:", data.reportId, "html length:", data.html?.length ?? 0);
         return { reportId: data.reportId, bhunakshaPolygon: data.bhunakshaPolygon ?? null, html: data.html ?? "", title: data.title ?? "" };
@@ -206,9 +201,13 @@ export function BhulekhInputForm() {
 
       // Surface the reportId as soon as pre-gen finishes so the success
       // handler can pass it through. We don't await this here.
+      // On failure, also capture the persisted reportId from the server's error envelope
+      // (if any) so payment-success can reuse the failed-pregen DB record.
       preGenerationPromise
         .then((r) => { preGeneratedReportIdRef.current = r.reportId; })
-        .catch(() => { /* surfaced in handler; success route falls back */ });
+        .catch((e: Error & { reportId?: string | null }) => {
+          if (e?.reportId) preGeneratedReportIdRef.current = e.reportId;
+        });
 
       // Step 1: Create Razorpay order in parallel with pre-gen. This is
       // typically <500ms — the gating step for opening the modal.
@@ -244,7 +243,8 @@ export function BhulekhInputForm() {
       }).catch((e) => console.warn("[BhulekhInputForm] Checkout session store failed:", e));
 
       // When pre-gen finishes, patch the session with the result so the
-      // webhook/success route can use the cached HTML.
+      // webhook/success route can use the cached HTML (or the persisted
+      // failure record, avoiding a second slow-path pipeline run).
       preGenerationPromise
         .then((r) => {
           fetch("/api/checkout", {
@@ -259,7 +259,20 @@ export function BhulekhInputForm() {
             }),
           }).catch(() => {/* already in modal; fall back to regen if needed */});
         })
-        .catch(() => {/* pre-gen failed; fall back to regen in success route */});
+        .catch((e: Error & { reportId?: string | null }) => {
+          const failedReportId = e?.reportId;
+          if (!failedReportId) return;
+          // Persist the failed-pregen reportId so the webhook/success route
+          // can short-circuit and reuse the persisted error.
+          fetch("/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...checkoutPayload,
+              preGeneratedReportId: failedReportId,
+            }),
+          }).catch(() => {/* already in modal; fall back to regen if needed */});
+        });
 
       // Step 3: Open Razorpay modal — typically within ~1s of click.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -299,12 +312,20 @@ export function BhulekhInputForm() {
           setFormState("generating");
           try {
             // If pre-gen already finished, use its reportId immediately.
-            // Otherwise await it (with timeout). If it times out, the
-            // success route falls back to full regeneration.
-            const resolvedPreGenerated =
-              preGeneratedReportIdRef.current != null
-                ? { reportId: preGeneratedReportIdRef.current, bhunakshaPolygon: null as number[][][] | null, html: "", title: "" }
-                : await waitForPreGeneration(preGenerationPromiseRef.current, 65_000);
+            // Otherwise await it. We bound the wait at 6 minutes — long
+            // enough to absorb a Bhulekh portal slowdown, short enough
+            // that the buyer doesn't sit on a spinner forever. If the
+            // pregen doesn't finish in 6 min, we hand off to the slow
+            // path with no preGeneratedReportId and the user gets a
+            // clear "your payment succeeded, we're still building the
+            // report" message.
+            const pregen = preGeneratedReportIdRef.current != null
+              ? Promise.resolve({ reportId: preGeneratedReportIdRef.current, bhunakshaPolygon: null as number[][][] | null, html: "", title: "" })
+              : Promise.race<{ reportId: string; bhunakshaPolygon: number[][][] | null; html: string; title: string } | null>([
+                  preGenerationPromiseRef.current,
+                  new Promise<null>((resolve) => setTimeout(() => resolve(null), 6 * 60 * 1000)),
+                ]);
+            const resolvedPreGenerated = await pregen;
             const result = await fetch("/api/payment/success", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
