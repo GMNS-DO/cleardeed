@@ -61,6 +61,7 @@ export const WarningSchema = z.enum([
   "low_confidence",
   "model_error",
   "rate_limited",
+  "ai_not_purchased",
 ]);
 export type Warning = z.infer<typeof WarningSchema>;
 

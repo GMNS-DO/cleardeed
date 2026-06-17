@@ -84,42 +84,63 @@ describe("cost-tracker.ts", () => {
   });
 
   describe("preflight (plan §3.2)", () => {
-    const makeStore = (reportSpent: number, orgSpent: number): CostStore => ({
+    const makeStore = (
+      reportSpent: number,
+      orgSpent: number,
+      unlocked = true,
+    ): CostStore => ({
       spentOnReportCents: async () => reportSpent,
       spentOnOrgCentsThisMonth: async () => orgSpent,
+      isUnlocked: async () => unlocked,
       recordCost: async () => {},
     });
 
     it("passes when within both budgets", async () => {
       const store = makeStore(0, 0);
-      const r = await preflight(store, "report-1", "org-1", 5);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 5);
       expect(r.ok).toBe(true);
     });
 
     it("rejects when per-report ceiling would be exceeded", async () => {
       const store = makeStore(PER_REPORT_CEILING_CENTS - 5, 0);
-      const r = await preflight(store, "report-1", "org-1", 10);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 10);
       expect(r.ok).toBe(false);
       expect(r.reason).toContain("report_exceeds_ceiling");
     });
 
     it("rejects when org monthly cap would be exceeded", async () => {
       const store = makeStore(0, ORG_MONTHLY_CAP_CENTS - 5);
-      const r = await preflight(store, "report-1", "org-1", 10);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 10);
       expect(r.ok).toBe(false);
       expect(r.reason).toContain("org_exceeds_monthly_cap");
     });
 
     it("passes exactly at the per-report ceiling", async () => {
       const store = makeStore(PER_REPORT_CEILING_CENTS, 0);
-      const r = await preflight(store, "report-1", "org-1", 0);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 0);
       expect(r.ok).toBe(true);
     });
 
     it("passes exactly at the org-monthly cap", async () => {
       const store = makeStore(0, ORG_MONTHLY_CAP_CENTS);
-      const r = await preflight(store, "report-1", "org-1", 0);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 0);
       expect(r.ok).toBe(true);
+    });
+
+    it("rejects when the report+docType is not unlocked", async () => {
+      const store = makeStore(0, 0, false);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 5);
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe("ai_not_purchased");
+    });
+
+    it("unlock check fires before budget checks (payment is a hard gate)", async () => {
+      // Both unlock=false AND over budget — we expect ai_not_purchased
+      // because the order is unlock-first, budget-second.
+      const store = makeStore(PER_REPORT_CEILING_CENTS + 1, ORG_MONTHLY_CAP_CENTS + 1, false);
+      const r = await preflight(store, "report-1", "org-1", "igr_ec", 5);
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe("ai_not_purchased");
     });
   });
 });

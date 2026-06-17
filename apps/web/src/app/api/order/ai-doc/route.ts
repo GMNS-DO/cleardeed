@@ -14,6 +14,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { assertRazorpaySafe, getRazorpayKeys } from "@/lib/razorpay-config";
+import { supabaseAdmin } from "@/lib/db";
 
 const AI_DOC_AMOUNT_PAISE = 49900; // ₹499
 
@@ -95,6 +96,37 @@ export async function POST(req: NextRequest) {
       receipt: string;
       status: string;
     };
+
+    // Persist a checkout_sessions row so the webhook can find the
+    // (reportId, docType) when payment.captured fires. Same pattern
+    // as /api/reports/[id]/refresh — webhook dispatches on
+    // session_data.kind.
+    try {
+      const { error: sessionError } = await supabaseAdmin()
+        .from("checkout_sessions")
+        .upsert(
+          {
+            order_id: order.id,
+            session_data: {
+              kind: "ai_doc",
+              reportId: body.reportId,
+              docType: body.docType,
+              amount: order.amount,
+            },
+            expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          },
+          { onConflict: "order_id" }
+        );
+
+      if (sessionError) {
+        console.error("[/api/order/ai-doc] Failed to store ai_doc session:", sessionError);
+        // We still return the order — the user can attempt payment; the
+        // webhook will be a no-op if the session is missing, and the user
+        // can retry from the upsell gate.
+      }
+    } catch (err) {
+      console.warn("[/api/order/ai-doc] Supabase not configured:", err);
+    }
 
     return NextResponse.json({
       orderId: order.id,

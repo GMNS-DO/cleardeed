@@ -137,14 +137,15 @@ export async function interpretDocumentWithDeps(
     cacheReadTokens: 0,
     cacheWriteTokens: 0,
   });
-  const gate = await preflight(costStore, args.reportId, args.orgId, estimatedCents);
+  const gate = await preflight(costStore, args.reportId, args.orgId, args.docType, estimatedCents);
   if (!gate.ok) {
+    const warning = gate.reason === "ai_not_purchased" ? "ai_not_purchased" : "model_error";
     return EmptyResult(
       args.docType,
       model,
       0,
       Date.now() - startMs,
-      ["model_error"],
+      [warning],
     );
   }
 
@@ -217,7 +218,7 @@ export async function interpretDocumentWithDeps(
 
 // The default client is a no-op stub. Production wires the real Anthropic
 // SDK at the apps/web layer; tests inject a fake client.
-function makeDefaultClient(): ClaudeClient {
+export function makeDefaultClient(): ClaudeClient {
   // V1 stub: in production the real Anthropic SDK is injected via the
   // apps/web layer. Tests pass their own client. The runtime guard
   // here is to keep `interpretDocument` callable from non-test code;

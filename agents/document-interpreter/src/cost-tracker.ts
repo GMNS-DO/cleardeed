@@ -66,6 +66,7 @@ export function estimateCost(model: string, usage: Usage): number {
 export type CostStore = {
   spentOnReportCents(reportId: string): Promise<number>;
   spentOnOrgCentsThisMonth(orgId: string | null): Promise<number>;
+  isUnlocked(reportId: string, docType: DocType): Promise<boolean>;
   recordCost(record: {
     reportId: string;
     orgId: string | null;
@@ -79,6 +80,7 @@ export type CostStore = {
 const noopStore: CostStore = {
   spentOnReportCents: async () => 0,
   spentOnOrgCentsThisMonth: async () => 0,
+  isUnlocked: async () => true,
   recordCost: async () => {},
 };
 
@@ -92,8 +94,17 @@ export async function preflight(
   store: CostStore,
   reportId: string,
   orgId: string | null,
+  docType: DocType,
   estimatedCents: number,
 ): Promise<{ ok: boolean; reason?: string }> {
+  // Payment gate: the upsell is a hard requirement for any LLM call.
+  // Without an unlock, no token is burned. This is the cost-tracker
+  // version of the upsell gate — the renderer separately shows
+  // AIDocUpsellGate, but this is what actually stops the call.
+  const unlocked = await store.isUnlocked(reportId, docType);
+  if (!unlocked) {
+    return { ok: false, reason: "ai_not_purchased" };
+  }
   const reportSpent = await store.spentOnReportCents(reportId);
   if (reportSpent + estimatedCents > PER_REPORT_CEILING_CENTS) {
     return {

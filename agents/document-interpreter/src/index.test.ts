@@ -22,6 +22,7 @@ const makeFakeClient = (response: ClaudeResponse): ClaudeClient => ({
 const noopStore: CostStore = {
   spentOnReportCents: async () => 0,
   spentOnOrgCentsThisMonth: async () => 0,
+  isUnlocked: async () => true,
   recordCost: async () => {},
 };
 
@@ -218,6 +219,7 @@ describe("A12 Document Interpreter — golden fixtures (plan §3.1 V1)", () => {
     const overBudget: CostStore = {
       spentOnReportCents: async () => 100,
       spentOnOrgCentsThisMonth: async () => 0,
+      isUnlocked: async () => true,
       recordCost: async () => {},
     };
     const result = await interpretDocumentWithDeps(

@@ -33,10 +33,14 @@ interface CheckoutSession {
   email?: string;
   whatsapp?: string;
   preGeneratedReportId?: string | null;
-  /** "refresh" for pay-to-refresh; absent (or anything else) for first purchase. */
+  /** "refresh" for pay-to-refresh; "ai_doc" for the AI summary add-on. */
   kind?: string;
   /** Set when kind === "refresh" — the report whose expires_at should be bumped. */
   reportId?: string;
+  /** Set when kind === "ai_doc" — the docType being unlocked (igr_ec, bhulekh_back). */
+  docType?: string;
+  /** Set when kind === "ai_doc" — the paid amount in paise. */
+  amount?: number;
 }
 
 async function getCheckoutSession(orderId: string): Promise<CheckoutSession | null> {
@@ -166,6 +170,53 @@ export async function POST(req: NextRequest) {
       status: "refreshed",
       expiresAt,
     });
+  }
+
+  // ── AI doc upsell fast path: write report_ai_unlocks, skip pipeline ─────
+  if (session.kind === "ai_doc" && session.reportId && session.docType) {
+    try {
+      const { error: unlockError } = await supabaseAdmin()
+        .from("report_ai_unlocks")
+        .upsert(
+          {
+            report_id: session.reportId,
+            doc_type: session.docType,
+            order_id: orderId,
+            amount_paise: event.payload?.order?.entity?.amount ?? 49900,
+          },
+          { onConflict: "report_id,doc_type" }
+        );
+      if (unlockError) {
+        console.error("[/api/webhook/razorpay] ai_doc unlock failed:", unlockError);
+        return NextResponse.json({
+          handled: false,
+          reason: "ai_doc_unlock_write_failed",
+        });
+      }
+      try {
+        await supabaseAdmin().from("audit_log").insert({
+          report_id: session.reportId,
+          event_type: "ai_doc_unlocked",
+          event_data: { orderId, docType: session.docType },
+        });
+      } catch (auditErr) {
+        console.warn("[/api/webhook/razorpay] audit_log insert failed (ai_doc):", auditErr);
+      }
+      console.info(`[/api/webhook/razorpay] AI doc unlocked: report=${session.reportId} docType=${session.docType}`);
+      return NextResponse.json({
+        handled: true,
+        kind: "ai_doc",
+        reportId: session.reportId,
+        docType: session.docType,
+        status: "unlocked",
+      });
+    } catch (err) {
+      console.error("[/api/webhook/razorpay] ai_doc path error:", err);
+      return NextResponse.json({
+        handled: false,
+        reason: "ai_doc_path_error",
+      });
+    }
   }
 
   // ── Fast path: report was pre-generated during checkout ─────────────────

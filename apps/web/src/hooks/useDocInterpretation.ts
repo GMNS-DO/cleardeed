@@ -45,6 +45,15 @@ export function useDocInterpretation(reportId: string, docType: "igr_ec" | "bhul
       const raw = localStorage.getItem(STORAGE_PREFIX + reportId + ":" + docType);
       if (raw) {
         const parsed = JSON.parse(raw) as InterpretationDone;
+        // If the cached result is an empty fields list (e.g. an
+        // earlier ai_not_purchased), don't restore it — the user
+        // may have paid in the meantime, and we want a fresh SSE
+        // attempt. The hook's start() will fetch and either succeed
+        // or fail again.
+        if (parsed.warnings?.includes("ai_not_purchased")) {
+          localStorage.removeItem(STORAGE_PREFIX + reportId + ":" + docType);
+          return;
+        }
         setState({ status: "done", fields: parsed.fields, meta: parsed });
       }
     } catch {
@@ -74,6 +83,16 @@ export function useDocInterpretation(reportId: string, docType: "igr_ec" | "bhul
     es.addEventListener("done", (ev) => {
       try {
         const meta = JSON.parse((ev as MessageEvent).data) as InterpretationDone;
+        // Payment gate: if the cost-tracker refused on
+        // ai_not_purchased, surface it as a failed state so the
+        // AIDocUpsellGate renders. We don't cache an empty result
+        // in localStorage (the user might pay and retry).
+        if (meta.warnings?.includes("ai_not_purchased")) {
+          setState({ status: "failed", error: "ai_not_purchased" });
+          es.close();
+          esRef.current = null;
+          return;
+        }
         // Persist for re-render resilience (Plan §3.1).
         localStorage.setItem(
           STORAGE_PREFIX + reportId + ":" + docType,

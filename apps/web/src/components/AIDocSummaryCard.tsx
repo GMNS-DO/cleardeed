@@ -57,6 +57,10 @@ export function AIDocSummaryCard({ reportId, docType }: Props) {
   }
 
   if (state.status === "failed") {
+    // ai_not_purchased comes back as a warning on an empty fields[]
+    // (the stream is "done" with 0 fields). The hook doesn't know
+    // about that, so we surface the upsell as a failure for now.
+    // (Plan §3.1: the upsell must be live from day one.)
     return (
       <AIDocUpsellGate
         reportId={reportId}

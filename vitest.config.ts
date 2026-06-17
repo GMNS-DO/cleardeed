@@ -44,6 +44,7 @@ export default defineConfig({
       "apps/web/src/lib/rate-limit.test.ts",
       "apps/web/src/app/api/reports/[id]/refresh/route.test.ts",
       "apps/web/src/lib/ai-doc/igr-ec-input.test.ts",
+      "apps/web/src/lib/ai-doc/cost-store.test.ts",
       "apps/web/src/app/api/user/delete/route.test.ts",
       "qa/fetcher_tests/**/*.test.ts",
       "qa/section_validators/**/*.test.ts",
@@ -105,6 +106,8 @@ export default defineConfig({
       "@cleardeed/output-auditor": path.resolve(__dirname, "agents/output-auditor/src/index.ts"),
       "@cleardeed/ownership-lineage-graph": path.resolve(__dirname, "agents/ownership-lineage-graph/src/index.ts"),
       "@cleardeed/document-interpreter": path.resolve(__dirname, "agents/document-interpreter/src/index.ts"),
+      "@cleardeed/document-interpreter/cost-tracker": path.resolve(__dirname, "agents/document-interpreter/src/cost-tracker.ts"),
+      "@cleardeed/document-interpreter/schema": path.resolve(__dirname, "agents/document-interpreter/src/schema.ts"),
     },
   },
 });

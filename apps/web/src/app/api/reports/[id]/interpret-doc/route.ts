@@ -15,8 +15,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getReport } from "@/lib/db";
-import { interpretDocument } from "@cleardeed/document-interpreter";
+import {
+  interpretDocumentWithDeps,
+  makeDefaultClient,
+} from "@cleardeed/document-interpreter";
 import { fetchIgrEcInput } from "@/lib/ai-doc/igr-ec-input";
+import { makeSupabaseCostStore } from "@/lib/ai-doc/cost-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,15 +74,19 @@ export async function GET(
       }, HEARTBEAT_MS);
 
       try {
-        const result = await interpretDocument({
-          reportId,
-          // orgId is a future column; until it lands, the agent
-          // stores rows with orgId = null and the cost-tracker
-          // falls back to the global default quota.
-          orgId: null,
-          docType: "igr_ec",
-          input,
-        });
+        const result = await interpretDocumentWithDeps(
+          {
+            reportId,
+            orgId: null,
+            docType: "igr_ec",
+            input,
+          },
+          {
+            client: makeDefaultClient(),
+            costStore: makeSupabaseCostStore(),
+          },
+          Date.now()
+        );
 
         // Emit per-field events.
         for (const f of result.fields) {
