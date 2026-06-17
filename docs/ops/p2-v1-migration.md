@@ -46,3 +46,21 @@ DROP TABLE IF EXISTS report_ai_interpretations;
 ```
 
 Note: this drops the AI interpretation ledger. Do not run after production data has accumulated — there is no export step.
+
+## Pre-apply verification (2026-06-17)
+
+Static checks performed before staging migration:
+
+| Check | Result |
+|---|---|
+| SQL balanced parens / statement count | 017: 34/34, 12 stmts; 018: 10/10, 4 stmts |
+| Insert columns vs NOT NULL columns | Found bug: `duration_ms` missing from `recordCost` insert — fixed in `ecd081c` |
+| `report_ai_unlocks` UNIQUE constraint match | `(report_id, doc_type)` — webhook upsert matches (`018`) |
+| `isUnlocked` query | Reads `(report_id, doc_type)` — matches `report_ai_unlocks` UNIQUE |
+| SSE wire protocol match | Server emits `field`/`done`/`error`; client hook adds 3 listeners — match |
+| `AIDocUpsellGate` body | Posts `{ reportId, docType, amount: 49900 }` — `docType` is `"igr_ec" \| "bhulekh_back"`, accepted by order endpoint |
+| `AIDocUpsellGate` ↔ webhook | Upsell order `kind: "ai_doc"` → webhook writes `report_ai_unlocks` row → next SSE call passes `isUnlocked()` check |
+| Migration 017 `report_ai_quotas` table | Created but not yet read by cost-store; cost-tracker sums from `report_ai_costs` directly. V2 work: switch to quota-row lookups for O(1) gate. Not blocking. |
+| Test suite | 524/524 pass; 12 skipped (200-name gate, V2 work) |
+
+Open the migration PR. After staging apply, run the smoke test and confirm the upsell → unlock → SSE chain works end-to-end on a staging report.
