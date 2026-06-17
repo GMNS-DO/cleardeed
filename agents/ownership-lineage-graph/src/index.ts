@@ -46,7 +46,10 @@ export function chooseLayoutMode(
   nodeCount: number,
   viewport: "mobile" | "desktop" | "unknown",
 ): Layout {
-  // V1: always list. V2 will refine.
+  // Plan §4.2 V2 thresholds. 80+ nodes -> list (browser perf).
+  // Mobile + 20+ -> timeline (vertical, narrow).
+  // Desktop OR unknown (server-rendered, default to desktop) + 20+ -> svg.
+  // < 20 nodes -> list (the bullet view is sufficient for small chains).
   if (nodeCount >= 80) {
     return { mode: "list", width: 600, height: 0, reason: "node_count>=80" };
   }
@@ -54,7 +57,13 @@ export function chooseLayoutMode(
     return { mode: "timeline", width: 360, height: 600, reason: "mobile+node_count>=20" };
   }
   if (nodeCount >= 20) {
-    return { mode: "svg", width: 800, height: 600, reason: "node_count>=20+desktop" };
+    // Treat "unknown" as desktop: the report HTML is server-rendered
+    // and the client can scroll horizontally on a narrow viewport.
+    const reason =
+      viewport === "unknown"
+        ? "node_count>=20+default_desktop"
+        : "node_count>=20+desktop";
+    return { mode: "svg", width: 800, height: 600, reason };
   }
   return { mode: "list", width: 600, height: 0, reason: "default" };
 }

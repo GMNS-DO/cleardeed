@@ -402,6 +402,91 @@ describe("A10 ConsumerReportWriter", () => {
     expect(audit.passed).toBe(true);
   });
 
+  it("P3 V2: renders SVG diagram in the lineage section when node count is ≥ 20 (default desktop)", () => {
+    // V2 dispatches to renderLineageSvg when chooseLayoutMode returns
+    // "svg". With the new default (unknown -> desktop), 20+ nodes
+    // always produce an SVG diagram. The bullet list is still
+    // rendered below the diagram for accessibility / screen readers.
+    //
+    // To produce 20+ nodes we need parties in the mutation history.
+    // In production the Bhulekh back page supplies them; here we
+    // inject them via the rawText field of each mutation entry.
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: Array.from({ length: 25 }, (_, i) => ({
+            mutationNumber: `MUT-${i}`,
+            mutationDate: `0${(i % 9) + 1}/01/202${i % 5}`,
+            plotNo: "415",
+            fromKhatiyan: `${90 + (i % 3)}`,
+            toKhatiyan: `${90 + ((i + 1) % 3)}`,
+            // Each event involves two distinct parties — that gives
+            // the lineage graph 50 person nodes, well over the
+            // 20-node threshold for SVG mode.
+            parties: [
+              { name: `Person ${i}A`, role: "seller" },
+              { name: `Person ${i}B`, role: "buyer" },
+            ],
+            rawText: `Sale from Person ${i}A to Person ${i}B`,
+          })),
+          encumbranceEntries: [],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Harihar Panda", fatherHusbandName: "Bharat Panda", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    // The lineage section is rendered
+    expect(html).toContain("lineage-section");
+    // The count summary is present
+    expect(html).toMatch(/Ownership lineage \(\d+ events?, \d+ owners?/);
+    // V2 marker: lineage-diagram div is emitted (mode=svg) when
+    // node count is >= 20. With 50 person nodes from the parties,
+    // the lineage graph crosses the threshold.
+    expect(html).toContain("lineage-diagram");
+    expect(html).toContain('data-mode="svg"');
+    // The SVG itself is rendered (we don't assert the full markup
+    // here — that's exercised in lineage-layout.test.ts)
+    expect(html).toContain("<svg");
+  });
+
+  it("P3 V2: small lineage (≤ 19 nodes) stays in list mode", () => {
+    // Below the 20-node threshold, the layout decision returns
+    // "list" — no diagram is rendered.
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: Array.from({ length: 3 }, (_, i) => ({
+            mutationNumber: `MUT-${i}`,
+            mutationDate: `0${i + 1}/01/2020`,
+            plotNo: "415",
+            fromKhatiyan: "90",
+            toKhatiyan: "94",
+          })),
+          encumbranceEntries: [],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Harihar Panda", fatherHusbandName: "Bharat Panda", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    expect(html).toContain("lineage-section");
+    expect(html).not.toContain("lineage-diagram");
+  });
   it("does not treat RCCMS placeholder partial results as usable", () => {
     const reportInput = mapToReportInput(
       {

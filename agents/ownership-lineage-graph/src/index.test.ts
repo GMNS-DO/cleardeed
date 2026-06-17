@@ -426,4 +426,37 @@ describe("Layout exports", () => {
     expect(l.width).toBeGreaterThan(0);
     expect(typeof l.reason).toBe("string");
   });
+
+  it("treats unknown viewport as desktop (svg) when 20+ nodes", () => {
+    // Plan §4.2: server-rendered reports don't know the client
+    // viewport, so unknown defaults to desktop SVG. The CSS
+    // horizontal-scroll wrapper handles narrow viewports.
+    const l = chooseLayoutMode(25, "unknown");
+    expect(l.mode).toBe("svg");
+    expect(l.reason).toBe("node_count>=20+default_desktop");
+  });
+
+  it("mobile + 20+ nodes still produces timeline", () => {
+    const l = chooseLayoutMode(25, "mobile");
+    expect(l.mode).toBe("timeline");
+  });
+
+  it("desktop + 20+ nodes produces svg (non-default reason)", () => {
+    const l = chooseLayoutMode(25, "desktop");
+    expect(l.mode).toBe("svg");
+    expect(l.reason).toBe("node_count>=20+desktop");
+  });
+
+  it("returns list for node count below 20 (small chains)", () => {
+    expect(chooseLayoutMode(5, "desktop").mode).toBe("list");
+    expect(chooseLayoutMode(5, "unknown").mode).toBe("list");
+    expect(chooseLayoutMode(5, "mobile").mode).toBe("list");
+  });
+
+  it("returns list for node count >= 80 (browser perf bound)", () => {
+    expect(chooseLayoutMode(80, "desktop").mode).toBe("list");
+    expect(chooseLayoutMode(80, "mobile").mode).toBe("list");
+    expect(chooseLayoutMode(80, "unknown").mode).toBe("list");
+    expect(chooseLayoutMode(80, "unknown").reason).toBe("node_count>=80");
+  });
 });

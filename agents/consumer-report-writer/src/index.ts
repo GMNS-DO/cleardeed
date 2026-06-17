@@ -37,6 +37,8 @@ import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 import { reasonA13 } from "@cleardeed/ownership-lineage-graph";
 import type { A13Result } from "@cleardeed/ownership-lineage-graph";
+import { layoutLineage } from "./lineage-layout";
+import { renderLineageSvg, renderLineageTimeline } from "./lineage-svg";
 
 export type ConsumerReportGenInput = ConsumerReportGenInputData;
 export { ConsumerReportGenInputSchema } from "./mapper";
@@ -3211,6 +3213,8 @@ function buildLineageSection(input: {
     description?: string;
   }>;
   tenants: Array<{ tenantName: string }>;
+  /** Plan §4.2: viewport hint from the client. V2 renderer uses it. */
+  viewport?: "mobile" | "desktop" | "unknown";
 }): string {
   if (
     input.mutationHistory.length === 0 &&
@@ -3224,12 +3228,18 @@ function buildLineageSection(input: {
   try {
     lineage = reasonA13({
       plotNo: input.plotNo || "—",
-      mutationHistory: input.mutationHistory.map((m) => ({
+      mutationHistory: input.mutationHistory.map((m: any) => ({
         mutationNumber: m.mutationNumber,
         mutationDate: m.mutationDate,
         plotNo: m.plotNo,
         fromKhatiyan: m.fromKhatiyan,
         toKhatiyan: m.toKhatiyan,
+        // Plan §4.9 R16: parties and rawText were missing in V1.
+        // Forward them so the lineage graph can extract per-event
+        // ownership transitions and trigger SVG mode for 20+ nodes.
+        parties: m.parties,
+        rawText: m.rawText,
+        docType: m.docType,
       })),
       encumbranceEntries: input.encumbranceEntries,
       tenants: input.tenants.map((t) => ({ tenantName: t.tenantName })),
@@ -3240,6 +3250,36 @@ function buildLineageSection(input: {
   }
 
   if (!lineage || lineage.events.length === 0) return "";
+
+  // Plan §4.1 V2: dispatch to SVG / timeline renderer when the layout
+  // mode is "svg" or "timeline" (i.e. node_count >= 20 + desktop/mobile
+  // viewport). For ≤ 20 nodes or unknown viewport, fall back to the
+  // bullet list (V1 behaviour). Pure-TS layout + SVG renderer.
+  let diagramHtml = "";
+  if (lineage.layout.mode === "svg" || lineage.layout.mode === "timeline") {
+    try {
+      const layoutNodes = lineage.nodes.map((n) => ({
+        id: n.id,
+        label: n.displayName,
+        kind: n.kind,
+      }));
+      const layoutEdges = lineage.edges.map((e) => ({
+        fromId: e.fromNodeId,
+        toId: e.toNodeId,
+        relationship: e.relationship,
+      }));
+      const layout = layoutLineage(layoutNodes, layoutEdges, {
+        maxWidth: lineage.layout.mode === "timeline" ? 360 : 800,
+      });
+      diagramHtml =
+        lineage.layout.mode === "svg"
+          ? renderLineageSvg(layout, { title: `Ownership lineage for plot ${escapeHtml(input.plotNo)}` })
+          : renderLineageTimeline(layout);
+    } catch {
+      // Renderer failure is non-fatal — fall through to the list view.
+      diagramHtml = "";
+    }
+  }
 
   const eventListItems = lineage.events.slice(0, 25).map((e) => `
     <li>
@@ -3264,6 +3304,7 @@ function buildLineageSection(input: {
 
   return `<details class="lineage-section" open>
     <summary>Ownership lineage (${escapeHtml(lineage.summary)})</summary>
+    ${diagramHtml ? `<div class="lineage-diagram" data-mode="${lineage.layout.mode}" data-reason="${escapeHtml(lineage.layout.reason)}">${diagramHtml}</div>` : ""}
     <ul class="lineage-events">${eventListItems}</ul>
     ${flagBadges ? `<h4>Flags</h4><ul class="lineage-flags">${flagBadges}</ul>` : ""}
   </details>`;
@@ -3323,9 +3364,15 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
       plotNo: m.plotNo,
       fromKhatiyan: m.fromKhatiyan,
       toKhatiyan: m.toKhatiyan,
+      // Plan §4.9 R16: forward parties + rawText + docType so the
+      // lineage graph can produce 20+ nodes for SVG mode.
+      parties: m.parties,
+      rawText: m.rawText,
+      docType: m.docType,
     })),
     encumbranceEntries: encumbrances,
     tenants: (backPage.tenants ?? []) as Array<{ tenantName: string }>,
+    viewport: "unknown",
   });
 
   return `<div class="info-box ror-back-page-panel">
