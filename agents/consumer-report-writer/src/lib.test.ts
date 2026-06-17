@@ -306,8 +306,13 @@ describe("P1 P0 accuracy gate (placeholder)", () => {
       });
     }
 
-    // Test artifacts: save this test run to the output dir
-    const outputPath = path.join(process.cwd(), "lib-held-out-test-24-name.json");
+    // Test artifacts: save this test run to a dedicated output dir
+    const outputDir = path.join(process.cwd(), "test-output");
+    try {
+      // Best-effort create the output dir; ignore if it already exists
+      require("fs").mkdirSync(outputDir, { recursive: true });
+    } catch (_) { /* ignore */ }
+    const outputPath = path.join(outputDir, "odia-held-out-24-name.json");
     writeFileSync(outputPath, JSON.stringify({
       passRate,
       exactMatches: exactMatches.length,
