@@ -21,6 +21,18 @@ describe("cost-tracker.ts", () => {
     it("returns Haiku for bhulekh_back (plan §3.1)", () => {
       expect(modelForDocType("bhulekh_back")).toBe("claude-haiku-4-5");
     });
+
+    it("returns Sonnet for user_upload_ec (P2 V2: legal-text, unknown source)", () => {
+      expect(modelForDocType("user_upload_ec")).toBe("claude-sonnet-4-5");
+    });
+
+    it("returns Haiku for user_upload_ror (P2 V2: structured RoR)", () => {
+      expect(modelForDocType("user_upload_ror")).toBe("claude-haiku-4-5");
+    });
+
+    it("returns Sonnet for mutation_order_3g (P2 V2: ordered chronology)", () => {
+      expect(modelForDocType("mutation_order_3g")).toBe("claude-sonnet-4-5");
+    });
   });
 
   describe("estimateCost (plan §3.2)", () => {

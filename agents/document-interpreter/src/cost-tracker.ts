@@ -44,7 +44,16 @@ export type CostEstimate = {
 
 /** Choose model for a given doc type. Plan §3.1: Sonnet for IGR EC, Haiku for Bhulekh back. */
 export function modelForDocType(docType: DocType): "claude-sonnet-4-5" | "claude-haiku-4-5" {
-  return docType === "igr_ec" ? "claude-sonnet-4-5" : "claude-haiku-4-5";
+  // Sonnet for legal-text / unknown-source docs (EC variants, mutation
+  // order). Haiku for structured RoR-style docs.
+  if (
+    docType === "igr_ec" ||
+    docType === "user_upload_ec" ||
+    docType === "mutation_order_3g"
+  ) {
+    return "claude-sonnet-4-5";
+  }
+  return "claude-haiku-4-5";
 }
 
 export function estimateCost(model: string, usage: Usage): number {

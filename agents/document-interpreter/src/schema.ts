@@ -18,7 +18,30 @@ export const DocumentInputSchema = z.union([
 ]);
 export type DocumentInput = z.infer<typeof DocumentInputSchema>;
 
-export const DocTypeSchema = z.enum(["igr_ec", "bhulekh_back"]);
+/**
+ * P2 V2 doc types: user-uploaded EC and RoR PDFs/PNGs.
+ *
+ * "user_upload_ec" — the user uploads an EC PDF/PNG they have
+ *   (e.g. from a sub-registrar office, or a downloaded IGR EC
+ *   screenshot). Sonnet is used because we don't know the source
+ *   and EC text is legal in nature.
+ *
+ * "user_upload_ror" — the user uploads a Bhulekh RoR PDF/PNG
+ *   (a screenshot of the back page, typically). Haiku is used
+ *   because RoR is structured like bhulekh_back.
+ *
+ * "mutation_order_3g" — the user uploads a RoR with 3+ generations
+ *   of mutation history and we extract a per-generation ordered
+ *   sequence. Sonnet because the order field is critical and the
+ *   model needs to reason about chronology.
+ */
+export const DocTypeSchema = z.enum([
+  "igr_ec",
+  "bhulekh_back",
+  "user_upload_ec",
+  "user_upload_ror",
+  "mutation_order_3g",
+]);
 export type DocType = z.infer<typeof DocTypeSchema>;
 
 export const SourceQuoteSchema = z.object({

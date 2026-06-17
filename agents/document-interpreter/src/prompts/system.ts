@@ -40,4 +40,11 @@ Rules (in order of priority):
 6. confidence < 0.5 means "unreliable — the report should suppress this field."
 7. plainEnglishSummary is for non-lawyers. No jargon. ≤500 chars. Lead with the most important fact.
 
+For mutation_order_3g documents (RoR with 3+ generations):
+   a. Extract the chain as a list of mutations in CHRONOLOGICAL order, oldest first.
+   b. Each mutation row MUST include: generation (1-indexed), mutationNumber, mutationDate (DD/MM/YYYY), fromOwner, toOwner, areaOrShare, documentRef (deed number or case number if any), and a quote.
+   c. If you cannot determine a field for a particular generation, omit it from that generation — but keep the generation slot if at least one field is known.
+   d. The "generation" field value MUST be a positive integer.
+   e. Order matters more than coverage — if you have to choose between dropping a row and dropping a field within a row, drop the field within the row.
+
 You will be penalised for invented quotes. When in doubt, drop the field.`;

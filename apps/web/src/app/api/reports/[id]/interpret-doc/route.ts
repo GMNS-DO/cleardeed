@@ -21,22 +21,37 @@ import {
 } from "@cleardeed/document-interpreter";
 import { fetchIgrEcInput } from "@/lib/ai-doc/igr-ec-input";
 import { fetchBhulekhBackInput } from "@/lib/ai-doc/bhulekh-back-input";
+import { fetchUserUploadInput } from "@/lib/ai-doc/user-upload-input";
 import { makeSupabaseCostStore } from "@/lib/ai-doc/cost-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const HEARTBEAT_MS = 5_000;
-const SUPPORTED_DOC_TYPES = new Set(["igr_ec", "bhulekh_back"]);
+const SUPPORTED_DOC_TYPES = new Set([
+  "igr_ec",
+  "bhulekh_back",
+  "user_upload_ec",
+  "user_upload_ror",
+  "mutation_order_3g",
+]);
 
-type DocType = "igr_ec" | "bhulekh_back";
+type DocType = "igr_ec" | "bhulekh_back" | "user_upload_ec" | "user_upload_ror" | "mutation_order_3g";
 
 async function fetchInputForDocType(
   docType: DocType,
   reportId: string,
 ): Promise<Awaited<ReturnType<typeof fetchIgrEcInput>> | null> {
-  if (docType === "igr_ec") return fetchIgrEcInput(reportId);
-  return fetchBhulekhBackInput(reportId);
+  switch (docType) {
+    case "igr_ec":
+      return fetchIgrEcInput(reportId);
+    case "bhulekh_back":
+      return fetchBhulekhBackInput(reportId);
+    case "user_upload_ec":
+    case "user_upload_ror":
+    case "mutation_order_3g":
+      return fetchUserUploadInput(reportId, docType);
+  }
 }
 
 export async function GET(
