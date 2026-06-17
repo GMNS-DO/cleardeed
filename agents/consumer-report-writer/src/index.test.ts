@@ -366,6 +366,42 @@ describe("A10 ConsumerReportWriter", () => {
     expect(audit.passed).toBe(true);
   });
 
+  it("P3 V1: renders the ownership lineage section when back-page data is present", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: [
+            { mutationNumber: "MUT-1", mutationDate: "01/01/2020", plotNo: "415", fromKhatiyan: "90", toKhatiyan: "94" },
+            { mutationNumber: "MUT-2", mutationDate: "02/01/2022", plotNo: "415", fromKhatiyan: "94", toKhatiyan: "94" },
+          ],
+          encumbranceEntries: [
+            { type: "Mortgage", partyName: "Sample Bank", docNo: "DOC-9", date: "02/02/2021", amount: "100000" },
+          ],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Harihar Panda", fatherHusbandName: "Bharat Panda", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    // A13 lineage section is rendered (per plan §4.1)
+    expect(html).toContain("lineage-section");
+    // Summary text matches the count-only regex
+    expect(html).toMatch(/Ownership lineage \(\d+ events?, \d+ owners?/);
+    // MORTGAGE_NO_RELEASE is a critical flag — should appear because
+    // the mortgage has no matching release.
+    expect(html).toContain("flag-critical");
+    // Audit passes
+    const audit = auditReport(html);
+    expect(audit.passed).toBe(true);
+  });
+
   it("does not treat RCCMS placeholder partial results as usable", () => {
     const reportInput = mapToReportInput(
       {

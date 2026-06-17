@@ -34,6 +34,8 @@ export default defineConfig({
       "agents/consumer-report-writer/src/**/*.test.ts",
       "agents/output-auditor/src/**/*.test.ts",
       "agents/land-classifier/**/*.test.ts",
+      "agents/ownership-lineage-graph/**/*.test.ts",
+      "agents/document-interpreter/**/*.test.ts",
       "packages/pdf-renderer/src/**/*.test.ts",
       "apps/web/src/lib/track.test.ts",
       "apps/web/src/lib/db.expiry.test.ts",
@@ -100,6 +102,8 @@ export default defineConfig({
       "@cleardeed/ownership-reasoner": path.resolve(__dirname, "agents/ownership-reasoner/index.ts"),
       "@cleardeed/encumbrance-reasoner": path.resolve(__dirname, "agents/encumbrance-reasoner/index.ts"),
       "@cleardeed/output-auditor": path.resolve(__dirname, "agents/output-auditor/src/index.ts"),
+      "@cleardeed/ownership-lineage-graph": path.resolve(__dirname, "agents/ownership-lineage-graph/src/index.ts"),
+      "@cleardeed/document-interpreter": path.resolve(__dirname, "agents/document-interpreter/src/index.ts"),
     },
   },
 });

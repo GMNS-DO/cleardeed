@@ -35,6 +35,8 @@ import {
 } from "./ror-insights";
 import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
+import { reasonA13 } from "@cleardeed/ownership-lineage-graph";
+import type { A13Result } from "@cleardeed/ownership-lineage-graph";
 
 export type ConsumerReportGenInput = ConsumerReportGenInputData;
 export { ConsumerReportGenInputSchema } from "./mapper";
@@ -3191,6 +3193,81 @@ function buildRoRPlotTablePanel(plotRows: any[], selectedPlotNo: unknown): strin
   </details>`;
 }
 
+function buildLineageSection(input: {
+  plotNo: string;
+  mutationHistory: Array<{
+    mutationNumber?: string;
+    mutationDate?: string;
+    plotNo?: string;
+    fromKhatiyan?: string;
+    toKhatiyan?: string;
+  }>;
+  encumbranceEntries: Array<{
+    type?: string;
+    partyName?: string;
+    docNo?: string;
+    date?: string;
+    amount?: string;
+    description?: string;
+  }>;
+  tenants: Array<{ tenantName: string }>;
+}): string {
+  if (
+    input.mutationHistory.length === 0 &&
+    input.encumbranceEntries.length === 0 &&
+    input.tenants.length === 0
+  ) {
+    return "";
+  }
+
+  let lineage: A13Result | null = null;
+  try {
+    lineage = reasonA13({
+      plotNo: input.plotNo || "—",
+      mutationHistory: input.mutationHistory.map((m) => ({
+        mutationNumber: m.mutationNumber,
+        mutationDate: m.mutationDate,
+        plotNo: m.plotNo,
+        fromKhatiyan: m.fromKhatiyan,
+        toKhatiyan: m.toKhatiyan,
+      })),
+      encumbranceEntries: input.encumbranceEntries,
+      tenants: input.tenants.map((t) => ({ tenantName: t.tenantName })),
+    });
+  } catch {
+    return "";
+  }
+
+  if (!lineage || lineage.events.length === 0) return "";
+
+  const eventListItems = lineage.events.slice(0, 25).map((e) => `
+    <li>
+      <strong>${escapeHtml(e.displayName)}</strong>
+      ${e.docNo ? `<span class="mono"> (${escapeHtml(e.docNo)})</span>` : ""}
+      ${e.date ? `<span class="muted"> &mdash; ${escapeHtml(e.date)}</span>` : ""}
+    </li>`).join("");
+
+  const flagBadges = lineage.flags
+    .filter((f) => f.code !== "OUTDATED_RECORDS")
+    .map((f) => {
+      const severityClass =
+        f.severity === "critical" ? "flag-critical" :
+        f.severity === "warn" ? "flag-warn" :
+        "flag-info";
+      return `<li class="${severityClass}">
+        <strong>${escapeHtml(f.headline)}</strong>
+        <p>${escapeHtml(f.body)}</p>
+        <p class="muted">${escapeHtml(f.actionRequired)}</p>
+      </li>`;
+    }).join("");
+
+  return `<details class="lineage-section" open>
+    <summary>Ownership lineage (${escapeHtml(lineage.summary)})</summary>
+    <ul class="lineage-events">${eventListItems}</ul>
+    ${flagBadges ? `<h4>Flags</h4><ul class="lineage-flags">${flagBadges}</ul>` : ""}
+  </details>`;
+}
+
 function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): string {
   if (!backPage) {
     if (insights.length === 0) return "";
@@ -3233,10 +3310,28 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
       <td>${escapeHtml(remark.rawText ?? "—")}</td>
     </tr>`).join("");
 
+  // P3 V1: ownership lineage section (A13). Plan §4.1: data layer only.
+  // We render a bullet list of events + flag badges. The summary is
+  // count-only and validated against the SummaryTextSchema regex in
+  // red-flags.ts and lineage-graph/schema.ts.
+  const lineageSection = buildLineageSection({
+    plotNo: "—",
+    mutationHistory: mutations.map((m: any) => ({
+      mutationNumber: m.mutationNumber,
+      mutationDate: m.mutationDate,
+      plotNo: m.plotNo,
+      fromKhatiyan: m.fromKhatiyan,
+      toKhatiyan: m.toKhatiyan,
+    })),
+    encumbranceEntries: encumbrances,
+    tenants: (backPage.tenants ?? []) as Array<{ tenantName: string }>,
+  });
+
   return `<div class="info-box ror-back-page-panel">
     <span class="info-label">&#8505; Bhulekh Back Page timeline</span>
     <p>Back Page entries are source anchors from Bhulekh. They can indicate mutation, charge, restriction, or case-reference activity, but they are not a substitute for IGR EC, mutation-status, or lawyer review.</p>
     ${buildInsightHighlights(insights)}
+    ${lineageSection}
     ${mutationRows ? `<details class="tenant-table-details" open><summary>Mutation history (${mutations.length})</summary><table class="data-table compact-table"><thead><tr><th>Mutation no.</th><th>Date</th><th>Plot</th><th>From khata</th><th>To khata</th></tr></thead><tbody>${mutationRows}</tbody></table></details>` : ""}
     ${encumbranceRows ? `<details class="tenant-table-details" open><summary>Encumbrance-style entries (${encumbrances.length})</summary><table class="data-table compact-table"><thead><tr><th>Type</th><th>Party</th><th>Doc no.</th><th>Date</th><th>Amount</th></tr></thead><tbody>${encumbranceRows}</tbody></table></details>` : ""}
     ${remarkRows ? `<details class="tenant-table-details"><summary>Back Page remarks (${remarks.length})</summary><table class="data-table compact-table"><thead><tr><th>Category</th><th>Extracted anchor</th><th>Raw remark</th></tr></thead><tbody>${remarkRows}</tbody></table></details>` : ""}
