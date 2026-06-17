@@ -23,6 +23,7 @@ import {
   buildReportUrl,
 } from "@/lib/report-access";
 import { FunnelTracker } from "@/components/FunnelTracker";
+import { AIDocSummaryCard } from "@/components/AIDocSummaryCard";
 import RefreshButtonClient from "./RefreshButtonClient";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,10 @@ async function LiveReport({ reportId }: { reportId: string }) {
       <>
         <FunnelTracker event="report_delivered" reportId={reportId} />
         <div dangerouslySetInnerHTML={{ __html: htmlWithExpiry }} />
+        {/* AI document summary — V1 ships igr_ec only. V1.5 adds bhulekh_back. */}
+        <div style={{ maxWidth: 720, margin: "32px auto 0", padding: "0 20px" }}>
+          <AIDocSummaryCard reportId={reportId} docType="igr_ec" />
+        </div>
       </>
     );
   } catch (error) {

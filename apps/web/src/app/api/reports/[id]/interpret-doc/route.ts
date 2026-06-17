@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReport } from "@/lib/db";
 import { interpretDocument } from "@cleardeed/document-interpreter";
+import { fetchIgrEcInput } from "@/lib/ai-doc/igr-ec-input";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,9 +49,8 @@ export async function GET(
   if (!reportResult.report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
-  const report = reportResult.report;
 
-  const input = await fetchIgrEcInput(report);
+  const input = await fetchIgrEcInput(reportId);
   if (!input) {
     return NextResponse.json(
       { error: "Document not available for this report" },
@@ -124,17 +124,4 @@ export async function GET(
       Connection: "keep-alive",
     },
   });
-}
-
-/**
- * Fetch the IGR EC document for the report. The pipeline stores the
- * raw HTML in `report.sources.igrSroData` (or similar). V1 returns
- * the HTML; V2 may also return a PDF for certified copy.
- */
-async function fetchIgrEcInput(report: any): Promise<{ kind: "html"; content: string } | null> {
-  const igr = report.sources?.igrSroData ?? report.sources?.igrEcData;
-  if (typeof igr === "string" && igr.length > 0) {
-    return { kind: "html", content: igr };
-  }
-  return null;
 }
