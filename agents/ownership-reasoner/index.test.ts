@@ -23,9 +23,11 @@ describe("Odia transliteration", () => {
   });
 
   it("transliterates Sunita Devi's name", () => {
+    // P5b: the popular Odia spelling uses "Debi" (not "Devi").
+    // The dict now maps ଦେବୀ → "Debi" per golden-path.ts:108.
     const result = transliterateOdia("ସୁନୀତା ଦେବୀ");
     expect(result.toLowerCase()).toContain("sunita");
-    expect(result.toLowerCase()).toContain("devi");
+    expect(result.toLowerCase()).toContain("debi");
   });
 
   it("transliterates Mohapatra", () => {
@@ -113,6 +115,74 @@ describe("Name matching", () => {
     );
     expect(result.nameMatch).toBe("partial");
     expect(result.method).toMatch(/surname|odia_surname/);
+  });
+
+  // P1 P2: fuzzy surname match (Damerau-Levenshtein + cluster fast-path).
+  // These cover the high-frequency Bhulekh-OCR confusions that pure
+  // Dice misses (Dice("Mahapatra","Mohapatra") = 0.81, below 0.85).
+  //
+  // To exercise the new path, we need claimed/tenant pairs where:
+  //   - full-name Dice is below 0.60 (so dice_full_name doesn't fire)
+  //   - surname Dice is below 0.85 (so surname_dice doesn't fire)
+  //   - claimed surname is in a cluster with the tenant's transliterated
+  //     surname (so fuzzy_surname_cluster fires)
+  //   - odia_surname_map doesn't fire (tenant is in Latin, not Odia script)
+  it("fuzzy_surname_cluster: Ganesh Panda vs Kumar Parida (low full-name, cluster match)", () => {
+    // Ganesh Panda vs Kumar Parida: full-name dice 0.30 (below 0.60).
+    // Surnames Panda and Parida are both in the mohapatra cluster.
+    const result = matchOwnerName(
+      "Ganesh Panda",
+      "Kumar Parida" // Latin tenant, transliterates to "Kumar Parida"
+    );
+    expect(result.matches).toBe(true);
+    expect(result.method).toBe("fuzzy_surname_cluster");
+    expect(result.confidence).toBeCloseTo(0.65, 2);
+  });
+
+  it("fuzzy_surname_cluster: Ganesh Sahoo vs Kumar Sahu (sahu cluster)", () => {
+    // Sahoo and Sahu are both in the sahu cluster.
+    const result = matchOwnerName(
+      "Ganesh Sahoo",
+      "Kumar Sahu"
+    );
+    expect(result.matches).toBe(true);
+    expect(result.method).toBe("fuzzy_surname_cluster");
+  });
+
+  it("fuzzy_surname_cluster: Kumar Jena vs Ganesh Jenaa (jena cluster, 1-edit)", () => {
+    // Jena and Jenaa are both in the jena cluster.
+    const result = matchOwnerName(
+      "Kumar Jena",
+      "Ganesh Jenaa"
+    );
+    expect(result.matches).toBe(true);
+    expect(result.method).toBe("fuzzy_surname_cluster");
+  });
+
+  it("fuzzy_surname_damerau_levenshtein: 1-edit surnames not in cluster", () => {
+    // Use surnames where the claimed one is NOT in any cluster, so the
+    // cluster fast-path is skipped and D-L runs.
+    // "Pandu" is not in any cluster; "Panda" IS in mohapatra cluster.
+    // Cluster check: pandu NOT in cluster → false. So D-L runs.
+    // D-L: 1 edit (substitute u->a), similarity 0.80, match.
+    // Use a multi-word pair with low full-name Dice so dice_full_name
+    // doesn't fire first.
+    const result = matchOwnerName(
+      "Kiran Pandu",
+      "Manoj Panda" // Latin tenant, full-name dice 0.44 (below 0.60)
+    );
+    expect(result.matches).toBe(true);
+    expect(result.method).toBe("fuzzy_surname_damerau_levenshtein");
+  });
+
+  it("does NOT fuzzy-match unrelated surnames (Ganesh Rout vs Kumar Behera)", () => {
+    // Rout and Behera are NOT in the same cluster.
+    // D-L distance: Rout vs Behera = 6 edits. Similarity 0. Below threshold.
+    const result = matchOwnerName(
+      "Ganesh Rout",
+      "Kumar Behera"
+    );
+    expect(result.method.startsWith("fuzzy_surname_")).toBe(false);
   });
 });
 

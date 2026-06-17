@@ -30,6 +30,8 @@
       "@cleardeed/orchestrator": ["../../packages/orchestrator/src/index.ts"],
       "@cleardeed/consumer-report-writer": ["../../agents/consumer-report-writer/src/index.ts"],
       "@cleardeed/consumer-report-writer/fixtures/golden-path": ["../../agents/consumer-report-writer/fixtures/golden-path.ts"],
+      "@cleardeed/consumer-report-writer/translit/feedback-merge": ["../../agents/consumer-report-writer/src/translit/feedback-merge.ts"],
+      "@cleardeed/consumer-report-writer/translit/feedback-cron": ["../../agents/consumer-report-writer/src/translit/feedback-cron.ts"],
       "@cleardeed/ownership-reasoner": ["../../agents/ownership-reasoner/index.ts"],
       "@cleardeed/encumbrance-reasoner": ["../../agents/encumbrance-reasoner/index.ts"],
       "@cleardeed/regulatory-screener": ["../../agents/regulatory-screener/index.ts"],
@@ -38,7 +40,11 @@
       "@cleardeed/pdf-renderer": ["../../packages/pdf-renderer/index.ts"],
       "@cleardeed/fetcher-public-dashboard": ["../../packages/fetchers/public-dashboard/src/index.ts"],
       "@cleardeed/fetcher-govt-fee": ["../../packages/fetchers/govt-fee/src/index.ts"],
-      "@cleardeed/fetcher-igr-certified-copy": ["../../packages/fetchers/igr-certified-copy/src/index.ts"]
+      "@cleardeed/fetcher-igr-certified-copy": ["../../packages/fetchers/igr-certified-copy/src/index.ts"],
+      "@cleardeed/ownership-lineage-graph": ["../../agents/ownership-lineage-graph/src/index.ts"],
+      "@cleardeed/document-interpreter": ["../../agents/document-interpreter/src/index.ts"],
+      "@cleardeed/document-interpreter/cost-tracker": ["../../agents/document-interpreter/src/cost-tracker.ts"],
+      "@cleardeed/document-interpreter/schema": ["../../agents/document-interpreter/src/schema.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

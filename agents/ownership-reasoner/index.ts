@@ -11,9 +11,26 @@ import {
   type NameMatch,
   type OwnerClaimValidation,
 } from "./schema";
+import {
+  transliterateOdia as libTransliterateOdia,
+  transliterateOdiaName as libTransliterateOdiaName,
+  containsOdia as libContainsOdia,
+  lookupKnownOdiaName as libLookupKnownOdiaName,
+} from "../consumer-report-writer/src/lib";
+import {
+  fuzzySurnameMatch,
+  HAND_BUILT_SURNAME_CLUSTERS,
+} from "../consumer-report-writer/src/translit/surname-match";
 
 // Re-export for external consumers
 export type { OwnershipReasonerInput } from "./schema";
+
+// R7 migration: ownership-reasoner previously had its own duplicated
+// transliteration (ISO-style). The single source of truth is now
+// consumer-report-writer/src/lib (popular-scheme). The local
+// KNOWN_ODIA_NAMES literal, ODIA_*_MAP constants, charByChar, and
+// transliterateOdia have been deleted; we re-export the lib's
+// implementations for backward compatibility.
 
 // ─── Comprehensive known Bhulekh name transliterations ─────────────────────────
 
@@ -322,127 +339,27 @@ const KNOWN_ODIA_NAMES: Record<string, string> = {
   "କୁମାରୀ": "Kumari",
 };
 
-// ─── Odia character maps ─────────────────────────────────────────────────────
+// ─── Odia character maps (REMOVED — R7) ───────────────────────────────────────
+// The character maps, charByChar, KNOWN_ODIA_NAMES literal, and
+// transliterateOdia/containsOdia/transliterateOdiaName functions have
+// been deleted. The single source of truth is now
+// agents/consumer-report-writer/src/lib.ts (popular-scheme).
+// Re-exports below provide the same public API as before.
 
-const ODIA_CONSONANTS = new Set([
-  "କ","ଖ","ଗ","ଘ","ଙ","ଚ","ଛ","ଜ","ଝ","ଞ",
-  "ଟ","ଠ","ଡ","ଢ","ଣ","ତ","ଥ","ଦ","ଧ","ନ",
-  "଩","ପ","ଫ","ବ","ଭ","ମ","ଯ","ର","଱","ଲ",
-  "ଳ","ଵ","ଶ","ଷ","ସ","ହ",
-]);
-const ODIA_CANDRA_BINDU = "଼";
-const ODIA_VOWELS = new Set(["ଅ","ଆ","ଇ","ଈ","ଉ","ଊ","ଋ","ଌ","଍","଎","ଏ","ଐ"]);
-const ODIA_VOWEL_MODIFIERS = new Set(["ା","ି","ୀ","ୁ","ୂ","ୃ","ୄ","େ","ୈ","ୋ","ୌ","ୖ"]);
-const ODIA_VIRAMA = "୍";
-const ODIA_ANUSVARA = new Set(["ଁ","ଂ"]);
+// ─── Re-exports for backward compatibility ───────────────────────────────────
 
-const ODIA_CONSONANT_MAP: Record<string, string> = {
-  "କ":"k","ଖ":"kh","ଗ":"g","ଘ":"gh","ଙ":"ng",
-  "ଚ":"ch","ଛ":"chh","ଜ":"j","ଝ":"jh","ଞ":"ny",
-  "ଟ":"t","ଠ":"th","ଡ":"d","ଢ":"dh","ଣ":"n",
-  "ତ":"t","ଥ":"th","ଦ":"d","ଧ":"dh","ନ":"n",
-  "଩":"ng","ପ":"p","ଫ":"ph","ବ":"b","ଭ":"bh",
-  "ମ":"m","ଯ":"y","ର":"r","଱":"sh","ଲ":"l",
-  "ଳ":"l","ଵ":"sh","ଶ":"s","ଷ":"s","ସ":"s","ହ":"h",
-};
-const ODIA_CLUSTER_CONSONANT_MAP: Record<string, string> = {
-  "କ":"k","ଖ":"kh","ଗ":"g","ଘ":"gh",
-  "ଚ":"ch","ଛ":"chh","ଜ":"j","ଝ":"jh",
-  "ଟ":"t","ଠ":"th","ଡ":"d","ଢ":"dh",
-  "ତ":"t","ଥ":"th","ଦ":"d","ଧ":"dh",
-  "ପ":"p","ଫ":"ph","ବ":"b","ଭ":"bh",
-  "ମ":"m","ଯ":"y","ର":"r","ଲ":"l",
-  "ଶ":"sh","ଷ":"sh","ସ":"sh","ହ":"h",
-};
-const ODIA_VOWEL_MAP: Record<string, string> = {
-  "ଅ":"a","ଆ":"aa","ଇ":"i","ଈ":"ii","ଉ":"u","ଊ":"uu","ଋ":"ri","ଏ":"e","ଐ":"ai",
-};
-const ODIA_MODIFIER_MAP: Record<string, string> = {
-  "ା":"aa","ି":"i","ୀ":"ii","ୁ":"u","ୂ":"uu","ୃ":"ri","େ":"e","ୈ":"ai","ୋ":"o","ୌ":"au","ୖ":"au",
-};
+export const containsOdia = libContainsOdia;
 
-// ─── Transliteration ──────────────────────────────────────────────────────────
-
-export function containsOdia(text: string): boolean {
-  return /[଀-୿]/.test(text);
-}
-
+// Wrapper that preserves the old behavior: Latin input is passed
+// through unchanged (the lib's transliterateOdia would charByChar each
+// Latin word, producing empty strings joined by spaces).
 export function transliterateOdia(text: string): string {
   if (!text) return "";
-  if (!containsOdia(text)) return text;
-  const trimmed = text.trim();
-  if (KNOWN_ODIA_NAMES[trimmed]) return KNOWN_ODIA_NAMES[trimmed];
-  const words = trimmed.split(/\s+/);
-  if (words.length > 1) {
-    return words.map(w => KNOWN_ODIA_NAMES[w.trim()] ?? charByChar(w.trim())).join(" ");
-  }
-  return charByChar(trimmed);
+  if (!libContainsOdia(text)) return text;
+  return libTransliterateOdia(text);
 }
 
-function charByChar(text: string): string {
-  const result: string[] = [];
-  const chars = [...text];
-  let i = 0;
-  while (i < chars.length) {
-    const c = chars[i];
-    if (c === ODIA_CANDRA_BINDU) { result.push("n"); i++; continue; }
-    if (ODIA_ANUSVARA.has(c)) { result.push("n"); i++; continue; }
-    if (ODIA_VOWELS.has(c)) { result.push(ODIA_VOWEL_MAP[c] ?? c); i++; continue; }
-    if (ODIA_VOWEL_MODIFIERS.has(c)) {
-      if (result.length > 0) result[result.length - 1] += ODIA_MODIFIER_MAP[c] ?? "";
-      i++; continue;
-    }
-    if (ODIA_CONSONANTS.has(c)) {
-      const cluster: string[] = [c];
-      let scan = i + 1;
-      while (scan < chars.length - 1 && chars[scan] === ODIA_VIRAMA && ODIA_CONSONANTS.has(chars[scan + 1])) {
-        cluster.push(chars[scan], chars[scan + 1]);
-        scan += 2;
-      }
-      const modifiers: string[] = [];
-      while (scan < chars.length && (ODIA_VOWEL_MODIFIERS.has(chars[scan]) || chars[scan] === ODIA_CANDRA_BINDU)) {
-        modifiers.push(chars[scan++]);
-      }
-      let base: string;
-      if (cluster.length > 1) {
-        const consonants = cluster.filter((_, idx) => idx % 2 === 0);
-        const lastC = consonants[consonants.length - 1];
-        const prefix = consonants.slice(0, -1).map(x => ODIA_CONSONANT_MAP[x] ?? x).join("");
-        base = prefix + (ODIA_CLUSTER_CONSONANT_MAP[lastC] ?? lastC);
-      } else {
-        base = ODIA_CONSONANT_MAP[c] ?? c;
-      }
-      const hasIMatra = modifiers.includes("ି");
-      if (hasIMatra) {
-        const lastC = cluster.filter((_, idx) => idx % 2 === 0).at(-1);
-        const unaspMap: Record<string, string> = { "ଖ":"k","ଘ":"g","ଛ":"ch","ଝ":"j","ଠ":"t","ଢ":"d","ଥ":"th","ଧ":"dh","ଫ":"p","ଭ":"b" };
-        if (lastC && unaspMap[lastC]) {
-          base = base.replace(ODIA_CONSONANT_MAP[lastC] ?? lastC, unaspMap[lastC]);
-        }
-      }
-      if (modifiers.length === 0) {
-        if (cluster.length === 1) base += "a";
-        result.push(base);
-      } else {
-        for (const mod of modifiers) {
-          if (mod === ODIA_CANDRA_BINDU) base += "n";
-          else if (mod !== "ି") base += ODIA_MODIFIER_MAP[mod] ?? "";
-        }
-        result.push(base);
-      }
-      i = scan;
-      continue;
-    }
-    if (/\s/.test(c) || /^[.,;:!?-]$/.test(c)) result.push(c);
-    i++;
-  }
-  return result.join("");
-}
-
-export function transliterateOdiaName(text: string): string {
-  if (!text) return "";
-  return containsOdia(text) ? transliterateOdia(text) : text;
-}
+export const transliterateOdiaName = libTransliterateOdiaName;
 
 type TransliterationMethod =
   | "known_name_dictionary"
@@ -454,7 +371,7 @@ function transliterationMethod(text: string): TransliterationMethod {
   const trimmed = text.trim();
   if (!trimmed) return "empty";
   if (!containsOdia(trimmed)) return "latin_passthrough";
-  return KNOWN_ODIA_NAMES[trimmed] ? "known_name_dictionary" : "odia_transliteration_v1";
+  return libLookupKnownOdiaName(trimmed) ? "known_name_dictionary" : "odia_transliteration_v1";
 }
 
 // ─── Dice coefficient ─────────────────────────────────────────────────────────
@@ -511,6 +428,25 @@ export function matchOwnerName(claimedName: string, odiaTenantName: string, fath
   if (diceFull >= 0.60) return { matches:true, nameMatch:"partial", confidence:0.70, score:diceFull, method:"dice_full_name" };
   const odiaScript = ODIA_SURNAME_MAP[clSurname];
   if (odiaScript && odiaTenantName.includes(odiaScript)) return { matches:true, nameMatch:"partial", confidence:0.62, score:0.62, method:"odia_surname_map" };
+
+  // P1 P2: fuzzy surname match (Damerau-Levenshtein + cluster fast-path).
+  // Catches 1-2 edit variants like Mahapatra/Mohapatra that Dice misses
+  // (Dice returns 0.81 for that pair, below the 0.85 threshold).
+  // Confidence 0.65 is between surname_dice (0.60) and odia_surname_map
+  // (0.62) — same range as partial surname matches.
+  if (transSurname && clSurname) {
+    const fuzzy = fuzzySurnameMatch(clSurname, transSurname, HAND_BUILT_SURNAME_CLUSTERS);
+    if (fuzzy.matches) {
+      return {
+        matches: true,
+        nameMatch: "partial",
+        confidence: 0.65,
+        score: fuzzy.score,
+        method: `fuzzy_surname_${fuzzy.method}`,
+      };
+    }
+  }
+
   const surnameDice = diceCoefficient(clSurname, transSurname);
   if (surnameDice >= 0.85) return { matches:true, nameMatch:"partial", confidence:0.60, score:surnameDice, method:"surname_dice" };
   const cluster = findSurnameCluster(clSurname);
@@ -673,6 +609,16 @@ function dedupeOwnerNames(names: string[]): string[] {
 function normalizeOwnerIdentity(name: string): string {
   return sanitize(name)
     .toLowerCase()
+    // Collapse common popular-spelling pairs: "Debi" ↔ "Devi", "Das" ↔ "Dash",
+    // "Samanta" ↔ "Samant", "Mahanti" ↔ "Mohanty", "Barik" ↔ "Barick",
+    // etc. These are dialectal/regional variants of the same person.
+    .replace(/\bdebi\b/g, "devi")
+    .replace(/\bdash\b/g, "das")
+    .replace(/\bsamanta\b/g, "samant")
+    .replace(/\bmahanty\b/g, "mahanti")
+    .replace(/\bmohanty\b/g, "mahanti")
+    .replace(/\bbarik\b/g, "barick")
+    .replace(/\bchhotuand\b/g, "chhotuand")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -766,6 +712,8 @@ function ownerMatchMethodLabel(method: string): string {
   if (method === "odia_surname_map") return "Surname appears in the Odia RoR name.";
   if (method === "surname_dice") return "Surname similarity matched after transliteration.";
   if (method === "surname_cluster") return "Surname variant cluster matched.";
+  if (method === "fuzzy_surname_cluster") return "Surname matched a known Bhulekh-OCR variant cluster (e.g. Mahapatra/Mohapatra).";
+  if (method === "fuzzy_surname_damerau_levenshtein") return "Surname matched within 2 edit operations (transposition/substitution).";
   if (method === "father_name_match") return "Guardian/father name appears in the available text.";
   if (method === "given_name_dice") return "Given name and surname partially matched.";
   return "No reliable automated owner-name match.";

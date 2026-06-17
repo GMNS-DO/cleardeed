@@ -35,6 +35,10 @@ import {
 } from "./ror-insights";
 import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
+import { reasonA13 } from "@cleardeed/ownership-lineage-graph";
+import type { A13Result } from "@cleardeed/ownership-lineage-graph";
+import { layoutLineage } from "./lineage-layout";
+import { renderLineageSvg, renderLineageTimeline } from "./lineage-svg";
 
 export type ConsumerReportGenInput = ConsumerReportGenInputData;
 export { ConsumerReportGenInputSchema } from "./mapper";
@@ -236,7 +240,9 @@ export function generateConsumerReport(
       ...(selectTopInsights(riskInsights.title, 2) as any[]),
       ...(selectTopInsights(riskInsights.redFlag, 2) as any[]),
       ...(selectTopInsights(riskInsights.financial, 2) as any[]),
-    ]
+    ],
+    // P3 V3: forward IGR EC entries for the cross-ref table. Plan §4.5.
+    (encumbranceReasoner as any)?.igrEcEntries ?? [],
   );
 
   // ── Derive regulatory flags ────────────────────────────────────────────────────
@@ -3191,7 +3197,148 @@ function buildRoRPlotTablePanel(plotRows: any[], selectedPlotNo: unknown): strin
   </details>`;
 }
 
-function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): string {
+function buildLineageSection(input: {
+  plotNo: string;
+  mutationHistory: Array<{
+    mutationNumber?: string;
+    mutationDate?: string;
+    plotNo?: string;
+    fromKhatiyan?: string;
+    toKhatiyan?: string;
+  }>;
+  encumbranceEntries: Array<{
+    type?: string;
+    partyName?: string;
+    docNo?: string;
+    date?: string;
+    amount?: string;
+    description?: string;
+  }>;
+  /** Plan §4.5: IGR EC entries for cross-document reference. */
+  igrEcEntries?: Array<{
+    docNo?: string;
+    regDate?: string;
+    party1?: string;
+    party2?: string;
+    propertyDesc?: string;
+    consideration?: string;
+    marketValue?: string;
+  }>;
+  tenants: Array<{ tenantName: string }>;
+  /** Plan §4.2: viewport hint from the client. V2 renderer uses it. */
+  viewport?: "mobile" | "desktop" | "unknown";
+}): string {
+  if (
+    input.mutationHistory.length === 0 &&
+    input.encumbranceEntries.length === 0 &&
+    input.tenants.length === 0
+  ) {
+    return "";
+  }
+
+  let lineage: A13Result | null = null;
+  try {
+    lineage = reasonA13({
+      plotNo: input.plotNo || "—",
+      mutationHistory: input.mutationHistory.map((m: any) => ({
+        mutationNumber: m.mutationNumber,
+        mutationDate: m.mutationDate,
+        plotNo: m.plotNo,
+        fromKhatiyan: m.fromKhatiyan,
+        toKhatiyan: m.toKhatiyan,
+        // Plan §4.9 R16: parties and rawText were missing in V1.
+        // Forward them so the lineage graph can extract per-event
+        // ownership transitions and trigger SVG mode for 20+ nodes.
+        parties: m.parties,
+        rawText: m.rawText,
+        docType: m.docType,
+      })),
+      encumbranceEntries: input.encumbranceEntries,
+      igrEcEntries: input.igrEcEntries ?? [],
+      tenants: input.tenants.map((t) => ({ tenantName: t.tenantName })),
+      viewport: "unknown",
+    });
+  } catch {
+    return "";
+  }
+
+  if (!lineage || lineage.events.length === 0) return "";
+
+  // Plan §4.1 V2: dispatch to SVG / timeline renderer when the layout
+  // mode is "svg" or "timeline" (i.e. node_count >= 20 + desktop/mobile
+  // viewport). For ≤ 20 nodes or unknown viewport, fall back to the
+  // bullet list (V1 behaviour). Pure-TS layout + SVG renderer.
+  let diagramHtml = "";
+  if (lineage.layout.mode === "svg" || lineage.layout.mode === "timeline") {
+    try {
+      const layoutNodes = lineage.nodes.map((n) => ({
+        id: n.id,
+        label: n.displayName,
+        kind: n.kind,
+      }));
+      const layoutEdges = lineage.edges.map((e) => ({
+        fromId: e.fromNodeId,
+        toId: e.toNodeId,
+        relationship: e.relationship,
+      }));
+      const layout = layoutLineage(layoutNodes, layoutEdges, {
+        maxWidth: lineage.layout.mode === "timeline" ? 360 : 800,
+      });
+      diagramHtml =
+        lineage.layout.mode === "svg"
+          ? renderLineageSvg(layout, { title: `Ownership lineage for plot ${escapeHtml(input.plotNo)}` })
+          : renderLineageTimeline(layout);
+    } catch {
+      // Renderer failure is non-fatal — fall through to the list view.
+      diagramHtml = "";
+    }
+  }
+
+  const eventListItems = lineage.events.slice(0, 25).map((e) => {
+    // Plan §4.5: render a "see also" badge when the event has a
+    // crossRef. The href points to the IGR EC section anchor
+    // (the report template is expected to render each EC entry
+    // with id="igr-ec-entry-{n}"). The badge is a small pill
+    // link with a tooltip.
+    const crossRef = e.crossRef
+      ? `<a class="lineage-cross-ref" href="${escapeHtml(e.crossRef.href)}" title="Doc no. ${escapeHtml(e.crossRef.matchedDocNo ?? e.docNo ?? "")} also appears in the IGR Encumbrance Certificate section">${escapeHtml(e.crossRef.label)}</a>`
+      : "";
+    return `
+    <li data-event-id="${escapeHtml(e.id)}">
+      <strong>${escapeHtml(e.displayName)}</strong>
+      ${e.docNo ? `<span class="mono"> (${escapeHtml(e.docNo)})</span>` : ""}
+      ${e.date ? `<span class="muted"> &mdash; ${escapeHtml(e.date)}</span>` : ""}
+      ${crossRef}
+    </li>`;
+  }).join("");
+
+  const flagBadges = lineage.flags
+    .filter((f) => f.code !== "OUTDATED_RECORDS")
+    .map((f) => {
+      const severityClass =
+        f.severity === "critical" ? "flag-critical" :
+        f.severity === "warn" ? "flag-warn" :
+        "flag-info";
+      return `<li class="${severityClass}">
+        <strong>${escapeHtml(f.headline)}</strong>
+        <p>${escapeHtml(f.body)}</p>
+        <p class="muted">${escapeHtml(f.actionRequired)}</p>
+      </li>`;
+    }).join("");
+
+  return `<details class="lineage-section" open>
+    <summary>Ownership lineage (${escapeHtml(lineage.summary)})</summary>
+    ${diagramHtml ? `<div class="lineage-diagram" data-mode="${lineage.layout.mode}" data-reason="${escapeHtml(lineage.layout.reason)}">${diagramHtml}</div>` : ""}
+    <ul class="lineage-events">${eventListItems}</ul>
+    ${flagBadges ? `<h4>Flags</h4><ul class="lineage-flags">${flagBadges}</ul>` : ""}
+  </details>`;
+}
+
+function buildRoRBackPagePanel(
+  backPage: any,
+  insights: RoRInsight[] = [],
+  igrEcEntries: Array<{ docNo?: string; regDate?: string; party1?: string; party2?: string; propertyDesc?: string; consideration?: string; marketValue?: string }> = [],
+): string {
   if (!backPage) {
     if (insights.length === 0) return "";
     return `<div class="info-box ror-back-page-panel">
@@ -3233,12 +3380,60 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
       <td>${escapeHtml(remark.rawText ?? "—")}</td>
     </tr>`).join("");
 
+  // P3 V3: render a dedicated IGR EC table with stable anchor IDs so
+  // the lineage event "see also" badges (crossRef) can link to it.
+  // Plan §4.5.
+  const igrEcTable = igrEcEntries.length > 0
+    ? `<details class="tenant-table-details" open>
+        <summary>IGR Encumbrance Certificate entries (${igrEcEntries.length})</summary>
+        <table class="data-table compact-table">
+          <thead><tr><th>Doc no.</th><th>Reg date</th><th>Party 1</th><th>Party 2</th><th>Consideration</th></tr></thead>
+          <tbody>
+            ${igrEcEntries.slice(0, 25).map((entry, idx) => `
+              <tr id="igr-ec-entry-${idx}" data-doc-no="${escapeHtml(entry.docNo ?? "—")}">
+                <td class="mono">${escapeHtml(entry.docNo ?? "—")}</td>
+                <td>${escapeHtml(entry.regDate ?? "—")}</td>
+                <td>${escapeHtml(entry.party1 ?? "—")}</td>
+                <td>${escapeHtml(entry.party2 ?? "—")}</td>
+                <td>${escapeHtml(entry.consideration ?? "—")}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </details>`
+    : "";
+
+  // P3 V1: ownership lineage section (A13). Plan §4.1: data layer only.
+  // We render a bullet list of events + flag badges. The summary is
+  // count-only and validated against the SummaryTextSchema regex in
+  // red-flags.ts and lineage-graph/schema.ts.
+  const lineageSection = buildLineageSection({
+    plotNo: "—",
+    mutationHistory: mutations.map((m: any) => ({
+      mutationNumber: m.mutationNumber,
+      mutationDate: m.mutationDate,
+      plotNo: m.plotNo,
+      fromKhatiyan: m.fromKhatiyan,
+      toKhatiyan: m.toKhatiyan,
+      // Plan §4.9 R16: forward parties + rawText + docType so the
+      // lineage graph can produce 20+ nodes for SVG mode.
+      parties: m.parties,
+      rawText: m.rawText,
+      docType: m.docType,
+    })),
+    encumbranceEntries: encumbrances,
+    igrEcEntries,
+    tenants: (backPage.tenants ?? []) as Array<{ tenantName: string }>,
+    viewport: "unknown",
+  });
+
   return `<div class="info-box ror-back-page-panel">
     <span class="info-label">&#8505; Bhulekh Back Page timeline</span>
     <p>Back Page entries are source anchors from Bhulekh. They can indicate mutation, charge, restriction, or case-reference activity, but they are not a substitute for IGR EC, mutation-status, or lawyer review.</p>
     ${buildInsightHighlights(insights)}
+    ${lineageSection}
     ${mutationRows ? `<details class="tenant-table-details" open><summary>Mutation history (${mutations.length})</summary><table class="data-table compact-table"><thead><tr><th>Mutation no.</th><th>Date</th><th>Plot</th><th>From khata</th><th>To khata</th></tr></thead><tbody>${mutationRows}</tbody></table></details>` : ""}
     ${encumbranceRows ? `<details class="tenant-table-details" open><summary>Encumbrance-style entries (${encumbrances.length})</summary><table class="data-table compact-table"><thead><tr><th>Type</th><th>Party</th><th>Doc no.</th><th>Date</th><th>Amount</th></tr></thead><tbody>${encumbranceRows}</tbody></table></details>` : ""}
+    ${igrEcTable}
     ${remarkRows ? `<details class="tenant-table-details"><summary>Back Page remarks (${remarks.length})</summary><table class="data-table compact-table"><thead><tr><th>Category</th><th>Extracted anchor</th><th>Raw remark</th></tr></thead><tbody>${remarkRows}</tbody></table></details>` : ""}
   </div>`;
 }

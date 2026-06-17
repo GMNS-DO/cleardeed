@@ -274,6 +274,25 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@edge-runtime/vm@3.2.0)(@types/node@22.19.17)(lightningcss@1.32.0)
 
+  packages/fetchers/govt-fee:
+    dependencies:
+      '@cleardeed/schema':
+        specifier: workspace:*
+        version: link:../../schema
+      zod:
+        specifier: ^3.0.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.11.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.11.0)(lightningcss@1.32.0)
+
   packages/fetchers/high-court:
     dependencies:
       playwright:
@@ -294,6 +313,25 @@ importers:
         version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/node@22.19.17)(lightningcss@1.32.0)
 
   packages/fetchers/igr-bmv:
+    dependencies:
+      '@cleardeed/schema':
+        specifier: workspace:*
+        version: link:../../schema
+      zod:
+        specifier: ^3.0.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.11.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.11.0)(lightningcss@1.32.0)
+
+  packages/fetchers/igr-certified-copy:
     dependencies:
       '@cleardeed/schema':
         specifier: workspace:*
@@ -416,6 +454,25 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+
+  packages/fetchers/public-dashboard:
+    dependencies:
+      '@cleardeed/schema':
+        specifier: workspace:*
+        version: link:../../schema
+      zod:
+        specifier: ^3.0.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.11.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@edge-runtime/vm@3.2.0)(@types/node@20.11.0)(lightningcss@1.32.0)
 
   packages/fetchers/rccms:
     dependencies:

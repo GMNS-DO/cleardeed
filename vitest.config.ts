@@ -5,6 +5,20 @@ export default defineConfig({
   test: {
     environment: "node",
     testTimeout: 300_000,
+    // Exclude live-portal tests — they hit real Bhulekh / IGR /
+    // IGR-EC portals and require network + Playwright browser cache.
+    // CI runs offline deterministic tests only. Run manually with:
+    //   pnpm exec vitest run packages/fetchers/bhulekh/src/test-live.test.ts
+    //   pnpm exec vitest run qa/fetcher_tests/bhulekh-bhunaksha-corpus.test.ts
+    //   RUN_FULL_CORPUS=1 pnpm exec vitest run qa/fetcher_tests/bhulekh-bhunaksha-corpus.test.ts
+    //   pnpm exec vitest run qa/all_fetchers_live_smoke.test.ts
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/test-live.test.ts",
+      "qa/fetcher_tests/bhulekh-bhunaksha-corpus.test.ts",
+    ],
     include: [
       "packages/fetchers/nominatim/src/**/*.test.ts",
       "packages/fetchers/bhulekh/src/**/*.test.ts",
@@ -34,13 +48,21 @@ export default defineConfig({
       "agents/consumer-report-writer/src/**/*.test.ts",
       "agents/output-auditor/src/**/*.test.ts",
       "agents/land-classifier/**/*.test.ts",
+      "agents/ownership-lineage-graph/**/*.test.ts",
+      "agents/document-interpreter/**/*.test.ts",
       "packages/pdf-renderer/src/**/*.test.ts",
       "apps/web/src/lib/track.test.ts",
       "apps/web/src/lib/db.expiry.test.ts",
       "apps/web/src/lib/report-access.test.ts",
+      "apps/web/src/lib/admin-token.test.ts",
       "apps/web/src/lib/razorpay-config.test.ts",
       "apps/web/src/lib/rate-limit.test.ts",
       "apps/web/src/app/api/reports/[id]/refresh/route.test.ts",
+      "apps/web/src/lib/ai-doc/igr-ec-input.test.ts",
+      "apps/web/src/lib/ai-doc/bhulekh-back-input.test.ts",
+      "apps/web/src/lib/ai-doc/user-upload-input.test.ts",
+      "apps/web/src/lib/ai-doc/certified-copy.test.ts",
+      "apps/web/src/lib/ai-doc/cost-store.test.ts",
       "apps/web/src/app/api/user/delete/route.test.ts",
       "qa/fetcher_tests/**/*.test.ts",
       "qa/section_validators/**/*.test.ts",
@@ -100,6 +122,10 @@ export default defineConfig({
       "@cleardeed/ownership-reasoner": path.resolve(__dirname, "agents/ownership-reasoner/index.ts"),
       "@cleardeed/encumbrance-reasoner": path.resolve(__dirname, "agents/encumbrance-reasoner/index.ts"),
       "@cleardeed/output-auditor": path.resolve(__dirname, "agents/output-auditor/src/index.ts"),
+      "@cleardeed/ownership-lineage-graph": path.resolve(__dirname, "agents/ownership-lineage-graph/src/index.ts"),
+      "@cleardeed/document-interpreter": path.resolve(__dirname, "agents/document-interpreter/src/index.ts"),
+      "@cleardeed/document-interpreter/cost-tracker": path.resolve(__dirname, "agents/document-interpreter/src/cost-tracker.ts"),
+      "@cleardeed/document-interpreter/schema": path.resolve(__dirname, "agents/document-interpreter/src/schema.ts"),
     },
   },
 });

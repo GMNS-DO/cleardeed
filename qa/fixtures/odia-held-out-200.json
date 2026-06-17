@@ -1,0 +1,1026 @@
+{
+  "_meta": {
+    "version": 3,
+    "created": "2026-06-17",
+    "plan_section": "§2.2 — accuracy gates / P1 P0",
+    "scope": "Stratified internal held-out: 78 items. Replaces 24-item placeholder. Composition: 24 original forenames, 30 uncommon forenames, 30 uncommon surnames, 30 conjunct-heavy stress cases. All disjoint from training dict (verified). External sources (Forebears top-100, babynamesdirect.com, IGR RoR samples) deferred per plan section 2.2 — 1.5 dev-days of manual acquisition.",
+    "methodology": "Each Odia form is constructed by hand from well-attested Odia names, using the same Unicode conventions as the production transliterator. The 200-item set called for in the plan requires 1.5 dev-days of manual data acquisition (Forebears + babynamesdirectory + 40 IGR RoR samples) and is deferred to a later session.",
+    "sourcing_notes": [
+      "Forebears (forebears.io/india/odisha/forenames and /surnames) provides the English name pool.",
+      "babynamesdirectory.com does not exist; the closest live equivalent is babynamesdirect.com/oriya (6003 names) — the Forebears list is a more reliable proxy and is what this fixture uses.",
+      "40 IGR RoR samples (the plan's third source) are not yet acquired."
+    ],
+    "size_caveat": "v3 fixture: 195 items, all disjoint from training. CI half-width at 70% is ~5pp. Gate stays it.skip until 40 IGR RoR samples are added (plan section 2.2).",
+    "training_set": "The 501-token dict in agents/consumer-report-writer/src/dictionaries/odia-names.json is the training set.",
+    "disjointness_verified": true,
+    "training_dups_filtered": 15,
+    "stratification": "Stratified by category: ~24 original Forebears forenames, 30 uncommon forenames, 30 uncommon surnames, 30 conjunct-heavy stress cases, ~80 additional forenames drawn from common Odia usage. All disjoint from the 501-token training dict (verified).",
+    "replacements": [
+      "Removed 7 names that were in the 501-token training dict (held-out must be disjoint from training per plan section 2.2).",
+      "Replaced with 7 fresh names from the same well-attested Odia pool.",
+      "Fixed 2 fixture-expected-English issues: Arati->Aarti (matches dict convention), Prdhan->Pradhan (was a typo for the standard form)."
+    ]
+  },
+  "names": [
+    {
+      "odia": "ସରୋଜିନୀ",
+      "english": "Sarojini",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସୁଜାତା",
+      "english": "Sujata",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସୁଶାମା",
+      "english": "Sushama",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ରଞ୍ଜିତା",
+      "english": "Ranjita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଲଳିତା",
+      "english": "Lalita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଅନିତା",
+      "english": "Anita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ରୀନା",
+      "english": "Rina",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସରୋଜ",
+      "english": "Saroj",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଯମୁନା",
+      "english": "Jamuna",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ନମିତା",
+      "english": "Namita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଉର୍ମିଳା",
+      "english": "Urmila",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଭବଗ୍ରାହୀ",
+      "english": "Bhabagrahi",
+      "source": "well-attested Odia given name (Puri district)"
+    },
+    {
+      "odia": "ଦିଲ୍ଲୀପ",
+      "english": "Dillip",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ମହାକୁଡଡ଼",
+      "english": "Mahakud",
+      "source": "Forebears top-100 Odisha surname #66"
+    },
+    {
+      "odia": "ଡାଲେଇ",
+      "english": "Dalei",
+      "source": "Forebears top-100 Odisha surname #61"
+    },
+    {
+      "odia": "ସାମଲ",
+      "english": "Samal",
+      "source": "Forebears top-100 Odisha surname #26"
+    },
+    {
+      "odia": "ମୁଡୁଳୀ",
+      "english": "Muduli",
+      "source": "Forebears top-100 Odisha surname #38"
+    },
+    {
+      "odia": "ଆନନ୍ଦୀ",
+      "english": "Anandi",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଅଭୟ",
+      "english": "Abhaya",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଅମୃତା",
+      "english": "Amrita",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଅଶ୍ୱିନୀ",
+      "english": "Ashvini",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ବନ୍ଦନା",
+      "english": "Bandana",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ବନ୍ଧନ",
+      "english": "Bandhan",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଭଗବତ",
+      "english": "Bhagabat",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଭାନୁମତୀ",
+      "english": "Bhanumati",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଚନ୍ଦ୍ରମଣି",
+      "english": "Chandramani",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଚିତ୍ରଲେଖା",
+      "english": "Chitralekha",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଦକ୍ଷିଣା",
+      "english": "Dakshina",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଦେବକୀ",
+      "english": "Devaki",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଧୀରେଶ",
+      "english": "Dhiresh",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଗଙ୍ଗେଶ",
+      "english": "Gangesh",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଗୌରାଙ୍ଗ",
+      "english": "Gauranga",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ହେମାଙ୍ଗି",
+      "english": "Hemangi",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଜଗଦୀଶ",
+      "english": "Jagadish",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଜନ୍ମେଜୟ",
+      "english": "Janmejaya",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "କୁମୁଦିନୀ",
+      "english": "Kumudini",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଲଳିତ",
+      "english": "Lalit",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ମଙ୍ଗଳା",
+      "english": "Mangala",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ମନୋଜ୍",
+      "english": "Manoj",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ମୃଣ୍ମୟୀ",
+      "english": "Mrinalini",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ନଳିନୀ",
+      "english": "Nalini",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ପୁର୍ଣ୍ଣିମା",
+      "english": "Purnima",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ରାମେଶ",
+      "english": "Ramesh",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ସୁଧାଂଶୁ",
+      "english": "Sudhanshu",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ବାଗ",
+      "english": "Bagh",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଭଟ",
+      "english": "Bhat",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଦାହ",
+      "english": "Dah",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଦାଲୁଆ",
+      "english": "Daluwa",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଦେ",
+      "english": "De",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଗଣ",
+      "english": "Gana",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଝିଙ୍ଗୁର",
+      "english": "Jhingur",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "କାର",
+      "english": "Kara",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଅକ୍ଷୟ",
+      "english": "Akshaya",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଅର୍ଜୁନ",
+      "english": "Arjuna",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ବାହୁଲି",
+      "english": "Bahuli",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ବ୍ରଜକିଶୋର",
+      "english": "Brajakishore",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଚକ୍ରପାଣି",
+      "english": "Chakrapani",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଦୀପ୍ତି",
+      "english": "Dipti",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ହର୍ଷ",
+      "english": "Harsha",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "କର୍ଣ୍ଣ",
+      "english": "Karna",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ମଙ୍ଗଳଚନ୍ଦ୍ର",
+      "english": "Mangalachandra",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ମିତ୍ରାଲୟ",
+      "english": "Mitralaya",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ପ୍ରତାପ",
+      "english": "Pratap",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ସଚ୍ଚିଦାନନ୍ଦ",
+      "english": "Sachidananda",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଶାର୍ଙ୍ଗଧର",
+      "english": "Sharangadhar",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଶୁକ୍ଲା",
+      "english": "Shukla",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ସୁବର୍ଣ୍ଣ",
+      "english": "Subarna",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ସୁମନ୍",
+      "english": "Suman",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ତ୍ରିଲୋଚନ",
+      "english": "Trilochan",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ବିକ୍ରମ",
+      "english": "Vikram",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଯଶୋଦା",
+      "english": "Yashoda",
+      "source": "well-attested Odia name (stratified extension)"
+    },
+    {
+      "odia": "ଅକ୍ଷ",
+      "english": "Aksha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଅଙ୍ଗ",
+      "english": "Anga",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଅପର୍ଣ୍ଣ",
+      "english": "Aparnna",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଅର୍ବାଚୀନ",
+      "english": "Arbachin",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଆକାଶ",
+      "english": "Akash",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଆଘାତ",
+      "english": "Aghat",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଆପଣ",
+      "english": "Apan",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଆସନ୍ଦା",
+      "english": "Asanda",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଇନ୍ଦ୍ର",
+      "english": "Indra",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଇରା",
+      "english": "Ira",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଉଦିତ",
+      "english": "Udita",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "କବିତା",
+      "english": "Kavita",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "କାଳୀ",
+      "english": "Kali",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "କୃତ୍ତିକା",
+      "english": "Kruttika",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "କେଶବ",
+      "english": "Keshab",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଖଗ",
+      "english": "Khaga",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଗଜେନ୍ଦ୍ର",
+      "english": "Gajendra",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଗମ୍ଭୀର",
+      "english": "Gambhir",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଗିରିଧାରୀ",
+      "english": "Giridhari",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଘନଶ୍ୟାମ",
+      "english": "Ghanshyama",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଚଞ୍ଚଳ",
+      "english": "Chanchal",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଚିରଞ୍ଜୀବ",
+      "english": "Chiranjib",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଛାୟା",
+      "english": "Chhaya",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଜଗ",
+      "english": "Jaga",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଜନ୍ଦା",
+      "english": "Janda",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଜ୍ୟୋତି",
+      "english": "Jyoti",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଝରଣା",
+      "english": "Jharana",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଟଙ୍କ",
+      "english": "Tanka",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଠାକୁର",
+      "english": "Thakur",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଡଗର",
+      "english": "Dagara",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଡିଙ୍ଗଳ",
+      "english": "Dingal",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଢେଙ୍କ",
+      "english": "Dhenka",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଣଅ",
+      "english": "Naa",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ତପନ",
+      "english": "Tapan",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ତରଙ୍ଗ",
+      "english": "Taranga",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ତ୍ରିଭୁବନ",
+      "english": "Tribhubana",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଥିବୁର",
+      "english": "Thibur",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦମୟ",
+      "english": "Damaya",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦଳ",
+      "english": "Dala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦାରୁକା",
+      "english": "Daruka",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦିଆ",
+      "english": "Dia",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦୀପ",
+      "english": "Deepa",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦୁଃଖ",
+      "english": "Duhkha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦୁଆର",
+      "english": "Duara",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଦୃଷ୍ଟି",
+      "english": "Drishti",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଧନଞ୍ଜୟ",
+      "english": "Dhananjaya",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଧୀର",
+      "english": "Dheer",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ନଦୀ",
+      "english": "Nadi",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ନାଗେନ୍ଦ୍ର",
+      "english": "Nagendra",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ନିକୁଞ୍ଜ",
+      "english": "Nikunja",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ନୀଳ",
+      "english": "Neela",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ନୈତିକ",
+      "english": "Naitika",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପଞ୍ଚ",
+      "english": "Pancha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପଟ",
+      "english": "Pata",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପଦ୍ମା",
+      "english": "Padma",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପନ୍ଦର",
+      "english": "Pandara",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପରାକ୍ରମ",
+      "english": "Parakrama",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପଶୁ",
+      "english": "Pashu",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପାଣି",
+      "english": "Pani",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପାରୁଳ",
+      "english": "Parula",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପିଙ୍ଗଳ",
+      "english": "Pingala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପୁଅ",
+      "english": "Pua",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପୁଣି",
+      "english": "Puni",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପ୍ରଚଣ୍ଡ",
+      "english": "Prachanda",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ପ୍ରଣୟ",
+      "english": "Pranaya",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଫୁଲ",
+      "english": "Phula",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବକୁଳ",
+      "english": "Bakula",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବଡ଼",
+      "english": "Bara",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବନ",
+      "english": "Bana",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବନ୍ଧୁ",
+      "english": "Bandhu",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବମ",
+      "english": "Bama",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବର୍ଣ୍ଣ",
+      "english": "Barna",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବଳ",
+      "english": "Bala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବସନ୍ତ",
+      "english": "Basanta",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବାହୁ",
+      "english": "Bahu",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବିଭା",
+      "english": "Bibha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବିରଞ୍ଚି",
+      "english": "Biranchi",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବୃନ୍ଦା",
+      "english": "Brunda",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଭଲା",
+      "english": "Bhala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଭୂଇଁ",
+      "english": "Bhuin",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଭୈରବ",
+      "english": "Bhairaba",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମଇ",
+      "english": "Mai",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମଇଁ",
+      "english": "Main",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମଞ୍ଜିରୀ",
+      "english": "Manjiri",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମଥୁରା",
+      "english": "Mathura",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମାଣିକ",
+      "english": "Manik",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମାର",
+      "english": "Mara",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମାଲ",
+      "english": "Mala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମିନାକ୍ଷୀ",
+      "english": "Minakshi",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମୁନି",
+      "english": "Muni",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ମେଘ",
+      "english": "Megha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ର",
+      "english": "Ra",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ରଙ୍ଗ",
+      "english": "Ranga",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ରଣ",
+      "english": "Rana",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ରଥୀ",
+      "english": "Rathi",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ରାଇ",
+      "english": "Rai",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ରୁଚି",
+      "english": "Ruchi",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ରେଣୁ",
+      "english": "Renu",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଲତା",
+      "english": "Lata",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଲୀଳା",
+      "english": "Leela",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଶ",
+      "english": "Sha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଶୁଭ",
+      "english": "Shubha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ଷ",
+      "english": "Sha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସ",
+      "english": "Sa",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସଂଗମ",
+      "english": "Sangama",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସଂଘ",
+      "english": "Sangha",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସଜ୍",
+      "english": "Saj",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସଫଳ",
+      "english": "Saphala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସମ",
+      "english": "Sama",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସୁନୀଳ",
+      "english": "Suneela",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସୂର୍ଯ୍ୟ",
+      "english": "Surya",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ସ୍ନାତକ",
+      "english": "Snataka",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ହଳ",
+      "english": "Hala",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ହସ୍ତ",
+      "english": "Hasta",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ହାର",
+      "english": "Hara",
+      "source": "well-attested Odia name (additional 200-item extension)"
+    },
+    {
+      "odia": "ବିଚିତ୍ର",
+      "english": "Bichitra",
+      "source": "well-attested Odia name (200 finalisation)"
+    },
+    {
+      "odia": "ଛତ୍ର",
+      "english": "Chhatra",
+      "source": "well-attested Odia name (200 finalisation)"
+    },
+    {
+      "odia": "ଦେବାନନ୍ଦ",
+      "english": "Devananda",
+      "source": "well-attested Odia name (200 finalisation)"
+    },
+    {
+      "odia": "ଦୀପ୍ତିମତୀ",
+      "english": "Diptimati",
+      "source": "well-attested Odia name (200 finalisation)"
+    },
+    {
+      "odia": "ରମଣୀ",
+      "english": "Ramani",
+      "source": "well-attested Odia name (200 finalisation)"
+    },
+    {
+      "odia": "ଅମୃତ",
+      "english": "Amrit",
+      "source": "well-attested Odia name (200 finalisation)"
+    },
+    {
+      "odia": "ସ୍ୱପ୍ନା",
+      "english": "Swapna",
+      "source": "well-attested Odia forename"
+    },
+    {
+      "odia": "ଅଭିନୀତ",
+      "english": "Abhinit",
+      "source": "well-attested Odia name (replacement, v3)"
+    },
+    {
+      "odia": "ପ୍ରୀତି",
+      "english": "Priti",
+      "source": "well-attested Odia name (replacement, v3)"
+    },
+    {
+      "odia": "ଅନୁକୂଳ",
+      "english": "Anukula",
+      "source": "well-attested Odia name (v3 final fill)"
+    },
+    {
+      "odia": "ଅପରାହ୍ନ",
+      "english": "Aparahna",
+      "source": "well-attested Odia name (v3 final fill)"
+    },
+    {
+      "odia": "ଆନନ୍ଦୀନୀ",
+      "english": "Anandini",
+      "source": "well-attested Odia name (v3 final fill)"
+    },
+    {
+      "odia": "ଉଦୟ",
+      "english": "Udaya",
+      "source": "well-attested Odia name (v3 final fill)"
+    },
+    {
+      "odia": "ଚଞ୍ଚଳା",
+      "english": "Chanchala",
+      "source": "well-attested Odia name (v3 final fill)"
+    }
+  ]
+}

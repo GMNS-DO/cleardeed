@@ -105,7 +105,10 @@ describe("A10 ConsumerReportWriter", () => {
     expect(allTokens.quality).toBe("lexicon_all_tokens");
     expect(allTokens.needsManualReview).toBe(false);
 
-    const machine = transliterateOdiaWithConfidence("ଅଜଣାନାମ");
+    // P5b: ଅଜଣାନାମ ("unknown name") is now in the dict as a verified
+    // entry. To exercise the machine_reading path, use a name that is
+    // genuinely unknown.
+    const machine = transliterateOdiaWithConfidence("କ୍ୱାଣ୍ଟମ");
     expect(machine.english).toMatch(/[A-Za-z]/);
     expect(machine.quality).toBe("machine_reading");
     expect(machine.needsManualReview).toBe(true);
@@ -366,6 +369,254 @@ describe("A10 ConsumerReportWriter", () => {
     expect(audit.passed).toBe(true);
   });
 
+  it("P3 V1: renders the ownership lineage section when back-page data is present", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: [
+            { mutationNumber: "MUT-1", mutationDate: "01/01/2020", plotNo: "415", fromKhatiyan: "90", toKhatiyan: "94" },
+            { mutationNumber: "MUT-2", mutationDate: "02/01/2022", plotNo: "415", fromKhatiyan: "94", toKhatiyan: "94" },
+          ],
+          encumbranceEntries: [
+            { type: "Mortgage", partyName: "Sample Bank", docNo: "DOC-9", date: "02/02/2021", amount: "100000" },
+          ],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Harihar Panda", fatherHusbandName: "Bharat Panda", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    // A13 lineage section is rendered (per plan §4.1)
+    expect(html).toContain("lineage-section");
+    // Summary text matches the count-only regex
+    expect(html).toMatch(/Ownership lineage \(\d+ events?, \d+ owners?/);
+    // MORTGAGE_NO_RELEASE is a critical flag — should appear because
+    // the mortgage has no matching release.
+    expect(html).toContain("flag-critical");
+    // Audit passes
+    const audit = auditReport(html);
+    expect(audit.passed).toBe(true);
+  });
+
+  it("P3 V2: renders SVG diagram in the lineage section when node count is ≥ 20 (default desktop)", () => {
+    // V2 dispatches to renderLineageSvg when chooseLayoutMode returns
+    // "svg". With the new default (unknown -> desktop), 20+ nodes
+    // always produce an SVG diagram. The bullet list is still
+    // rendered below the diagram for accessibility / screen readers.
+    //
+    // To produce 20+ nodes we need parties in the mutation history.
+    // In production the Bhulekh back page supplies them; here we
+    // inject them via the rawText field of each mutation entry.
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: Array.from({ length: 25 }, (_, i) => ({
+            mutationNumber: `MUT-${i}`,
+            mutationDate: `0${(i % 9) + 1}/01/202${i % 5}`,
+            plotNo: "415",
+            fromKhatiyan: `${90 + (i % 3)}`,
+            toKhatiyan: `${90 + ((i + 1) % 3)}`,
+            // Each event involves two distinct parties — that gives
+            // the lineage graph 50 person nodes, well over the
+            // 20-node threshold for SVG mode.
+            parties: [
+              { name: `Person ${i}A`, role: "seller" },
+              { name: `Person ${i}B`, role: "buyer" },
+            ],
+            rawText: `Sale from Person ${i}A to Person ${i}B`,
+          })),
+          encumbranceEntries: [],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Harihar Panda", fatherHusbandName: "Bharat Panda", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    // The lineage section is rendered
+    expect(html).toContain("lineage-section");
+    // The count summary is present
+    expect(html).toMatch(/Ownership lineage \(\d+ events?, \d+ owners?/);
+    // V2 marker: lineage-diagram div is emitted (mode=svg) when
+    // node count is >= 20. With 50 person nodes from the parties,
+    // the lineage graph crosses the threshold.
+    expect(html).toContain("lineage-diagram");
+    expect(html).toContain('data-mode="svg"');
+    // The SVG itself is rendered (we don't assert the full markup
+    // here — that's exercised in lineage-layout.test.ts)
+    expect(html).toContain("<svg");
+  });
+
+  it("P3 V2: small lineage (≤ 19 nodes) stays in list mode", () => {
+    // Below the 20-node threshold, the layout decision returns
+    // "list" — no diagram is rendered.
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: Array.from({ length: 3 }, (_, i) => ({
+            mutationNumber: `MUT-${i}`,
+            mutationDate: `0${i + 1}/01/2020`,
+            plotNo: "415",
+            fromKhatiyan: "90",
+            toKhatiyan: "94",
+          })),
+          encumbranceEntries: [],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Harihar Panda", fatherHusbandName: "Bharat Panda", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    expect(html).toContain("lineage-section");
+    expect(html).not.toContain("lineage-diagram");
+  });
+
+  it("P3 V3: emits a 'see also' badge when a mutation's docNo matches an IGR EC entry", () => {
+    // Plan §4.5: cross-document reference. When a Bhulekh mutation's
+    // docNo matches an IGR EC entry's docNo (after normalise), the
+    // rendered lineage event should carry a "see also" badge linking
+    // to the IGR EC table row.
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      encumbranceReasoner: {
+        status: "success",
+        confidence: 0.9,
+        igrEcEntries: [
+          {
+            docNo: "2020/KH/12345",
+            regDate: "2020-06-01",
+            party1: "Ravi Kumar",
+            party2: "Sita Devi",
+            propertyDesc: "Plot 415, Khata 94",
+            consideration: "₹12,00,000",
+          },
+        ],
+      },
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: [
+            {
+              mutationNumber: "MUT-1",
+              mutationDate: "01/01/2020",
+              plotNo: "415",
+              fromKhatiyan: "90",
+              toKhatiyan: "94",
+              parties: [
+                { name: "Ravi Kumar", role: "seller" },
+                { name: "Sita Devi", role: "buyer" },
+              ],
+              rawText: "Sale from Ravi Kumar to Sita Devi",
+            },
+            {
+              mutationNumber: "2020/KH/12345", // matches the EC entry
+              mutationDate: "02/01/2020",
+              plotNo: "415",
+              fromKhatiyan: "94",
+              toKhatiyan: "94",
+              parties: [
+                { name: "Sita Devi", role: "seller" },
+                { name: "New Owner", role: "buyer" },
+              ],
+              rawText: "Sale from Sita Devi to New Owner",
+            },
+          ],
+          encumbranceEntries: [],
+          backPageRemarks: [],
+        },
+        tenants: [
+          { tenantName: "Sita Devi", fatherHusbandName: "Ravi Kumar", surveyNo: "415", area: "0.12" },
+        ],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+
+    // The IGR EC table is rendered with stable anchor IDs
+    expect(html).toContain('id="igr-ec-entry-0"');
+    expect(html).toContain("2020/KH/12345");
+
+    // The cross-ref badge is emitted for the matching event
+    expect(html).toContain("lineage-cross-ref");
+    expect(html).toContain("Also in IGR EC");
+    expect(html).toContain('href="#igr-ec-entry-0"');
+
+    // The unmatched event (MUT-1) does NOT get a cross-ref badge
+    const lines = html.split("\n");
+    const mut1Line = lines.find((l) => l.includes("MUT-1"));
+    const matchedLine = lines.find((l) => l.includes("2020/KH/12345") && l.includes("lineage-cross-ref"));
+    // Note: MUT-1 line is also rendered; the test just confirms
+    // there's a cross-ref near the matched line.
+    expect(matchedLine).toBeDefined();
+  });
+
+  it("P3 V3: emits no cross-ref badge when no docNo matches", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      encumbranceReasoner: {
+        status: "success",
+        confidence: 0.9,
+        igrEcEntries: [
+          {
+            docNo: "2020/KH/99999",
+            regDate: "2020-06-01",
+            party1: "Someone",
+            party2: "Else",
+          },
+        ],
+      },
+      revenueRecords: {
+        ...CONSUMER_REPORT_FIXTURE.revenueRecords,
+        khataNo: "94",
+        backPage: {
+          status: "success",
+          mutationHistory: [
+            {
+              mutationNumber: "MUT-1",
+              mutationDate: "01/01/2020",
+              plotNo: "415",
+              fromKhatiyan: "90",
+              toKhatiyan: "94",
+              parties: [
+                { name: "A", role: "seller" },
+                { name: "B", role: "buyer" },
+              ],
+              rawText: "Sale",
+            },
+          ],
+          encumbranceEntries: [],
+          backPageRemarks: [],
+        },
+        tenants: [],
+      },
+    };
+
+    const { html } = generateConsumerReport(input as any);
+    expect(html).toContain('id="igr-ec-entry-0"');
+    expect(html).not.toContain("lineage-cross-ref");
+  });
   it("does not treat RCCMS placeholder partial results as usable", () => {
     const reportInput = mapToReportInput(
       {
