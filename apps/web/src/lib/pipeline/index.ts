@@ -49,6 +49,12 @@ import { publicDashboardFetch } from "@cleardeed/fetcher-public-dashboard";
 import { govtFeeFetch } from "@cleardeed/fetcher-govt-fee";
 import { igrCertifiedCopyFetch } from "@cleardeed/fetcher-igr-certified-copy";
 import type { SourceResult } from "@cleardeed/orchestrator";
+import {
+  isSourceFired,
+  ALL_SOURCE_IDS,
+  type SourceId,
+  type FireResult,
+} from "./contracts/fire";
 
 export type { Tier2Input };
 
@@ -85,6 +91,9 @@ export interface PipelineOutput {
   /** Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR cross-check.
    *  Adds the cadastral map image, owner block, khatiyan no, and three-column area. */
   bhunakshaPlotReport?: unknown;
+  /** Per-source "fire" gate (typed liveness check). Keyed by SourceId.
+   *  Downstream agents (A10, A11) read from this instead of string status. */
+  fire: Map<SourceId, FireResult>;
 }
 
 /**
@@ -287,6 +296,13 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
   const { auditOrThrow } = await import("@cleardeed/output-auditor");
   auditOrThrow(html, orchestratorOutput.reportId); // throws on critical violations
 
+  // ── Step 8b: Typed "fire" gate per source (replaces scattered status strings)
+  const fire = new Map<SourceId, FireResult>();
+  for (const sourceId of ALL_SOURCE_IDS) {
+    const envelope = orchestratorOutput.sources.find((s) => s.source === sourceId);
+    fire.set(sourceId, isSourceFired(sourceId, envelope ?? null));
+  }
+
   // ── Step 9: Build source summary ───────────────────────────────────────────
   const sourceSummary = {
     nominatim:
@@ -323,6 +339,7 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
     validationFindings: orchestratorOutput.validationFindings ?? [],
     sourceSummary,
     sources: orchestratorOutput.sources,
+    fire,
   };
 }
 
