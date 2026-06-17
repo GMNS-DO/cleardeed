@@ -68,6 +68,19 @@ const DEFAULT_DISCLAIMER = `This report is prepared by ClearDeed using publicly 
  * source is active. Every other source is dormant and the gate must
  * surface that explicitly, not let the orchestrator's "no data" leak
  * through as a real negative result.
+ *
+ * Resolution (I3): The orchestrator (`packages/orchestrator/src/index.ts`)
+ * is already V1.1-scoped — `runAllFetchers` only fetches Bhulekh in V1.1
+ * dropdown mode and emits `not_covered` SourceResults for everything else
+ * in legacy GPS mode. So this set is a *defensive marker*: if a stale code
+ * path or V1.5 fallback ever returns a non-bhulekh SourceResult to
+ * `buildFireMap`, the gate short-circuits it to `skipped_dormant` instead
+ * of letting an orchestrator `no_data` leak through as a real negative.
+ *
+ * `nominatim` and `bhunaksha` are listed here even though the orchestrator
+ * emits `not_covered` results for them — that is intentional, so that any
+ * future path returning a real `ok`/`no_data` for them still gets the
+ * dormant short-circuit applied uniformly.
  */
 export const V11_DORMANT_SOURCES: ReadonlySet<SourceId> = new Set<SourceId>([
   "nominatim",
@@ -93,6 +106,11 @@ export const V11_DORMANT_SOURCES: ReadonlySet<SourceId> = new Set<SourceId>([
 ]);
 
 // `bhulekh` is the V1.1-active source and is NOT in V11_DORMANT_SOURCES.
+//
+// NOTE (M3): This set is intentionally observable from any code that
+// iterates `sources`. It is a wire-marker list — do not refactor into a
+// private helper. The wire-level `buildFireMap` and the gate-level
+// (fire.ts) `isSourceFired` must agree on what counts as V1.1-dormant.
 
 /**
  * Build a `Map<SourceId, FireResult>` from the orchestrator's `SourceResult[]`.
