@@ -73,6 +73,7 @@ export type CostStore = {
     docType: DocType;
     model: string;
     costCents: number;
+    durationMs: number;
     usage: Usage;
   }): Promise<void>;
 };

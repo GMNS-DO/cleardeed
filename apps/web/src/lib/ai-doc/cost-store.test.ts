@@ -94,6 +94,7 @@ describe("makeSupabaseCostStore — cost ceiling (plan §3.2)", () => {
       docType: "igr_ec",
       model: "claude-sonnet-4-5",
       costCents: 4,
+      durationMs: 1234,
       usage: {
         inputTokens: 1000,
         outputTokens: 200,
@@ -107,6 +108,7 @@ describe("makeSupabaseCostStore — cost ceiling (plan §3.2)", () => {
         report_id: "r1",
         doc_type: "igr_ec",
         model: "claude-sonnet-4-5",
+        duration_ms: 1234,
         cost_usd_cents: 4,
         input_tokens: 1000,
         output_tokens: 200,

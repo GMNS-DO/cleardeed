@@ -176,6 +176,7 @@ export async function interpretDocumentWithDeps(
     docType: args.docType,
     model,
     costCents,
+    durationMs: Date.now() - startMs,
     usage: response.usage,
   });
 

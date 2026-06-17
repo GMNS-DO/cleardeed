@@ -84,6 +84,7 @@ export function makeSupabaseCostStore(): CostStore {
           doc_type: record.docType,
           model: record.model,
           cost_usd_cents: record.costCents,
+          duration_ms: record.durationMs,
           input_tokens: usage.inputTokens,
           output_tokens: usage.outputTokens,
           cache_read_tokens: usage.cacheReadTokens,
