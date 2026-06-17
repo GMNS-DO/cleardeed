@@ -49,10 +49,74 @@ import { publicDashboardFetch } from "@cleardeed/fetcher-public-dashboard";
 import { govtFeeFetch } from "@cleardeed/fetcher-govt-fee";
 import { igrCertifiedCopyFetch } from "@cleardeed/fetcher-igr-certified-copy";
 import type { SourceResult } from "@cleardeed/orchestrator";
+import {
+  isSourceFired,
+  V11_DORMANT_MARKER,
+  type FireResult,
+  type SourceId,
+} from "./contracts/fire";
 
 export type { Tier2Input };
 
 const DEFAULT_DISCLAIMER = `This report is prepared by ClearDeed using publicly available government land records. It is not a legal opinion, not a title certificate, and not a guarantee of ownership or freedom from encumbrance. Before you transact: share this report with a qualified property lawyer, request original title documents from the seller going back at least 30 years, obtain an Encumbrance Certificate from the Sub-Registrar office, verify plot boundaries on the ground with a local survey, confirm land classification permits your intended use, and confirm no conversion of land use is required.`;
+
+/**
+ * The set of source ids that are V1.1-DORMANT and should produce
+ * `reason: "skipped_dormant"` regardless of what the orchestrator returned.
+ *
+ * Per the binding brief (Task 0.1, finding 3): in V1.1, only the Bhulekh
+ * source is active. Every other source is dormant and the gate must
+ * surface that explicitly, not let the orchestrator's "no data" leak
+ * through as a real negative result.
+ */
+export const V11_DORMANT_SOURCES: ReadonlySet<SourceId> = new Set<SourceId>([
+  "nominatim",
+  "bhunaksha",
+  "bhunaksha-plot-report",
+  "ecourts",
+  "rccms",
+  "igr-ec",
+  "rera",
+  "cersai",
+  "high-court",
+  "drt",
+  "bda-zoning",
+  "circle-rate",
+  "stamp-duty",
+  "igr-bmv",
+  "igr-daily-bulletin",
+  "public-dashboard",
+  "govt-fee",
+  "igr-certified-copy",
+  "igr-sro",
+  "larr",
+]);
+
+// `bhulekh` is the V1.1-active source and is NOT in V11_DORMANT_SOURCES.
+
+/**
+ * Build a `Map<SourceId, FireResult>` from the orchestrator's `SourceResult[]`.
+ *
+ * Per the binding brief (Task 0.1, finding 3): V1.1-DORMANT sources produce
+ * `reason: "skipped_dormant"`. The dormant set is a static list — see
+ * `V11_DORMANT_SOURCES`. The orchestrator can also explicitly emit a
+ * `V11_DORMANT_MARKER` SourceResult (the gate handles both paths).
+ *
+ * Wire test: `fire.wire.test.ts` exercises this with a mixed array
+ * (one OK, one `no_data`, one V1.1-DORMANT) and asserts the resulting map.
+ */
+export function buildFireMap(sources: ReadonlyArray<SourceResult>): Map<SourceId, FireResult> {
+  const out = new Map<SourceId, FireResult>();
+  for (const src of sources) {
+    const id = src.source as SourceId;
+    if (V11_DORMANT_SOURCES.has(id)) {
+      out.set(id, { fired: false, reason: "skipped_dormant" });
+      continue;
+    }
+    out.set(id, isSourceFired(id, src));
+  }
+  return out;
+}
 
 export interface PipelineInput {
   reportId?: string;

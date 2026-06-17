@@ -28,3 +28,4 @@ export * as PublicDashboard from "./public-dashboard";
 export * as GovtFee from "./govt-fee";
 export * as IgrCertifiedCopy from "./igr-certified-copy";
 export * from "./status-bridge";
+export * from "./fire";
