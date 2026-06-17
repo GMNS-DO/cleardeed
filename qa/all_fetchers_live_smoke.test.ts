@@ -27,6 +27,7 @@ import { bhunakshaPlotReportFetch } from "@cleardeed/fetcher-bhunaksha-plot-repo
 import { ecourtsFetch } from "@cleardeed/fetcher-ecourts";
 import { cersaiFetch } from "@cleardeed/fetcher-cersai";
 import { fetch as rccmsFetch } from "@cleardeed/fetcher-rccms";
+import { fetchCcmsNic } from "../../packages/fetchers/rccms/src/v2-ccms-nic";
 import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
 import { igrBmvFetch } from "@cleardeed/fetcher-igr-bmv";
 import { stampDutyFetch } from "@cleardeed/fetcher-stamp-duty";
@@ -161,6 +162,62 @@ describe.skipIf(process.env.CI === "true")(
           } else {
             const r = result as { status?: string; statusReason?: string };
             smokeRuns.push({ fetcher: "rccms", status: r.status ?? "?", reason: r.statusReason ?? "-", latencyMs: elapsedMs, crashed: false });
+          }
+        }
+
+        // 7b. RCCMS v2 (ccms.nic.in) — Task 1.1.
+        // Skip the whole block when ccms.nic.in is unreachable. The
+        // fallback is silent (not a CRASH) so the existing acceptance
+        // criterion "0 fetchers should hard-crash" still holds.
+        {
+          let ccmsReachable = true;
+          try {
+            const probe = await globalThis.fetch("https://ccms.nic.in/searchCases.html", {
+              method: "HEAD",
+              signal: AbortSignal.timeout(3_000),
+            });
+            ccmsReachable = probe.ok;
+          } catch {
+            ccmsReachable = false;
+          }
+
+          if (!ccmsReachable) {
+            smokeRuns.push({
+              fetcher: "rccms-v2-ccms-nic",
+              status: "skipped",
+              reason: "ccms.nic.in unreachable",
+              latencyMs: 0,
+              crashed: false,
+            });
+          } else {
+            const { result, elapsedMs, crashed, errorMessage } = await timeIt(
+              "rccms-v2-ccms-nic",
+              () =>
+                fetchCcmsNic({
+                  district: "Khordha",
+                  tahasil: "Bhubaneswar",
+                  village: "Mendhasala",
+                })
+            );
+            if (crashed || !result) {
+              smokeRuns.push({
+                fetcher: "rccms-v2-ccms-nic",
+                status: "CRASH",
+                reason: "threw",
+                latencyMs: elapsedMs,
+                crashed: true,
+                errorMessage,
+              });
+            } else {
+              const r = result as { status?: string; error?: string };
+              smokeRuns.push({
+                fetcher: "rccms-v2-ccms-nic",
+                status: r.status ?? "?",
+                reason: r.error ?? "-",
+                latencyMs: elapsedMs,
+                crashed: false,
+              });
+            }
           }
         }
 

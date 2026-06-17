@@ -155,14 +155,14 @@
       }
     },
     "rccms": {
-      "label": "RCCMS Odisha Revenue Court (rccms.odisha.gov.in)",
+      "label": "RCCMS Odisha Revenue Court (ccms.nic.in v2.0)",
       "wired_in_v11": true,
       "is_primary_for_sections": ["section-encumbrance"],
-      "v11_special_handling": "V1.1 hotfix (2026-06-12): RCCMS Playwright probe hangs >3min, pipeline skips and marks status='partial', verification='manual_required'. Report ships in ~60s. Buyers see the 'manual_required' note.",
+      "v11_special_handling": "V1.2 (2026-06-17, Task 1.1): added v2-ccms-nic fetcher in parallel with the existing rccms probe. ccms.nic.in is reachable (HTTP 200, JSESSIONID set) and /searchCases.html exists. Captcha solving currently fails — solveCaptcha() with useOnnx:false falls back to ddddocr (generic OCR) which does not match this portal's captcha; the ONNX model referenced by the plan does not exist yet (Task 0.3 stub). When captcha solving fails the fetcher returns status='manual_required' (honest non-fire), the existing rccms probe stays the production path until v2 can clear the captcha end-to-end.",
       "source_down": {
         "section_id": "section-encumbrance",
-        "degradation_tag": "rccms_manual_required",
-        "consumer_message": "Revenue court search unavailable — verify revenue cases manually at rccms.odisha.gov.in"
+        "degradation_tag": "rccms_source_down",
+        "consumer_message": "Revenue court search unavailable — retry in 1 hour or verify at ccms.nic.in"
       },
       "no_data": {
         "section_id": "section-encumbrance",
