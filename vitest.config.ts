@@ -5,6 +5,20 @@ export default defineConfig({
   test: {
     environment: "node",
     testTimeout: 300_000,
+    // Exclude live-portal tests — they hit real Bhulekh / IGR /
+    // IGR-EC portals and require network + Playwright browser cache.
+    // CI runs offline deterministic tests only. Run manually with:
+    //   pnpm exec vitest run packages/fetchers/bhulekh/src/test-live.test.ts
+    //   pnpm exec vitest run qa/fetcher_tests/bhulekh-bhunaksha-corpus.test.ts
+    //   RUN_FULL_CORPUS=1 pnpm exec vitest run qa/fetcher_tests/bhulekh-bhunaksha-corpus.test.ts
+    //   pnpm exec vitest run qa/all_fetchers_live_smoke.test.ts
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/test-live.test.ts",
+      "qa/fetcher_tests/bhulekh-bhunaksha-corpus.test.ts",
+    ],
     include: [
       "packages/fetchers/nominatim/src/**/*.test.ts",
       "packages/fetchers/bhulekh/src/**/*.test.ts",
