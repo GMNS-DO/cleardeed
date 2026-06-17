@@ -319,15 +319,40 @@ console.log(`Post-P5: commit ef24cb1 (630-token dict, resolveConjunct(), U+0B5F 
 const r1 = runSampleSet(SAMPLES, "Sample Set 1: Single-token names (mix of common, conjunct-heavy)");
 const r2 = runSampleSet(PRODUCTION_SAMPLES, "Sample Set 2: Production-shaped inputs (multi-token, mixed Odia + Latin)");
 
-const totalPre = r1.preP5Pass + r2.preP5Pass;
-const totalPost = r1.postP5Pass + r2.postP5Pass;
-const total = SAMPLES.length + PRODUCTION_SAMPLES.length;
+// ─── IGR RoR samples (real names from production fixtures) ──────────────────
+// These are the names the report pipeline ACTUALLY processes. Sourced
+// from golden-path.ts, consumer-report-writer/src/index.test.ts,
+// ownership-reasoner/index.test.ts, bhulekh/src/index.test.ts, and
+// demo-fixture.ts (real names, not hand-curated).
+import { readFileSync } from "fs";
+const IGR_ROR_SAMPLES: { odia: string; want: string; source: string; note: string }[] = JSON.parse(
+  readFileSync("qa/fixtures/igr-ror-samples.json", "utf-8")
+).map((s: { odia: string; want: string; source: string; note: string }) => ({
+  odia: s.odia,
+  want: s.want,
+  source: s.source,
+  note: s.note,
+}));
+
+const r3 = runSampleSet(IGR_ROR_SAMPLES, "Sample Set 3: Real IGR RoR fixture names (45 samples from production code)");
+
+const totalPre = r1.preP5Pass + r2.preP5Pass + r3.preP5Pass;
+const totalPost = r1.postP5Pass + r2.postP5Pass + r3.postP5Pass;
+const total = SAMPLES.length + PRODUCTION_SAMPLES.length + IGR_ROR_SAMPLES.length;
 
 console.log();
 console.log("## Verdict");
 console.log();
-console.log(`**Combined pre-P5: ${totalPre}/${total} (${((totalPre / total) * 100).toFixed(0)}%)**`);
+console.log(`**Combined pre-P5:  ${totalPre}/${total} (${((totalPre / total) * 100).toFixed(0)}%)**`);
 console.log(`**Combined post-P5: ${totalPost}/${total} (${((totalPost / total) * 100).toFixed(0)}%)**`);
 console.log();
 console.log(`P5 fixes ${totalPost - totalPre} of ${total} names.`);
+console.log();
+console.log(`### Set-by-set breakdown`);
+console.log();
+console.log(`| Set | Pre-P5 | Post-P5 | Δ |`);
+console.log(`|-----|--------|---------|---|`);
+console.log(`| 1. Single-token (${SAMPLES.length}) | ${r1.preP5Pass}/${SAMPLES.length} | ${r1.postP5Pass}/${SAMPLES.length} | +${r1.postP5Pass - r1.preP5Pass} |`);
+console.log(`| 2. Production-shaped (${PRODUCTION_SAMPLES.length}) | ${r2.preP5Pass}/${PRODUCTION_SAMPLES.length} | ${r2.postP5Pass}/${PRODUCTION_SAMPLES.length} | +${r2.postP5Pass - r2.preP5Pass} |`);
+console.log(`| 3. Real IGR RoR fixture (${IGR_ROR_SAMPLES.length}) | ${r3.preP5Pass}/${IGR_ROR_SAMPLES.length} | ${r3.postP5Pass}/${IGR_ROR_SAMPLES.length} | +${r3.postP5Pass - r3.preP5Pass} |`);
 console.log();

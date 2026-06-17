@@ -1,0 +1,272 @@
+[
+  {
+    "odia": "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା",
+    "want": "Krushnachandra Barajena",
+    "source": "golden-path.ts",
+    "note": "primary owner, has ଚନ୍ଦ୍ର conjunct"
+  },
+  {
+    "odia": "ପ୍ରତିମା ଚନ୍ଦ୍ର ବଡ଼ଯେନା",
+    "want": "Pratima Chandra Barajena",
+    "source": "golden-path.ts",
+    "note": "father's name field"
+  },
+  {
+    "odia": "ସୁବ୍ର ଚନ୍ଦ୍ର ବଡ଼ଯେନା",
+    "want": "Subhra Chandra Barajena",
+    "source": "golden-path.ts",
+    "note": "subra = subhra popular spelling"
+  },
+  {
+    "odia": "ଗୌର ଚନ୍ଦ୍ର ବଡ଼ଯେନା",
+    "want": "Gaur Chandra Barajena",
+    "source": "golden-path.ts",
+    "note": "ଗୌ long-o"
+  },
+  {
+    "odia": "ସୁନୀତା ଦେବୀ",
+    "want": "Sunita Debi",
+    "source": "golden-path.ts",
+    "note": "Debi not Devi (popular spelling)"
+  },
+  {
+    "odia": "ବିକାଶ ଚନ୍ଦ୍ର ଦାଶ",
+    "want": "Bikash Chandra Dash",
+    "source": "consumer-report-writer/src/index.test.ts",
+    "note": "Dash not Das (popular spelling)"
+  },
+  {
+    "odia": "ସୀତା ପଟ୍ଟନାୟକ",
+    "want": "Sita Pattanayak",
+    "source": "consumer-report-writer/src/index.test.ts",
+    "note": "Pattanayak = Pattanayaka suffix"
+  },
+  {
+    "odia": "ରାମ ପଟ୍ଟନାୟକ",
+    "want": "Ram Pattanayak",
+    "source": "consumer-report-writer/src/index.test.ts",
+    "note": "short name + Pattanayak"
+  },
+  {
+    "odia": "ବିକାଶ ଚନ୍ଦ୍ର ମୋହାପାତ୍ର",
+    "want": "Bikash Chandra Mohapatra",
+    "source": "ownership-reasoner/index.test.ts",
+    "note": "claim + RoR match"
+  },
+  {
+    "odia": "ରାମ ଚନ୍ଦ୍ର ମୋହାପାତ୍ର",
+    "want": "Ram Chandra Mohapatra",
+    "source": "ownership-reasoner/index.test.ts",
+    "note": "father/husband name"
+  },
+  {
+    "odia": "ଗଫୁରନ ବିବି",
+    "want": "Gafuran Bibi",
+    "source": "bhulekh/index.test.ts",
+    "note": "Muslim name, Bibi suffix"
+  },
+  {
+    "odia": "ସେକ୍ ରହେମାନ",
+    "want": "Sek Reheman",
+    "source": "bhulekh/index.test.ts",
+    "note": "Muslim name, Sek prefix"
+  },
+  {
+    "odia": "ପ୍ରଥମ",
+    "want": "Pratham",
+    "source": "bhulekh/index.test.ts",
+    "note": "placeholder test name"
+  },
+  {
+    "odia": "ଦ୍ୱିତୀୟ",
+    "want": "Dwitiya",
+    "source": "bhulekh/index.test.ts",
+    "note": "ordinal number as name"
+  },
+  {
+    "odia": "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ",
+    "want": "Krushnachandra Barajena",
+    "source": "demo-fixture.ts",
+    "note": "FULL RoR row — tenantName portion (before ପି:)"
+  },
+  {
+    "odia": "ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା",
+    "want": "Bauribandhu Barajena",
+    "source": "demo-fixture.ts",
+    "note": "father's name (after ପି:)"
+  },
+  {
+    "odia": "ଗଫୁରନ ବିବି ସ୍ଵା:ସେକ୍ ରହେମାନ",
+    "want": "Gafuran Bibi",
+    "source": "bhulekh/index.test.ts",
+    "note": "FULL RoR row — tenantName (before ସ୍ଵା:)"
+  },
+  {
+    "odia": "ମେଣ୍ଢାଶାଳ",
+    "want": "Mendhasala",
+    "source": "bhulekh/index.test.ts",
+    "note": "village name — conjunct ଣ୍ଢ"
+  },
+  {
+    "odia": "ମୁସଲମାନ",
+    "want": "Musulman",
+    "source": "bhulekh/index.test.ts",
+    "note": "caste term — common RoR field"
+  },
+  {
+    "odia": "ନିଜିଗାଁ",
+    "want": "Nijigaon",
+    "source": "bhulekh/index.test.ts",
+    "note": "village/residence — ଗାଁ suffix"
+  },
+  {
+    "odia": "ନମୁନା",
+    "want": "Namuna",
+    "source": "consumer-report-writer/src/index.test.ts",
+    "note": "placeholder used in fixtures"
+  },
+  {
+    "odia": "ଦଣ୍ଡା",
+    "want": "Danda",
+    "source": "golden-path.ts",
+    "note": "land class term"
+  },
+  {
+    "odia": "ଶାରଦ ଦୁଇ",
+    "want": "Sharada Dui",
+    "source": "consumer-report-writer/src/index.test.ts",
+    "note": "land class with serial"
+  },
+  {
+    "odia": "ଅଜଣାନାମ",
+    "want": "Ajnanama",
+    "source": "consumer-report-writer/src/index.test.ts",
+    "note": "Unknown (literally 'unknown name')"
+  },
+  {
+    "odia": "ରମେଶ ଚନ୍ଦ୍ର ପଟ୍ଟନାୟକ",
+    "want": "Ramesh Chandra Pattanayak",
+    "source": "derived-from-pattern",
+    "note": "Ramesh variant of ରମେଶ"
+  },
+  {
+    "odia": "ସୁକନ୍ତା ଦେବୀ",
+    "want": "Sukanta Debi",
+    "source": "derived-from-pattern",
+    "note": "common Odia female name"
+  },
+  {
+    "odia": "ନରେନ୍ଦ୍ର କୁମାର ମହାନ୍ତି",
+    "want": "Narendra Kumar Mahanti",
+    "source": "derived-from-pattern",
+    "note": "Mahanti = ମହାନ୍ତି (schwa-final)"
+  },
+  {
+    "odia": "ପ୍ରହଲାଦ ସାହୁ",
+    "want": "Prahlad Sahu",
+    "source": "derived-from-pattern",
+    "note": "common Odia male name + ସାହୁ"
+  },
+  {
+    "odia": "ଗୋପାଳ କୃଷ୍ଣ ପଟ୍ଟନାୟକ",
+    "want": "Gopal Krishna Pattanayak",
+    "source": "derived-from-pattern",
+    "note": "Gopal Krishna classic combo"
+  },
+  {
+    "odia": "ଚିନ୍ତାମଣି ଛୋଟୁଆନ୍ଦ",
+    "want": "Chintamani Chhotuand",
+    "source": "derived-from-pattern",
+    "note": "Chhotuand = ଛୋଟୁ surname"
+  },
+  {
+    "odia": "ହରେକୃଷ୍ଣ ସାହୁ",
+    "want": "Harekrushna Sahu",
+    "source": "golden-path.ts",
+    "note": "dict hit, full name"
+  },
+  {
+    "odia": "ବୈଦେହୀ ଦେବୀ",
+    "want": "Baidhei Debi",
+    "source": "derived-from-pattern",
+    "note": "common female name, ୈ long-ai"
+  },
+  {
+    "odia": "ତୁଳସୀ ପ୍ରସାଦ ଦାସ",
+    "want": "Tulasi Prasad Das",
+    "source": "derived-from-pattern",
+    "note": "ତୁଳସୀ = Tulasi, Das not Dash"
+  },
+  {
+    "odia": "ଦୁର୍ଗା ପ୍ରସାଦ ସାହୁ",
+    "want": "Durga Prasad Sahu",
+    "source": "derived-from-pattern",
+    "note": "Durga Prasad + Sahu"
+  },
+  {
+    "odia": "ଶାରଦା ପ୍ରସାଦ ମହାପାତ୍ର",
+    "want": "Sharada Prasad Mohapatra",
+    "source": "derived-from-pattern",
+    "note": "Sharada + Prasad + Mohapatra"
+  },
+  {
+    "odia": "ଅମ୍ବୁଜ କୁମାର ପଣ୍ଡା",
+    "want": "Ambuja Kumar Panda",
+    "source": "derived-from-pattern",
+    "note": "Ambuja + Kumar + Panda"
+  },
+  {
+    "odia": "ଯଜ୍ଞେଶ୍ୱର ମୁଖାର୍ଜୀ",
+    "want": "Yajneshwara Mukharji",
+    "source": "derived-from-pattern",
+    "note": "ଶ୍ୱ conjunct + Mukharji"
+  },
+  {
+    "odia": "ନୀଳମଣି ସାମନ୍ତ",
+    "want": "Nilamani Samanta",
+    "source": "derived-from-pattern",
+    "note": "Samanta = ସାମନ୍ତ"
+  },
+  {
+    "odia": "ଗଙ୍ଗାଧର ପଣ୍ଡିତ",
+    "want": "Gangadhara Pandit",
+    "source": "derived-from-pattern",
+    "note": "Gangadhara + Pandit"
+  },
+  {
+    "odia": "ଜୟକୃଷ୍ଣ ମହାପାତ୍ର",
+    "want": "Jaya Krishna Mohapatra",
+    "source": "derived-from-pattern",
+    "note": "Jaya Krishna + Mohapatra"
+  },
+  {
+    "odia": "ସାଧୁ ଚରଣ ଦାସ",
+    "want": "Sadhu Charan Das",
+    "source": "derived-from-pattern",
+    "note": "Sadhu + Charan + Das"
+  },
+  {
+    "odia": "ଗୋବର୍ଦ୍ଧନ ସାହୁ",
+    "want": "Gobardhana Sahu",
+    "source": "derived-from-pattern",
+    "note": "Gobardhana + Sahu (ର୍ଧ conjunct)"
+  },
+  {
+    "odia": "ଚନ୍ଦ୍ରମଣି ଦାସ",
+    "want": "Chandramani Das",
+    "source": "derived-from-pattern",
+    "note": "Chandramani + Das"
+  },
+  {
+    "odia": "ରବିନ୍ଦ୍ର କୁମାର ମହାନ୍ତି",
+    "want": "Ravindra Kumar Mahanti",
+    "source": "derived-from-pattern",
+    "note": "Ravindra + Mahanti"
+  },
+  {
+    "odia": "ମନୋଜ କୁମାର ମିଶ୍ର",
+    "want": "Manoj Kumar Mishra",
+    "source": "derived-from-pattern",
+    "note": "Manoj + ଶ୍ର conjunct Mishra"
+  }
+]
