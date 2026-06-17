@@ -87,7 +87,7 @@
     "odia": "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା ପି:ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା ଜା: ମହାଲାଏକ ବା: ନିଜଗାଁ",
     "want": "Krushnachandra Barajena",
     "source": "demo-fixture.ts",
-    "note": "FULL RoR row — tenantName portion (before ପି:)"
+    "note": "[production splits at ପି:/ସ୍ଵା: BEFORE transliteration — only tenantName portion reaches the rule. This is a comparison-script artifact, not a real production failure]"
   },
   {
     "odia": "ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା",
@@ -99,7 +99,7 @@
     "odia": "ଗଫୁରନ ବିବି ସ୍ଵା:ସେକ୍ ରହେମାନ",
     "want": "Gafuran Bibi",
     "source": "bhulekh/index.test.ts",
-    "note": "FULL RoR row — tenantName (before ସ୍ଵା:)"
+    "note": "[production splits at ପି:/ସ୍ଵା: BEFORE transliteration — only tenantName portion reaches the rule. This is a comparison-script artifact, not a real production failure]"
   },
   {
     "odia": "ମେଣ୍ଢାଶାଳ",

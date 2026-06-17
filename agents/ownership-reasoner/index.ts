@@ -609,6 +609,16 @@ function dedupeOwnerNames(names: string[]): string[] {
 function normalizeOwnerIdentity(name: string): string {
   return sanitize(name)
     .toLowerCase()
+    // Collapse common popular-spelling pairs: "Debi" ↔ "Devi", "Das" ↔ "Dash",
+    // "Samanta" ↔ "Samant", "Mahanti" ↔ "Mohanty", "Barik" ↔ "Barick",
+    // etc. These are dialectal/regional variants of the same person.
+    .replace(/\bdebi\b/g, "devi")
+    .replace(/\bdash\b/g, "das")
+    .replace(/\bsamanta\b/g, "samant")
+    .replace(/\bmahanty\b/g, "mahanti")
+    .replace(/\bmohanty\b/g, "mahanti")
+    .replace(/\bbarik\b/g, "barick")
+    .replace(/\bchhotuand\b/g, "chhotuand")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();

@@ -49,7 +49,7 @@ const ODIA_CONSONANTS = new Set([
   "\u0B29", "\u0B2A", "\u0B2B", "\u0B2C", "\u0B2D",
   "\u0B2E", "\u0B2F", "\u0B30", "\u0B31", "\u0B32",
   "\u0B33", "\u0B35", "\u0B36", "\u0B37", "\u0B38",
-  "\u0B39", "\u0B5C", "\u0B5D", "\u0B5F", // Oriya Nukta: \u1E0D\u0323, \u1E0D\u0323\u0323, \u1E8F
+  "\u0B39", "\u0B5C", "\u0B5D", "\u0B5F", "\u0B71", // Oriya Nukta: \u1E0D\u0323, \u1E0D\u0323\u0323, \u1E8F + Vedic anusvara: va
 ]);
 
 const ODIA_CANDRA_BINDU = "\u0B3C";
@@ -98,6 +98,7 @@ const ODIA_CONSONANT_MAP: Record<string, string> = {
   "\u0B33": "l",  "\u0B35": "w", "\u0B36": "sh",  "\u0B37": "sh",  "\u0B38": "s",
   "\u0B39": "h",
   "\u0B5F": "y",   // U+0B5F YAY NUKTA (ya with nukta) \u2014 base consonant, not a modifier
+  "\u0B71": "v",   // U+0B71 VEDIC ANUSVARA (va)
 };
 
 /**
@@ -134,6 +135,7 @@ const CONSONANT_CLASS: Record<string, "velar" | "palatal" | "retroflex" | "denta
   "\u0B2F": "glide", "\u0B30": "liquid", "\u0B31": "liquid", "\u0B32": "liquid", "\u0B33": "liquid",
   "\u0B35": "glide", "\u0B36": "sibilant", "\u0B37": "sibilant", "\u0B38": "sibilant", "\u0B39": "sibilant",
   "\u0B5F": "glide", // U+0B5F YAY NUKTA (ya with nukta)
+  "\u0B71": "glide", // U+0B71 VEDIC ANUSVARA (va)
 };
 
 /**
@@ -167,11 +169,17 @@ const CONJUNCT_MAP: Record<string, string> = {
   "\u0B21\u0B4D\u0B27": "ddh",  // \u0B21\u0B4D\u0B27
   "\u0B24\u0B4D\u0B24": "tt",   // \u0B24\u0B4D\u0B24 = tta
   "\u0B24\u0B4D\u0B25": "tth",  // \u0B24\u0B4D\u0B25 = ttha
+  "\u0B26\u0B4D\u0B22": "ddh",  // \u0B26\u0B4D\u0B22 = ddha  (Mendhasala \u0B26\u0B4D\u0B27 \u2192 nd)
+  "\u0B26\u0B4D\u0B23": "nd",   // \u0B26\u0B4D\u0B23 = dental-d + retroflex-n (assimilates to "nd")
   "\u0B26\u0B4D\u0B24": "tt",   // \u0B26\u0B4D\u0B24
   "\u0B26\u0B4D\u0B25": "tth",  // \u0B26\u0B4D\u0B25
   "\u0B26\u0B4D\u0B26": "dd",   // \u0B26\u0B4D\u0B26
   "\u0B27\u0B4D\u0B27": "ddh",  // \u0B27\u0B4D\u0B27
   "\u0B27\u0B4D\u0B30": "dr",   // \u0B27\u0B4D\u0B30
+  "\u0B28\u0B4D\u0B27": "ndh",  // \u0B28\u0B4D\u0B27 = ndha  (common in names)
+  "\u0B28\u0B4D\u0B26": "nd",   // \u0B28\u0B4D\u0B26 = nda
+  "\u0B28\u0B4D\u0B21": "nd",   // \u0B28\u0B4D\u0B21 = nda (dental + retroflex assimilates)
+  "\u0B28\u0B4D\u0B22": "nd",   // \u0B28\u0B4D\u0B22 = nda (dental + retroflex aspirates to "ndh" but popular scheme just "nd" \u2014 Mendhasala)
   "\u0B2A\u0B4D\u0B24": "pt",   // \u0B2A\u0B4D\u0B24 = pta
   "\u0B2A\u0B4D\u0B25": "pth",  // \u0B2A\u0B4D\u0B25
   "\u0B2A\u0B4D\u0B26": "pd",   // \u0B2A\u0B4D\u0B26
@@ -188,7 +196,10 @@ const CONJUNCT_MAP: Record<string, string> = {
   "\u0B32\u0B4D\u0B32": "ll",   // \u0B32\u0B4D\u0B32 = lla
   "\u0B36\u0B4D\u0B1A": "shch", // \u0B36\u0B4D\u0B1A
   "\u0B36\u0B4D\u0B30": "shr",  // \u0B36\u0B4D\u0B30 = shra
-  "\u0B36\u0B4D\u0B5F": "shv",  // \u0B36\u0B4D\u0B2C = shva (e.g. \u0B05\u0B36\u0B4D\u0B2C = Ashva)
+  "\u0B36\u0B4D\u0B5F": "shy",  // \u0B36\u0B4D\u0B5F = shya (NOT shva \u2014 was a typo; e.g. \u0B05\u0B36\u0B4D\u0B5F = Ashya)
+  "\u0B36\u0B4D\u0B2C": "shv",  // \u0B36\u0B4D\u0B2C = shva (e.g. \u0B05\u0B36\u0B4D\u0B2C = Ashva, \u0B2C\u0B3F\u0B36\u0B4D\u0B2C = Bishva)
+  "\u0B36\u0B4D\u0B71": "shv",  // \u0B36\u0B4D\u0B71 = shva (with Vedic va \u2014 e.g. \u0B2C\u0B3F\u0B36\u0B4D\u0B71 = Bishva, \u0B2E\u0B47\u0B23\u0B4D\u0B21\u0B3E\u0B36\u0B4D\u0B71 = Mendhasala)
+  "\u0B36\u0B4D\u0B2F": "shv",  // \u0B36\u0B4D\u0B5F (alias for "v" sound) \u2014 Ishvara etc.
   "\u0B38\u0B4D\u0B24": "st",   // \u0B38\u0B4D\u0B24 = sta
   "\u0B38\u0B4D\u0B25": "sth",  // \u0B38\u0B4D\u0B25 = stha
   "\u0B38\u0B4D\u0B30": "sr",   // \u0B38\u0B4D\u0B30 = sra

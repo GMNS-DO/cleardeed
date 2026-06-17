@@ -105,7 +105,10 @@ describe("A10 ConsumerReportWriter", () => {
     expect(allTokens.quality).toBe("lexicon_all_tokens");
     expect(allTokens.needsManualReview).toBe(false);
 
-    const machine = transliterateOdiaWithConfidence("ଅଜଣାନାମ");
+    // P5b: ଅଜଣାନାମ ("unknown name") is now in the dict as a verified
+    // entry. To exercise the machine_reading path, use a name that is
+    // genuinely unknown.
+    const machine = transliterateOdiaWithConfidence("କ୍ୱାଣ୍ଟମ");
     expect(machine.english).toMatch(/[A-Za-z]/);
     expect(machine.quality).toBe("machine_reading");
     expect(machine.needsManualReview).toBe(true);

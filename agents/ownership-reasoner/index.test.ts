@@ -23,9 +23,11 @@ describe("Odia transliteration", () => {
   });
 
   it("transliterates Sunita Devi's name", () => {
+    // P5b: the popular Odia spelling uses "Debi" (not "Devi").
+    // The dict now maps ଦେବୀ → "Debi" per golden-path.ts:108.
     const result = transliterateOdia("ସୁନୀତା ଦେବୀ");
     expect(result.toLowerCase()).toContain("sunita");
-    expect(result.toLowerCase()).toContain("devi");
+    expect(result.toLowerCase()).toContain("debi");
   });
 
   it("transliterates Mohapatra", () => {
