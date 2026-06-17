@@ -52,9 +52,13 @@ import type { SourceResult } from "@cleardeed/orchestrator";
 import {
   isSourceFired,
   V11_DORMANT_MARKER,
+  ALL_SOURCE_IDS,
   type FireResult,
   type SourceId,
 } from "./contracts/fire";
+
+/** Runtime set of valid SourceId values, for narrowing guard. */
+const VALID_SOURCE_IDS: ReadonlySet<string> = new Set<string>(ALL_SOURCE_IDS);
 
 export type { Tier2Input };
 
@@ -126,6 +130,16 @@ export const V11_DORMANT_SOURCES: ReadonlySet<SourceId> = new Set<SourceId>([
 export function buildFireMap(sources: ReadonlyArray<SourceResult>): Map<SourceId, FireResult> {
   const out = new Map<SourceId, FireResult>();
   for (const src of sources) {
+    // M2 narrowing guard: SourceResult.source is typed as string, but the
+    // gate expects a SourceId. If the orchestrator ever emits a source id
+    // that isn't in the closed SourceId union (e.g. a stale code path or
+    // a typo in a fetcher), surface that explicitly as `invalid_input`
+    // rather than silently coercing and producing a misleading
+    // `skipped_dormant` from the dormant check below.
+    if (typeof src.source !== "string" || !VALID_SOURCE_IDS.has(src.source)) {
+      out.set(src.source as SourceId, { fired: false, reason: "invalid_input" });
+      continue;
+    }
     const id = src.source as SourceId;
     if (V11_DORMANT_SOURCES.has(id)) {
       out.set(id, { fired: false, reason: "skipped_dormant" });

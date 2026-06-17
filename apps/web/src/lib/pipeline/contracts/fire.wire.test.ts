@@ -106,11 +106,11 @@ describe("fire wire — generateReport integrates buildFireMap", () => {
     }
   });
 
-  it("buildFireMap does not silently drop unknown source ids (M2 narrowing)", () => {
+  it("buildFireMap returns invalid_input for unknown source ids (M2 narrowing)", () => {
     // Feed it a source with an id outside SourceId. The function must
-    // narrow and either skip with an invalid_input reason or fall
-    // through to no_schema — it must NOT crash and it must NOT return
-    // a successful fire result for a garbage id.
+    // narrow and return fired=false with reason='invalid_input' — it
+    // must NOT crash and it must NOT return a successful fire result
+    // for a garbage id, nor silently produce skipped_dormant.
     const garbage = {
       source: "totally-not-a-real-source",
       status: "ok",
@@ -119,9 +119,15 @@ describe("fire wire — generateReport integrates buildFireMap", () => {
     } as unknown as SourceResult;
 
     const map = buildFireMap([garbage]);
-    // Either the entry is absent or its reason is non-success.
-    for (const [, result] of map) {
+    // The entry must exist (we surface the narrowing failure) and have
+    // the explicit invalid_input reason.
+    const values = Array.from(map.values());
+    expect(values.length).toBeGreaterThan(0);
+    for (const result of values) {
       expect(result.fired).toBe(false);
+      if (!result.fired) {
+        expect(result.reason).toBe("invalid_input");
+      }
     }
   });
 });
