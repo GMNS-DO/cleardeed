@@ -6,6 +6,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 300_000,
     include: [
+      "packages/captcha-breaker/src/**/*.test.ts",
       "packages/fetchers/nominatim/src/**/*.test.ts",
       "packages/fetchers/bhulekh/src/**/*.test.ts",
       "packages/fetchers/bhunaksha/src/**/*.test.ts",
@@ -66,6 +67,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@cleardeed/captcha-breaker": path.resolve(__dirname, "packages/captcha-breaker/src/index.ts"),
       "@/*": path.resolve(__dirname, "./apps/web/src/*"),
       "@/lib/db": path.resolve(__dirname, "./apps/web/src/lib/db"),
       "@/lib/report-access": path.resolve(__dirname, "./apps/web/src/lib/report-access"),

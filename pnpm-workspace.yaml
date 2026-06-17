@@ -1,5 +1,6 @@
 packages:
   - 'apps/*'
+  - 'packages/captcha-breaker'
   - 'packages/schema'
   - 'packages/orchestrator'
   - 'packages/pdf-renderer'
