@@ -39,6 +39,7 @@ export default defineConfig({
       "apps/web/src/lib/pipeline/contracts/fire.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.snapshot.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.wire.test.ts",
+      "apps/web/src/lib/pipeline/contracts/contract-test-factory.test.ts",
       "apps/web/src/lib/db.expiry.test.ts",
       "apps/web/src/lib/report-access.test.ts",
       "apps/web/src/lib/razorpay-config.test.ts",
