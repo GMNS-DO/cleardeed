@@ -243,25 +243,17 @@ describe("P1 P0 accuracy gate (placeholder)", () => {
    *
    * Plan §2.2 requires ≥ 70% on a 200-name held-out set built from
    * Forebears (80), babynamesdirectory (80), and IGR RoR samples (40).
-   * None of these are in the repo today. This test deliberately fails
-   * with a skip so it cannot be silently green-washed.
    *
-   * To enable this gate:
-   *   1. Acquire Forebears Odisha-surname top-100 list (1 dev-day, manual web).
-   *   2. Acquire babynamesdirectory Odia names list (1 dev-day, manual web).
-   *   3. Extract 40 additional IGR RoR samples from ror-samples.md
-   *      (or capture 40 fresh samples).
-   *   4. Build a name-pair JSON in this directory:
-   *        qa/fixtures/odia-held-out-200.json
-   *      Format: { names: [{ odia: "…", english: "…", source: "forebears" }, …] }
-   *   5. Implement the gate check below; assert ≥ 70% exact match on
-   *      transliterateOdiaWithConfidence.quality === "verified_exact"
-   *      or "lexicon_all_tokens".
-   *
-   * See docs/week2-handoff.md for the full acquisition plan.
+   * v2 fixture status (2026-06-17): 200 names are in place — Forebears
+   * top-100 Odisha surnames (24 items), 30 uncommon forenames, 30
+   * uncommon surnames, 30 conjunct-heavy stress cases, and ~80
+   * additional forenames drawn from common Odia usage. The 40 IGR RoR
+   * samples remain unacquired; the 200-item gate below stays as
+   * it.skip until real IGR RoR samples are added (per plan section 2.2,
+   * 1.5 dev-days of manual acquisition work).
    */
-  it.skip("achieves ≥ 70% exact match on 200-name held-out (data not yet acquired)", () => {
-    // The test body will be filled in Week 2.
+  it.skip("achieves ≥ 70% exact match on 200-name held-out (40 IGR RoR samples still needed for production gate)", () => {
+    // The test body will be filled in once IGR RoR samples are in.
     // When implementing, the assertion shape is:
     //   const fixture = JSON.parse(readFileSync("qa/fixtures/odia-held-out-200.json"));
     //   const pass = fixture.names.filter(n =>
@@ -271,20 +263,22 @@ describe("P1 P0 accuracy gate (placeholder)", () => {
   });
 
   /**
-   * P0 held-out gate — 24-name subset (statistically underpowered).
+   * P1 P1 held-out report — 200-name stratified fixture.
    *
-   * This test runs against an honest subset of the 200-name held-out fixture.
-   * The 24 names are from Forebears Odisha forenames that I can confidently
-   * render in Odia script. None are in the current 109-token dict.
+   * This test runs against the full 200-name held-out fixture. The
+   * fixture is stratified (24 Forebears forenames, 30 uncommon
+   * forenames, 30 uncommon surnames, 30 conjunct-heavy stress cases,
+   * ~80 additional forenames). All disjoint from the 501-token
+   * training dict.
    *
-   * IMPORTANT: With only 24 items, a pass/fail at 70% has wide confidence
-   * intervals (binom CI half-width ~ 18 percentage points at 70%).
-   * This test reports the actual pass rate but does NOT declare GO/NO-GO.
+   * With 200 items, a pass/fail at 70% has CI half-width ~5pp
+   * (binom, alpha=0.05). This test reports the actual pass rate
+   * across all tiers and per-tier breakdowns.
    *
-   * The full 200-name gate (with statistical significance) remains skipped
-   * until data acquisition.
+   * The gate itself remains it.skip until the 40 IGR RoR samples
+   * are added to the fixture (plan section 2.2).
    */
-  it("report pass rate on 24-name held-out (statistically underpowered, data acquired from Forebears Odisha forenames)", () => {
+  it("report pass rate on 200-name stratified held-out (still not the production gate)", () => {
     const { readFileSync, writeFileSync } = require("fs");
     const path = require("path");
 
@@ -294,7 +288,7 @@ describe("P1 P0 accuracy gate (placeholder)", () => {
 
     // Assert fixture shape
     expect(Array.isArray(fixture.names)).toBe(true);
-    expect(fixture.names.length).toBe(24);
+    expect(fixture.names.length).toBe(200);
 
     // Run test
     const exactMatches = fixture.names.filter((n) =>
@@ -302,40 +296,61 @@ describe("P1 P0 accuracy gate (placeholder)", () => {
     );
 
     const passRate = exactMatches.length / fixture.names.length;
-    console.log(`\nHeld-out test results (24 names):`);
-    console.log(`  Exact matches: ${exactMatches.length}/${fixture.names.length} (${passRate.toFixed(2)})`);
-    console.log(`  Mismatches: ${fixture.names.length - exactMatches.length}/${fixture.names.length}`);
+    console.log(`\nHeld-out test results (200 names):`);
+    console.log(`  Exact matches: ${exactMatches.length}/${fixture.names.length} (${(passRate * 100).toFixed(1)}%)`);
+
+    // Per-tier breakdown.
+    const tiers = ["lexicon_all_tokens", "lexicon_partial", "machine_reading", "verified_exact"];
+    const byTier: Record<string, { matches: number; total: number }> = {};
+    for (const t of tiers) byTier[t] = { matches: 0, total: 0 };
+    for (const n of fixture.names) {
+      const r = transliterateOdiaWithConfidence(n.odia);
+      const tier = r.quality;
+      if (!byTier[tier]) byTier[tier] = { matches: 0, total: 0 };
+      byTier[tier].total += 1;
+      if (r.english.toLowerCase() === n.english.toLowerCase()) byTier[tier].matches += 1;
+    }
+    console.log(`  Tier breakdown:`);
+    for (const t of tiers) {
+      const { matches, total } = byTier[t];
+      const rate = total > 0 ? (matches / total * 100).toFixed(1) : "—";
+      console.log(`    ${t}: ${matches}/${total} (${rate}%)`);
+    }
 
     // Assert: report the pass rate
-    // DO NOT assert passRate >= 0.70 — it would be statistically underpowered
-    // and could mislead the decision. Instead:
+    // DO NOT assert passRate >= 0.70 — the 200-item gate remains it.skip
+    // until 40 IGR RoR samples are added. This test is a reporting-only
+    // signal for the engineering team.
     expect(typeof passRate).toBe("number");
 
     // If you want to see all failures:
-    const mismatches = fixture.names.filter((n) => !exactMatches.includes(n));
+    const mismatches = fixture.names.filter(
+      (n) => !exactMatches.includes(n)
+    );
     if (mismatches.length > 0) {
-      console.log("\nMismatches:");
-      mismatches.forEach((n) => {
-        const got = transliterateOdiaWithConfidence(n.odia).english;
-        console.log(`  ${n.odia} → got: ${got}, want: ${n.english}`);
+      console.log(`\n  Mismatches (showing up to 20):`);
+      mismatches.slice(0, 20).forEach((n) => {
+        const got = transliterateOdiaWithConfidence(n.odia);
+        console.log(`    ${n.odia} → got: ${got.english} (${got.quality}), want: ${n.english}`);
       });
     }
 
     // Test artifacts: save this test run to a dedicated output dir
     const outputDir = path.join(process.cwd(), "test-output");
     try {
-      // Best-effort create the output dir; ignore if it already exists
       require("fs").mkdirSync(outputDir, { recursive: true });
     } catch (_) { /* ignore */ }
-    const outputPath = path.join(outputDir, "odia-held-out-24-name.json");
+    const outputPath = path.join(outputDir, "odia-held-out-200-name.json");
     writeFileSync(outputPath, JSON.stringify({
       passRate,
       exactMatches: exactMatches.length,
       mismatches: fixture.names.length - exactMatches.length,
+      tierBreakdown: byTier,
       failures: mismatches.map(n => ({
         input: n.odia,
         expected: n.english,
         got: transliterateOdiaWithConfidence(n.odia).english,
+        quality: transliterateOdiaWithConfidence(n.odia).quality,
       })),
     }, null, 2));
     console.log(`\nTest artifacts saved to: ${outputPath}`);
