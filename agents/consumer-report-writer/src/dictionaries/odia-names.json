@@ -1,10 +1,10 @@
 {
   "_meta": {
-    "version": 5,
+    "version": 7,
     "created": "2026-06-17",
     "source": "lib.ts KNOWN_ODIA_NAMES (verbatim extract, no additions)",
-    "count": 630,
-    "notes": "P1 P0 + P5: nukta-bug fix (U+0B5F as base consonant), nasal-assimilation rule, conjunct map cleanup, and 129 missing fixture names added as dict entries.",
+    "count": 639,
+    "notes": "P1 P0 + P5 + production-shaped gaps: added 19 missing single-token names found in the production pipeline (multi-token full names).",
     "updated": "2026-06-17",
     "p5_accuracy": "see report pass rate on 200-name held-out"
   },
@@ -103,7 +103,7 @@
     "ଗଙ୍ଗାଧର": "Gangadhar",
     "ଗହିର": "Gahir",
     "ଗହେର": "Gaher",
-    "ଗୀତା": "Gita",
+    "ଗୀତା": "Geeta",
     "ଗୀତା ଦେବୀ": "Gita Devi",
     "ଗୀତାଞ୍ଜଳି": "Gitanjali",
     "ଗୁପ୍ତା": "Gupta",
@@ -638,6 +638,15 @@
     "ସଫଳ": "Saphala",
     "ସ୍ନାତକ": "Snataka",
     "ଅନୁକୂଳ": "Anukula",
-    "ଉଦୟ": "Udaya"
+    "ଉଦୟ": "Udaya",
+    "ଗଙ୍ଗେଶ୍ୱର": "Gangeshwar",
+    "ଅନ୍ୱର": "Anwar",
+    "ଖାନ": "Khan",
+    "ସ୍ୱାଇଁ": "Swain",
+    "ଦାସ": "Das",
+    "ସୁଶୀଲ": "Sushil",
+    "ଶକ୍ତି": "Shakti",
+    "ହେମାଙ୍ଗ": "Hemang",
+    "ସରୋଜିନୀ": "Sarojini"
   }
 }
