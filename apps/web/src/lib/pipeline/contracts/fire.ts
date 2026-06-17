@@ -98,7 +98,7 @@ export type FireEnvelope =
   | { source: "igr-bmv"; fired: true; guidelineValue: number | null; villageName: string | null }
   | { source: "igr-daily-bulletin"; fired: true; bulletinDate: string | null; deedCount: number }
   | { source: "public-dashboard"; fired: true; scannedPageUrl: string | null }
-  | { source: "govt-fee"; fired: true; conversionFeeEstimate: number | null }
+  | { source: "govt-fee"; fired: true; category: string; minStampINR: number }
   | { source: "igr-certified-copy"; fired: true; certifiedCopyUrl: string | null }
   | { source: "igr-sro"; fired: true; sroName: string | null; sroAddress: string | null }
   | { source: "larr"; fired: true; notificationId: string | null; notificationDate: string | null }
@@ -392,6 +392,9 @@ function fireBdaZoning(d: SourceDataMap["bda-zoning"]): FireResult {
     return { fired: false, reason: "no_data" };
   }
   const zoneId = firstRow.zone?.id ?? null;
+  if (!zoneId) {
+    return { fired: false, reason: "no_data" };
+  }
   return {
     fired: true,
     envelope: {
@@ -475,44 +478,42 @@ function fireIgrDailyBulletin(d: SourceDataMap["igr-daily-bulletin"]): FireResul
 }
 
 function firePublicDashboard(d: SourceDataMap["public-dashboard"]): FireResult {
-  const url = (d as { scannedPageUrl?: string }).scannedPageUrl
-    ?? (d as { url?: string }).url
-    ?? null;
-  if (!url) {
+  if (!d.pageUrl) {
     return { fired: false, reason: "no_data" };
   }
   return {
     fired: true,
-    envelope: { source: "public-dashboard", fired: true, scannedPageUrl: url },
+    envelope: { source: "public-dashboard", fired: true, scannedPageUrl: d.pageUrl },
   };
 }
 
 function fireGovtFee(d: SourceDataMap["govt-fee"]): FireResult {
-  // Estimate the conversion fee as the average of all per-decimal
-  // AdditionalPerPlotFees entries — closer to a per-plot conversion
-  // estimate than the deed fees, which depend on the transaction value.
-  const conv = d.conversionFeeEstimate
-    ?? (d.schedule as { additionalPerPlotFees?: { conversionFeePerDecimal?: number } })?.additionalPerPlotFees?.conversionFeePerDecimal
-    ?? null;
-  if (conv == null) {
+  // The GovtFee contract schema (as of the binding brief) does not surface a
+  // top-level conversion fee — it lives in the per-plot schedule. We fire
+  // only when a `matchedDeedFee` is present (the buyer's quoted deed has a
+  // government-expected fee). If the schema later adds a dedicated
+  // conversion field, swap this check.
+  if (d.matchedDeedFee == null) {
     return { fired: false, reason: "no_data" };
   }
   return {
     fired: true,
-    envelope: { source: "govt-fee", fired: true, conversionFeeEstimate: conv },
+    envelope: {
+      source: "govt-fee",
+      fired: true,
+      category: d.matchedDeedFee.category,
+      minStampINR: d.matchedDeedFee.minStampINR,
+    },
   };
 }
 
 function fireIgrCertifiedCopy(d: SourceDataMap["igr-certified-copy"]): FireResult {
-  const url = (d as { certifiedCopyUrl?: string }).certifiedCopyUrl
-    ?? (d as { url?: string }).url
-    ?? null;
-  if (!url) {
+  if (!d.pageUrl) {
     return { fired: false, reason: "no_data" };
   }
   return {
     fired: true,
-    envelope: { source: "igr-certified-copy", fired: true, certifiedCopyUrl: url },
+    envelope: { source: "igr-certified-copy", fired: true, certifiedCopyUrl: d.pageUrl },
   };
 }
 

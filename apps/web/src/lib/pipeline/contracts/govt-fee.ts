@@ -17,4 +17,4 @@ export {
   type EncumbranceCertificateFee,
   type CertifiedCopyFee,
   type AdditionalPerPlotFees,
-} from "@cleardeed/fetcher-govt-fee";
+} from "../../../../../../packages/fetchers/govt-fee/src/contract";

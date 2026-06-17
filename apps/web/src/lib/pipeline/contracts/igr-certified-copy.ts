@@ -9,4 +9,4 @@ export {
   type CertifiedCopyResult,
   type CertifiedCopyData,
   type IndexEntry,
-} from "@cleardeed/fetcher-igr-certified-copy";
+} from "../../../../../../packages/fetchers/igr-certified-copy/src/contract";

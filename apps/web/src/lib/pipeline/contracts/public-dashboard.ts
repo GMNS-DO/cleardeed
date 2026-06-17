@@ -9,4 +9,4 @@ export {
   type PublicDashboardResult,
   type PublicDashboardData,
   type DashboardEntry,
-} from "@cleardeed/fetcher-public-dashboard";
+} from "../../../../../../packages/fetchers/public-dashboard/src/contract";
