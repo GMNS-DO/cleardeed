@@ -27,6 +27,7 @@ const KNOWN_ODIA_NAMES: Readonly<Record<string, string>> = loadOdiaNameDict();
 export type OdiaNameReadingQuality =
   | "verified_exact"
   | "lexicon_all_tokens"
+  | "lexicon_partial"
   | "machine_reading"
   | "latin_passthrough"
   | "empty";
@@ -329,6 +330,28 @@ export function transliterateOdiaWithConfidence(text: string): OdiaNameReading {
       quality: "lexicon_all_tokens",
       confidence: 0.92,
       needsManualReview: false,
+    };
+  }
+
+  // Partial-lexicon tier: at least one word in the dict, the rest from
+  // charByChar. This is for multi-word Odia names where some tokens
+  // are common (in the dict) and others are rare (need the fallback).
+  //   "ସାମଲ କୁମାର" → "Samal Kumar" (Samal in dict, Kumar in dict too
+  //   — that's the all_tokens case; this tier is for "ସାମଲ ଫୋନ୍ଦିଚାନ୍ଦ"
+  //   → "Samal Fondichan" where Fondichan is NOT in the dict).
+  // We mark needsManualReview=true because the user should verify the
+  // machine-read portion is correct.
+  const hasSomeDict = mappedWords.some(Boolean);
+  if (hasSomeDict) {
+    const partialEnglish = words
+      .map((word, idx) => mappedWords[idx] ?? charByChar(word))
+      .map((w, idx) => mappedWords[idx] ? w : titleCaseLatinWords(w))
+      .join(" ");
+    return {
+      english: partialEnglish,
+      quality: "lexicon_partial",
+      confidence: 0.80,
+      needsManualReview: true,
     };
   }
 

@@ -42,9 +42,9 @@ describe("odia-names loader", () => {
 
   it("meta reports the source and count", () => {
     const meta = getOdiaNamesMeta();
-    expect(meta.version).toBe(1);
+    expect(meta.version).toBe(2);
     expect(meta.count).toBe(Object.keys(loadOdiaNameDict()).length);
-    expect(meta.source).toMatch(/lib\.ts/);
+    expect(meta.source).toMatch(/lib\.ts|odia-names\.json/);
   });
 
   it("contains the surnames mentioned in the plan's gate (Mohapatra, Jena, Parida, etc.)", () => {
@@ -133,6 +133,21 @@ describe("behavior preservation (zero-change refactor)", () => {
     // one of them. The P1 P1 normaliser will fold them together.
     const s = "କୃଷ୍ଣ୍ଦର ବଡ୍ଯେନା";
     expect(transliterateOdia(s)).toBe("Krushnachandra Barajena");
+  });
+
+  it("returns lexicon_partial for multi-token with at least one dict word", () => {
+    // First word "Kumar" (କୁମାର) is in the dict; second word "Fondichan"
+    // is not, so the partial-lexicon tier kicks in.
+    const s = "କୁମାର ଫୋନ୍ଦିଚାନ୍ଦ";
+    const r = transliterateOdiaWithConfidence(s);
+    expect(r.quality).toBe("lexicon_partial");
+    expect(r.confidence).toBe(0.80);
+    expect(r.needsManualReview).toBe(true);
+    // First word should be the exact dict value "Kumar"
+    expect(r.english.split(" ")[0]).toBe("Kumar");
+    // The second word should be a non-empty string (machine-read)
+    expect(r.english.split(" ").length).toBe(2);
+    expect(r.english.split(" ")[1].length).toBeGreaterThan(0);
   });
 
   it("falls through to machine_reading for unknown Odia input", () => {
