@@ -239,6 +239,34 @@ describe("isSourceFired — reason literal union is exhaustive", () => {
     // The brief mandates skipped_dormant when dormant. We test it explicitly:
     expect(result.fired).toBe(false);
   });
+
+  it("'no_schema' is produced for a hand-rolled payload on a no-Zod source (per I4)", () => {
+    // Brief I4: rera has no per-source Zod contract. A hand-rolled payload
+    // with status=ok and an empty data object must return
+    // { fired: false, reason: "no_schema" } — not parse_error, not no_data.
+    const result = isSourceFired("rera", {
+      source: "rera",
+      status: "ok",
+      data: {},
+    });
+    expect(result.fired).toBe(false);
+    if (!result.fired) {
+      expect(result.reason).toBe("no_schema");
+    }
+  });
+
+  it("'no_schema' is produced for high-court with null data (per I4)", () => {
+    // Brief I4: high-court has no Zod contract. Null data → no_schema.
+    const result = isSourceFired("high-court", {
+      source: "high-court",
+      status: "ok",
+      data: null,
+    });
+    expect(result.fired).toBe(false);
+    if (!result.fired) {
+      expect(result.reason).toBe("no_schema");
+    }
+  });
 });
 
 describe("isSourceFired — FireEnvelope discriminant is exhaustive", () => {

@@ -76,7 +76,8 @@ export type FireReason =
   | "source_down"
   | "invalid_input"
   | "parse_error"
-  | "skipped_dormant";
+  | "skipped_dormant"
+  | "no_schema";
 
 // ── Public FireEnvelope (per the brief: discriminated union over `source`) ──
 // Every variant is `fired: true` and carries the *named* fields the
@@ -137,6 +138,20 @@ type SourceDataMap = {
 };
 
 /**
+ * Sources whose fetcher currently has no Zod contract schema. For these
+ * four the gate does a structural type cast rather than `XxxDataSchema.parse()`.
+ * If a new source is added to `SourceId` without a contract, this set must be
+ * updated so the gate returns `no_schema` rather than silently producing a
+ * `parse_error` from the fallback `default` arm.
+ */
+export const NO_SCHEMA_SOURCES: ReadonlySet<SourceId> = new Set<SourceId>([
+  "rera",
+  "high-court",
+  "drt",
+  "larr",
+]);
+
+/**
  * Sentinel type used by the wire step to mark a V1.1-DORMANT source. When the
  * pipeline calls isSourceFired for a dormant source, the wire code passes an
  * object with this sentinel so the gate produces `skipped_dormant` rather
@@ -177,6 +192,13 @@ export function isSourceFired(source: SourceId, result: unknown): FireResult {
   }
 
   if (!r.data || typeof r.data !== "object") {
+    // For NO_SCHEMA_SOURCES (rera/high-court/drt/larr), missing/null data
+    // means the contract isn't established yet — surface that explicitly
+    // as `no_schema` rather than collapsing to `no_data`. For all other
+    // sources, the data is genuinely missing.
+    if (NO_SCHEMA_SOURCES.has(source)) {
+      return { fired: false, reason: "no_schema" };
+    }
     return { fired: false, reason: "no_data" };
   }
 
@@ -246,9 +268,13 @@ function buildEnvelope(source: SourceId, data: Record<string, unknown>): FireRes
       case "bhunaksha-plot-report":
         return fireBhunakshaPlotReport(BhunakshaPlotReportDataSchema.parse(data));
       default: {
+        // Unreachable for the closed SourceId union, but kept as a
+        // forward-compatibility net: if a new source id is added without
+        // a per-source Zod contract, surface that explicitly as
+        // `no_schema` rather than collapsing to `parse_error`.
         const _exhaustive: never = source;
         void _exhaustive;
-        return { fired: false, reason: "parse_error" };
+        return { fired: false, reason: "no_schema" };
       }
     }
   } catch {
@@ -315,21 +341,21 @@ function fireIgrEc(d: SourceDataMap["igr-ec"]): FireResult {
 }
 
 function fireRera(d: SourceDataMap["rera"]): FireResult {
-  // Per the brief's test case #6: rera with status=ok and projectName=null
-  // is a real probe — null project is still a real fire. The RERA contract
-  // schema isn't built yet (added in a later task), but the gate can still
-  // expose the typed envelope fields from the inline data shape.
-  void d;
-  // The data shape for rera is `{ projectName, registrationNo }` per the
-  // brief's FireEnvelope variant. We read the values from the raw data
-  // passed by the wire step.
+  // RERA has no Zod contract yet (per I4). The data shape is
+  // `{ projectName, registrationNo }`. A hand-rolled payload with no
+  // fields is treated as `no_schema` — the contract is missing, so we
+  // cannot validate the shape beyond the type cast.
+  const data = d as { projectName?: string | null; registrationNo?: string | null };
+  if (data === null || (data.projectName === undefined && data.registrationNo === undefined)) {
+    return { fired: false, reason: "no_schema" };
+  }
   return {
     fired: true,
     envelope: {
       source: "rera",
       fired: true,
-      projectName: (d as { projectName?: string | null }).projectName ?? null,
-      registrationNo: (d as { registrationNo?: string | null }).registrationNo ?? null,
+      projectName: data.projectName ?? null,
+      registrationNo: data.registrationNo ?? null,
     },
   };
 }
@@ -346,8 +372,15 @@ function fireCourtCases(
   d: SourceDataMap["high-court"],
   source: "high-court" | "drt",
 ): FireResult {
+  // High Court and DRT have no Zod contract yet (per I4). The expected
+  // shape is `{ cases: ReadonlyArray<unknown> }`. If the data is null or
+  // completely missing, treat as `no_schema`; if `cases` is present but
+  // not an array, treat as `parse_error` (the shape was wrong, not missing).
+  if (d === null || d === undefined) {
+    return { fired: false, reason: "no_schema" };
+  }
   if (!Array.isArray(d.cases)) {
-    return { fired: false, reason: "skipped_dormant" };
+    return { fired: false, reason: "parse_error" };
   }
   return {
     fired: true,
