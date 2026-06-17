@@ -17,6 +17,10 @@ import {
   containsOdia as libContainsOdia,
   lookupKnownOdiaName as libLookupKnownOdiaName,
 } from "../consumer-report-writer/src/lib";
+import {
+  fuzzySurnameMatch,
+  HAND_BUILT_SURNAME_CLUSTERS,
+} from "../consumer-report-writer/src/translit/surname-match";
 
 // Re-export for external consumers
 export type { OwnershipReasonerInput } from "./schema";
@@ -424,6 +428,25 @@ export function matchOwnerName(claimedName: string, odiaTenantName: string, fath
   if (diceFull >= 0.60) return { matches:true, nameMatch:"partial", confidence:0.70, score:diceFull, method:"dice_full_name" };
   const odiaScript = ODIA_SURNAME_MAP[clSurname];
   if (odiaScript && odiaTenantName.includes(odiaScript)) return { matches:true, nameMatch:"partial", confidence:0.62, score:0.62, method:"odia_surname_map" };
+
+  // P1 P2: fuzzy surname match (Damerau-Levenshtein + cluster fast-path).
+  // Catches 1-2 edit variants like Mahapatra/Mohapatra that Dice misses
+  // (Dice returns 0.81 for that pair, below the 0.85 threshold).
+  // Confidence 0.65 is between surname_dice (0.60) and odia_surname_map
+  // (0.62) — same range as partial surname matches.
+  if (transSurname && clSurname) {
+    const fuzzy = fuzzySurnameMatch(clSurname, transSurname, HAND_BUILT_SURNAME_CLUSTERS);
+    if (fuzzy.matches) {
+      return {
+        matches: true,
+        nameMatch: "partial",
+        confidence: 0.65,
+        score: fuzzy.score,
+        method: `fuzzy_surname_${fuzzy.method}`,
+      };
+    }
+  }
+
   const surnameDice = diceCoefficient(clSurname, transSurname);
   if (surnameDice >= 0.85) return { matches:true, nameMatch:"partial", confidence:0.60, score:surnameDice, method:"surname_dice" };
   const cluster = findSurnameCluster(clSurname);
@@ -679,6 +702,8 @@ function ownerMatchMethodLabel(method: string): string {
   if (method === "odia_surname_map") return "Surname appears in the Odia RoR name.";
   if (method === "surname_dice") return "Surname similarity matched after transliteration.";
   if (method === "surname_cluster") return "Surname variant cluster matched.";
+  if (method === "fuzzy_surname_cluster") return "Surname matched a known Bhulekh-OCR variant cluster (e.g. Mahapatra/Mohapatra).";
+  if (method === "fuzzy_surname_damerau_levenshtein") return "Surname matched within 2 edit operations (transposition/substitution).";
   if (method === "father_name_match") return "Guardian/father name appears in the available text.";
   if (method === "given_name_dice") return "Given name and surname partially matched.";
   return "No reliable automated owner-name match.";

@@ -1,0 +1,66 @@
+{
+  "_meta": {
+    "generated": "2026-06-17T09:27:18.257Z",
+    "source": "algorithmically derived from odia-names.json (single-link, D-L + prefix >= 3)",
+    "method": "D-L distance (length-relative) AND common_prefix >= 3, single-link clustering",
+    "clusterCount": 12,
+    "surnameCount": 188,
+    "note": "Diagnostic only. HAND_BUILT_SURNAME_CLUSTERS in surname-match.ts is the production source."
+  },
+  "clusters": {
+    "tripathi": [
+      "tripathi",
+      "tripathy"
+    ],
+    "parida": [
+      "parida",
+      "parija"
+    ],
+    "singh": [
+      "singh",
+      "sinha"
+    ],
+    "kara": [
+      "kara",
+      "karan"
+    ],
+    "prabha": [
+      "prabha",
+      "prabhas",
+      "prafulla",
+      "prahlad",
+      "pramila",
+      "pramod",
+      "pranab",
+      "prasad"
+    ],
+    "laxman": [
+      "laxman",
+      "laxmi"
+    ],
+    "manorama": [
+      "manorama",
+      "manoranjan"
+    ],
+    "kamal": [
+      "kamal",
+      "kamala"
+    ],
+    "dutt": [
+      "dutt",
+      "dutta"
+    ],
+    "mandal": [
+      "mandal",
+      "mangal"
+    ],
+    "jayant": [
+      "jayant",
+      "jayanti"
+    ],
+    "sarada": [
+      "sarada",
+      "sarat"
+    ]
+  }
+}
