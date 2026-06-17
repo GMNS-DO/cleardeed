@@ -3233,6 +3233,7 @@ function buildLineageSection(input: {
       })),
       encumbranceEntries: input.encumbranceEntries,
       tenants: input.tenants.map((t) => ({ tenantName: t.tenantName })),
+      viewport: "unknown",
     });
   } catch {
     return "";

@@ -40,7 +40,9 @@
       "@cleardeed/pdf-renderer": ["../../packages/pdf-renderer/index.ts"],
       "@cleardeed/fetcher-public-dashboard": ["../../packages/fetchers/public-dashboard/src/index.ts"],
       "@cleardeed/fetcher-govt-fee": ["../../packages/fetchers/govt-fee/src/index.ts"],
-      "@cleardeed/fetcher-igr-certified-copy": ["../../packages/fetchers/igr-certified-copy/src/index.ts"]
+      "@cleardeed/fetcher-igr-certified-copy": ["../../packages/fetchers/igr-certified-copy/src/index.ts"],
+      "@cleardeed/ownership-lineage-graph": ["../../agents/ownership-lineage-graph/src/index.ts"],
+      "@cleardeed/document-interpreter": ["../../agents/document-interpreter/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

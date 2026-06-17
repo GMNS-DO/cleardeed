@@ -89,40 +89,42 @@ describe("A11 no_ungrounded_ai_claim rule scaffold (flag-controlled)", () => {
     }
   });
 
-  it("flag defaults to false in Week 1 (P2 V1 will flip it)", () => {
-    // The Week 1 default. This is a contract assertion: if a future
-    // PR enables the flag without the P2 V1 support code, this test
-    // fails and the PR must be split.
-    expect((auditor as { AI_CLAIM_AUDIT_ENABLED: boolean }).AI_CLAIM_AUDIT_ENABLED).toBe(false);
+  it("flag is true in P2 V1 (rule is active)", () => {
+    expect((auditor as { AI_CLAIM_AUDIT_ENABLED: boolean }).AI_CLAIM_AUDIT_ENABLED).toBe(true);
   });
 
-  it("scanning an ungrounded item with the flag off does not produce an ai_claim violation", () => {
-    // This is the Week 1 contract: ai-claim auditing is OFF.
+  it("scanning an ungrounded item with the flag on produces an ai_claim violation", () => {
     const f = AI_CLAIM_FIXTURES.find((x) => !x.grounded && x.text.startsWith("All documents are in order"));
     expect(f).toBeDefined();
     if (!f) return; // type guard
 
     const html = `<div class="section">${f.text}</div>
 <div class="disclaimer-box">ClearDeed is an information aggregator. Consult a property lawyer before transacting.</div>`;
-    const result = auditor.auditReport(html, { reportId: "CLD-AICLAIMS-OFF" });
+    const result = auditor.auditReport(html, { reportId: "CLD-AICLAIMS-ON" });
     const aiClaimViolations = result.violations.filter((v) => v.type === "no_ungrounded_ai_claim");
-    expect(aiClaimViolations).toHaveLength(0);
+    expect(aiClaimViolations.length).toBeGreaterThan(0);
+    // The ungrounded item is a "transaction recommendation" — action
+    // section — so severity is critical.
+    expect(aiClaimViolations[0].severity).toBe("critical");
   });
 
-  it.skip("(P2 V1 path) when the flag is forced on, every ungrounded item produces a violation", () => {
-    // DEFERRED to P2 V1 (Week 3). The Week 1 stub returns [] so this
-    // test would always fail; the .skip here documents the contract
-    // for the PR that ships the real rule. To enable: remove the .skip,
-    // implement runNoUngroundedAiClaimRule in index.ts, and flip
-    // AI_CLAIM_AUDIT_ENABLED to true.
-    //
-    // Pseudocode for the future assertion body (kept here so the
-    // implementer has the test as-written):
-    //   for (const f of AI_CLAIM_FIXTURES.filter((x) => !x.grounded)) {
-    //     const html = `<div class="section">${f.text}</div>
-    //     <div class="disclaimer-box">...</div>`;
-    //     const violations = runNoUngroundedAiClaimRule(html);
-    //     expect(violations.some((v) => v.match.includes(f.text.slice(0, 30)))).toBe(true);
-    //   }
+  it("(P2 V1 path) when the flag is on, every ungrounded item produces a violation", () => {
+    for (const f of AI_CLAIM_FIXTURES.filter((x) => !x.grounded)) {
+      const html = `<div class="section">${f.text}</div>
+<div class="disclaimer-box">ClearDeed is an information aggregator. Consult a property lawyer before transacting.</div>`;
+      const violations = auditor.runNoUngroundedAiClaimRule(html);
+      expect(
+        violations.some((v) => v.match.includes(f.text.slice(0, 30).toLowerCase()))
+      ).toBe(true);
+    }
+  });
+
+  it("grounded items do not produce violations even when present in the HTML", () => {
+    for (const f of AI_CLAIM_FIXTURES.filter((x) => x.grounded)) {
+      const html = `<div class="section">${f.text}</div>
+<div class="disclaimer-box">ClearDeed is an information aggregator. Consult a property lawyer before transacting.</div>`;
+      const violations = auditor.runNoUngroundedAiClaimRule(html);
+      expect(violations).toHaveLength(0);
+    }
   });
 });

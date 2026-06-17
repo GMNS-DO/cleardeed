@@ -28,7 +28,8 @@ import type {
   Layout,
   LayoutMode,
 } from "./schema";
-import { A13ResultSchema, A13InputSchema, parseDateToSortKey } from "./schema";
+import { A13ResultSchema, A13InputSchema } from "./schema";
+import { parseDateToSortKey } from "./sort";
 import { detectRedFlags } from "./red-flags";
 import { sortEventsChronologically } from "./sort";
 

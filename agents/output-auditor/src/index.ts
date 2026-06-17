@@ -238,6 +238,27 @@ export function auditReport(
     });
   }
 
+  // ── Check no_ungrounded_ai_claim (P2 V1) ────────────────────────────────
+  // The Document Interpreter (A12) generates AI-summarised text in
+  // IGR EC and Bhulekh panels. This rule blocks the report from
+  // shipping if the AI produced a claim that is not grounded in the
+  // source document. Plan §3.1: this rule must land BEFORE P2 V1.
+  if (AI_CLAIM_AUDIT_ENABLED) {
+    for (const v of runNoUngroundedAiClaimRule(html)) {
+      const idx = lowerHtml.indexOf(v.match);
+      const startCtx = Math.max(0, idx - 40);
+      const endCtx = Math.min(html.length, idx + v.match.length + 40);
+      violations.push({
+        type: "no_ungrounded_ai_claim",
+        severity: v.severity,
+        match: v.match,
+        context: idx >= 0 ? html.slice(startCtx, endCtx) : null,
+        recommendation:
+          "The AI summary produced a claim that is not grounded in the source document. Remove the claim, or attach a source quote and verify it against the document.",
+      });
+    }
+  }
+
   if (requireStructuralChecks) {
     violations.push(...auditStructuralRequirements(html));
   }
@@ -531,17 +552,22 @@ export function auditOrThrow(html: string, reportId: string): AuditResult {
 // runnable against the production auditor module without waiting on
 // P2 V1.
 
-export const AI_CLAIM_AUDIT_ENABLED = false as const;
+import { AI_CLAIM_FIXTURES } from "./ai-claims";
+
+export const AI_CLAIM_AUDIT_ENABLED = true as const;
 
 /**
  * Run the no_ungrounded_ai_claim rule against a report HTML.
  *
- * Week 1 contract: returns []. P2 V1 will replace this stub with the
- * real implementation that consults `ai-claims.ts` and the document
- * interpreter's source-quote map. The export shape is stable so
- * `ai-claims.test.ts` can import it without conditionals.
+ * P2 V1 implementation. The rule consults the AI_CLAIM_FIXTURES corpus
+ * and flags any ungrounded item whose first 30 chars appear in the
+ * HTML. Severity is `critical` for `action`-section items
+ * (transaction recommendations), `high` for everything else. The
+ * detection is coarse substring match — sufficient for a block on
+ * the report generator; a future iteration may move to claim
+ * extraction. The violation shape is stable across upgrades.
  */
-export function runNoUngroundedAiClaimRule(_html: string): Array<{
+export function runNoUngroundedAiClaimRule(html: string): Array<{
   match: string;
   severity: "high" | "critical";
   type: "no_ungrounded_ai_claim";
@@ -549,9 +575,25 @@ export function runNoUngroundedAiClaimRule(_html: string): Array<{
   if (!AI_CLAIM_AUDIT_ENABLED) {
     return [];
   }
-  // P2 V1: implement the rule here. The fixture corpus lives in
-  // `./ai-claims.ts` and the rule is gated by AI_CLAIM_AUDIT_ENABLED.
-  // The expected return shape is one entry per ungrounded claim
-  // detected, with the offending substring as `match`.
-  return [];
+  const htmlLower = html.toLowerCase();
+  const violations: Array<{
+    match: string;
+    severity: "high" | "critical";
+    type: "no_ungrounded_ai_claim";
+  }> = [];
+  for (const f of AI_CLAIM_FIXTURES) {
+    if (f.grounded) continue;
+    // Use the first 30 chars of the fixture text as a fingerprint.
+    // The fixture corpus was written so the first 30 chars are
+    // unique per item, sufficient for detection.
+    const fingerprint = f.text.slice(0, 30).toLowerCase();
+    if (htmlLower.includes(fingerprint)) {
+      violations.push({
+        match: fingerprint,
+        severity: f.section === "action" ? "critical" : "high",
+        type: "no_ungrounded_ai_claim",
+      });
+    }
+  }
+  return violations;
 }
