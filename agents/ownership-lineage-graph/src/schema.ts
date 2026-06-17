@@ -31,6 +31,24 @@ export const LineageEventSchema = z.object({
   displayName: z.string(),
   /** Optional raw text from the source document (for the legal review UI) */
   rawText: z.string().optional(),
+  /**
+   * Plan §4.5: cross-document reference. When the same docNo appears
+   * in another source (e.g. an IGR EC entry with matching deed
+   * number), surface a "see also" badge. The renderer reads
+   * `crossRef.label` (e.g. "Also in IGR EC") and `crossRef.href`
+   * (the report-section anchor to scroll to).
+   */
+  crossRef: z.object({
+    /** Short human label, e.g. "Also in IGR EC". */
+    label: z.string().min(1).max(100),
+    /** Where to jump in the report. */
+    href: z.string().min(1).max(200),
+    /** Other source name for the "see also" badge tooltip. */
+    sourceName: z.string().min(1).max(50),
+    /** Optional: the matching docNo from the other source (for the
+     *  audit trail — proves why the badge was emitted). */
+    matchedDocNo: z.string().optional(),
+  }).optional(),
 });
 export type LineageEvent = z.infer<typeof LineageEventSchema>;
 
@@ -166,6 +184,22 @@ export const A13InputSchema = z.object({
     date: z.string().optional(),
     amount: z.string().optional(),
     description: z.string().optional(),
+  })).default([]),
+  /**
+   * Plan §4.5: IGR EC entries for cross-document reference. When a
+   * Bhulekh mutation's docNo matches an EC entry's docNo (after
+   * normalise), the lineage event gets a `crossRef` badge pointing
+   * to the EC section anchor in the report HTML. V3 ships
+   * in-report matching only; cross-report matching is V4.
+   */
+  igrEcEntries: z.array(z.object({
+    docNo: z.string().optional(),
+    regDate: z.string().optional(),
+    party1: z.string().optional(),
+    party2: z.string().optional(),
+    propertyDesc: z.string().optional(),
+    consideration: z.string().optional(),
+    marketValue: z.string().optional(),
   })).default([]),
   /** Tenant list (current owners) for end-of-chain nodes */
   tenants: z.array(z.object({

@@ -240,7 +240,9 @@ export function generateConsumerReport(
       ...(selectTopInsights(riskInsights.title, 2) as any[]),
       ...(selectTopInsights(riskInsights.redFlag, 2) as any[]),
       ...(selectTopInsights(riskInsights.financial, 2) as any[]),
-    ]
+    ],
+    // P3 V3: forward IGR EC entries for the cross-ref table. Plan §4.5.
+    (encumbranceReasoner as any)?.igrEcEntries ?? [],
   );
 
   // ── Derive regulatory flags ────────────────────────────────────────────────────
@@ -3212,6 +3214,16 @@ function buildLineageSection(input: {
     amount?: string;
     description?: string;
   }>;
+  /** Plan §4.5: IGR EC entries for cross-document reference. */
+  igrEcEntries?: Array<{
+    docNo?: string;
+    regDate?: string;
+    party1?: string;
+    party2?: string;
+    propertyDesc?: string;
+    consideration?: string;
+    marketValue?: string;
+  }>;
   tenants: Array<{ tenantName: string }>;
   /** Plan §4.2: viewport hint from the client. V2 renderer uses it. */
   viewport?: "mobile" | "desktop" | "unknown";
@@ -3242,6 +3254,7 @@ function buildLineageSection(input: {
         docType: m.docType,
       })),
       encumbranceEntries: input.encumbranceEntries,
+      igrEcEntries: input.igrEcEntries ?? [],
       tenants: input.tenants.map((t) => ({ tenantName: t.tenantName })),
       viewport: "unknown",
     });
@@ -3281,12 +3294,23 @@ function buildLineageSection(input: {
     }
   }
 
-  const eventListItems = lineage.events.slice(0, 25).map((e) => `
-    <li>
+  const eventListItems = lineage.events.slice(0, 25).map((e) => {
+    // Plan §4.5: render a "see also" badge when the event has a
+    // crossRef. The href points to the IGR EC section anchor
+    // (the report template is expected to render each EC entry
+    // with id="igr-ec-entry-{n}"). The badge is a small pill
+    // link with a tooltip.
+    const crossRef = e.crossRef
+      ? `<a class="lineage-cross-ref" href="${escapeHtml(e.crossRef.href)}" title="Doc no. ${escapeHtml(e.crossRef.matchedDocNo ?? e.docNo ?? "")} also appears in the IGR Encumbrance Certificate section">${escapeHtml(e.crossRef.label)}</a>`
+      : "";
+    return `
+    <li data-event-id="${escapeHtml(e.id)}">
       <strong>${escapeHtml(e.displayName)}</strong>
       ${e.docNo ? `<span class="mono"> (${escapeHtml(e.docNo)})</span>` : ""}
       ${e.date ? `<span class="muted"> &mdash; ${escapeHtml(e.date)}</span>` : ""}
-    </li>`).join("");
+      ${crossRef}
+    </li>`;
+  }).join("");
 
   const flagBadges = lineage.flags
     .filter((f) => f.code !== "OUTDATED_RECORDS")
@@ -3310,7 +3334,11 @@ function buildLineageSection(input: {
   </details>`;
 }
 
-function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): string {
+function buildRoRBackPagePanel(
+  backPage: any,
+  insights: RoRInsight[] = [],
+  igrEcEntries: Array<{ docNo?: string; regDate?: string; party1?: string; party2?: string; propertyDesc?: string; consideration?: string; marketValue?: string }> = [],
+): string {
   if (!backPage) {
     if (insights.length === 0) return "";
     return `<div class="info-box ror-back-page-panel">
@@ -3352,6 +3380,28 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
       <td>${escapeHtml(remark.rawText ?? "—")}</td>
     </tr>`).join("");
 
+  // P3 V3: render a dedicated IGR EC table with stable anchor IDs so
+  // the lineage event "see also" badges (crossRef) can link to it.
+  // Plan §4.5.
+  const igrEcTable = igrEcEntries.length > 0
+    ? `<details class="tenant-table-details" open>
+        <summary>IGR Encumbrance Certificate entries (${igrEcEntries.length})</summary>
+        <table class="data-table compact-table">
+          <thead><tr><th>Doc no.</th><th>Reg date</th><th>Party 1</th><th>Party 2</th><th>Consideration</th></tr></thead>
+          <tbody>
+            ${igrEcEntries.slice(0, 25).map((entry, idx) => `
+              <tr id="igr-ec-entry-${idx}" data-doc-no="${escapeHtml(entry.docNo ?? "—")}">
+                <td class="mono">${escapeHtml(entry.docNo ?? "—")}</td>
+                <td>${escapeHtml(entry.regDate ?? "—")}</td>
+                <td>${escapeHtml(entry.party1 ?? "—")}</td>
+                <td>${escapeHtml(entry.party2 ?? "—")}</td>
+                <td>${escapeHtml(entry.consideration ?? "—")}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </details>`
+    : "";
+
   // P3 V1: ownership lineage section (A13). Plan §4.1: data layer only.
   // We render a bullet list of events + flag badges. The summary is
   // count-only and validated against the SummaryTextSchema regex in
@@ -3371,6 +3421,7 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
       docType: m.docType,
     })),
     encumbranceEntries: encumbrances,
+    igrEcEntries,
     tenants: (backPage.tenants ?? []) as Array<{ tenantName: string }>,
     viewport: "unknown",
   });
@@ -3382,6 +3433,7 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
     ${lineageSection}
     ${mutationRows ? `<details class="tenant-table-details" open><summary>Mutation history (${mutations.length})</summary><table class="data-table compact-table"><thead><tr><th>Mutation no.</th><th>Date</th><th>Plot</th><th>From khata</th><th>To khata</th></tr></thead><tbody>${mutationRows}</tbody></table></details>` : ""}
     ${encumbranceRows ? `<details class="tenant-table-details" open><summary>Encumbrance-style entries (${encumbrances.length})</summary><table class="data-table compact-table"><thead><tr><th>Type</th><th>Party</th><th>Doc no.</th><th>Date</th><th>Amount</th></tr></thead><tbody>${encumbranceRows}</tbody></table></details>` : ""}
+    ${igrEcTable}
     ${remarkRows ? `<details class="tenant-table-details"><summary>Back Page remarks (${remarks.length})</summary><table class="data-table compact-table"><thead><tr><th>Category</th><th>Extracted anchor</th><th>Raw remark</th></tr></thead><tbody>${remarkRows}</tbody></table></details>` : ""}
   </div>`;
 }

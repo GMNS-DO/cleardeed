@@ -32,6 +32,7 @@ import { A13ResultSchema, A13InputSchema } from "./schema";
 import { parseDateToSortKey } from "./sort";
 import { detectRedFlags } from "./red-flags";
 import { sortEventsChronologically } from "./sort";
+import { joinEventsToEc, attachCrossRefs } from "./cross-ref";
 
 /** Threshold for switching to "list" mode (plan §4.7 test fixture). */
 const LIST_THRESHOLD = 50;
@@ -198,6 +199,19 @@ export function reasonA13(input: A13Input): A13Result {
   // 3. Sort all events chronologically
   const allEvents = sortEventsChronologically([...mutationEvents, ...encumbranceEvents]);
 
+  // 1b. Plan §4.5: cross-document reference join. For each event
+  // whose docNo matches an IGR EC entry's docNo (after normalise),
+  // attach a `crossRef` badge. V3 in-report only.
+  let eventsWithCrossRefs: LineageEvent[] = allEvents;
+  if (parsed.igrEcEntries && parsed.igrEcEntries.length > 0) {
+    const badges = joinEventsToEc(allEvents, parsed.igrEcEntries, {
+      reportId: parsed.plotNo, // The plot no is the report's de-facto ID within A13
+    });
+    if (badges.size > 0) {
+      eventsWithCrossRefs = attachCrossRefs(allEvents, badges);
+    }
+  }
+
   // 4. Build nodes — one node per unique person/entity referenced
   const nodeMap = new Map<string, LineageNode>();
   for (const event of allEvents) {
@@ -357,7 +371,7 @@ export function reasonA13(input: A13Input): A13Result {
   const result: A13Result = {
     nodes: [...nodeMap.values()],
     edges,
-    events: allEvents,
+    events: eventsWithCrossRefs,
     flags,
     summary,
     layout,
