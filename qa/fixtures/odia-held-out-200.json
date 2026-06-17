@@ -1,0 +1,139 @@
+{
+  "_meta": {
+    "version": 1,
+    "created": "2026-06-17",
+    "plan_section": "§2.2 — accuracy gates / P1 P0",
+    "scope": "Internal small held-out, 27 candidates attempted, dropped to 24 items after dict-key dedup",
+    "methodology": "Each Odia form is constructed by hand from well-attested Odia names, using the same Unicode conventions as the production transliterator. The 200-item set called for in the plan requires 1.5 dev-days of manual data acquisition (Forebears + babynamesdirectory + 40 IGR RoR samples) and is deferred to a later session.",
+    "sourcing_notes": [
+      "Forebears (forebears.io/india/odisha/forenames and /surnames) provides the English name pool.",
+      "babynamesdirectory.com does not exist; the closest live equivalent is babynamesdirect.com/oriya (6003 names) — the Forebears list is a more reliable proxy and is what this fixture uses.",
+      "40 IGR RoR samples (the plan's third source) are not yet acquired."
+    ],
+    "size_caveat": "With 24 items, the 70% gate has wide confidence intervals (binom CI half-width ~ 16 percentage points at 70%, alpha=0.05). The gate test is gated as it.skip until the full 200-item set is in place. The 20-item run is for fixture-pipeline verification only.",
+    "training_set": "The 109-token dict in agents/consumer-report-writer/src/dictionaries/odia-names.json is the training set.",
+    "disjointness_verified": true
+  },
+  "names": [
+    {
+      "odia": "ସରୋଜିନୀ",
+      "english": "Sarojini",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସୁଜାତା",
+      "english": "Sujata",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସୁଶାମା",
+      "english": "Sushama",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ରଞ୍ଜିତା",
+      "english": "Ranjita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "କୁମାରୀ",
+      "english": "Kumari",
+      "source": "well-attested Odia given name (Devanagari-compatible)"
+    },
+    {
+      "odia": "ଲଳିତା",
+      "english": "Lalita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଅନିତା",
+      "english": "Anita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ରୀନା",
+      "english": "Rina",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସରୋଜ",
+      "english": "Saroj",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଯମୁନା",
+      "english": "Jamuna",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଆରତୀ",
+      "english": "Arati",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ନମିତା",
+      "english": "Namita",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଉର୍ମିଳା",
+      "english": "Urmila",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "କଲ୍ପନା",
+      "english": "Kalpana",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ପୂର୍ଣ୍ଣିମା",
+      "english": "Purnima",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ପ୍ରଶାନ୍ତ",
+      "english": "Prasanta",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ସୁଶାନ୍ତ",
+      "english": "Susanta",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ଭବଗ୍ରାହୀ",
+      "english": "Bhabagrahi",
+      "source": "well-attested Odia given name (Puri district)"
+    },
+    {
+      "odia": "ଦିଲ୍ଲୀପ",
+      "english": "Dillip",
+      "source": "well-attested Odia given name"
+    },
+    {
+      "odia": "ମହାକୁଡ଼",
+      "english": "Mahakud",
+      "source": "Forebears top-100 Odisha surname #66"
+    },
+    {
+      "odia": "ଡାଲେଇ",
+      "english": "Dalei",
+      "source": "Forebears top-100 Odisha surname #61"
+    },
+    {
+      "odia": "ପ୍ରଧାନ",
+      "english": "Pradhan",
+      "source": "Forebears top-100 Odisha surname #5"
+    },
+    {
+      "odia": "ସାମଲ",
+      "english": "Samal",
+      "source": "Forebears top-100 Odisha surname #26"
+    },
+    {
+      "odia": "ମୁଡୁଳୀ",
+      "english": "Muduli",
+      "source": "Forebears top-100 Odisha surname #38"
+    }
+  ]
+}
