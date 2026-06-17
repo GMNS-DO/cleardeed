@@ -20,6 +20,7 @@ import {
   makeDefaultClient,
 } from "@cleardeed/document-interpreter";
 import { fetchIgrEcInput } from "@/lib/ai-doc/igr-ec-input";
+import { fetchBhulekhBackInput } from "@/lib/ai-doc/bhulekh-back-input";
 import { makeSupabaseCostStore } from "@/lib/ai-doc/cost-store";
 
 export const runtime = "nodejs";
@@ -27,6 +28,16 @@ export const dynamic = "force-dynamic";
 
 const HEARTBEAT_MS = 5_000;
 const SUPPORTED_DOC_TYPES = new Set(["igr_ec", "bhulekh_back"]);
+
+type DocType = "igr_ec" | "bhulekh_back";
+
+async function fetchInputForDocType(
+  docType: DocType,
+  reportId: string,
+): Promise<Awaited<ReturnType<typeof fetchIgrEcInput>> | null> {
+  if (docType === "igr_ec") return fetchIgrEcInput(reportId);
+  return fetchBhulekhBackInput(reportId);
+}
 
 export async function GET(
   req: NextRequest,
@@ -41,20 +52,16 @@ export async function GET(
     );
   }
 
-  // V1 only supports igr_ec; bhulekh_back is V1.5.
-  if (docType !== "igr_ec") {
-    return NextResponse.json(
-      { error: "bhulekh_back is V1.5 — not yet enabled" },
-      { status: 503 }
-    );
-  }
+  // V1.5: both doc types are live. igr_ec uses Sonnet; bhulekh_back uses
+  // Haiku (selected by modelForDocType in cost-tracker.ts).
+  const typedDocType = docType as DocType;
 
   const reportResult = await getReport(reportId);
   if (!reportResult.report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  const input = await fetchIgrEcInput(reportId);
+  const input = await fetchInputForDocType(typedDocType, reportId);
   if (!input) {
     return NextResponse.json(
       { error: "Document not available for this report" },
@@ -78,7 +85,7 @@ export async function GET(
           {
             reportId,
             orgId: null,
-            docType: "igr_ec",
+            docType: typedDocType,
             input,
           },
           {

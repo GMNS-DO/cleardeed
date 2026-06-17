@@ -53,7 +53,7 @@ export default async function ReportPage({ params, searchParams }: PageProps) {
 
 async function LiveReport({ reportId }: { reportId: string }) {
   try {
-    const { report } = await getReport(reportId) as {
+    const { report, sources } = await getReport(reportId) as {
       report?: {
         html?: string | null;
         status?: string | null;
@@ -62,6 +62,18 @@ async function LiveReport({ reportId }: { reportId: string }) {
         expiresAt?: string | null;
         revokedAt?: string | null;
       } | null;
+      sources?: Array<{
+        source_name?: string;
+        status?: string;
+        parsed_data?: {
+          backPage?: {
+            status?: string;
+            mutationHistory?: unknown[];
+            encumbranceEntries?: unknown[];
+            backPageRemarks?: unknown[];
+          } | null;
+        } | null;
+      }>;
     };
 
     if (!report?.html) {
@@ -76,6 +88,20 @@ async function LiveReport({ reportId }: { reportId: string }) {
       return <ReportExpired reportId={reportId} expiresAt={report.expiresAt ?? null} revokedAt={report.revokedAt ?? null} />;
     }
 
+    // V1.5: pre-flight check — does this report have a Bhulekh back page
+    // worth interpreting? We mirror fetchBhulekhBackInput's gating logic
+    // here so the page doesn't mount an empty AI card for a blank back page.
+    const bhulekhSource = (sources ?? []).find(
+      (s) => s.source_name === "bhulekh" && s.status === "success",
+    );
+    const bhulekhBack = bhulekhSource?.parsed_data?.backPage ?? null;
+    const hasBhulekhBack =
+      bhulekhBack !== null &&
+      bhulekhBack.status === "success" &&
+      ((bhulekhBack.mutationHistory?.length ?? 0) > 0 ||
+        (bhulekhBack.encumbranceEntries?.length ?? 0) > 0 ||
+        (bhulekhBack.backPageRemarks?.length ?? 0) > 0);
+
     const htmlWithTokens = addReportAccessTokensToHtml(report.html, reportId);
     const htmlWithExpiry = injectReportExpiryIntoHtml(htmlWithTokens, report.expiresAt ?? null);
 
@@ -83,9 +109,12 @@ async function LiveReport({ reportId }: { reportId: string }) {
       <>
         <FunnelTracker event="report_delivered" reportId={reportId} />
         <div dangerouslySetInnerHTML={{ __html: htmlWithExpiry }} />
-        {/* AI document summary — V1 ships igr_ec only. V1.5 adds bhulekh_back. */}
-        <div style={{ maxWidth: 720, margin: "32px auto 0", padding: "0 20px" }}>
+        {/* AI document summary cards. V1 ships igr_ec; V1.5 adds bhulekh_back. */}
+        <div style={{ maxWidth: 720, margin: "32px auto 0", padding: "0 20px", display: "grid", gap: 16 }}>
           <AIDocSummaryCard reportId={reportId} docType="igr_ec" />
+          {hasBhulekhBack && (
+            <AIDocSummaryCard reportId={reportId} docType="bhulekh_back" />
+          )}
         </div>
       </>
     );
