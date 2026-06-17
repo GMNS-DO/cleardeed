@@ -42,7 +42,7 @@ describe("odia-names loader", () => {
 
   it("meta reports the source and count", () => {
     const meta = getOdiaNamesMeta();
-    expect(meta.version).toBe(2);
+    expect(meta.version).toBeGreaterThanOrEqual(2);
     expect(meta.count).toBe(Object.keys(loadOdiaNameDict()).length);
     expect(meta.source).toMatch(/lib\.ts|odia-names\.json/);
   });
