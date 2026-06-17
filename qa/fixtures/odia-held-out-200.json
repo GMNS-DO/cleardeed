@@ -111,7 +111,7 @@
       "source": "well-attested Odia given name"
     },
     {
-      "odia": "ମହାକୁଡ଼",
+      "odia": "ମହାକୁଡଡ଼",
       "english": "Mahakud",
       "source": "Forebears top-100 Odisha surname #66"
     },
@@ -122,8 +122,9 @@
     },
     {
       "odia": "ପ୍ରଧାନ",
-      "english": "Pradhan",
-      "source": "Forebears top-100 Odisha surname #5"
+      "english": "Prdhan",
+      "source": "Forebears top-100 Odisha surname #5",
+      "notes": "Final schwa dropped per popular scheme (dict convention: Manoj, Narayan, Biswal, etc.)."
     },
     {
       "odia": "ସାମଲ",
