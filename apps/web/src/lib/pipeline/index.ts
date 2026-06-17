@@ -146,6 +146,10 @@ export interface PipelineOutput {
     rccms: string;
   };
   sources: SourceResult[];
+  /** Fire map for every fetched source (Task 0.1, finding 3 contract).
+   *  Assembled by `buildFireMap(sources)` so downstream tasks can read the
+   *  per-source firing decision without re-running the gate logic. */
+  fire: Map<SourceId, FireResult>;
   /** Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR cross-check.
    *  Adds the cadastral map image, owner block, khatiyan no, and three-column area. */
   bhunakshaPlotReport?: unknown;
@@ -387,6 +391,10 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
     validationFindings: orchestratorOutput.validationFindings ?? [],
     sourceSummary,
     sources: orchestratorOutput.sources,
+    // Task 0.1 finding 3 contract — assemble the per-source fire map and
+    // expose it on the pipeline output so downstream tasks can read the
+    // firing decision without re-running the gate.
+    fire: buildFireMap(orchestratorOutput.sources),
   };
 }
 
@@ -421,6 +429,10 @@ export interface V11PipelineOutput {
     cersai?: string;
     rccms?: string;
   };
+  /** Fire map for every fetched source (Task 0.1, finding 3 contract).
+   *  Assembled by `buildFireMap(sources)` so downstream tasks can read the
+   *  per-source firing decision without re-running the gate logic. */
+  fire: Map<SourceId, FireResult>;
   /** Bhunaksha polygon GeoJSON — passed to report for Mapbox rendering */
   bhunakshaPolygon?: {
     type: "Polygon";
@@ -1099,6 +1111,12 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       cersai: cersaiResult?.status ?? "not_run",
       rccms: rccmsResult?.status ?? "not_run",
     },
+    // Task 0.1 finding 3 contract — assemble the per-source fire map and
+    // expose it on the pipeline output so downstream tasks can read the
+    // firing decision without re-running the gate. The V1.1 sources array
+    // includes the V1.1 financial-exposure sources (ecourts, igr-ec, etc.)
+    // alongside the orchestrator's Bhulekh result.
+    fire: buildFireMap(sourcesWithFinancial),
     bhunakshaPolygon,
     bhunakshaPlotReport: bhunakshaPlotReport ?? null,
   };
