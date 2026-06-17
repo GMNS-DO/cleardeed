@@ -22,6 +22,7 @@ export const ViolationSchema = z.object({
     "missing_section",
     "source_state_violation",
     "score_detected",
+    "no_ungrounded_ai_claim",
   ]),
   severity: z.enum(["critical", "high", "medium"]),
   match: z.string(),
@@ -515,4 +516,42 @@ export function auditOrThrow(html: string, reportId: string): AuditResult {
     );
   }
   return result;
+}
+
+// ─── `no_ungrounded_ai_claim` rule scaffold (P1 P0 / Week 1) ────────────────
+//
+// This rule fires when the consumer report contains text that the
+// document interpreter (A12) generated and that is NOT grounded in the
+// source document A12 read. It is the second of three new rule
+// categories arriving in 2026-06; see the implementation plan.
+//
+// The rule is OFF by default in Week 1. P2 V1 (Week 3) flips the flag
+// to true once the document-interpreter package ships. The scaffold
+// is exported now so the test infrastructure in `ai-claims.test.ts` is
+// runnable against the production auditor module without waiting on
+// P2 V1.
+
+export const AI_CLAIM_AUDIT_ENABLED = false as const;
+
+/**
+ * Run the no_ungrounded_ai_claim rule against a report HTML.
+ *
+ * Week 1 contract: returns []. P2 V1 will replace this stub with the
+ * real implementation that consults `ai-claims.ts` and the document
+ * interpreter's source-quote map. The export shape is stable so
+ * `ai-claims.test.ts` can import it without conditionals.
+ */
+export function runNoUngroundedAiClaimRule(_html: string): Array<{
+  match: string;
+  severity: "high" | "critical";
+  type: "no_ungrounded_ai_claim";
+}> {
+  if (!AI_CLAIM_AUDIT_ENABLED) {
+    return [];
+  }
+  // P2 V1: implement the rule here. The fixture corpus lives in
+  // `./ai-claims.ts` and the rule is gated by AI_CLAIM_AUDIT_ENABLED.
+  // The expected return shape is one entry per ungrounded claim
+  // detected, with the offending substring as `match`.
+  return [];
 }

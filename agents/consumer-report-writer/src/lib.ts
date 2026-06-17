@@ -2,126 +2,27 @@
  * A10 ConsumerReportWriter — Odia transliteration (local copy)
  *
  * Minimal transliteration for Bhulekh owner names.
- * Source of truth for these constants: agents/ownership-reasoner/index.ts
+ *
+ * P1 P0 (2026-06-17): the name dictionary now lives in
+ * `./dictionaries/odia-names.json` and is loaded synchronously via
+ * `loadOdiaNameDict()`. This module's public interface
+ * (transliterateOdia, transliterateOdiaWithConfidence, lookupKnownOdiaName,
+ *  transliterateOdiaName, containsOdia, diceCoefficient) is unchanged.
+ * The legacy in-source KNOWN_ODIA_NAMES literal was extracted verbatim
+ * into the JSON; the JS reference map is built from the loader output.
+ * `agents/ownership-reasoner/index.ts` is no longer the source of truth
+ * for these names — it imports from this module (P1 P1 task, currently
+ * a duplicate). Once P1 P1 lands, ownership-reasoner's local copy is deleted.
  */
 
 // ─── Known Odia → Latin name lookup ────────────────────────────────────────────
 
-const KNOWN_ODIA_NAMES: Record<string, string> = {
-  // Observed at GPS 20.272688, 85.701271 (Mendhasala, Khordha)
-  "\u0B15\u0B43\u0B37\u0B4D\u0B23\u0B4D\u0B26\u0B30": "Krushnachandra",
-  "\u0B2C\u0B21\u0B4D\u0B2F\u0B47\u0B28\u0B3E": "Barajena",
-  "\u0B2C\u0B47\u0B09\u0B30\u0B3F\u0B07": "Beuria",
-  "\u0B2C\u0B3E\u0B30\u0B32": "Baral",
-  "\u0B2C\u0B3F\u0B37\u0B4D\u0B35\u0B3E\u0B32": "Biswal",
-  "\u0B2E\u0B39\u0B3E\u0B28\u0B4D\u0B24\u0B40": "Mohanty",
-  "\u0B2E\u0B32\u0B4D\u0B32\u0B3F\u0B15": "Mallick",
-  "\u0B2E\u0B3E\u0B39\u0B3E\u0B2A\u0B3E\u0B24\u0B4D\u0B30": "Mohapatra",
-  "\u0B2E\u0B3F\u0B37\u0B3E\u0B30": "Misra",
-  "\u0B28\u0B3E\u0B2F\u0B15": "Nayak",
-  "\u0B1D\u0B47\u0B28\u0B3E": "Jena",
-  "\u0B24\u0B4D\u0B30\u0B3F\u0B2A\u0B3E\u0B24\u0B4D\u0B24\u0B40": "Tripathy",
-  "\u0B37\u0B39\u0B42": "Sahoo",
-  "\u0B37\u0B4D\u0B2C\u0B48\u0B28": "Swain",
-  "\u0B26\u0B3E\u0B37": "Das",
-  // Full names from Bhulekh RoR for GPS 20.272688, 85.701271
-  "\u0B15\u0B43\u0B37\u0B4D\u0B23\u0B4D\u0B26\u0B30 \u0B2C\u0B21\u0B4D\u0B2F\u0B47\u0B28\u0B3E": "Krushnachandra Barajena",
-  "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା": "Krushnachandra Barajena",
-  "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା": "Krushnachandra Barajena",
-  "ପ୍ରତିମା ଚନ୍ଦ୍ର ବଡ଼ଯେନା": "Pratima Chandra Barajena",
-  "ସୁବ୍ର ଚନ୍ଦ୍ର ବଡ଼ଯେନା": "Subhra Chandra Barajena",
-  "ଗୌର ଚନ୍ଦ୍ର ବଡ଼ଯେନା": "Gaur Chandra Barajena",
-  "ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା": "Bauribandhu Barajena",
-  "ବାଉରିବନ୍ଧୁ ବଡ଼ଯେନା": "Bauribandhu Barajena",
-  "\u0B2A\u0B4D\u0B30\u0B24\u0B3F\u0B2E\u0B3E \u0B1A\u0B23\u0B4D\u0B26\u0B30 \u0B2C\u0B21\u0B4D\u0B2F\u0B47\u0B28\u0B3E": "Pratima Chandra Barajena",
-  "\u0B37\u0B41\u0B2C\u0B30 \u0B1A\u0B23\u0B4D\u0B26\u0B30 \u0B2C\u0B21\u0B4D\u0B2F\u0B47\u0B28\u0B3E": "Subhra Chandra Barajena",
-  "\u0B17\u0B4C\u0B30 \u0B1A\u0B23\u0B4D\u0B26\u0B30 \u0B2C\u0B21\u0B4D\u0B2F\u0B47\u0B28\u0B3E": "Gaur Chandra Barajena",
-  "\u0B37\u0B41\u0B28\u0B40\u0B24\u0B3E \u0B26\u0B47\u0B2C\u0B40": "Sunita Devi",
-  // Father name
-  "\u0B2A\u0B4D\u0B30\u0B24\u0B3F\u0B2E\u0B3E \u0B1A\u0B23\u0B4D\u0B26\u0B30": "Pratima Chandra",
-  "\u0B1A\u0B23\u0B4D\u0B26\u0B30": "Chandra",
-  "ଚନ୍ଦ୍ର": "Chandra",
-  // Common Odisha given-name and surname tokens used for high-confidence readings.
-  "ସୁବର": "Subhra",
-  "ସୁବ୍ର": "Subhra",
-  "ବେହେରା": "Behera",
-  "ବିଶ୍ୱାଳ": "Biswal",
-  "ରାଉତ": "Raut",
-  "ପଣଦା": "Panda",
-  "ପଣ୍ଡା": "Panda",
-  "ପରିଦା": "Parida",
-  "ଦେବୀ": "Devi",
-  "ସାହୁ": "Sahu",
-  "ସାହୂ": "Sahu",
-  "ପରିଜା": "Parija",
-  "ସିଂହ": "Singh",
-  "ସିଂହଦେବ": "Singhadeba",
-  "ଶର୍ମା": "Sharma",
-  "ଆଚାର୍ଯ୍ୟ": "Acharjya",
-  "ତ୍ରିପାଠୀ": "Tripathi",
-  "ଭୋଇ": "Bhoi",
-  "ଧାର": "Dhar",
-  "ମହାପତ୍ର": "Mahapatra",
-  "ମୋହାପାତ୍ର": "Mohapatra",
-  "ଦାଶ": "Dash",
-  "ଚୌଧୁରୀ": "Choudhury",
-  "ସେନ": "Sen",
-  "କର": "Kara",
-  "କରଣ": "Karan",
-  "କୁମାର": "Kumar",
-  "ପ୍ରସାଦ": "Prasad",
-  "ଚରଣ": "Charan",
-  "ଭୂଷଣ": "Bhusan",
-  "ନାଥ": "Nath",
-  "ମଲ୍ଲ": "Malla",
-  "ମହେଶ": "Mahes",
-  "ମଧୁ": "Madhu",
-  "ପ୍ରମୋଦ": "Pramod",
-  "ପୁରୁଷୋତ୍ତମ": "Purusottam",
-  "ଭୀମ": "Bhim",
-  "ଜଗନ୍ନାଥ": "Jagannath",
-  "ନୃସିଂହ": "Nrusinha",
-  "ନାରାୟଣ": "Narayan",
-  "ବିଶ୍ଵନାଥ": "Bishwanath",
-  "ହରେକୃଷ୍ଣ": "Harekrushna",
-  "ମନୋଜ": "Manoj",
-  "ଦିଲୀପ": "Dilip",
-  "ଦିନବନ୍ଧୁ": "Dinabandhu",
-  "ନରେନ୍ଦ୍ର": "Narendra",
-  "ନିରଞ୍ଜନ": "Niranjan",
-  "ରାମ": "Ram",
-  "ରାଜେନ୍ଦ୍ର": "Rajendra",
-  "ରମଣ": "Ramana",
-  "ରାଧା": "Radha",
-  "ସୁଭାଷ": "Subhash",
-  "ସତ୍ୟ": "Satya",
-  "ଶଙ୍କର": "Shankar",
-  "ଶ୍ରୀ": "Shri",
-  "ଅମର": "Amar",
-  "ଅରୁଣ": "Arun",
-  "ଅନିଲ": "Anil",
-  "ଆନନ୍ଦ": "Ananda",
-  "କିଶୋର": "Kishore",
-  "ଗୋପାଳ": "Gopal",
-  "ବିକାଶ": "Bikash",
-  "ବିଜୟ": "Vijay",
-  "ବିନୋଦ": "Binod",
-  "ବନମାଳୀ": "Banamali",
-  "ବିଭୂତି": "Vibhuti",
-  "ପ୍ରଫୁଲ୍ଲ": "Prafulla",
-  "ପ୍ରଭା": "Prabha",
-  "ପ୍ରଭାସ": "Prabhas",
-  "ପ୍ରସନ୍ନ": "Prasanna",
-  "ପ୍ରଣବ": "Pranab",
-  "ରେଖା": "Rekha",
-  "ମମତା": "Mamata",
-  "ମାଲତୀ": "Malati",
-  "ପୂଜା": "Puja",
-  "ଲକ୍ଷ୍ମୀ": "Laxmi",
-  "ଗୌରୀ": "Gauri",
-  "ମନୋରମା": "Manorama",
-  "କମଲ": "Kamala",
-};
+import { loadOdiaNameDict } from "./dictionaries/odia-names";
+
+const KNOWN_ODIA_NAMES: Readonly<Record<string, string>> = loadOdiaNameDict();
+// Compile-time assertion that the loader returned the same shape we used to inline.
+// If a future PR swaps the loader for an async one or a different schema,
+// the type signature above will refuse to compile.
 
 export type OdiaNameReadingQuality =
   | "verified_exact"
