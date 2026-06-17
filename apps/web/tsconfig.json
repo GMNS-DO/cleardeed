@@ -30,6 +30,8 @@
       "@cleardeed/orchestrator": ["../../packages/orchestrator/src/index.ts"],
       "@cleardeed/consumer-report-writer": ["../../agents/consumer-report-writer/src/index.ts"],
       "@cleardeed/consumer-report-writer/fixtures/golden-path": ["../../agents/consumer-report-writer/fixtures/golden-path.ts"],
+      "@cleardeed/consumer-report-writer/translit/feedback-merge": ["../../agents/consumer-report-writer/src/translit/feedback-merge.ts"],
+      "@cleardeed/consumer-report-writer/translit/feedback-cron": ["../../agents/consumer-report-writer/src/translit/feedback-cron.ts"],
       "@cleardeed/ownership-reasoner": ["../../agents/ownership-reasoner/index.ts"],
       "@cleardeed/encumbrance-reasoner": ["../../agents/encumbrance-reasoner/index.ts"],
       "@cleardeed/regulatory-screener": ["../../agents/regulatory-screener/index.ts"],
