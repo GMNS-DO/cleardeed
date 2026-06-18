@@ -28,17 +28,17 @@ import {
 } from "./mapper";
 import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
-import {
-  buildRoRInsightGroups,
-  buildRiskInsights,
-  selectTopInsights,
-  type RoRInsight,
-  type RiskInsight,
-} from "./ror-insights";
+import type { RiskInsight } from "./types";
 import { runInsights } from "./insights/engine";
 import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
 import { renderInsightList } from "./insights/render";
+import {
+  rorInsightGroups,
+  riskInsightGroups,
+  selectTopRisk,
+  type RoRInsight,
+} from "./insights/adapter";
 
 export type ConsumerReportGenInput = ConsumerReportGenInputData;
 export { ConsumerReportGenInputSchema } from "./mapper";
@@ -174,59 +174,26 @@ export function generateConsumerReport(
     revenueRecords?.mutationReferences ?? []
   );
 
-  // ── Build old-style RoR insights (for backward-compatible panel renderers) ──────
-  const rorInsights = buildRoRInsightGroups({
-    bhulekhUsable,
-    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
-    selectedPlotNo: plotNo,
-    ownerRecords,
-    plotRows: revenueRecords?.plotRows ?? [],
-    selectedPlotRow: targetPlotRow,
-    plotArea,
-    landClass: {
-      rawKisam: landClassOdia,
-      standardizedKisam: primaryTenant?.landClass ?? null,
-      displayKisam: landClassEnglish,
-      conversionRequired,
-      prohibited: primaryTenant?.prohibited ?? null,
-      buildable: primaryTenant?.buildable ?? null,
-    },
-    dues: revenueRecords?.dues ?? null,
-    remarks: revenueRecords?.remarks ?? null,
-    backPage: revenueRecords?.backPage ?? null,
-  });
-
-  // ── Build new risk intelligence insights (5 dimensions) ───────────────────────
-  const riskInsights = buildRiskInsights({
-    bhulekhUsable,
-    bhulekhStatus: sourceStatus.bhulekh ?? "unknown",
-    selectedPlotNo: plotNo,
-    ownerRecords,
-    plotRows: revenueRecords?.plotRows ?? [],
-    selectedPlotRow: targetPlotRow,
-    plotArea,
-    landClass: {
-      rawKisam: landClassOdia,
-      standardizedKisam: primaryTenant?.landClass ?? null,
-      displayKisam: landClassEnglish,
-      conversionRequired,
-      prohibited: primaryTenant?.prohibited ?? null,
-      buildable: primaryTenant?.buildable ?? null,
-    },
-    dues: revenueRecords?.dues ?? null,
-    remarks: revenueRecords?.remarks ?? null,
-    backPage: revenueRecords?.backPage ?? null,
-    nameMatch: nameMatch as any,
-    courtCases: { total: totalCases, status: courtSourceStatuses.ecourts },
-  });
+  // ── Run the unified insight engine (Task 24: replaces legacy
+  //    buildRoRInsightGroups + buildRiskInsights). The new engine emits a
+  //    flat list of `Insight` objects; the adapter in insights/adapter.ts
+  //    partitions them into the legacy `RoRInsight[]` and `RiskInsight[]`
+  //    shapes that the existing panel renderers (buildRoRCompletenessPanel,
+  //    buildRoRBackPagePanel, buildInsightHighlights) still consume.
+  const insights: Insight[] = runInsights(
+    ALL_RULES,
+    data as unknown as Parameters<typeof runInsights>[1]
+  );
+  const rorInsights = rorInsightGroups(insights);
+  const riskInsights = riskInsightGroups(insights);
 
   const rorCompletenessPanel = buildRoRCompletenessPanel(
     revenueRecords,
     { bhulekhUsable, bhulekhStatus: sourceStatus.bhulekh ?? "unknown", selectedPlotNo: plotNo },
     rorInsights.plot,
     rorInsights.dues,
-    selectTopInsights(riskInsights.transferability, 3),
-    selectTopInsights(riskInsights.positive, 2)
+    selectTopRisk(riskInsights.transferability, 3),
+    selectTopRisk(riskInsights.positive, 2)
   );
   const rorPlotTablePanel = buildRoRPlotTablePanel(revenueRecords?.plotRows ?? [], plotNo);
   // Bhunaksha Plot Report (D-036) — captcha-free per-plot ground-truth cross-check.
@@ -239,9 +206,9 @@ export function generateConsumerReport(
   const rorBackPagePanel = buildRoRBackPagePanel(
     revenueRecords?.backPage,
     [
-      ...(selectTopInsights(riskInsights.title, 2) as any[]),
-      ...(selectTopInsights(riskInsights.redFlag, 2) as any[]),
-      ...(selectTopInsights(riskInsights.financial, 2) as any[]),
+      ...(selectTopRisk(riskInsights.title, 2) as any[]),
+      ...(selectTopRisk(riskInsights.redFlag, 2) as any[]),
+      ...(selectTopRisk(riskInsights.financial, 2) as any[]),
     ]
   );
 
@@ -585,7 +552,7 @@ ${buildProvenanceStrip({
     </div>
   </div>
   <div class="section-body">
-    ${buildInsightHighlights([...rorInsights.owner, ...selectTopInsights(riskInsights.title, 2)])}
+    ${buildInsightHighlights([...rorInsights.owner, ...selectTopRisk(riskInsights.title, 2)])}
     ${ownerDetailsSection}
     ${coOwnerNote}
     <details class="tenant-table-details">
@@ -954,14 +921,6 @@ function submitFeedbackComment(section, btn) {
 </html>`;
 
   const title = `ClearDeed — ${plotVillage}, ${plotTahasil} (Plot ${safePlotNo})`;
-
-  // ── Run the unified insight engine (Tasks 7–21 will populate ALL_RULES) ─────
-  // Insights are derived from the validated report input. They are exposed on
-  // the return value for downstream consumers (A11 audit, dashboards) — the
-  // HTML rendering of these insights lands in a later phase. RuleInput is
-  // intentionally `unknown` in the schema, so passing `data` (the validated
-  // input) is the contractually correct shape.
-  const insights = runInsights(ALL_RULES, data as unknown as Parameters<typeof runInsights>[1]);
 
   // Append the unified insight blocks (per panel) to the assembled HTML.
   const completenessInsights = insights.filter((i) => i.panel === "completeness");
@@ -3276,88 +3235,6 @@ function buildRoRBackPagePanel(backPage: any, insights: RoRInsight[] = []): stri
   </div>`;
 }
 
-function buildNameMatchSection(input: {
-  claimed: string;
-  official: string;
-  nameMatch: string;
-  explanation: string;
-  bhulekhUsable: boolean;
-  bhulekhStatus: string;
-  claimedNameQualityWarning: boolean;
-  confidenceBasis: string;
-  confidenceMethod: string | null;
-  readiness: string | null;
-  fatherHusbandMatch: string | null;
-  matchReasons: Array<{ code?: string; label?: string; weight?: number; detail?: string }>;
-  blockingWarnings: string[];
-}): string {
-  const { claimed, official, nameMatch, explanation, bhulekhUsable, bhulekhStatus, claimedNameQualityWarning } = input;
-  const fullNameWarning = claimedNameQualityWarning
-    ? `<p><strong>Input quality note:</strong> You entered a single-word name. For owner matching, use the seller's full legal name, not just a surname.</p>`
-    : "";
-  const basis = buildOwnerMatchBasis(input);
-
-  if (!bhulekhUsable) {
-    return `<div class="error-notice">
-      <p>We could not verify the owner name because Bhulekh did not return usable owner records in this run. Source status: <strong>${escapeHtml(bhulekhStatus)}</strong>.</p>
-      ${fullNameWarning}
-      ${basis}
-      <p><strong>What to do:</strong> Ask the seller for the current Bhulekh Khatiyan and the seller's full legal name. Cross-check every recorded owner and legal heir before paying any advance.</p>
-    </div>`;
-  }
-
-  if (nameMatch === "not_requested") {
-    return `<div class="success-notice">
-      <p>Bhulekh owner records retrieved. No seller name was provided for comparison — ownership verification is pending. The recorded owners are shown below.</p>
-    </div>`;
-  }
-
-  if (nameMatch === "unknown") {
-    return `<div class="error-notice">
-      <p>We could not verify the owner name. The land records were retrieved but could not be compared against the seller's name.</p>
-      ${fullNameWarning}
-      ${basis}
-      <p><strong>What to do:</strong> Ask the seller to show you the original Bhulekh Khatiyan document. Cross-check the owner name on the document against the seller's name.</p>
-    </div>`;
-  }
-
-  if (nameMatch === "exact") {
-    return `<div class="success-notice">
-      <p>Bhulekh RoR shows a recorded owner name that matches the seller-provided full name <strong>"${claimed}"</strong>: <strong>"${official}"</strong>.</p>
-      ${fullNameWarning}
-      ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
-      ${basis}
-    </div>`;
-  }
-
-  if (nameMatch === "ambiguous") {
-    return `<div class="warning-notice owner-ambiguous">
-      <p>The provided name <strong>"${claimed}"</strong> is only a surname or single word. Bhulekh contains a similar recorded owner name (<strong>"${official}"</strong>), but this is not enough to confirm the seller's identity.</p>
-      ${fullNameWarning}
-      ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
-      ${basis}
-      <p><strong>What to do:</strong> Ask for the seller's full legal name as written on ID and sale documents, then have a lawyer compare it with the RoR and title chain.</p>
-    </div>`;
-  }
-
-  if (nameMatch === "partial") {
-    return `<div class="warning-notice">
-      <p>The seller-claimed name <strong>"${claimed}"</strong> partially matches the government record which shows <strong>"${official}"</strong> as the owner.</p>
-      ${fullNameWarning}
-      ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
-      ${basis}
-    </div>`;
-  }
-
-  // mismatch
-  return `<div class="error-notice">
-    <p>The seller-claimed name <strong>"${claimed}"</strong> does <strong>not</strong> appear in the government land record for this plot. The record shows <strong>"${official}"</strong> as the official owner.</p>
-    ${fullNameWarning}
-    ${explanation ? `<p>${escapeHtml(explanation)}</p>` : ""}
-    ${basis}
-  </div>`;
-}
-
 function ownerBadge(nameMatch: string): { status: "green" | "amber" | "red" | "gray"; label: string } {
   if (nameMatch === "ror_available") return { status: "gray", label: "&#8505; RoR owner fetched" };
   if (nameMatch === "exact") return { status: "green", label: "&#10003; Full-name match" };
@@ -3366,28 +3243,6 @@ function ownerBadge(nameMatch: string): { status: "green" | "amber" | "red" | "g
   if (nameMatch === "mismatch") return { status: "red", label: "&#10007; Mismatch" };
   if (nameMatch === "not_requested") return { status: "gray", label: "&#8505; Pending — no seller name" };
   return { status: "gray", label: "&#8505; Unverified" };
-}
-
-function buildOwnerMatchBasis(input: {
-  confidenceBasis: string;
-  confidenceMethod: string | null;
-  readiness: string | null;
-  fatherHusbandMatch: string | null;
-  matchReasons: Array<{ code?: string; label?: string; weight?: number; detail?: string }>;
-  blockingWarnings: string[];
-}): string {
-  const rows = [
-    input.confidenceMethod ? `Method: ${input.confidenceMethod}` : null,
-    input.readiness ? `Readiness: ${input.readiness}` : null,
-    input.fatherHusbandMatch ? `Guardian check: ${input.fatherHusbandMatch.replace(/_/g, " ")}` : null,
-  ].filter(Boolean) as string[];
-  const reasons = input.matchReasons
-    .map((reason) => reason.label ?? reason.code)
-    .filter((reason): reason is string => Boolean(reason));
-  const warnings = input.blockingWarnings.filter(Boolean);
-  const basisText = [input.confidenceBasis, ...rows, ...reasons, ...warnings].filter(Boolean);
-  if (basisText.length === 0) return "";
-  return `<div class="match-basis"><strong>Match basis:</strong><ul>${basisText.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`;
 }
 
 // ─── Adjacent Plot Analysis Panel ─────────────────────────────────────────────
