@@ -11,6 +11,7 @@ export default defineConfig({
       "packages/fetchers/bhulekh/src/**/*.test.ts",
       "packages/fetchers/bhunaksha/src/**/*.test.ts",
       "packages/fetchers/bhunaksha-plot-report/src/**/*.test.ts",
+      "packages/render/src/**/*.test.ts",
       "packages/fetchers/ecourts/src/**/*.test.ts",
       "packages/fetchers/high-court/src/**/*.test.ts",
       "packages/fetchers/drt/src/**/*.test.ts",
