@@ -1,6 +1,7 @@
 // agents/consumer-report-writer/src/insights/__tests__/engine.test.ts
 import { describe, it, expect } from "vitest";
 import { runRule, stubFor, liveDataPresent } from "../registry/_shared";
+import { runInsights, groupByPanel } from "../engine";
 import type { Rule } from "../schema";
 
 const baseRule: Rule = {
@@ -64,5 +65,27 @@ describe("registry _shared", () => {
     expect(s.panel).toBe("court");
     expect(s.issueLens).toBe("title_chain");
     expect(s.body).toBe("Body text");
+  });
+});
+
+describe("engine", () => {
+  it("runInsights runs every rule and drops nulls", () => {
+    const rules: Rule[] = [
+      { ...baseRule, id: "ROR-INS-A", fn: () => null },
+      { ...baseRule, id: "ROR-INS-B" }, // emits when input.ror.status==='verified'
+      { ...baseRule, id: "ROR-INS-C" },
+    ];
+    const out = runInsights(rules, { ror: { status: "verified" } });
+    expect(out.length).toBe(2);
+  });
+
+  it("groupByPanel buckets by panel id", () => {
+    const rules: Rule[] = [
+      { ...baseRule, id: "ROR-INS-A" },
+    ];
+    const out = runInsights(rules, { ror: { status: "verified" } });
+    const map = groupByPanel(out);
+    expect(map.get("plot")?.length).toBe(1);
+    expect(map.get("owner")).toBeUndefined();
   });
 });
