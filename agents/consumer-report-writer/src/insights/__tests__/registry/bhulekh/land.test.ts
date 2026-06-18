@@ -6,8 +6,8 @@ import { runInsights } from "../../../engine";
 const baseRor = { status: "verified" as const, page1: { owner: "Rama Mohanty" } };
 
 describe("bhulekh land rules", () => {
-  it("exports 5 rules", () => {
-    expect(bhulekhLandRules.length).toBe(5);
+  it("exports 6 rules", () => {
+    expect(bhulekhLandRules.length).toBe(6);
   });
 
   it("fires redFlag when kisam is forest / jungle", () => {
@@ -39,5 +39,37 @@ describe("bhulekh land rules", () => {
 
   it("emits nothing when ror is empty", () => {
     expect(runInsights(bhulekhLandRules, {}).length).toBe(0);
+  });
+
+  // ROR-INS-035 (BLOCKER 3 regression): neya_niyogita is government-notified
+  // land (Neyanjori / Gair Khalsa), NOT bagayat. It must fire ROR-INS-035,
+  // not ROR-INS-031.
+  it("does NOT fire ROR-INS-031 (bagayat watchout) for neya_niyogita", () => {
+    const out = runInsights(bhulekhLandRules, {
+      ror: { ...baseRor, page1: { ...baseRor.page1, kisam: "neya_niyogita" } },
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-031")).toBeUndefined();
+  });
+
+  it("fires ROR-INS-035 (redFlag) for neya_niyogita", () => {
+    const out = runInsights(bhulekhLandRules, {
+      ror: { ...baseRor, page1: { ...baseRor.page1, kisam: "neya_niyogita" } },
+    });
+    const red = out.find(
+      (i) => i.severity === "redFlag" && i.ruleId === "ROR-INS-035"
+    );
+    expect(red).toBeDefined();
+    expect(red!.body).toMatch(/Government notified land|Neyanjori/);
+  });
+
+  it("fires ROR-INS-035 (redFlag) for the neyanjori spelling variant", () => {
+    const out = runInsights(bhulekhLandRules, {
+      ror: { ...baseRor, page1: { ...baseRor.page1, kisam: "neyanjori" } },
+    });
+    const red = out.find(
+      (i) => i.severity === "redFlag" && i.ruleId === "ROR-INS-035"
+    );
+    expect(red).toBeDefined();
+    expect(red!.body).toMatch(/Government notified land|Neyanjori/);
   });
 });

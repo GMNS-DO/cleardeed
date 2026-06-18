@@ -21,7 +21,17 @@ const BAGAYAT_KISAMS = new Set([
   "krishi",
   "jalasechita_single",
   "jalasechita_double",
+]);
+
+// Neyanjori / neya_niyogita / khalsa — government notified land (Gair Khalsa).
+// Per Session 050 / docs/superpowers/plans/2026-06-18-doc-consolidation-and-status-index.md
+// line 317: NOT ordinary irrigated/agricultural land; it is government-notified
+// land where construction and private sale are prohibited without state
+// government approval. Fires ROR-INS-035 (redFlag) below.
+const NEYANJORI_KISAMS = new Set([
+  "neyanjori",
   "neya_niyogita",
+  "khalsa",
 ]);
 
 const GHARABARI_KISAMS = new Set([
@@ -107,6 +117,25 @@ function leaseDeedSthitibanStub(input: RuleInput): Insight[] | null {
   )];
 }
 
+function kisamNeyanjoriRedFlag(input: RuleInput): Insight[] | null {
+  const r = (input as any).ror;
+  if (!r || r.status !== "verified") return null;
+  const kisam = r.page1?.kisam;
+  if (typeof kisam !== "string") return null;
+  if (!NEYANJORI_KISAMS.has(kisam.toLowerCase())) return null;
+  return [{
+    panel: "land",
+    issueLens: "land_use_permission",
+    evidenceStrength: "document_anchor",
+    source: "bhulekh:ror:page-1",
+    severity: "redFlag",
+    headline: "Kisam is government notified land (Neyanjori / Gair Khalsa)",
+    body: `The RoR records the land class as '${kisam}'. This is government notified land (Neyanjori / Gair Khalsa) — construction and private sale are prohibited without state government approval.`,
+    actionItem: "Do not pay. Ask the seller for the state government's prior diversion / de-notification order. Without it, the land can be resumed by the government at any time.",
+    ruleId: "ROR-INS-035",
+  }];
+}
+
 function kisamUnknownWatchout(input: RuleInput): Insight[] | null {
   // Covers two parser-source-quality cases:
   //   (a) RoR verified but kisam field is missing / not in dictionary.
@@ -147,4 +176,5 @@ export const bhulekhLandRules: Rule[] = [
   { id: "ROR-INS-032", panel: "land", fn: kisamGharabariPositive, version: v },
   { id: "ROR-INS-033", panel: "land", fn: leaseDeedSthitibanStub, version: v },
   { id: "ROR-INS-034", panel: "land", fn: kisamUnknownWatchout, version: v },
+  { id: "ROR-INS-035", panel: "land", fn: kisamNeyanjoriRedFlag, version: v },
 ];
