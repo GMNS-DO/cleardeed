@@ -1,10 +1,12 @@
 // agents/consumer-report-writer/src/insights/registry/registry/court.ts
 import type { Rule, RuleInput } from "../../schema";
-import { stubFor } from "../_shared";
+import { liveDataPresent, stubFor } from "../_shared";
 
 const v = "1.0.0";
 
-function courtPendingCaseMatchesSellerStub(_input: RuleInput) {
+// HIGH #4: gate every stub on RoR data presence.
+function courtPendingCaseMatchesSellerStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-120",
@@ -17,7 +19,8 @@ function courtPendingCaseMatchesSellerStub(_input: RuleInput) {
   ];
 }
 
-function courtClosedCaseMatchesSellerStub(_input: RuleInput) {
+function courtClosedCaseMatchesSellerStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-121",
@@ -30,7 +33,8 @@ function courtClosedCaseMatchesSellerStub(_input: RuleInput) {
   ];
 }
 
-function courtZeroResultsStub(_input: RuleInput) {
+function courtZeroResultsStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-122",

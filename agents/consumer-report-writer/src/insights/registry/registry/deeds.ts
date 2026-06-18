@@ -1,10 +1,14 @@
 // agents/consumer-report-writer/src/insights/registry/registry/deeds.ts
 import type { Rule, RuleInput } from "../../schema";
-import { stubFor } from "../_shared";
+import { liveDataPresent, stubFor } from "../_shared";
 
 const v = "1.0.0";
 
-function deedsSellerMatchesRorStub(_input: RuleInput) {
+// HIGH #4: gate every stub on RoR data presence so demos / partial
+// fetches without RoR don't accumulate ~20 "Manual verification"
+// watchouts.
+function deedsSellerMatchesRorStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-110",
@@ -17,7 +21,8 @@ function deedsSellerMatchesRorStub(_input: RuleInput) {
   ];
 }
 
-function deedsSellerMismatchesRorStub(_input: RuleInput) {
+function deedsSellerMismatchesRorStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-111",
@@ -30,7 +35,8 @@ function deedsSellerMismatchesRorStub(_input: RuleInput) {
   ];
 }
 
-function deedsBelowBenchmarkStub(_input: RuleInput) {
+function deedsBelowBenchmarkStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-112",
@@ -43,7 +49,8 @@ function deedsBelowBenchmarkStub(_input: RuleInput) {
   ];
 }
 
-function deedsNoSaleDeedStub(_input: RuleInput) {
+function deedsNoSaleDeedStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-113",
@@ -56,7 +63,8 @@ function deedsNoSaleDeedStub(_input: RuleInput) {
   ];
 }
 
-function deedsPartitionUntracedStub(_input: RuleInput) {
+function deedsPartitionUntracedStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-114",

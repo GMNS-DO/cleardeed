@@ -1,10 +1,15 @@
 // agents/consumer-report-writer/src/insights/registry/registry/encumbrance.ts
 import type { Insight, Rule, RuleInput } from "../../schema";
-import { stubFor } from "../_shared";
+import { liveDataPresent, stubFor } from "../_shared";
 
 const v = "1.0.0";
 
-function encumbranceActiveMortgageStub(_input: RuleInput) {
+// HIGH #4: every stub in this panel gates on RoR data presence so the
+// stubs do not fire on demo / empty inputs. Each stub still fires on a
+// real consumer report (where RoR was fetched), but the engine can now
+// keep noise low on demos and on partial fetches that lack RoR.
+function encumbranceActiveMortgageStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-100",
@@ -17,7 +22,8 @@ function encumbranceActiveMortgageStub(_input: RuleInput) {
   ];
 }
 
-function encumbranceNonDischargedChargeStub(_input: RuleInput) {
+function encumbranceNonDischargedChargeStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-101",
@@ -30,7 +36,8 @@ function encumbranceNonDischargedChargeStub(_input: RuleInput) {
   ];
 }
 
-function encumbranceSatisfactionEntryStub(_input: RuleInput) {
+function encumbranceSatisfactionEntryStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-102",
@@ -44,6 +51,7 @@ function encumbranceSatisfactionEntryStub(_input: RuleInput) {
 }
 
 function encumbranceCersaiChargeStub(input: RuleInput): Insight[] | null {
+  if (!liveDataPresent(input, "ror")) return null;
   const c = (input as any).cersai;
   if (c && c.activeCharge === true) {
     return [
@@ -76,7 +84,8 @@ function encumbranceCersaiChargeStub(input: RuleInput): Insight[] | null {
   return null;
 }
 
-function encumbranceNarrowWindowStub(_input: RuleInput) {
+function encumbranceNarrowWindowStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-104",

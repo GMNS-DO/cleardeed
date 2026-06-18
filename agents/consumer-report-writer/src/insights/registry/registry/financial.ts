@@ -1,10 +1,12 @@
 // agents/consumer-report-writer/src/insights/registry/registry/financial.ts
 import type { Rule, RuleInput } from "../../schema";
-import { stubFor } from "../_shared";
+import { liveDataPresent, stubFor } from "../_shared";
 
 const v = "1.0.0";
 
-function financialAskingPriceVsBenchmarkStub(_input: RuleInput) {
+// HIGH #4: gate every stub on RoR data presence.
+function financialAskingPriceVsBenchmarkStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-130",
@@ -17,7 +19,8 @@ function financialAskingPriceVsBenchmarkStub(_input: RuleInput) {
   ];
 }
 
-function financialEcFinancialAttachmentStub(_input: RuleInput) {
+function financialEcFinancialAttachmentStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-131",
@@ -30,7 +33,8 @@ function financialEcFinancialAttachmentStub(_input: RuleInput) {
   ];
 }
 
-function financialMultipleEncumbrancesStub(_input: RuleInput) {
+function financialMultipleEncumbrancesStub(input: RuleInput) {
+  if (!liveDataPresent(input, "ror")) return null;
   return [
     stubFor(
       "ROR-INS-132",
