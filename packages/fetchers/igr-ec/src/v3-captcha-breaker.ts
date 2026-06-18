@@ -409,8 +409,11 @@ export async function fetchIgrEcV3(
   }
 }
 
-// ── Re-exports for tests / pipeline ──────────────────────────────────────────
-
-export const V3_PARSER_VERSION_PUBLIC = V3_PARSER_VERSION;
-export const V3_ONNX_MODEL_PATH_PUBLIC = ONNX_MODEL_PATH;
-export { parseResultsTable as _parseResultsTableForTests };
+// ── End of V3 module ─────────────────────────────────────────────────────────
+//
+// Exports used by `index.ts` and the live/unit test suites:
+//   fetchIgrEcV3        — main entry
+//   IgrEcV3Options      — options shape (test-only `captchaSolver`)
+//   IgrEcV3Input        — input shape for the fetcher
+//   IgrEcV3Envelope     — typed IgrEcContract alias
+//   V3_PARSER_VERSION   — const for the V3 parser version (consumed by index.ts)

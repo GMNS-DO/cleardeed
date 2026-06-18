@@ -290,9 +290,9 @@ describe("IGR EC V3 — unit-test battery (mocked fetch)", () => {
   });
 
   it("captures captcha-solver failure in the envelope (parse_error code)", async () => {
-    // We force solveCaptcha to return a low-confidence result by mocking
-    // it to return text "". This makes the fetcher classify the request
-    // as parse_error with code CAPTCHA_UNSOLVED.
+    // A captcha solver that throws must surface as parse_error / CAPTCHA_UNSOLVED.
+    // Inject via the IgrEcV3Options.captchaSolver hook so the test does not
+    // depend on the real ONNX / Tesseract pipeline.
     const pageHtml = `<html><body>
       <form id="encumbranceSearch">
         <input name="csrf" value="abc123" />
@@ -311,21 +311,42 @@ describe("IGR EC V3 — unit-test battery (mocked fetch)", () => {
         headers: { "content-type": "image/png" },
       })
     );
-    // We can't easily mock the captcha-breaker's solveCaptcha here, so
-    // we skip this assertion if the captcha-breaker is unavailable.
-    if (!CAPTCHA_BREAKER_AVAILABLE) {
-      return;
-    }
-    // If the captcha-breaker is available and the fetcher accepts empty
-    // captcha answers, this test will fall through to the post step.
-    // We assert the result is *one of* the valid states, not a crash.
     const result = await fetchIgrEcV3(
       { partyName: "Ramesh", sroCode: "10", deedPeriod: "1" },
-      { captchaSolver: mockCaptchaSolver }
+      { captchaSolver: failingCaptchaSolver }
     );
-    expect(["ok", "no_data", "parse_error", "source_down", "invalid_input"]).toContain(
-      result.status
+    expect(result.status).toBe("parse_error");
+    expect(result.error?.code).toBe("CAPTCHA_UNSOLVED");
+  });
+
+  it("captures empty captcha-solver result in the envelope (parse_error code)", async () => {
+    // A captcha solver that returns text shorter than 4 chars is treated as
+    // unsolved. Same envelope contract, different solver behaviour.
+    const pageHtml = `<html><body>
+      <form id="encumbranceSearch">
+        <input name="csrf" value="abc123" />
+        <img class="captcha-img" src="/captcha.png?id=xyz" />
+      </form>
+    </body></html>`;
+    fetchMock.mockResolvedValueOnce(
+      new Response(pageHtml, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
     );
+    fetchMock.mockResolvedValueOnce(
+      new Response(Buffer.from("png-bytes"), {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      })
+    );
+    const emptyCaptchaSolver = async () => ({ text: "", confidence: 0, attempts: 1 });
+    const result = await fetchIgrEcV3(
+      { partyName: "Ramesh", sroCode: "10", deedPeriod: "1" },
+      { captchaSolver: emptyCaptchaSolver }
+    );
+    expect(result.status).toBe("parse_error");
+    expect(result.error?.code).toBe("CAPTCHA_UNSOLVED");
   });
 
   it("the V3 envelope is an IgrEcContract (validated shape)", async () => {
@@ -378,16 +399,33 @@ describe("IGR EC — index.ts V3/V1 integration smoke", () => {
     expect(Array.isArray(result.inputsTried)).toBe(true);
   }, 30_000);
 
-  it("isSourceFired('igr-ec') is wired (returns FireResult shape)", () => {
-    // Pass a fake IGRECResult envelope so the fire dispatch reaches the
-    // igr-ec branch and returns a FireResult object.
-    const fired = isSourceFired("igr-ec", {
+  it("isSourceFired('igr-ec') fires on ecAvailable=true and not on ecAvailable=false", () => {
+    // ecAvailable=true → fired=true with envelope.ecReference carried
+    const firedOk = isSourceFired("igr-ec", {
+      source: "igr-ec",
+      status: "ok",
+      data: { ecAvailable: true, ecDocumentRef: "EC-2024-1234" },
+      fetchedAt: "2026-06-17T00:00:00.000Z",
+    } as unknown as Parameters<typeof igrEcFetch>[0]);
+    expect(firedOk.fired).toBe(true);
+    if (firedOk.fired) {
+      // Per fire.ts, fired envelopes expose named fields on `.envelope`
+      // (discriminated by source), not at the top level.
+      expect(firedOk.envelope.source).toBe("igr-ec");
+      expect(firedOk.envelope.ecReference).toBe("EC-2024-1234");
+      expect(firedOk.envelope.certifiedCopyAvailable).toBe(true);
+    }
+    // ecAvailable=false → fired=false / no_data (the contract gates on
+    // ecAvailable, not on the envelope status alone)
+    const firedNoData = isSourceFired("igr-ec", {
       source: "igr-ec",
       status: "ok",
       data: { ecAvailable: false },
       fetchedAt: "2026-06-17T00:00:00.000Z",
     } as unknown as Parameters<typeof igrEcFetch>[0]);
-    expect(typeof fired).toBe("object");
-    expect(typeof (fired as { fired: unknown }).fired).toBe("boolean");
+    expect(firedNoData.fired).toBe(false);
+    if (!firedNoData.fired) {
+      expect(firedNoData.reason).toBe("no_data");
+    }
   });
 });
