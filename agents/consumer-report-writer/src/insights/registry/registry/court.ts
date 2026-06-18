@@ -1,4 +1,50 @@
 // agents/consumer-report-writer/src/insights/registry/registry/court.ts
-import type { Rule } from "../../schema";
-// Panel: court. Rules added in Phase 1, Task 7.
-export const courtRules: Rule[] = [];
+import type { Rule, RuleInput } from "../../schema";
+import { stubFor } from "../_shared";
+
+const v = "1.0.0";
+
+function courtPendingCaseMatchesSellerStub(_input: RuleInput) {
+  return [
+    stubFor(
+      "ROR-INS-120",
+      "court",
+      "title_chain",
+      "parser_uncertain",
+      "Pending-case match against seller name is not yet checked. Will activate once eCourts + High Court + DRT are live and case-name matching is wired.",
+      "Search the seller name on eCourts (district courts), Orissa High Court, and DRT before signing. Any pending case linked to the seller is a red flag for the title."
+    ),
+  ];
+}
+
+function courtClosedCaseMatchesSellerStub(_input: RuleInput) {
+  return [
+    stubFor(
+      "ROR-INS-121",
+      "court",
+      "title_chain",
+      "parser_uncertain",
+      "Closed-case match against seller name is not yet checked. Will activate once eCourts + High Court + DRT are live and case-name matching is wired.",
+      "Even a closed old dispute can affect marketability. Ask the seller for a copy of the disposal order and the facts of the case before agreeing to a discount."
+    ),
+  ];
+}
+
+function courtZeroResultsStub(_input: RuleInput) {
+  return [
+    stubFor(
+      "ROR-INS-122",
+      "court",
+      "title_chain",
+      "parser_uncertain",
+      "Zero-cases language is not yet safely emitted. Will activate once eCourts + High Court + DRT are live with verified negative-result confidence.",
+      "A 'no cases found' result is only a real finding once the court search actually returns zero records — a partial or captcha-failed result is NOT a clean negative. Ask the buyer's lawyer to run the search manually before relying on it."
+    ),
+  ];
+}
+
+export const courtRules: Rule[] = [
+  { id: "ROR-INS-120", panel: "court", fn: courtPendingCaseMatchesSellerStub, version: v },
+  { id: "ROR-INS-121", panel: "court", fn: courtClosedCaseMatchesSellerStub, version: v },
+  { id: "ROR-INS-122", panel: "court", fn: courtZeroResultsStub, version: v },
+];
