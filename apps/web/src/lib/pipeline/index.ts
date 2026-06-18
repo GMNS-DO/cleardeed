@@ -36,6 +36,10 @@ import { cersaiFetch } from "@cleardeed/fetcher-cersai";
 import { fetch as rccmsFetch } from "@cleardeed/fetcher-rccms";
 import { fetch as circleRateFetch } from "@cleardeed/fetcher-circle-rate";
 import { fetch as bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
+// Sprint 8 (Task 35) — Plot diagram pipeline step. Wires the WFS compose
+// + SVG render + Supabase Storage upload into the V1.1 report pipeline
+// with a 30s timeout, 7-day cache, and non-blocking failure semantics.
+import { runPlotDiagramStep, type PlotDiagramStepResult } from "../plot-diagram-step";
 // Sprint V5b — IGR public-data fetchers (PI-V.5). Typed-degradation siblings to
 // the existing circle-rate / igr-ec pipeline calls. The renderer sub-cards are
 // added in `agents/consumer-report-writer/src/index.ts` buildBenchmarkSection.
@@ -473,6 +477,11 @@ export interface V11PipelineOutput {
   /** Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR
    *  cross-check. Adds cadastral map image, owner block, khatiyan no, area. */
   bhunakshaPlotReport?: unknown;
+  /** Plot diagram (Task 35): WFS-composed SVG of target + neighbors +
+   *  roads, uploaded to Supabase Storage. `null` when the step was skipped
+   *  (no polygon) or failed (non-blocking — the rest of the report still
+   *  ships). The renderer embeds `url` directly in the consumer report. */
+  plotDiagram?: PlotDiagramStepResult | null;
 }
 
 /**
@@ -523,10 +532,14 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   let bhunakshaPolygon: { type: "Polygon"; coordinates: number[][][] } | null = null;
   let bhunakshaSummary = "not_fetched";
   let bhunakshaResult: Awaited<ReturnType<typeof bhunakshaFetch>> | null = null;
+  // Captured for the plot diagram step (Task 35). Hoisted so it's available
+  // outside the try block even when Bhunaksha fetch errors.
+  let villageGpsForDiagram: { lat: number; lon: number } | null = null;
 
   try {
     const villageGps = await resolveVillageGps(input.village, input.tehsil);
     if (villageGps) {
+      villageGpsForDiagram = { lat: villageGps.lat, lon: villageGps.lon };
       bhunakshaResult = await bhunakshaFetch({
         lat: villageGps.lat,
         lon: villageGps.lon,
@@ -550,6 +563,41 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   } catch (err) {
     console.warn("[pipeline/v11] Bhunaksha fetch error:", err instanceof Error ? err.message : err);
     bhunakshaSummary = "fetch_error";
+  }
+
+  // ── Step 1c: Plot diagram (Task 35) — WFS compose + SVG render + upload ─
+  // Non-blocking: a failure here does NOT fail the report. The diagram is
+  // an additive UX surface (rendered as <img> in the consumer report) — the
+  // rest of the report still ships. 30s overall budget; 7-day cache by
+  // reportId (primary) or (gps+plot#+village) (secondary).
+  let plotDiagram: PlotDiagramStepResult | null = null;
+  if (bhunakshaPolygon && villageGpsForDiagram) {
+    try {
+      plotDiagram = await runPlotDiagramStep({
+        reportId,
+        gps: villageGpsForDiagram,
+        village: input.village,
+        plotNo: bhunakshaResult?.data?.plotNo ?? input.identifier,
+        targetPolygon: bhunakshaPolygon,
+        traceId: `rpt-${reportId.slice(0, 8)}`,
+      });
+    } catch (err) {
+      // runPlotDiagramStep already swallows errors and returns a
+      // structured result. A throw here would be a bug in the step itself
+      // (e.g. uncaught exception in cache helper). Log and continue.
+      console.warn(
+        "[pipeline/v11] plot diagram step threw (should not happen):",
+        err instanceof Error ? err.message : err
+      );
+      plotDiagram = {
+        status: "failed",
+        url: null,
+        reason: err instanceof Error ? err.message : String(err),
+        cacheHit: false,
+        rendered: false,
+        durationMs: 0,
+      };
+    }
   }
 
   // ── Step 1c: Bhunaksha Plot Report — independent ROR cross-check ────────
@@ -1151,6 +1199,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     fire: buildFireMap(sourcesWithFinancial),
     bhunakshaPolygon,
     bhunakshaPlotReport: bhunakshaPlotReport ?? null,
+    plotDiagram: plotDiagram ?? null,
   };
 }
 

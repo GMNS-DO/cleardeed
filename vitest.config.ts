@@ -45,6 +45,8 @@ export default defineConfig({
       "apps/web/src/lib/pipeline/contracts/contract-test-factory.test.ts",
       "apps/web/src/lib/db.expiry.test.ts",
       "apps/web/src/lib/plot-diagram-storage.test.ts",
+      "apps/web/src/lib/plot-diagram-step.test.ts",
+      "apps/web/src/lib/plot-diagram-cache.test.ts",
       "apps/web/src/lib/survey.test.ts",
       "apps/web/src/lib/report-access.test.ts",
       "apps/web/src/lib/razorpay-config.test.ts",

@@ -21,6 +21,17 @@ import { getSupabaseServerClient } from "./db";
 export const PLOT_DIAGRAMS_BUCKET = "plot-diagrams";
 
 /**
+ * The minimal shape of a target polygon the plot diagram pipeline needs.
+ * Bhunaksha's `data.polygon` is structurally compatible (see BhunakshaResult
+ * schema in packages/schema) so we accept it loosely here to avoid pulling
+ * the full zod schema into the storage helper.
+ */
+export interface PlotPolygonLike {
+  type: "Polygon";
+  coordinates: number[][][];
+}
+
+/**
  * Build the canonical storage path for a plot diagram SVG.
  *
  * Exported so tests and other code (e.g. cleanup, signed-URL generators)
