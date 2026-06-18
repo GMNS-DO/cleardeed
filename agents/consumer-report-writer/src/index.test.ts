@@ -1581,4 +1581,29 @@ describe("A10 ConsumerReportWriter", () => {
       expect(synthesized.length).toBe(0);
     });
   });
+
+  describe("generateConsumerReport exposes insights", () => {
+    it("returns an insights array alongside HTML", () => {
+      const input = {
+        ...CONSUMER_REPORT_FIXTURE,
+        gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { html, insights } = generateConsumerReport(input as any);
+
+      expect(typeof html).toBe("string");
+      expect(Array.isArray(insights)).toBe(true);
+
+      // Schema check: every insight must carry the schema-required fields
+      // (Tasks 7–21 will populate ALL_RULES; until then insights is empty).
+      for (const i of insights) {
+        expect(i.issueLens).toBeTruthy();
+        expect(i.evidenceStrength).toBeTruthy();
+        expect(i.source).toBeTruthy();
+        expect(i.actionItem).toBeTruthy();
+        expect(i.ruleId).toMatch(/^ROR-INS-\d{3}$/);
+      }
+    });
+  });
 });

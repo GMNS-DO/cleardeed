@@ -35,6 +35,9 @@ import {
 } from "./ror-insights";
 import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
+import { runInsights } from "./insights/engine";
+import { ALL_RULES } from "./insights/registry";
+import type { Insight } from "./insights/schema";
 
 export type ConsumerReportGenInput = ConsumerReportGenInputData;
 export { ConsumerReportGenInputSchema } from "./mapper";
@@ -50,12 +53,14 @@ export interface GenerateReportOptions {
 
 /**
  * Generate the consumer-facing property report as HTML string.
- * Returns { html, title } — html is a standalone, print-friendly HTML fragment.
+ * Returns { html, title, insights } — html is a standalone, print-friendly HTML
+ * fragment; insights is the structured list of rule-derived consumer insights
+ * (populated by Tasks 7–21; empty array until then).
  */
 export { buildFounderCuratedClusters };
 export function generateConsumerReport(
   input: z.infer<typeof ConsumerReportGenInputSchema>
-): { html: string; title: string } {
+): { html: string; title: string; insights: Insight[] } {
   const parsed = ConsumerReportGenInputSchema.safeParse(input);
   if (!parsed.success) {
     return generateErrorReport("Invalid report input. Please try again.");
@@ -949,7 +954,15 @@ function submitFeedbackComment(section, btn) {
 
   const title = `ClearDeed — ${plotVillage}, ${plotTahasil} (Plot ${safePlotNo})`;
 
-  return { html, title };
+  // ── Run the unified insight engine (Tasks 7–21 will populate ALL_RULES) ─────
+  // Insights are derived from the validated report input. They are exposed on
+  // the return value for downstream consumers (A11 audit, dashboards) — the
+  // HTML rendering of these insights lands in a later phase. RuleInput is
+  // intentionally `unknown` in the schema, so passing `data` (the validated
+  // input) is the contractually correct shape.
+  const insights = runInsights(ALL_RULES, data as unknown as Parameters<typeof runInsights>[1]);
+
+  return { html, title, insights };
 }
 
 // ─── Section builders ─────────────────────────────────────────────────────────
@@ -3688,11 +3701,12 @@ function buildVerifyLink(url: unknown, label: string, title?: string): string {
 
 // ─── Error fallback ────────────────────────────────────────────────────────────
 
-function generateErrorReport(message: string): { html: string; title: string } {
+function generateErrorReport(message: string): { html: string; title: string; insights: Insight[] } {
   return {
     html: `<!DOCTYPE html><html><head><style>body{font-family:system-ui;padding:40px;color:#333;}</style></head>
 <body><h1>Report Error</h1><p>${escapeHtml(message)}</p></body></html>`,
     title: "ClearDeed — Error",
+    insights: [],
   };
 }
 
