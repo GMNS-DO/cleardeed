@@ -964,6 +964,10 @@ function buildInsightHighlights(insights: (RoRInsight | RiskInsight)[]): string 
       <p>${escapeHtml(item.body)}</p>
       <div class="insight-source">Source: ${escapeHtml(item.source)}</div>
       ${actionItem ? `<p class="insight-action"><strong>What to do:</strong> ${escapeHtml(actionItem)}</p>` : ""}
+      <details>
+        <summary>How we checked this</summary>
+        <p>Source: ${escapeHtml(item.source)}. This insight is a structured observation, not a legal opinion. Verify with a qualified property lawyer before transacting.</p>
+      </details>
     </div>`;
   }).join("");
 
@@ -992,6 +996,10 @@ function buildRiskInsightCard(insight: RiskInsight): string {
     <p>${escapeHtml(insight.body)}</p>
     <div class="insight-source">Source: ${escapeHtml(insight.source)}</div>
     ${insight.actionItem ? `<p class="insight-action"><strong>What to do:</strong> ${escapeHtml(insight.actionItem)}</p>` : ""}
+    <details>
+      <summary>How we checked this</summary>
+      <p>Source: ${escapeHtml(insight.source)}. This insight is a structured observation, not a legal opinion. Verify with a qualified property lawyer before transacting.</p>
+    </details>
   </div>`;
 }
 
@@ -3088,6 +3096,7 @@ function buildBackPageRiskInsight(mutationCount: number, encumbranceCount: numbe
       <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
       <div class="insight-label">Multiple owners recorded in this khatiyan</div>
       <p>This khatiyan has ${ownerCount} recorded owners. Every owner — or their legal heirs if deceased — must give written consent before any sale or transfer. Ask your lawyer to confirm every owner's current status.</p>
+      <details><summary>How we checked this</summary><p>Source: Bhulekh Back Page (tenant block). This is a source observation, not a legal opinion. Verify with a qualified property lawyer before transacting.</p></details>
     </div>`;
   }
 
@@ -3096,6 +3105,7 @@ function buildBackPageRiskInsight(mutationCount: number, encumbranceCount: numbe
       <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
       <div class="insight-label">High number of encumbrance entries (${encumbranceCount})</div>
       <p>The Back Page of this khatiyan shows ${encumbranceCount} encumbrance-style entries. This is common for government land or land with historical leases/loans. Ask the seller to produce the original EC and clear all charge entries before registration.</p>
+      <details><summary>How we checked this</summary><p>Source: Bhulekh Back Page encumbrance-style table. This is a row-count signal, not proof of any charge. Verify with a qualified property lawyer before transacting.</p></details>
     </div>`;
   }
 
@@ -3104,6 +3114,7 @@ function buildBackPageRiskInsight(mutationCount: number, encumbranceCount: numbe
       <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
       <div class="insight-label">High transaction history (${mutationCount} entries)</div>
       <p>This khatiyan has been transacted ${mutationCount} times — typical for government notified land or frequently transferred plots. Confirm the title chain is complete and every prior sale deed is registered.</p>
+      <details><summary>How we checked this</summary><p>Source: Bhulekh Back Page mutation history table. This is a row-count signal, not verified ownership history. Verify the full title chain with a qualified property lawyer before transacting.</p></details>
     </div>`;
   }
 
@@ -3112,6 +3123,7 @@ function buildBackPageRiskInsight(mutationCount: number, encumbranceCount: numbe
       <div class="insight-head"><span class="insight-icon">&#9888;</span><span class="insight-type">Watch-out</span></div>
       <div class="insight-label">Back Page entries found — ${mutationCount} mutations, ${encumbranceCount} encumbrance entries</div>
       <p>The khatiyan Back Page shows prior transaction and encumbrance activity. These are entry points for your lawyer to trace the title chain. Get the Encumbrance Certificate (EC) from IGR Odisha and review all entries carefully.</p>
+      <details><summary>How we checked this</summary><p>Source: Bhulekh Back Page. These entries are source anchors, not verified ownership history or EC clearance. Verify with a qualified property lawyer before transacting.</p></details>
     </div>`;
   }
 
@@ -3119,6 +3131,7 @@ function buildBackPageRiskInsight(mutationCount: number, encumbranceCount: numbe
     <div class="insight-head"><span class="insight-icon">&#10003;</span><span class="insight-type">Positive signal</span></div>
     <div class="insight-label">Back Page returned without major encumbrance or mutation entries</div>
     <p>The Back Page did not return significant mutation or charge entries for this khatiyan. This is a neutral signal, not proof of ownership or title status. Confirm with the full title chain and EC before relying on this.</p>
+    <details><summary>How we checked this</summary><p>Source: Bhulekh Back Page. No parsed rows is a source observation, not proof of no encumbrance. Verify with the IGR EC before relying on this.</p></details>
   </div>`;
 }
 
