@@ -107,7 +107,13 @@ function sellerNameNotMatchedRedFlag(input: RuleInput): Insight[] | null {
   if (sellerName.trim().split(/\s+/).length === 1) return null;
   const ownerLc = p1.owner.toLowerCase();
   const sellerTokens = sellerName.toLowerCase().split(/\s+/);
-  const anyTokenMatch = sellerTokens.some((t: string) => ownerLc.includes(t));
+  // HIGH #1: ignore single-letter and very short tokens (length < 3).
+  // A buyer typing "m" would otherwise match every owner name containing
+  // an "m" ("Rama", "Soma", "Mohan", ...) and the rule would fire
+  // redFlag on every report. Restrict to tokens of meaningful length.
+  const meaningfulTokens = sellerTokens.filter((t: string) => t.length >= 3);
+  if (meaningfulTokens.length === 0) return null;
+  const anyTokenMatch = meaningfulTokens.some((t: string) => ownerLc.includes(t));
   if (!anyTokenMatch) {
     return [{
       panel: "owner",

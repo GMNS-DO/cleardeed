@@ -48,4 +48,37 @@ describe("bhulekh owner rules", () => {
   it("emits nothing when ror is missing", () => {
     expect(runInsights(bhulekhOwnerRules, {}).length).toBe(0);
   });
+
+  // HIGH #1 regression: ROR-INS-024 must ignore single-letter and very short
+  // seller tokens. A buyer typing "m" would otherwise match every owner
+  // name containing an "m".
+  it("does NOT fire ROR-INS-024 for a single-letter seller name 'm'", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama Mohanty" } },
+      sellerName: "m",
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-024")).toBeUndefined();
+  });
+
+  it("does NOT fire ROR-INS-024 when only short tokens (length < 3) are provided", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama Mohanty" } },
+      sellerName: "M P", // 1-char and 1-char tokens
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-024")).toBeUndefined();
+  });
+
+  it("preserves existing ROR-INS-024 behavior for meaningful tokens", () => {
+    // Sanity check: a multi-token seller name whose tokens don't appear in
+    // the RoR owner still fires the redFlag. Single-token seller names
+    // remain the domain of ROR-INS-023 (single-token watchout), not
+    // ROR-INS-024.
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama Mohanty" } },
+      sellerName: "Shyam Patnaik",
+    });
+    expect(
+      out.find((i) => i.ruleId === "ROR-INS-024" && i.severity === "redFlag")
+    ).toBeDefined();
+  });
 });
