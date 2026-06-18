@@ -51,7 +51,6 @@ function encumbranceSatisfactionEntryStub(input: RuleInput) {
 }
 
 function encumbranceCersaiChargeStub(input: RuleInput): Insight[] | null {
-  if (!liveDataPresent(input, "ror")) return null;
   const c = (input as any).cersai;
   if (c && c.activeCharge === true) {
     return [
@@ -69,7 +68,8 @@ function encumbranceCersaiChargeStub(input: RuleInput): Insight[] | null {
       },
     ];
   }
-  if (!c) {
+  // Stub branch: only on a real report (RoR fetched). Demos stay quiet.
+  if (!c && liveDataPresent(input, "ror")) {
     return [
       stubFor(
         "ROR-INS-103",
