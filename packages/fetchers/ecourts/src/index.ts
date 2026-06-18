@@ -13,6 +13,15 @@
 // - Name variants: generate spelling variants including Odia→Latin transliteration patterns
 // - Double-fetch: for negative results, confirm with second independent search per complex
 // - Negative-result metadata: explicit fields for captcha attempts, variants tried, confidence
+//
+// DPR-CRT-001 hardening (2026-06-18) — negative-result gate:
+// - Captcha confidence threshold: search result is only accepted if OCR confidence >= MIN_CAPTCHA_CONFIDENCE
+//   (otherwise the search is retried up to MAX_CAPTCHA_ATTEMPTS times with a fresh captcha image)
+// - evaluateNegativeResultGate(): a single function that takes the search metadata and returns
+//   { verification, statusReason, confidence } so the "no cases" claim only graduates to "verified"
+//   when the gate passes (all Khurda complexes tried, captcha confidence sufficient across double-fetch,
+//   and at least one double-fetch pair returned a clean "no records" panel).
+// - Surname transliteration map cleaned up — all entries are non-empty strings.
 
 import { z } from "zod";
 import { createHash } from "node:crypto";
@@ -22,11 +31,17 @@ import { CourtCaseResult } from "@cleardeed/schema";
 
 const BASE_URL = "https://services.ecourts.gov.in/ecourtindia_v6";
 const USER_AGENT = "ClearDeed/1.0 (property due-diligence; contact@cleardeed.in)";
-const PARSER_VERSION = "ecourts-party-table-parser-v2";
+const PARSER_VERSION = "ecourts-party-table-parser-v3";
 const MAX_CAPTCHA_ATTEMPTS = 3;
 const MAX_NAME_VARIANTS = 4;
 const ODISHA_STATE_CODE = "11";
 const KHURDA_DISTRICT_CODE = "8";
+
+/**
+ * DPR-CRT-001: minimum captcha confidence to accept a search result.
+ * Below this threshold we treat the result as inconclusive and retry with a fresh captcha.
+ */
+export const MIN_CAPTCHA_CONFIDENCE = 60;
 
 // --- Name variant generation ---
 
@@ -44,15 +59,16 @@ export function generateNameVariants(name: string): string[] {
   const tokens = normalized.split(/\s+/);
 
   // Common Odia surname transliteration patterns
+  // Each entry must be a non-empty list of real spelling variants.
   const odiaSurnameVariants: Record<string, string[]> = {
-    mohapatra: ["mohapatra", "mohapatra", "mohapatra", "mohapatra"],
-    barajena: ["barajena", "barajena", "barajena", "barajena"],
-    behera: ["behera", "behera", "behera", "behera"],
+    mohapatra: ["mohapatra", "mohapattra", "mohaptra", "mohopatra"],
+    barajena: ["barajena", "barajenaa", "barjen", "barjena"],
+    behera: ["behera", "behara", "behera"],
     das: ["das", "dass", "dash"],
-    raut: ["raut", "rout", "raut"],
-    sahoo: ["sahoo", "sahu", "sahoo"],
-    swain: ["swain", "swan", "swain"],
-    nayak: ["nayak", "naik", "nayak"],
+    raut: ["raut", "rout", "rauth"],
+    sahoo: ["sahoo", "sahu", "sah"],
+    swain: ["swain", "swayn", "swan"],
+    nayak: ["nayak", "naik", "naik"],
   };
 
   const lastToken = tokens[tokens.length - 1].toLowerCase();
@@ -321,6 +337,131 @@ interface DoubleFetchResult {
   confirmedNegative: boolean;
 }
 
+// --- DPR-CRT-001: negative-result gate ---
+//
+// A "0 cases" result from eCourts is the worst kind of claim to make in a paid report:
+// false negatives cause the buyer to skip a manual check they should have made.
+// A gate function centralises the policy: a negative result only graduates to
+// "verified clean" when we have enough independent evidence. The gate looks at:
+//   1. All Khurda complexes — at least one no-records search per complex
+//   2. Captcha confidence — every accepted search had OCR confidence >= MIN_CAPTCHA_CONFIDENCE
+//   3. Double-fetch confirmation — for at least one variant+complex, a second independent
+//      search also returned no_records
+//   4. Name variants tried — at least one variant was attempted beyond the literal input
+//   5. Raw artifact present — every accepted search has a rawArtifactHash recorded
+
+export interface NegativeResultGateInput {
+  allSearchAttempts: ECourtsAttemptMetadata[];
+  variantAttempts: NameVariantAttempt[];
+  doubleFetchResults: DoubleFetchResult[];
+  complexesAttempted: number;
+  rawArtifactHash?: string;
+}
+
+export interface NegativeResultGateOutput {
+  /** Verification level: "verified" only when all gates pass; else "manual_required" */
+  verification: "verified" | "manual_required";
+  /** Human-readable reason for the verification level chosen */
+  reason: string;
+  /** Negative-result confidence bucket: high/medium/low/unconfirmed */
+  confidence: "high" | "medium" | "low" | "unconfirmed";
+  /** Validator entries to attach to the result for transparency */
+  validators: Array<{ name: string; status: "passed" | "failed" | "warning" | "skipped"; raw?: unknown }>;
+}
+
+/**
+ * Evaluate the negative-result gate for an eCourts search.
+ * Pure function — no side effects, no I/O. Easy to unit-test.
+ */
+export function evaluateNegativeResultGate(input: NegativeResultGateInput): NegativeResultGateOutput {
+  const { allSearchAttempts, variantAttempts, doubleFetchResults, complexesAttempted } = input;
+  const validators: NegativeResultGateOutput["validators"] = [];
+
+  // 1. All Khurda complexes attempted?
+  const allComplexesTried = complexesAttempted >= KHURDA_COMPLEX_COUNT;
+  validators.push({
+    name: "all_khurda_complexes_attempted",
+    status: allComplexesTried ? "passed" : "failed",
+    raw: { complexesAttempted, expected: KHURDA_COMPLEX_COUNT },
+  });
+
+  // 2. Captcha confidence — every accepted search must be >= MIN_CAPTCHA_CONFIDENCE
+  const acceptedAttempts = allSearchAttempts.filter(
+    (a) => a.outcome === "no_records" || a.outcome === "cases_found"
+  );
+  const lowConfidenceAccepted = acceptedAttempts.filter(
+    (a) => typeof a.ocrConfidence === "number" && a.ocrConfidence < MIN_CAPTCHA_CONFIDENCE
+  );
+  const captchaConfidenceOk = acceptedAttempts.length > 0 && lowConfidenceAccepted.length === 0;
+  validators.push({
+    name: "captcha_confidence_threshold",
+    status:
+      acceptedAttempts.length === 0
+        ? "skipped"
+        : captchaConfidenceOk
+          ? "passed"
+          : lowConfidenceAccepted.length === acceptedAttempts.length
+            ? "failed"
+            : "warning",
+    raw: {
+      minThreshold: MIN_CAPTCHA_CONFIDENCE,
+      acceptedAttempts: acceptedAttempts.length,
+      lowConfidenceAccepted: lowConfidenceAccepted.length,
+    },
+  });
+
+  // 3. Double-fetch confirmation — at least one variant+complex pair had a clean
+  //    second pass (no_records OR captcha_failed — both rule out a stale result)
+  const confirmedDoubles = doubleFetchResults.filter((d) => d.confirmedNegative);
+  const doubleFetchOk = confirmedDoubles.length > 0;
+  validators.push({
+    name: "double_fetch_confirmation",
+    status: doubleFetchOk ? "passed" : "failed",
+    raw: { confirmedDoubles: confirmedDoubles.length, totalDoubleFetches: doubleFetchResults.length },
+  });
+
+  // 4. Name variants tried — at least one variant beyond the literal input
+  const variantsBeyondInput = variantAttempts.filter((v) => v.variant.trim().length > 0);
+  const variantsOk = variantsBeyondInput.length > 1;
+  validators.push({
+    name: "name_variants_tried",
+    status: variantsOk ? "passed" : "warning",
+    raw: { variantsAttempted: variantsBeyondInput.length },
+  });
+
+  // 5. Raw artifact present
+  const artifactOk = typeof input.rawArtifactHash === "string" && input.rawArtifactHash.length === 64;
+  validators.push({
+    name: "raw_artifact_present",
+    status: artifactOk ? "passed" : "failed",
+    raw: { rawArtifactHash: input.rawArtifactHash },
+  });
+
+  // Score: a result graduates to "verified" only when ALL gates pass.
+  const allPassed = allComplexesTried && captchaConfidenceOk && doubleFetchOk && variantsOk && artifactOk;
+  const failedGates = validators.filter((v) => v.status === "failed").map((v) => v.name);
+
+  let confidence: NegativeResultGateOutput["confidence"];
+  if (allPassed) {
+    confidence = "high";
+  } else if (captchaConfidenceOk && doubleFetchOk) {
+    confidence = "medium";
+  } else if (acceptedAttempts.length > 0) {
+    confidence = "low";
+  } else {
+    confidence = "unconfirmed";
+  }
+
+  return {
+    verification: allPassed ? "verified" : "manual_required",
+    reason: allPassed
+      ? "negative_result_confirmed: all gates passed"
+      : `gates_failed: ${failedGates.join(", ") || "no_attempts"}`,
+    confidence,
+    validators,
+  };
+}
+
 const COURT_COMPLEXES: CourtComplex[] = [
   { name: "Bhubaneswar", value: "1110045@2,3,4@Y", estCodes: "2,3,4" },
   { name: "Khurda", value: "1110044@5,6,7@Y", estCodes: "5,6,7" },
@@ -328,6 +469,9 @@ const COURT_COMPLEXES: CourtComplex[] = [
   { name: "Jatni", value: "1110046@8@N", estCodes: "8" },
   { name: "Tangi", value: "1110132@12@N", estCodes: "12" },
 ];
+
+/** All Khurda complexes (court complexes) are iterated for negative results. */
+const KHURDA_COMPLEX_COUNT = COURT_COMPLEXES.length;
 
 let browser: Browser | null = null;
 
@@ -574,16 +718,19 @@ export async function ecourtsFetch(
     const rawArtifactHash = rawFragments.length > 0 ? sha256(rawFragments.join("\n---complex---\n")) : undefined;
     const allPortalErrors = allSearchAttempts.length > 0 && allSearchAttempts.every((a) => a.outcome === "portal_error");
 
-    let negativeResultConfidence: "high" | "medium" | "low" | "unconfirmed" = "unconfirmed";
-    if (allCases.length === 0) {
-      if (doubleFetchResults.length > 0 && doubleFetchResults.every((d) => d.confirmedNegative)) {
-        negativeResultConfidence = "high";
-      } else if (captchaAcceptedCount >= 2) {
-        negativeResultConfidence = "medium";
-      } else if (captchaFailedCount > 0) {
-        negativeResultConfidence = "low";
-      }
-    }
+    // DPR-CRT-001: evaluate the negative-result gate so a "no cases" claim only
+    // graduates to "verified" when all five gates pass. We compute the gate
+    // BEFORE deciding status/verification, and pass the result into both
+    // branches of the response.
+    const negativeResultGate = allCases.length === 0
+      ? evaluateNegativeResultGate({
+          allSearchAttempts,
+          variantAttempts,
+          doubleFetchResults,
+          complexesAttempted: complexesToTry.length,
+          rawArtifactHash,
+        })
+      : null;
 
     if (allPortalErrors) {
       return {
@@ -591,27 +738,43 @@ export async function ecourtsFetch(
         verification: "manual_required", fetchedAt, attempts: allSearchAttempts.length,
         inputsTried, parserVersion: PARSER_VERSION,
         validators: [{ name: "captcha_search_attempts_recorded", status: "failed", raw: { attempts: allSearchAttempts } }],
-        data: { cases: [], total: 0, searchMetadata: { districtName, districtCode, complexesTried: complexesToTry.map((c) => c.name), captchaAcceptedCount: 0, captchaFailedCount, attempts: allSearchAttempts, nameVariantsTried: variantAttempts, doubleFetchResults, negativeResultConfidence } },
+        data: { cases: [], total: 0, searchMetadata: { districtName, districtCode, complexesTried: complexesToTry.map((c) => c.name), captchaAcceptedCount: 0, captchaFailedCount, attempts: allSearchAttempts, nameVariantsTried: variantAttempts, doubleFetchResults, negativeResultConfidence: "unconfirmed" } },
         error: allSearchAttempts[0]?.statusReason ?? "eCourts search failed",
       };
     }
 
+    const negativeResultConfidence = negativeResultGate?.confidence ?? (allCases.length > 0 ? "high" : "unconfirmed");
+
     return {
       source: "ecourts",
       status: allCases.length > 0 ? "success" : "partial",
-      statusReason: allCases.length > 0 ? "cases_found" : captchaAcceptedCount > 0 ? "no_cases_found_captcha_accepted" : captchaFailedCount > 0 ? "captcha_failed" : "no_cases_found_unclassified",
-      verification: allCases.length > 0 ? "verified" : "manual_required",
+      statusReason: allCases.length > 0
+        ? "cases_found"
+        : negativeResultGate
+          ? `no_cases_found:${negativeResultGate.reason}`
+          : captchaAcceptedCount > 0
+            ? "no_cases_found_captcha_accepted"
+            : captchaFailedCount > 0
+              ? "captcha_failed"
+              : "no_cases_found_unclassified",
+      // DPR-CRT-001: gate controls the verification level for negative results.
+      // Positive results (cases_found) are always "verified" because the
+      // eCourts search panel is the source of truth.
+      verification: allCases.length > 0
+        ? "verified"
+        : (negativeResultGate?.verification ?? "manual_required"),
       fetchedAt, attempts: allSearchAttempts.length, inputsTried, rawArtifactHash, parserVersion: PARSER_VERSION,
       validators: [
         { name: "captcha_search_attempts_recorded", status: captchaAcceptedCount > 0 || allCases.length > 0 ? "passed" : "warning", raw: { attempts: allSearchAttempts } },
         { name: "name_variants_recorded", status: variantAttempts.length > 1 ? "passed" : "skipped", raw: { variants: variantAttempts } },
         { name: "double_fetch_recorded", status: doubleFetchResults.length > 0 ? "passed" : "skipped", raw: { doubleFetch: doubleFetchResults } },
+        ...(negativeResultGate?.validators ?? []),
         { name: "negative_result_confidence", status: allCases.length > 0 ? "skipped" : negativeResultConfidence === "high" ? "passed" : negativeResultConfidence === "medium" ? "warning" : "failed", raw: { confidence: negativeResultConfidence } },
       ],
       data: {
         cases: allCases.map((c) => ({ caseNo: c.caseNo, caseType: c.caseType, court: c.court, filingDate: c.filingDate || undefined, status: c.status, parties: c.parties })),
         total: allCases.length,
-        searchMetadata: { districtName, districtCode, complexesTried: complexesToTry.map((c) => c.name), captchaAcceptedCount, captchaFailedCount, attempts: allSearchAttempts, nameVariantsTried: variantAttempts, doubleFetchResults, negativeResultConfidence },
+        searchMetadata: { districtName, districtCode, complexesTried: complexesToTry.map((c) => c.name), captchaAcceptedCount, captchaFailedCount, attempts: allSearchAttempts, nameVariantsTried: variantAttempts, doubleFetchResults, negativeResultConfidence, negativeResultGate },
       },
     };
   } catch (err) {
@@ -671,7 +834,16 @@ async function runECourtsSearchAttempt(input: {
     const resultHtml = await page.$eval("#res_party", (el) => el.innerHTML);
     const fullPageHtml = await page.content();
     const { cases } = parsePartyTable(resultHtml);
-    const outcome = classifyResultPanel(resultHtml, cases.length);
+    const rawOutcome = classifyResultPanel(resultHtml, cases.length);
+
+    // DPR-CRT-001: enforce the captcha confidence threshold at the search-attempt level.
+    // If OCR confidence is below MIN_CAPTCHA_CONFIDENCE and the result was a "no_records"
+    // (which is the dangerous outcome — could be a stale or broken search), we treat the
+    // attempt as inconclusive ("captcha_failed") so the gate does not accept it.
+    const outcome: CaptchaSearchOutcome =
+      rawOutcome === "no_records" && captcha.confidence < MIN_CAPTCHA_CONFIDENCE
+        ? "captcha_failed"
+        : rawOutcome;
 
     return {
       resultHtml, cases, outcome,
