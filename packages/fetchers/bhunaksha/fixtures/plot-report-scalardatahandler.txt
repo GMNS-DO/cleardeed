@@ -1,0 +1,16 @@
+[
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/ScalarDatahandler",
+    "status": 200,
+    "contentType": "text/html;charset=utf-8",
+    "bytes": 231,
+    "bodyPreview": "<div id=\"div_level_5\">&nbsp;&nbsp;\nSheet No &nbsp;:\n<select  class=\"ui-widget-content\" name=\"level_5\" id=\"level_5\" onChange=\"initVillMap()\">\n</select> <br />\n<input type=\"hidden\" name=\"levelCount\" id=\"levelCount\" value=\"5\" /></div>"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/ScalarDatahandler?OP=5&state=21&levels=20%2C2%2C1%2C16%2Cnull%2C&plotno=415",
+    "status": 200,
+    "contentType": "text/html;charset=utf-8",
+    "bytes": 16,
+    "bodyPreview": "{\"has_data\":\"N\"}"
+  }
+]

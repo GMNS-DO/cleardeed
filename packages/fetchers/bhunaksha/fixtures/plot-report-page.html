@@ -1,0 +1,571 @@
+<!DOCTYPE html><html lang="en"><head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <title>BhuNaksha</title>
+
+        <!-- Bootstrap Core CSS -->
+        <link href="assets/bootstrap3/css/bootstrap.min.css" rel="stylesheet">
+
+        <link href="assets/ol3/ol.css" rel="stylesheet">
+
+        <link href="assets/sidebar/ol3-sidebar.css" rel="stylesheet">
+        <link href="assets/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+        <link href="assets/misc/bn4fullmap.css" rel="stylesheet">
+        <style>
+
+        </style>
+
+        <script type="text/javascript" src="assets/jquery/js/jquery-3.5.1.min.js"></script>
+        <script type="text/javascript" src="assets/bootstrap3/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="assets/ol3/ol.js"></script>
+        <script type="text/javascript" src="assets/sidebar/ol3-sidebar.min.js"></script>
+        <script type="text/javascript" src="assets/misc/config.js"></script>
+        <script type="text/javascript" src="assets/misc/ratioscalebar.js"></script>
+        <script type="text/javascript" src="index.js"></script>  
+        
+        <style>
+            @keyframes blinkAndChangeColor {
+              0% {
+                opacity: 1;
+                color: crimson;
+              }
+              25% {
+                opacity: 0;
+                color: orange;
+              }
+              50% {
+                opacity: 1;
+                color: green;
+              }
+              75% {
+                opacity: 0;
+                color: blue;
+              }
+              100% {
+                opacity: 1;
+                color: purple;
+              }
+            }
+
+            .blinking-label {
+              font-size: 17px;
+              margin-top: 10px;
+              display: inline-block;
+              animation: blinkAndChangeColor 8s linear infinite;
+            }
+            
+            .modal-content {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .modal-header {
+                border-bottom: 1px solid #dee2e6;
+                color: #343a40;
+                font-weight: bold;
+            }
+
+            .modal-body {
+                color: #495057;
+                font-size: 16px;
+                line-height: 1.5;
+            }
+
+            .modal-footer {
+                border-top: 1px solid #dee2e6;
+            }
+
+            .btn-secondary {
+                background-color: #6c757d;
+                border-color: #6c757d;
+            }
+        </style>
+        
+        <style>
+
+            .visitor_position {
+                background-color:rgba(0,0,0,0.08);
+                margin-top:5px;
+                height: 20px;
+            }
+            .fullscreen-below-nav-bar{
+                top: 73px !important;
+            }
+            @media screen and (max-width: 600px) {
+                .fullscreen-below-nav-bar{
+                    top: 150px !important;
+                }
+                .visitor_position {
+                    height: 93px;
+                }
+                @media screen and (max-width: 768px) {
+                    .fullscreen-below-nav-bar{
+                        top: 150px !important;
+                    }
+                    .visitor_position {
+                        height: 93px;
+                    }
+                }
+                
+            </style>
+
+        </head>
+
+        <body>
+            
+            
+             
+             
+            
+
+
+
+
+
+
+
+<div class="navbar-fixed-top">
+<nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container" style="width:98%">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">BhuNaksha</a>
+                       
+                           
+                        
+                </div>
+                <div id="navbar" class="collapse navbar-collapse">
+                    
+                    <div class="col-sm-3 col-md-3 ">
+                                 <form class="navbar-form" role="search">
+                                        <div class="input-group input-group-sm">
+                                        <input type="text" name="plotNo" id="plotNo" class="form-control" placeholder="Plot No.." style="">
+                                        <span class="input-group-btn">
+                                            <button class="btn btn-default" type="button" onclick="selectPlot($('#plotNo').val().trim());"><span class="glyphicon glyphicon-search"></span></button>
+                                        </span>
+                                    </div>
+                                </form>
+                    </div>
+                     
+                     <ul class="nav navbar-nav navbar-right">
+                         
+                         <li><a href="javascript: login();"><i class="fa fa-user-circle"></i>Login</a></li>
+                         
+
+                     </ul>
+                </div><!--/.nav-collapse -->
+            </div>
+        </nav>
+<script type="text/javascript">
+    $('#plotNo').keypress(function (e) {
+ var key = e.which;
+ if(key ===13)  // the enter key code
+  {
+    selectPlot($('#plotNo').val());
+    return false;  
+  }
+});   
+
+var state = '21';
+if(state === '30'){
+    $(document).ready(function () {
+         getMenuItem();
+    });
+    
+    function getMenuItem() {
+                $.post("rest/Settings/menuItemsList_GA",
+                        {
+                            state: $('#state').val(),
+                            module: "Help"
+                        },
+                        function (data) {
+
+                            if (data) {
+                                $.post("rest/Settings/submenuItemsList_GA",
+                                        {
+                                            state: $('#state').val(),
+                                            adminT : "Help"
+                                        }, function (submenudata) {
+                                    var htmlvalue = "";//  <ul class=\"nav navbar-nav \">";
+                                    for (var i = 0; i < data.length; i++) {
+                                        htmlvalue += "<li class=\"dropdown\">"
+                                                + "<a class=\"dropdown-toggle\" data-toggle=\"dropdown\" href=\"#\"><img src=\"assets/images/help.png\" style=\"height: 19px;\"><label style=\"color: palegreen;\">" + data[i].title +
+                                                "</label><span class=\"caret\"></span></a>" + " <ul class=\"dropdown-menu\">";
+                                        for (var j = 0; j < submenudata.length; j++) {
+                                            if (data[i].code === submenudata[j].reference_code) {
+                                                htmlvalue += "<li>" + "<a href='"+submenudata[j].resource+"' target=\"_blank\"><i class=\"" + submenudata[j].icon + "\"></i>&nbsp;" + submenudata[j].title + "</a>" + "</li>";
+                                            }
+                                        }
+                                        htmlvalue += " </ul>";
+                                        htmlvalue += " </li>";
+                                    }
+                                    //  htmlvalue += " </ul>";
+                                    $('#menu').html(htmlvalue);
+                                }, 'json'
+
+                                        );
+                            }
+                        }, 'json'
+
+                        );
+            }
+    
+}
+
+    </script>
+             
+            
+            
+        </div>
+        <div class="fullscreen-below-nav-bar">
+            <div class="relative-fullscreen">
+
+                <div id="sidebar" class="sidebar sidebar-left">
+                    <!-- Nav tabs -->
+                    <div class="sidebar-tabs">
+                        <ul role="tablist">
+                            <li class="active"><a href="#home-pane" role="tab"><i class="fa fa-bars"></i></a></li>
+                            <li><a href="#layer-pane" role="tab"><i class="fa fa-tree"></i></a></li>
+                            <li><a href="#theme-pane" role="tab"><i class="fa fa-photo"></i></a></li>
+
+                        </ul>
+
+                        <ul role="tablist">
+                            <li><a href="#about" role="tab"><i class="fa fa-info"></i></a></li>
+                        </ul>
+                    </div>
+
+
+                    <!-- Tab panes -->
+
+
+                    <div class="sidebar-content">
+
+                        <div class="sidebar-pane active" id="home-pane">
+                            <h1 class="sidebar-header">
+                                Home
+                                <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+                            </h1>
+
+                            <div class="panel panel-info">
+                                <div class="panel-heading">Location </div>
+                                <div class="panel-body">
+                                    <label for="state">State</label>:
+
+
+Odisha
+<br><div id="village_selector">
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="div_level_1">&nbsp;&nbsp;
+District&nbsp;:
+<select class="ui-widget-content" name="level_1" id="level_1" onchange="loadVilLevel(2)">
+<option value="20">20 ଖୋର୍ଦ୍ଧା</option>
+<option value="23">23 ସୋନପୁର</option>
+<option value="26">26 ନବରଙ୍ଗପୁର</option>
+</select> <br>
+<div id="div_level_2">&nbsp;&nbsp;
+Tehsil&nbsp;:
+<select class="ui-widget-content" name="level_2" id="level_2" onchange="loadVilLevel(3)">
+<option value="1">1 ବାଣପୁର</option>
+<option value="2">2 ଭୁବନେଶ୍ଵର</option>
+<option value="3">3 ଖୋର୍ଦ୍ଧା</option>
+<option value="4">4 ବେଗୁନିଆ</option>
+<option value="5">5 ବୋଲଗଡ</option>
+<option value="6">6 ଜଟଣୀ</option>
+<option value="7">7 ଟାଙ୍ଗି</option>
+<option value="8">8 ବାଲିଅନ୍ତା</option>
+<option value="9">9 ବାଲି ପାଟଣା</option>
+<option value="10">10 ଚିଲିକା</option>
+</select> <br>
+<div id="div_level_3">&nbsp;&nbsp;
+RI&nbsp;:
+<select class="ui-widget-content" name="level_3" id="level_3" onchange="loadVilLevel(4)">
+<option value="1">1 ନିଳାଦ୍ରି ପ୍ରସାଦ</option>
+<option value="3">3 ଗାଲୁଆ</option>
+<option value="4">4 ବାଣପୁର</option>
+<option value="5">5 କୁମାରଙ୍ଗ</option>
+<option value="7">7 ନରେନ୍ଦ୍ରପୁର</option>
+<option value="9">9 ନାଚୁଣୀ</option>
+<option value="12">12 ପଦ୍ମପୁର</option>
+<option value="13">13 ପ୍ରତାପ</option>
+</select> <br>
+<div id="div_level_4">&nbsp;&nbsp;
+Village&nbsp;:
+<select class="ui-widget-content" name="level_4" id="level_4" onchange="loadVilLevel(5)">
+<option value="16">16 ଫାସିପଡ଼ା</option>
+<option value="17">17 ନୂଆଗାଁ</option>
+<option value="18">18 ବ୍ରହ୍ମପୁରା</option>
+<option value="19">19 କଟୁରିକଟା</option>
+<option value="20">20 ଜିରିପଡ଼ା</option>
+<option value="22">22 କୃର୍ଷ୍ଣତରା</option>
+<option value="23">23 ଡ଼ୁମୁଡ଼ୁମେଇ</option>
+<option value="24">24 ସିଲିଙ୍ଗପଡ଼ା</option>
+<option value="25">25 ନାଥପୁର</option>
+<option value="26">26 କୁଣ୍ଡାଖାଇ</option>
+<option value="27">27 ଧୂଆଁନଳୀ</option>
+<option value="28">28 ଅରାଙ୍ଗ</option>
+<option value="29">29 ଯୁଆଳିଆମ୍ବା</option>
+<option value="30">30 କିଆଗୋରଡ଼ା</option>
+<option value="31">31 ଭାଲିଆପଡ଼ା</option>
+<option value="32">32 ରାଇପଡ଼ା</option>
+<option value="33">33 ନିଳାଦ୍ରି ପ୍ରସାଦ</option>
+<option value="34">34 ପୁଞ୍ଜୀଆମା</option>
+<option value="35">35 ରିଗିଡ଼ିସିମା</option>
+<option value="36">36 ବଙ୍କାଡ଼ଗଡ଼</option>
+<option value="37">37 ନିଳାପଲ୍ଲୀ</option>
+<option value="38">38 କାଶିପଡ଼ା</option>
+<option value="39">39 ଟଭାଡ଼ିହି</option>
+<option value="40">40 ଖାରିଆପଲି</option>
+<option value="41">41 ବିଘ୍ନପୁଟ</option>
+<option value="42">42 ହରିଆମାଳ</option>
+<option value="366">366 ଚମ୍ପାଗଡ଼</option>
+<option value="379">379 ବରକୋଳି</option>
+<option value="380">380 ନାକିତୁଠ</option>
+<option value="381">381 ଚନ୍ଦ୍ରମା</option>
+<option value="382">382 କଳାପାଟ</option>
+<option value="383">383 କରଞ୍ଜପଲି ପାନବରଜ</option>
+<option value="423">423 ବରବରା</option>
+</select> <br>
+<div id="div_level_5"><div id="div_level_5">&nbsp;&nbsp;
+Sheet No &nbsp;:
+<select class="ui-widget-content" name="level_5" id="level_5" onchange="initVillMap()">
+</select> <br>
+<input type="hidden" name="levelCount" id="levelCount" value="5" style=""></div></div></div></div></div></div>
+
+ 
+<div id="sheet"></div>
+
+</div><div id="showfmbdiv" style="display: none;">
+                                        <input type="checkbox" value="Y" name="ShowFMB" id="ShowFMB" checked="checked" onchange="showFMBLayer();" style="">
+                                        <b> Show FMB Layers</b>                                        
+                                        </div><table id="state_selector">
+                                        
+
+
+
+
+
+
+
+
+
+
+
+
+<input type="hidden" name="state" id="state" value="21" style="">
+  
+                                        
+                                    </table>
+                                </div>
+                            </div>
+                                        
+                                       
+
+                            <div class="panel panel-success">
+                                <div class="panel-heading">Plot Info</div>
+                                
+                                
+                                <div class="panel-body">                                 
+                                    <div id="plotinfo"><i class="fa fa-spinner fa-spin" style="font-size:24px"></i></div>
+                                    <input type="hidden" name="plotId" id="plotId" style="">
+                                </div>                              
+                            </div>
+
+
+                        </div>
+
+                        <div class="sidebar-pane" id="layer-pane">
+                            <h1 class="sidebar-header">Layers<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+
+                            <div class="panel panel-info">
+                                <div id="layer-list" class="panel-body"></div>
+                            </div>
+                        </div>
+                                                                <div class="sidebar-pane" id="layer-pane">
+                                            <h1 class="sidebar-header">Custom Layers<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+
+                                            <div class="panel panel-info">
+                                                <div id="derived-layer-list" class="panel-body"><ul id="derived_root" class="layerlist" style="padding:6px; list-style-type: none;"><li><input type="checkbox" id="derived_cat_chk_ALL" onclick="togleChkGrp('derived_layer','derived_chk_cat','ALL',this.checked)" style="">ALL</li><ul id="derived_cat_ALL" style="padding: 10px;  list-style-type: none;"><li><input type="checkbox" value="4pNvmPNZQVKUxoY9gnr5jg" layer="derived_layer" id="layer_chk_4pNvmPNZQVKUxoY9gnr5jg" derived_chk_cat="ALL" onclick="reloadSelectedLayers('derived_layer');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAVUlEQVR42mP4TyXAMGrQoDGIAQmQaRBE85nXZ+AIv3EMuExBNgLNOOoYhMssBlJNGZQGYTWLli6iWmBTM/pxmYUnTTIQkz8IJmtiMy3BjDZasNHXIABCmC4COVaz5AAAAABJRU5ErkJggg==">Vertices</li><li><input type="checkbox" value="XVkadIC5TJ-Qfv1xJRRfUw" layer="derived_layer" id="layer_chk_XVkadIC5TJ-Qfv1xJRRfUw" derived_chk_cat="ALL" onclick="reloadSelectedLayers('derived_layer');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAaElEQVR42u2UwQoAIAhD9//fHFQURVjJLLs1uvpwU0N0Ej7oFSgA+Z2Dar1AGEBKPQvq9Sgyg+YWdMoCtLTQKWiiOpLj2HMpa5oL09REQKPMU7sK+5gFZhvdbo1hgb8yt+sPlxn9rzYBq1dWtmEtNU4AAAAASUVORK5CYII=">Border Length</li><li><input type="checkbox" value="owifbZLjQ-KmOURPHl870A" layer="derived_layer" id="layer_chk_owifbZLjQ-KmOURPHl870A" derived_chk_cat="ALL" onclick="reloadSelectedLayers('derived_layer');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAdElEQVR42u3UwQ2AMAgF0D+HU7n/FA5goiRNONTvDyDeSrjyAm0prqbAgv6CcMKyDo36iUhAoj4Kef2x7ZZp6NmCVghER3Bl9EVR0Haoort7HU1MkYAmyycSRw59ZfXDLluIvMa2XYtYiG9Z2/Z/2rX11VrcfI5tsNBV2mYAAAAASUVORK5CYII=">Border Length (Normalized)</li><li><input type="checkbox" value="xMDfjGRqT-WSI_IjDY_aIV" layer="derived_layer" id="layer_chk_xMDfjGRqT-WSI_IjDY_aIV" derived_chk_cat="ALL" onclick="reloadSelectedLayers('derived_layer');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAKklEQVR42mP4TyXAMGrQqEFDySAGBhQ00AahmTIIXERNg0YT5KhBdDUIALc/hc8XkqLgAAAAAElFTkSuQmCC">PNIU</li><li><input type="checkbox" value="LOGdejeoS9m2O-yBGckWFQ" layer="derived_layer" id="layer_chk_LOGdejeoS9m2O-yBGckWFQ" derived_chk_cat="ALL" onclick="reloadSelectedLayers('derived_layer');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAVUlEQVR42u3UwQ0AIAgDwO6/gTu5k/5RUKT4UdL3pQkBNNLgQ2EIsLILAShVCwcSigl56lyAnEo25FdSIVNxN9I4TVmsf+SOoBkXgMTpct4IDXr11XbmVc7eO6X7ywAAAABJRU5ErkJggg==">Pending For Approval</li></ul></ul></div>
+                                                
+                                                <div id="pniu_search" class="panel-body">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" name="pniu" id="pniu" class="form-control" placeholder="PNIU.." style="">
+                                                        <span class="input-group-btn">
+                                                            <button class="btn btn-default" id="getPlot" type="button" onclick="getPlotForPNIU($('#pniu').val().trim());"><span class="glyphicon glyphicon-search"></span></button>
+                                                        </span>
+
+                                                    </div>
+                                                    <br>
+                                                    <div id="view-options">
+                                                        Select Viewing options : 
+
+                                                        <br>
+                                                        <input type="radio" checked="true" name="radio" id="Google Map" value="Google Map" style="">
+                                                        <label for="Google Map">Google Map</label>
+
+
+                                                        <br>
+                                                        <input type="radio" name="radio" id="Bing" value="Bing" style="">
+                                                        <label for="Bing">Bing Maps</label>
+
+                                                        <br>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                        
+
+                        <div class="sidebar-pane" id="theme-pane">
+                            <h1 class="sidebar-header">Themes<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                            <div class="panel panel-info">
+                                <div id="theme-list" class="panel-body"><ul id="theme_root" style="padding:6px; list-style-type: none;"><li><input type="checkbox" id="theme_cat_chk_General" onclick="togleChkGrp('theme','theme_chk_cat','General',this.checked)" style="">General</li><ul id="theme_cat_General" style="padding:6px; list-style-type: none;"><li><input type="checkbox" value="yPZFNAmvQnmIfRGJ79MrNg" layer="theme" id="theme_chk_yPZFNAmvQnmIfRGJ79MrNg" theme_chk_cat="General" onclick="reloadSelectedLayers('theme');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAUElEQVR42mP4TyXAMGoQRQb9ZGCAk9RxEaZZmCLEeg1ZJ1Y3khBG+H1KWmDjCS8au4iY0CXWRQRDd4DSEZGmDIKUTX70kx9rpJo1WkLS0SAAqtSLP3RXn24AAAAASUVORK5CYII=">area &lt; 1</li><li><input type="checkbox" value="3igOltIPQ1GRGd4w0Tvjww" layer="theme" id="theme_chk_3igOltIPQ1GRGd4w0Tvjww" theme_chk_cat="General" onclick="reloadSelectedLayers('theme');" style=""><img src="data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAASklEQVR42mP4TyXAMGoQ1QyayTCTai5CNgvTXNK8BtGP1XUkhxEuPw6Ei/CHN31jjaApRBlEjCnYDcKfXkhzEZ7YGc39owbR0iAAz6Wc6xFRqLQAAAAASUVORK5CYII=">Area &gt; 10</li></ul></ul></div>
+                            </div>
+
+                        </div>                       
+
+                        <div class="sidebar-pane" id="about">
+                            <h1 class="sidebar-header">About BhuNaksha<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                        </div>
+                    </div>
+                </div>
+
+                            <div id="map" class="sidebar-map"><!--<center><h2><b>Under Maintenance</b></h2></center>-->
+                                
+                            <div class="ol-viewport" style="position: relative; overflow: hidden; width: 100%; height: 100%; touch-action: none;"><canvas class="ol-unselectable" style="width: 100%; height: 100%;" width="1280" height="647"></canvas><div class="ol-overlaycontainer"></div><div class="ol-overlaycontainer-stopevent"><div class="ol-zoom ol-unselectable ol-control"><button class="ol-zoom-in" type="button" title="Zoom in">+</button><button class="ol-zoom-out" type="button" title="Zoom out">−</button></div><div class="ol-rotate ol-unselectable ol-control ol-hidden"><button class="ol-rotate-reset" type="button" title="Reset rotation"><span class="ol-compass" style="transform: rotate(0rad);">⇧</span></button></div><div class="ol-attribution ol-unselectable ol-control ol-collapsed ol-logo-only" style=""><ul><li style=""><a href="https://openlayers.org/"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAA3NCSVQICAjb4U/gAAAACXBIWXMAAAHGAAABxgEXwfpGAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAhNQTFRF////AP//AICAgP//AFVVQECA////K1VVSbbbYL/fJ05idsTYJFtbbcjbJllmZszWWMTOIFhoHlNiZszTa9DdUcHNHlNlV8XRIVdiasrUHlZjIVZjaMnVH1RlIFRkH1RkH1ZlasvYasvXVsPQH1VkacnVa8vWIVZjIFRjVMPQa8rXIVVkXsXRsNveIFVkIFZlIVVj3eDeh6GmbMvXH1ZkIFRka8rWbMvXIFVkIFVjIFVkbMvWH1VjbMvWIFVlbcvWIFVla8vVIFVkbMvWbMvVH1VkbMvWIFVlbcvWIFVkbcvVbMvWjNPbIFVkU8LPwMzNIFVkbczWIFVkbsvWbMvXIFVkRnB8bcvW2+TkW8XRIFVkIlZlJVloJlpoKlxrLl9tMmJwOWd0Omh1RXF8TneCT3iDUHiDU8LPVMLPVcLPVcPQVsPPVsPQV8PQWMTQWsTQW8TQXMXSXsXRX4SNX8bSYMfTYcfTYsfTY8jUZcfSZsnUaIqTacrVasrVa8jTa8rWbI2VbMvWbcvWdJObdcvUdszUd8vVeJaee87Yfc3WgJyjhqGnitDYjaarldPZnrK2oNbborW5o9bbo9fbpLa6q9ndrL3ArtndscDDutzfu8fJwN7gwt7gxc/QyuHhy+HizeHi0NfX0+Pj19zb1+Tj2uXk29/e3uLg3+Lh3+bl4uXj4ufl4+fl5Ofl5ufl5ujm5+jmySDnBAAAAFp0Uk5TAAECAgMEBAYHCA0NDg4UGRogIiMmKSssLzU7PkJJT1JTVFliY2hrdHZ3foSFhYeJjY2QkpugqbG1tre5w8zQ09XY3uXn6+zx8vT09vf4+Pj5+fr6/P39/f3+gz7SsAAAAVVJREFUOMtjYKA7EBDnwCPLrObS1BRiLoJLnte6CQy8FLHLCzs2QUG4FjZ5GbcmBDDjxJBXDWxCBrb8aM4zbkIDzpLYnAcE9VXlJSWlZRU13koIeW57mGx5XjoMZEUqwxWYQaQbSzLSkYGfKFSe0QMsX5WbjgY0YS4MBplemI4BdGBW+DQ11eZiymfqQuXZIjqwyadPNoSZ4L+0FVM6e+oGI6g8a9iKNT3o8kVzNkzRg5lgl7p4wyRUL9Yt2jAxVh6mQCogae6GmflI8p0r13VFWTHBQ0rWPW7ahgWVcPm+9cuLoyy4kCJDzCm6d8PSFoh0zvQNC5OjDJhQopPPJqph1doJBUD5tnkbZiUEqaCnB3bTqLTFG1bPn71kw4b+GFdpLElKIzRxxgYgWNYc5SCENVHKeUaltHdXx0dZ8uBI1hJ2UUDgq82CM2MwKeibqAvSO7MCABq0wXEPiqWEAAAAAElFTkSuQmCC"></a></li></ul><button type="button" title="Attributions"><span>i</span></button></div><div class="ol-mouse-position"></div><div class="ol-scale-line"><div class="ol-scale-line-inner">1: 2132</div></div></div></div></div> 
+
+            </div>
+
+        </div>
+
+        <!-- PlotInfo popup  -->
+        <div id="plotInfoContPop">
+
+
+            <table width="100%">
+                <tbody><tr><th>Plot Info</th>
+                    <th style="text-align: right"> 
+
+                        <button id="bt-info-close"><i style="color: #0074d9" class="fa fa-window-close"></i></button></th>
+                </tr>
+                <tr>
+                    <td colspan="2"> <div id="plotInfoPop"><i class="fa fa-spinner fa-spin" style="font-size:24px"></i></div></td>
+                </tr>
+            </tbody></table>
+
+
+
+        </div>  <!-- PlotInfo popup  -->
+
+        <div id="attribution" class="villattribution"><br><br><br><br><span style="font-family:arial; color: #0000FF; font-size: 10.0px;">District : 20 ଖୋର୍ଦ୍ଧା, Tehsil : 2 ଭୁବନେଶ୍ଵର, RI : 44 ଜୟଦେବବିହାର, Village : 16 ଭୂବନେଶ୍ଵର ସହର ୟୁନିଟ ନଂ-16 ଜୟଦେବ ବିହାର, Sheet No  : 01 <br>Updated on :2022-07-14 17:27:13.378049<br>The Maps and related data shown in this website are for the purpose of viewing only. The data displayed here is not meant for use in any legal purpose or any such activities. Neither National Informatics Centre nor Revenue &amp; Disaster Management Department, Govt of Odisha is responsible for accuracy of the data.</span></div>
+        <input type="hidden" name="state" id="stateId" value="21" style="">
+
+    
+    <script>
+        
+        function getVisitorStats()
+        {
+            var hosturl = "rest/user/getVisitorStats/";
+            var stateCode = $('#stateId').val();
+            var statesEnabledForvistorstat = ["22", "30", "08"];
+            if (! statesEnabledForvistorstat.includes(stateCode))
+                return;
+            $.ajax({
+                url: hosturl,
+                type: "POST",
+                dataType: "json",
+                data: {
+                    "state": stateCode
+                },
+                success: function (result)
+                {
+                    //  alert(result);
+                    //todayusers = result;
+                    $('#lblonlineusers').text(result.usersOnline);
+                    //  $('#lbltodayvisitor').text(result.todaysUsers);
+                    $('#lblonlineVisitors').text(result.visitorsOnline);
+                    $('#lbltotalcountvisitor').text(result.hitCount);
+                    //     $('#lblMapCount').text(result.mapCount);
+                    //     $('#lblParcelCount').text(result.parcelCount);
+
+                }
+            });
+
+        }
+
+        $(document).ready(function ()
+        {
+            getVisitorStats();
+            
+            // Check if notice is not empty and show the modal
+            
+        });
+
+        window.addEventListener('beforeunload', function (e)
+        {
+            var hosturl = "rest/user/removeSession/";
+            var stateCode = $('#stateId').val();
+                            console.log(newPage);
+       if (newPage !== 'login') {
+            $.ajax({
+                url: hosturl,
+                type: "POST",
+                dataType: "json",
+                data: {
+                    "state": stateCode
+                },
+                success: function (result)
+                {
+                    return result;
+                }
+            });
+                }
+            // Cancel the event
+            //e.preventDefault();
+            // Chrome requires returnValue to be set
+            // e.returnValue = '';
+                        newPage='';
+        });
+        
+    //checks if a color is stored in localStorage and, if found, sets the background color accordingly.
+    
+        
+         $('#plotNo').keypress(function (e) {
+    var key = e.which;
+    if(key ===13)  // the enter key code
+    {
+        selectPlot($('#plotNo').val());
+        return false;  
+    }
+    });  
+    </script>
+
+
+
+
+
+
+</body></html>

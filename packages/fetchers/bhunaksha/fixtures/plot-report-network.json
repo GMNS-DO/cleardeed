@@ -1,0 +1,121 @@
+[
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Levels/count",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 1,
+    "bodyPreview": "5"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/MapInfo/getVVVVExtentGeoref",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 729,
+    "bodyPreview": "{\"ymin\":581.5355495814846,\"xmin\":-1657.5525241349203,\"ymax\":1563.4873432304498,\"xmax\":-1264.8289083838513,\"scaleFactor\":1.0,\"attribution\":\"<br /><br /><br /><br /><span style=\\\"font-family:arial; color: #0000FF; font-size: 10.0px;\\\">District : 20 ଖୋର୍ଦ୍ଧା, Tehsil : 1 ବାଣପୁର, RI : 1 ନିଳାଦ୍ରି ପ୍ରସାଦ, Village : 16 ଫାସିପଡ଼ା, Sheet No  : 01 <br />Updated on :2017-11-20 11:48:37.038<br />The Maps and related data shown in this website are for the purpose of viewing only. The data displayed here is not "
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 204,
+    "contentType": "",
+    "bytes": 0,
+    "bodyPreview": null
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 1995,
+    "bodyPreview": "[{\"autoShowLayer\":\"N\",\"categoryCode\":\"General\",\"categoryTitle\":\"General\",\"extraAttributes\":\"\",\"geometryType\":\"POLYGON\",\"id\":\"yPZFNAmvQnmIfRGJ79MrNg\",\"layerCode\":\"yPZFNAmvQnmIfRGJ79MrNg\",\"layerDescription\":\"area < 1\",\"layerIcon\":\"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAUElEQVR42mP4TyXAMGoQRQb9ZGCAk9RxEaZZmCLEeg1ZJ1Y3khBG+H1KWmDjCS8au4iY0CXWRQRDd4DSEZGmDIKUTX70kx9rpJo1WkLS0SAAqtSLP3RXn24AAAAASUVORK5CYII=\",\"layerType\":\"TABLE_THEMES\",\"selected\":false,\"sldRule\":\"<PolygonSymbolizer>\\n         "
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 6822,
+    "bodyPreview": "[{\"autoShowLayer\":\"N\",\"categoryCode\":\"\",\"categoryTitle\":\"\",\"extraAttributes\":\"\",\"geometryType\":\"POINT\",\"id\":\"4pNvmPNZQVKUxoY9gnr5jg\",\"layerCode\":\"in.nic.lrisd.bhunaksha.common.derivedlayers.VertexLayer\",\"layerDescription\":\"Vertices\",\"layerIcon\":\"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAVUlEQVR42mP4TyXAMGrQoDGIAQmQaRBE85nXZ+AIv3EMuExBNgLNOOoYhMssBlJNGZQGYTWLli6iWmBTM/pxmYUnTTIQkz8IJmtiMy3BjDZasNHXIABCmC4COVaz5AAAAABJRU5ErkJggg==\",\"layerType\":\"TABLE_DERIVED_LAYERS\",\"selected\":false,\"sldRule"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/WMS?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=VILLAGE_MAP&transparent=true&state=21&gis_code=20010101601&overlay_codes=&CRS=EPSG%3A3857&STYLES=VILLAGE_MAP&WIDTH=1920&HEIGHT=971&BBOX=-3754.3015648146734%2C-86.58442782471343%2C831.920132295902%2C2231.607320636648",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 0,
+    "bodyPreview": null
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/ScalarDatahandler",
+    "status": 200,
+    "contentType": "text/html;charset=utf-8",
+    "bytes": 231,
+    "bodyPreview": "<div id=\"div_level_5\">&nbsp;&nbsp;\nSheet No &nbsp;:\n<select  class=\"ui-widget-content\" name=\"level_5\" id=\"level_5\" onChange=\"initVillMap()\">\n</select> <br />\n<input type=\"hidden\" name=\"levelCount\" id=\"levelCount\" value=\"5\" /></div>"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/WMS?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&FORMAT=image%2Fpng&TRANSPARENT=true&LAYERS=VILLAGE_MAP&transparent=true&state=21&gis_code=20024401601&overlay_codes=&CRS=EPSG%3A3857&STYLES=VILLAGE_MAP&WIDTH=1920&HEIGHT=971&BBOX=160.023630208751%2C-26.56759144003297%2C1306.5790544863949%2C552.9803456753074",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 0,
+    "bodyPreview": null
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 204,
+    "contentType": "",
+    "bytes": 0,
+    "bodyPreview": null
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 204,
+    "contentType": "",
+    "bytes": 0,
+    "bodyPreview": null
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 204,
+    "contentType": "",
+    "bytes": 0,
+    "bodyPreview": null
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/MapInfo/getVVVVExtentGeoref",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 551,
+    "bodyPreview": "{\"ymin\":null,\"xmin\":null,\"ymax\":null,\"xmax\":null,\"scaleFactor\":1.0,\"attribution\":\"<br /><br /><br /><br /><span style=\\\"font-family:arial; color: #0000FF; font-size: 10.0px;\\\"><br />Updated on :null<br />The Maps and related data shown in this website are for the purpose of viewing only. The data displayed here is not meant for use in any legal purpose or any such activities. Neither National Informatics Centre nor Revenue & Disaster Management Department, Govt of Odisha is responsible for accur"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/MapInfo/getVVVVExtentGeoref",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 752,
+    "bodyPreview": "{\"ymin\":73.1177413694564,\"xmin\":711.476057818099,\"ymax\":453.295012865818,\"xmax\":755.126626877047,\"scaleFactor\":1.0,\"attribution\":\"<br /><br /><br /><br /><span style=\\\"font-family:arial; color: #0000FF; font-size: 10.0px;\\\">District : 20 ଖୋର୍ଦ୍ଧା, Tehsil : 2 ଭୁବନେଶ୍ଵର, RI : 44 ଜୟଦେବବିହାର, Village : 16 ଭୂବନେଶ୍ଵର ସହର ୟୁନିଟ ନଂ-16 ଜୟଦେବ ବିହାର, Sheet No  : 01 <br />Updated on :2022-07-14 17:27:13.378049<br />The Maps and related data shown in this website are for the purpose of viewing only. The data"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 6822,
+    "bodyPreview": "[{\"autoShowLayer\":\"N\",\"categoryCode\":\"\",\"categoryTitle\":\"\",\"extraAttributes\":\"\",\"geometryType\":\"POINT\",\"id\":\"4pNvmPNZQVKUxoY9gnr5jg\",\"layerCode\":\"in.nic.lrisd.bhunaksha.common.derivedlayers.VertexLayer\",\"layerDescription\":\"Vertices\",\"layerIcon\":\"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAVUlEQVR42mP4TyXAMGrQoDGIAQmQaRBE85nXZ+AIv3EMuExBNgLNOOoYhMssBlJNGZQGYTWLli6iWmBTM/pxmYUnTTIQkz8IJmtiMy3BjDZasNHXIABCmC4COVaz5AAAAABJRU5ErkJggg==\",\"layerType\":\"TABLE_DERIVED_LAYERS\",\"selected\":false,\"sldRule"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 1995,
+    "bodyPreview": "[{\"autoShowLayer\":\"N\",\"categoryCode\":\"General\",\"categoryTitle\":\"General\",\"extraAttributes\":\"\",\"geometryType\":\"POLYGON\",\"id\":\"yPZFNAmvQnmIfRGJ79MrNg\",\"layerCode\":\"yPZFNAmvQnmIfRGJ79MrNg\",\"layerDescription\":\"area < 1\",\"layerIcon\":\"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAUElEQVR42mP4TyXAMGoQRQb9ZGCAk9RxEaZZmCLEeg1ZJ1Y3khBG+H1KWmDjCS8au4iY0CXWRQRDd4DSEZGmDIKUTX70kx9rpJo1WkLS0SAAqtSLP3RXn24AAAAASUVORK5CYII=\",\"layerType\":\"TABLE_THEMES\",\"selected\":false,\"sldRule\":\"<PolygonSymbolizer>\\n         "
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+    "status": 200,
+    "contentType": "application/json",
+    "bytes": 6822,
+    "bodyPreview": "[{\"autoShowLayer\":\"N\",\"categoryCode\":\"\",\"categoryTitle\":\"\",\"extraAttributes\":\"\",\"geometryType\":\"POINT\",\"id\":\"4pNvmPNZQVKUxoY9gnr5jg\",\"layerCode\":\"in.nic.lrisd.bhunaksha.common.derivedlayers.VertexLayer\",\"layerDescription\":\"Vertices\",\"layerIcon\":\"iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAVUlEQVR42mP4TyXAMGrQoDGIAQmQaRBE85nXZ+AIv3EMuExBNgLNOOoYhMssBlJNGZQGYTWLli6iWmBTM/pxmYUnTTIQkz8IJmtiMy3BjDZasNHXIABCmC4COVaz5AAAAABJRU5ErkJggg==\",\"layerType\":\"TABLE_DERIVED_LAYERS\",\"selected\":false,\"sldRule"
+  },
+  {
+    "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/ScalarDatahandler?OP=5&state=21&levels=20%2C2%2C1%2C16%2Cnull%2C&plotno=415",
+    "status": 200,
+    "contentType": "text/html;charset=utf-8",
+    "bytes": 16,
+    "bodyPreview": "{\"has_data\":\"N\"}"
+  }
+]

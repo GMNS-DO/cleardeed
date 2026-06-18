@@ -1,0 +1,420 @@
+{
+  "startedAt": "2026-06-18T17:11:47.001Z",
+  "finishedAt": "2026-06-18T17:11:51.656Z",
+  "observations": [
+    {
+      "ts": "2026-06-18T17:11:47.004Z",
+      "event": "probe_start",
+      "startedAt": "2026-06-18T17:11:47.001Z",
+      "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/",
+      "target": "Mendhasala/Plot 415"
+    },
+    {
+      "ts": "2026-06-18T17:11:47.405Z",
+      "event": "step",
+      "step": "1_load",
+      "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.728Z",
+      "event": "page_loaded",
+      "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.772Z",
+      "event": "level_1_options",
+      "count": 3,
+      "options": [
+        {
+          "value": "20",
+          "text": "20 ଖୋର୍ଦ୍ଧା"
+        },
+        {
+          "value": "23",
+          "text": "23 ସୋନପୁର"
+        },
+        {
+          "value": "26",
+          "text": "26 ନବରଙ୍ଗପୁର"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:50.772Z",
+      "event": "step",
+      "step": "2a_pick_district",
+      "value": "20"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.826Z",
+      "event": "level_2_options",
+      "count": 10,
+      "options": [
+        {
+          "value": "1",
+          "text": "1 ବାଣପୁର"
+        },
+        {
+          "value": "2",
+          "text": "2 ଭୁବନେଶ୍ଵର"
+        },
+        {
+          "value": "3",
+          "text": "3 ଖୋର୍ଦ୍ଧା"
+        },
+        {
+          "value": "4",
+          "text": "4 ବେଗୁନିଆ"
+        },
+        {
+          "value": "5",
+          "text": "5 ବୋଲଗଡ"
+        },
+        {
+          "value": "6",
+          "text": "6 ଜଟଣୀ"
+        },
+        {
+          "value": "7",
+          "text": "7 ଟାଙ୍ଗି"
+        },
+        {
+          "value": "8",
+          "text": "8 ବାଲିଅନ୍ତା"
+        },
+        {
+          "value": "9",
+          "text": "9 ବାଲି ପାଟଣା"
+        },
+        {
+          "value": "10",
+          "text": "10 ଚିଲିକା"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:50.826Z",
+      "event": "step",
+      "step": "2b_pick_tahasil",
+      "value": "2"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.851Z",
+      "event": "level_3_options",
+      "count": 8,
+      "options": [
+        {
+          "value": "1",
+          "text": "1 ନିଳାଦ୍ରି ପ୍ରସାଦ"
+        },
+        {
+          "value": "3",
+          "text": "3 ଗାଲୁଆ"
+        },
+        {
+          "value": "4",
+          "text": "4 ବାଣପୁର"
+        },
+        {
+          "value": "5",
+          "text": "5 କୁମାରଙ୍ଗ"
+        },
+        {
+          "value": "7",
+          "text": "7 ନରେନ୍ଦ୍ରପୁର"
+        },
+        {
+          "value": "9",
+          "text": "9 ନାଚୁଣୀ"
+        },
+        {
+          "value": "12",
+          "text": "12 ପଦ୍ମପୁର"
+        },
+        {
+          "value": "13",
+          "text": "13 ପ୍ରତାପ"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:50.851Z",
+      "event": "step",
+      "step": "2c_pick_ri"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.874Z",
+      "event": "level_4_options",
+      "count": 33,
+      "options": [
+        {
+          "value": "16",
+          "text": "16 ଫାସିପଡ଼ା"
+        },
+        {
+          "value": "17",
+          "text": "17 ନୂଆଗାଁ"
+        },
+        {
+          "value": "18",
+          "text": "18 ବ୍ରହ୍ମପୁରା"
+        },
+        {
+          "value": "19",
+          "text": "19 କଟୁରିକଟା"
+        },
+        {
+          "value": "20",
+          "text": "20 ଜିରିପଡ଼ା"
+        },
+        {
+          "value": "22",
+          "text": "22 କୃର୍ଷ୍ଣତରା"
+        },
+        {
+          "value": "23",
+          "text": "23 ଡ଼ୁମୁଡ଼ୁମେଇ"
+        },
+        {
+          "value": "24",
+          "text": "24 ସିଲିଙ୍ଗପଡ଼ା"
+        },
+        {
+          "value": "25",
+          "text": "25 ନାଥପୁର"
+        },
+        {
+          "value": "26",
+          "text": "26 କୁଣ୍ଡାଖାଇ"
+        },
+        {
+          "value": "27",
+          "text": "27 ଧୂଆଁନଳୀ"
+        },
+        {
+          "value": "28",
+          "text": "28 ଅରାଙ୍ଗ"
+        },
+        {
+          "value": "29",
+          "text": "29 ଯୁଆଳିଆମ୍ବା"
+        },
+        {
+          "value": "30",
+          "text": "30 କିଆଗୋରଡ଼ା"
+        },
+        {
+          "value": "31",
+          "text": "31 ଭାଲିଆପଡ଼ା"
+        },
+        {
+          "value": "32",
+          "text": "32 ରାଇପଡ଼ା"
+        },
+        {
+          "value": "33",
+          "text": "33 ନିଳାଦ୍ରି ପ୍ରସାଦ"
+        },
+        {
+          "value": "34",
+          "text": "34 ପୁଞ୍ଜୀଆମା"
+        },
+        {
+          "value": "35",
+          "text": "35 ରିଗିଡ଼ିସିମା"
+        },
+        {
+          "value": "36",
+          "text": "36 ବଙ୍କାଡ଼ଗଡ଼"
+        },
+        {
+          "value": "37",
+          "text": "37 ନିଳାପଲ୍ଲୀ"
+        },
+        {
+          "value": "38",
+          "text": "38 କାଶିପଡ଼ା"
+        },
+        {
+          "value": "39",
+          "text": "39 ଟଭାଡ଼ିହି"
+        },
+        {
+          "value": "40",
+          "text": "40 ଖାରିଆପଲି"
+        },
+        {
+          "value": "41",
+          "text": "41 ବିଘ୍ନପୁଟ"
+        },
+        {
+          "value": "42",
+          "text": "42 ହରିଆମାଳ"
+        },
+        {
+          "value": "366",
+          "text": "366 ଚମ୍ପାଗଡ଼"
+        },
+        {
+          "value": "379",
+          "text": "379 ବରକୋଳି"
+        },
+        {
+          "value": "380",
+          "text": "380 ନାକିତୁଠ"
+        },
+        {
+          "value": "381",
+          "text": "381 ଚନ୍ଦ୍ରମା"
+        },
+        {
+          "value": "382",
+          "text": "382 କଳାପାଟ"
+        },
+        {
+          "value": "383",
+          "text": "383 କରଞ୍ଜପଲି ପାନବରଜ"
+        },
+        {
+          "value": "423",
+          "text": "423 ବରବରା"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:50.874Z",
+      "event": "step",
+      "step": "2d_pick_village"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.907Z",
+      "event": "level_5_options",
+      "count": 1,
+      "options": [
+        {
+          "value": "01",
+          "text": "01"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:50.928Z",
+      "event": "cascade_complete"
+    },
+    {
+      "ts": "2026-06-18T17:11:50.928Z",
+      "event": "step",
+      "step": "3_select_plot",
+      "plotNo": "415"
+    },
+    {
+      "ts": "2026-06-18T17:11:51.451Z",
+      "event": "select_plot_complete",
+      "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/"
+    },
+    {
+      "ts": "2026-06-18T17:11:51.453Z",
+      "event": "inline_svg_probe",
+      "bytes": 0,
+      "present": false
+    },
+    {
+      "ts": "2026-06-18T17:11:51.455Z",
+      "event": "plot_img_probe",
+      "count": 0,
+      "sample": []
+    },
+    {
+      "ts": "2026-06-18T17:11:51.458Z",
+      "event": "canvas_probe",
+      "count": 1,
+      "sample": [
+        {
+          "id": null,
+          "width": 1280,
+          "height": 647,
+          "clientW": 1280,
+          "clientH": 647
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:51.585Z",
+      "event": "map_screenshot",
+      "path": "packages/fetchers/bhunaksha/fixtures/plot-report-map-screenshot.png",
+      "bytes": 39713
+    },
+    {
+      "ts": "2026-06-18T17:11:51.588Z",
+      "event": "plot_info_text",
+      "present": true,
+      "bytes": 0
+    },
+    {
+      "ts": "2026-06-18T17:11:51.589Z",
+      "event": "network_saved",
+      "path": "packages/fetchers/bhunaksha/fixtures/plot-report-network.json",
+      "count": 17,
+      "sample": [
+        {
+          "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Levels/count",
+          "status": 200,
+          "bytes": 1,
+          "contentType": "application/json"
+        },
+        {
+          "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/MapInfo/getVVVVExtentGeoref",
+          "status": 200,
+          "bytes": 729,
+          "contentType": "application/json"
+        },
+        {
+          "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+          "status": 204,
+          "bytes": 0,
+          "contentType": ""
+        },
+        {
+          "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+          "status": 200,
+          "bytes": 1995,
+          "contentType": "application/json"
+        },
+        {
+          "url": "https://app3bhunakshaodisha.nic.in/bhunaksha/rest/Layers/getLayers",
+          "status": 200,
+          "bytes": 6822,
+          "contentType": "application/json"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-18T17:11:51.589Z",
+      "event": "scalar_saved",
+      "path": "packages/fetchers/bhunaksha/fixtures/plot-report-scalardatahandler.txt",
+      "count": 2
+    },
+    {
+      "ts": "2026-06-18T17:11:51.596Z",
+      "event": "html_saved",
+      "path": "packages/fetchers/bhunaksha/fixtures/plot-report-page.html",
+      "bytes": 28204
+    },
+    {
+      "ts": "2026-06-18T17:11:51.596Z",
+      "event": "verdict",
+      "inlineSvgBytes": 0,
+      "plotImgCount": 0,
+      "canvasCount": 1,
+      "plotInfoBytes": 0,
+      "conclusion": "CANVAS_WMS: No inline SVG or <img>. The diagram is rendered to a <canvas> via OpenLayers WMS tiles. There is NO static plot report — the diagram is a live tiled map. Task 32 must either screenshot the canvas or query the WMS endpoints directly."
+    },
+    {
+      "ts": "2026-06-18T17:11:51.656Z",
+      "event": "probe_end",
+      "startedAt": "2026-06-18T17:11:47.001Z",
+      "finishedAt": "2026-06-18T17:11:51.656Z",
+      "observationCount": 24
+    }
+  ]
+}
