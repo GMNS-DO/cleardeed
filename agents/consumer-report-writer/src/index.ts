@@ -34,6 +34,13 @@ import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
 import { renderInsightList } from "./insights/render";
 import {
+  tallyInsightsByBuyerQuestion,
+  getUnimplementedExplanation,
+  BUYER_QUESTIONS,
+  type BuyerQuestionId,
+  type BuyerQuestionTally,
+} from "./buyer-questions";
+import {
   rorInsightGroups,
   riskInsightGroups,
   selectTopRisk,
@@ -396,6 +403,7 @@ export function generateConsumerReport(
     regFlags,
     plotArea,
     estimatedValue: null,
+    insights,
   });
 
   const html = `<!DOCTYPE html>
@@ -2610,6 +2618,10 @@ interface SixBuyerQuestionsInput {
   regFlags: Array<{ flag?: string; severity?: string; description?: string }>;
   plotArea: { acres?: number | null; sqft?: number | null } | null;
   estimatedValue: string | null;
+  /** T-048: optional list of generated insights. When provided, watchout /
+   *  redFlag counts per question are computed from the rule -> question
+   *  mapping. When omitted, the panel falls back to hand-rolled counts. */
+  insights?: ReadonlyArray<Insight> | null;
 }
 
 /**
@@ -2619,7 +2631,15 @@ interface SixBuyerQuestionsInput {
  */
 function buildSixBuyerQuestions(input: SixBuyerQuestionsInput): string {
   const { bhulekhUsable, primaryOwnerName, plotNo, landClassEnglish, conversionRequired,
-    totalCases, courtStatuses, encumbranceStatus, redFlags, regFlags, plotArea } = input;
+    totalCases, courtStatuses, encumbranceStatus, redFlags, regFlags, plotArea,
+    insights } = input;
+
+  // T-048: compute per-question watchout / redFlag / positive tallies from
+  // the rule -> buyer-question mapping. Falls back to zero when no insights
+  // are passed in (e.g. unit tests with hand-rolled inputs).
+  const rollup = insights
+    ? tallyInsightsByBuyerQuestion(insights as Insight[])
+    : null;
 
   // Q1: Does the seller actually own this?
   const q1Icon = bhulekhUsable ? "&#10003;" : "&#9888;";
@@ -2688,36 +2708,99 @@ function buildSixBuyerQuestions(input: SixBuyerQuestionsInput): string {
     : "Post-purchase costs need manual estimation. Budget ₹10,000–50,000 for mutation, registration, and clearance certificates.";
   const q6Label = "Budget ₹10,000–50,000 for post-purchase costs";
 
-  const questions = [
-    { num: "Q1", question: "Does the seller actually own this?",
-      icon: q1Icon, cls: q1Cls, label: q1Label, body: q1Body },
-    { num: "Q2", question: "Can I build my house here?",
-      icon: q2Icon, cls: q2Cls, label: q2Label, body: q2Body },
-    { num: "Q3", question: "Could I lose it after paying?",
-      icon: q3Icon, cls: q3Cls, label: q3Label, body: q3Body },
-    { num: "Q4", question: "Am I overpaying?",
-      icon: q4Icon, cls: q4Cls, label: q4Label, body: q4Body },
-    { num: "Q5", question: "Is the area going to develop or decay?",
-      icon: q5Icon, cls: q5Cls, label: q5Label, body: q5Body },
-    { num: "Q6", question: "What happens after I buy?",
-      icon: q6Icon, cls: q6Cls, label: q6Label, body: q6Body },
+  // T-048: merge the static question metadata with the live per-question
+  // tally. The tally chips ("3 watchouts / 1 red flag") are computed from
+  // the rule -> question mapping. The "manual verification required" band
+  // is rendered for questions whose primary sources are not yet
+  // implemented (Q4, Q5, Q6 today; partial for Q2/Q3).
+  const questions: Array<{
+    id: BuyerQuestionId;
+    num: string;
+    question: string;
+    icon: string;
+    cls: string;
+    label: string;
+    body: string;
+    tally: BuyerQuestionTally | null;
+    manualAction: string | null;
+    anchorId: string;
+  }> = [
+    { id: "Q1", num: "Q1", question: "Does the seller actually own this?",
+      icon: q1Icon, cls: q1Cls, label: q1Label, body: q1Body,
+      tally: rollup?.byQuestion.Q1 ?? null,
+      manualAction: null,
+      anchorId: BUYER_QUESTIONS.Q1.anchorId },
+    { id: "Q2", num: "Q2", question: "Can I build my house here?",
+      icon: q2Icon, cls: q2Cls, label: q2Label, body: q2Body,
+      tally: rollup?.byQuestion.Q2 ?? null,
+      manualAction: null,
+      anchorId: BUYER_QUESTIONS.Q2.anchorId },
+    { id: "Q3", num: "Q3", question: "Could I lose it after paying?",
+      icon: q3Icon, cls: q3Cls, label: q3Label, body: q3Body,
+      tally: rollup?.byQuestion.Q3 ?? null,
+      manualAction: null,
+      anchorId: BUYER_QUESTIONS.Q3.anchorId },
+    { id: "Q4", num: "Q4", question: "Am I overpaying?",
+      icon: q4Icon, cls: q4Cls, label: q4Label, body: q4Body,
+      tally: rollup?.byQuestion.Q4 ?? null,
+      manualAction: getUnimplementedExplanation("Q4").manualAction,
+      anchorId: BUYER_QUESTIONS.Q4.anchorId },
+    { id: "Q5", num: "Q5", question: "Is the area going to develop or decay?",
+      icon: q5Icon, cls: q5Cls, label: q5Label, body: q5Body,
+      tally: rollup?.byQuestion.Q5 ?? null,
+      manualAction: getUnimplementedExplanation("Q5").manualAction,
+      anchorId: BUYER_QUESTIONS.Q5.anchorId },
+    { id: "Q6", num: "Q6", question: "What happens after I buy?",
+      icon: q6Icon, cls: q6Cls, label: q6Label, body: q6Body,
+      tally: rollup?.byQuestion.Q6 ?? null,
+      manualAction: getUnimplementedExplanation("Q6").manualAction,
+      anchorId: BUYER_QUESTIONS.Q6.anchorId },
   ];
 
-  const rows = questions.map(q => `
-    <div class="bq-item ${q.cls}">
+  const rows = questions.map(q => {
+    const tallyHtml = q.tally
+      ? `<div class="bq-tally" data-question="${q.id}">
+          ${q.tally.redFlags > 0
+            ? `<span class="bq-chip bq-chip-red" title="red flags from rule mapping">${q.tally.redFlags} red flag${q.tally.redFlags === 1 ? "" : "s"}</span>`
+            : ""}
+          ${q.tally.watchouts > 0
+            ? `<span class="bq-chip bq-chip-watch" title="watchouts from rule mapping">${q.tally.watchouts} watchout${q.tally.watchouts === 1 ? "" : "s"}</span>`
+            : ""}
+          ${q.tally.positive > 0
+            ? `<span class="bq-chip bq-chip-pos" title="positive signals from rule mapping">${q.tally.positive} positive</span>`
+            : ""}
+          ${q.tally.redFlags + q.tally.watchouts + q.tally.positive === 0
+            ? `<span class="bq-chip bq-chip-none" title="no insights fall in this bucket">No data yet</span>`
+            : ""}
+        </div>`
+      : "";
+    const manualHtml = q.manualAction
+      ? `<div class="bq-manual"><span class="bq-manual-label">Manual verification required</span><p>${escapeHtml(q.manualAction)}</p></div>`
+      : "";
+    return `
+    <div class="bq-item ${q.cls}" data-question="${q.id}">
       <div class="bq-num">${q.num}</div>
       <div class="bq-icon">${q.icon}</div>
       <div class="bq-body">
         <div class="bq-question">${escapeHtml(q.question)}</div>
         <div class="bq-label">${escapeHtml(q.label)}</div>
         <div class="bq-detail">${q.body}</div>
+        ${tallyHtml}
+        ${manualHtml}
+        <a class="bq-anchor" href="#${q.anchorId}">View detail &rarr;</a>
       </div>
-    </div>`).join("\n");
+    </div>`;
+  }).join("\n");
+
+  const tallySummary = rollup
+    ? `<div class="bq-summary">Mapped ${rollup.total.redFlags} red flags / ${rollup.total.watchouts} watchouts / ${rollup.total.positive} positive across the 6 buckets</div>`
+    : "";
 
   return `<section class="bq-panel" id="section-six-questions">
   <div class="bq-header">
     <div class="bq-title">6 questions every land buyer asks</div>
     <div class="bq-sub">Answered from Bhulekh, court records, and regulatory overlays — scroll for full details</div>
+    ${tallySummary}
   </div>
   <div class="bq-grid">
     ${rows}
