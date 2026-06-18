@@ -12,10 +12,10 @@ describe("auto-activation", () => {
     expect(out[0]?.severity).toBe("redFlag");
   });
 
-  it("CERSAI rule emits stub insight when cersai is missing", () => {
+  it("CERSAI rule emits stub insight when cersai is missing (with RoR present)", () => {
     const [rule] = encumbranceRules.filter((r) => r.id === "ROR-INS-103");
     expect(rule).toBeDefined();
-    const out = runInsights([rule!], {});
+    const out = runInsights([rule!], { ror: { present: true } });
     expect(out[0]?.body).toContain("not yet wired");
   });
 });
