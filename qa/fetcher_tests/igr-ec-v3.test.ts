@@ -35,12 +35,13 @@ const isLive = process.env.IGR_EC_LIVE === "1";
 
 describe.skipIf(!isLive)("IGR EC V3 — live Bar 1/2/3 contract", () => {
   it("runs Bar 1/2/3 against the real IGR Odisha EC search portal", async () => {
-    const corpus: IgrEcV3Input[] = [
-      { partyName: "Ramesh", sroCode: "10", deedPeriod: "1" },
-      { partyName: "Suresh", sroCode: "11", deedPeriod: "1" },
-      { partyName: "Mahanty", sroCode: "12", deedPeriod: "1" },
-    ];
-    const result = await runBar1Bar2Bar3("igr-ec", corpus, fetchIgrEcV3, {
+    // runBar1Bar2Bar3 expects a string-keyed corpus and a fetcher of shape
+    // (input: string) => Promise<unknown>. Wrap fetchIgrEcV3 so the corpus
+    // keys are party names (the IGR EC search is party-name-driven).
+    const corpus = ["Ramesh", "Suresh", "Mahanty"];
+    const fetcher = (partyName: string) =>
+      fetchIgrEcV3({ partyName, sroCode: "10", deedPeriod: "1" });
+    const result = await runBar1Bar2Bar3("igr-ec", corpus, fetcher, {
       timeoutMs: 60_000,
     });
     // Bar 1/2/3 returns the per-plot fetcher results. We assert

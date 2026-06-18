@@ -143,7 +143,7 @@
       "igr_ec_v3_captcha_unsolved": {
         "section_id": "section-encumbrance",
         "degradation_tag": "igr_ec_v3_captcha_unsolved",
-        "consumer_message": "V3 captcha solver could not crack the IGR captcha after 5 attempts — manual EC retrieval required."
+        "consumer_message": "V3 captcha solver could not crack the IGR captcha — manual EC retrieval required."
       },
       "igr_ec_v3_table_not_found": {
         "section_id": "section-encumbrance",
