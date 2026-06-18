@@ -41,3 +41,15 @@ both prohibited phrases inside insight blocks and any open disclosure.
 
 ## Supersedes
 - The "two engines" structure introduced in Session 056.
+
+## Note on legacy migration (2026-06-18)
+
+The unified insight engine is wired into the report writer alongside the legacy
+`rorInsights` and `riskInsights` engines. The legacy engines and the
+`computeFinancialExposure` function (~300 lines filtering by `i.label?.includes(...)`)
+are still consumed by `buildRoRCompletenessPanel`, `buildRoRBackPagePanel`, and
+`buildFinancialExposureSummary`. Full migration is tracked as Task 24a/b/c
+(split in `.git/sdd/task-22-24-report.md`).
+
+Status: PARTIAL. The "Supersedes the two engines" claim in the Decision section
+above is conditional on Task 24a/b/c completion.
