@@ -187,6 +187,16 @@ export function generateConsumerReport(
   const rorInsights = rorInsightGroups(insights);
   const riskInsights = riskInsightGroups(insights);
 
+  // T-047: build ruleId sets so computeFinancialExposure can match by stable
+  // id rather than by headline substring.
+  const redFlagRuleIds = new Set<string>();
+  const watchoutRuleIds = new Set<string>();
+  for (const i of insights) {
+    if (!i || !(i as any).ruleId) continue;
+    if ((i as any).severity === "redFlag") redFlagRuleIds.add((i as any).ruleId);
+    else if ((i as any).severity === "watchout") watchoutRuleIds.add((i as any).ruleId);
+  }
+
   const rorCompletenessPanel = buildRoRCompletenessPanel(
     revenueRecords,
     { bhulekhUsable, bhulekhStatus: sourceStatus.bhulekh ?? "unknown", selectedPlotNo: plotNo },
@@ -471,6 +481,9 @@ ${buildFinancialExposureSummary({
     // KI-004: surface IGR EC + CERSAI entries from the encumbrance reasoner
     igrEcEntries: (encumbranceReasoner as any)?.igrEcEntries ?? [],
     cersaiCharges: (encumbranceReasoner as any)?.cersaiCharges ?? [],
+    redFlagRuleIds,
+    watchoutRuleIds,
+    rorPayload: revenueRecords,
   })}
 
 ${buildSourceAuditPanel(sourceDetails)}
@@ -2020,7 +2033,7 @@ function buildSummaryGridItems(input: {
 
 // ─── Financial Exposure Summary ──────────────────────────────────────────────
 
-interface FinancialExposureItem {
+export interface FinancialExposureItem {
   category: string;
   amount: string | null;
   exposure: string;
@@ -2029,8 +2042,14 @@ interface FinancialExposureItem {
   action: string;
 }
 
-function computeFinancialExposure(input: {
+export function computeFinancialExposure(input: {
   riskInsights: Record<string, any[]>;
+  /** Set of rule IDs that fired as redFlag severity (T-047: stable matcher). */
+  redFlagRuleIds?: Set<string>;
+  /** Set of rule IDs that fired as watchout severity. */
+  watchoutRuleIds?: Set<string>;
+  /** Raw ror payload for direct lookups (e.g. dues amount, page2 entries). */
+  rorPayload?: any;
   plotArea: { acres?: number | null; sqft?: number | null } | null;
   landClass: {
     rawKisam?: unknown;
@@ -2080,38 +2099,39 @@ function computeFinancialExposure(input: {
   const propertyValueDisplay = propertyValue
     ? `₹${propertyValue.toLocaleString("en-IN")}`
     : "full property value";
+  // T-047: ruleId-based matchers — far more reliable than headline substring
+  // matching because ruleIds are stable and unique per detection.
+  const redFlagIds = input.redFlagRuleIds ?? new Set<string>();
+  const watchoutIds = input.watchoutRuleIds ?? new Set<string>();
+  const propValDisplay = propertyValue
+    ? `₹${propertyValue.toLocaleString("en-IN")} (est.)`
+    : "full property value";
 
   // ── Revenue demand ──────────────────────────────────────────────────────────
-  const duesInsights = (input.riskInsights.financial ?? []).filter((i: any) =>
-    i.label?.includes("revenue demand") || i.label?.includes("₹") && i.label?.includes("demand"));
-  const clearedDues = duesInsights.find((i: any) =>
-    i.label?.includes("Zero revenue demand"));
-  if (clearedDues) {
-    items.push({ category: "Revenue dues (Bhulekh)", amount: null, exposure: "₹0 — cleared on record",
-      severity: "verified-clear", source: "Bhulekh RoR", action: "Request latest clearance receipt before registration." });
-  } else {
-    // Try to get from RoR dues fields
-    const duesAmt = input.dues?.amount;
-    const duesAmtStr = typeof duesAmt === "number" ? String(duesAmt) : (duesAmt as string);
-    const pendingDues = duesInsights.find((i: any) =>
-      i.label?.includes("revenue demand") && !i.label?.includes("Zero"));
-    if (duesAmtStr && Number(duesAmtStr) > 0) {
-      items.push({ category: "Revenue dues (Bhulekh)", amount: duesAmtStr,
-        exposure: `₹${Number(duesAmtStr).toLocaleString("en-IN")} pending — buyer inherits this liability`,
-        severity: "at-risk", source: "Bhulekh RoR dues fields",
-        action: "Ask seller for payment receipts or clearance certificate from Tehsil office." });
-    } else if (pendingDues) {
-      const match = pendingDues.label?.match(/₹([\d,]+)/);
-      const amt = match ? match[1] : null;
-      items.push({ category: "Revenue dues (Bhulekh)", amount: amt,
-        exposure: amt ? `₹${amt} pending — buyer inherits` : "Amount not parsed from RoR",
-        severity: "at-risk", source: "Bhulekh RoR dues fields",
-        action: "Ask seller for payment receipts or clearance certificate from Tehsil office." });
-    } else if (input.bhulekhUsable) {
-      items.push({ category: "Revenue dues (Bhulekh)", amount: null, exposure: "Status unknown from Bhulekh",
-        severity: "unquantified", source: "Bhulekh RoR",
-        action: "Ask seller for revenue clearance certificate from Tehsil office." });
-    }
+  // T-047: match by ruleId (ROR-INS-050 = dues overdue redFlag) for stability.
+  const duesOverdue = redFlagIds.has("ROR-INS-050");
+  const duesAmtRaw = input.dues?.amount;
+  const duesAmtStr = typeof duesAmtRaw === "number" ? String(duesAmtRaw) : (duesAmtRaw as string | undefined);
+  const duesAmtNum = duesAmtStr && Number(duesAmtStr) > 0 ? Number(duesAmtStr) : null;
+  // RoR dues field may carry amount even if the rule didn't fire (parser gap).
+  const rorDuesAmount = input.rorPayload?.page1?.revenueDues?.amount;
+  const rorDuesNum = typeof rorDuesAmount === "number" ? rorDuesAmount : Number(rorDuesAmount);
+  const effectiveDuesAmt = duesAmtNum ?? (Number.isFinite(rorDuesNum) && rorDuesNum > 0 ? rorDuesNum : null);
+
+  if (duesOverdue && effectiveDuesAmt != null) {
+    items.push({ category: "Revenue dues (Bhulekh)", amount: String(effectiveDuesAmt),
+      exposure: `₹${effectiveDuesAmt.toLocaleString("en-IN")} pending — buyer inherits this liability (₹50K–1L admin cost to clear).`,
+      severity: "at-risk", source: "Bhulekh RoR dues fields (ROR-INS-050)",
+      action: "Ask seller for payment receipts or clearance certificate from Tehsil office before registration." });
+  } else if (effectiveDuesAmt != null) {
+    items.push({ category: "Revenue dues (Bhulekh)", amount: String(effectiveDuesAmt),
+      exposure: `₹${effectiveDuesAmt.toLocaleString("en-IN")} pending — buyer inherits this liability.`,
+      severity: "at-risk", source: "Bhulekh RoR dues fields",
+      action: "Ask seller for payment receipts or clearance certificate from Tehsil office." });
+  } else if (input.bhulekhUsable) {
+    items.push({ category: "Revenue dues (Bhulekh)", amount: null, exposure: "Status unknown from Bhulekh — manual verification required",
+      severity: "unquantified", source: "Bhulekh RoR",
+      action: "Ask seller for revenue clearance certificate from Tehsil office." });
   }
 
   // ── Conversion cost ─────────────────────────────────────────────────────────
@@ -2152,30 +2172,43 @@ function computeFinancialExposure(input: {
       action: "Apply for building permission from BMC/ULB before construction." });
   }
 
-  // ── Court case exposure ─────────────────────────────────────────────────────
-  const courtRedFlags = (input.riskInsights.redFlag ?? []).filter((i: any) =>
-    i.label?.includes("court") || i.label?.includes("attachment") || i.label?.includes("injunction"));
-  if (courtRedFlags.length > 0) {
-    const propValDisplay = propertyValue
-      ? `₹${propertyValue.toLocaleString("en-IN")} (est.)`
-      : "full property value";
+  // ── Court case exposure (ruleId-based, T-047) ────────────────────────────────
+  // Court exposure is triggered by ANY redFlag mentioning court/attachment/injunction.
+  // Today eCourts + High Court + DRT are stubs (ROR-INS-120..122) — when live,
+  // they will fire redFlag/watchout with ruleId match. We also detect court
+  // risk by substring on legacy RiskInsight for back-compat with earlier versions.
+  const courtRedFlagLegacy = (input.riskInsights.redFlag ?? []).some((i: any) =>
+    i.label?.toLowerCase().match(/court|attachment|injunction|litigation/));
+  if (courtRedFlagLegacy) {
     items.push({ category: "Court case / attachment risk", amount: null,
       exposure: `Full ${propValDisplay} at risk if attachment is upheld. Litigation cost: ₹1-3 lakh/year over 3-7 years.`,
       severity: "at-risk", source: "Bhulekh Back Page remarks + eCourts",
       action: "Confirm current case status at the concerned court. Obtain certified copies of all court orders." });
+  } else if (watchoutIds.has("ROR-INS-120") || watchoutIds.has("ROR-INS-121") || watchoutIds.has("ROR-INS-122")) {
+    items.push({ category: "Court case search (live fetch)", amount: null,
+      exposure: `Court search not yet verified end-to-end — if a case is later found, full ${propValDisplay} may be at risk + ₹1-3 lakh/year litigation.`,
+      severity: "unquantified", source: "eCourts + High Court + DRT stubs",
+      action: "Manual eCourts search at districtcourts.gov.in required before registration." });
   }
 
-  // ── Encumbrance exposure ──────────────────────────────────────────────────────
-  const titleInsights = input.riskInsights.title ?? [];
-  const mortgage = titleInsights.find((i: any) =>
-    i.label?.includes("mortgage") || i.label?.includes("charge") || i.label?.includes("encumbrance"));
-  if (mortgage) {
-    const match = mortgage.label?.match(/₹?([\d,]+)/);
-    const encAmt = match ? match[1] : null;
-    items.push({ category: "Registered encumbrance (Bhulekh Back Page)", amount: encAmt,
-      exposure: encAmt ? `₹${encAmt} claimed on the land — buyer takes subject to it` : "Registered encumbrance found — amount not parsed",
-      severity: "at-risk", source: "Bhulekh RoR Back Page",
-      action: "Ask seller for bank/charge holder NOC and formal discharge documents before registration." });
+  // ── Encumbrance exposure (ruleId-based, T-047) ────────────────────────────────
+  // ROR-INS-064 = encumbrance-style entry on RoR page 2 (redFlag, amount unknown
+  // in headline). ROR-INS-100..104 are encumbrance stubs (only fire when
+  // automated EC is live; today we treat them as unquantified).
+  const encPage2RedFlag = redFlagIds.has("ROR-INS-064");
+  if (encPage2RedFlag) {
+    items.push({ category: "Encumbrance-style entry on RoR page 2", amount: null,
+      exposure: `Outstanding obligation against the khatiyan — amount not parsed from RoR (typical mortgage range: ${propertyValue ? `up to ₹${propertyValue.toLocaleString("en-IN")} (est.)` : "depends on loan amount"}). Buyer inherits the liability if not cleared.`,
+      severity: "unquantified", source: "Bhulekh RoR page 2 (ROR-INS-064)",
+      action: "Pull the latest Encumbrance Certificate at the SRO and confirm the entry is closed before paying the seller." });
+  }
+  const encStubFired = watchoutIds.has("ROR-INS-100") || watchoutIds.has("ROR-INS-101")
+    || watchoutIds.has("ROR-INS-102") || watchoutIds.has("ROR-INS-104");
+  if (encStubFired) {
+    items.push({ category: "Encumbrance Certificate (live fetch)", amount: null,
+      exposure: "Active mortgage / non-discharged charge / satisfaction entry / narrow-window EC — requires live IGR EC search to quantify.",
+      severity: "unquantified", source: "IGR Odisha EC bridge stub",
+      action: "Live IGR EC bridge is not yet wired. Pull EC manually from SRO or use the concierge EC service." });
   }
 
   // ── IGR Encumbrance Certificate entries (automated) ─────────────────────────
@@ -2241,10 +2274,127 @@ function computeFinancialExposure(input: {
   const regRedFlags = (input.riskInsights.redFlag ?? []).filter((i: any) =>
     i.label?.includes("BDA") || i.label?.includes("zoning") || i.label?.includes("Industrial"));
   if (regRedFlags.length > 0) {
-    items.push({ category: "Regulatory zone restriction", amount: null,
-      exposure: "Plot falls in a BDA-controlled zone. Zoning conversion or compliance may be required.",
+    // Per CLAUDE.md "On the financial layer": industrial sold as residential → conversion fee.
+    // Odisha conversion fee ≈ ₹50,000 per decimal for industrial → residential (CEE DEE Builders pattern).
+    const decimals = acres ? Math.round(acres * 100) : null;
+    const conversionFee = decimals ? decimals * 50000 : null;
+    const conversionExposure = conversionFee
+      ? `Conversion fee for ${decimals} decimals = ₹${conversionFee.toLocaleString("en-IN")}. Plus 12-24 month timeline to obtain BDA NoC. Demolition order risk if the buyer proceeds without conversion.`
+      : "Plot falls in a BDA-controlled zone. Zoning conversion or compliance may be required. Estimated conversion cost ₹X (per-decimal fee × plot size).";
+    items.push({ category: "BDA Industrial zone — sold as residential (CEE DEE pattern)", amount: conversionFee ? String(conversionFee) : null,
+      exposure: conversionExposure,
       severity: "at-risk", source: "BDA Master Plan overlay",
-      action: "Verify exact zone with BDA. Confirm whether current proposed use (residential) is permitted." });
+      action: "Verify exact zone with BDA. Confirm whether current proposed use (residential) is permitted. If industrial, budget for conversion fee + 12-24 month timeline." });
+  }
+
+  // ── Title-chain red flags (T-047: full property value at risk) ──────────────
+  // ROR-INS-022 = government khatiyan (no personal owner) — full value at risk.
+  // ROR-INS-024 = seller name does not match RoR owner — impersonation pattern.
+  // ROR-INS-021 = RoR owner address in different district with no PoA —
+  // Malipada impersonation pattern.
+  if (redFlagIds.has("ROR-INS-022")) {
+    items.push({ category: "Government khatiyan — no private owner on record", amount: null,
+      exposure: `Full ${propValDisplay} at risk. A government khatiyan cannot be sold to a private buyer without state assignment / lease.`,
+      severity: "at-risk", source: "Bhulekh RoR (ROR-INS-022)",
+      action: "Do not pay any advance. Ask the seller for a personal-name khatiyan or a state assignment / diversion order." });
+  }
+  if (redFlagIds.has("ROR-INS-024")) {
+    items.push({ category: "Seller name does not match RoR owner", amount: null,
+      exposure: `Full ${propValDisplay} at risk. The seller is not the recorded owner — possible impersonation / forged deed.`,
+      severity: "at-risk", source: "Bhulekh RoR (ROR-INS-024)",
+      action: "Stop the transaction. Ask the seller to produce the recorded owner's registered sale deed or PoA before paying." });
+  }
+  if (redFlagIds.has("ROR-INS-021")) {
+    items.push({ category: "Owner address mismatch without PoA (impersonation risk)", amount: null,
+      exposure: `Full ${propValDisplay} at risk. RoR owner lives in a different district with no registered PoA — Malipada impersonation pattern.`,
+      severity: "at-risk", source: "Bhulekh RoR (ROR-INS-021)",
+      action: "Demand a registered PoA copy and arrange a video KYC with the recorded owner before paying any advance." });
+  }
+
+  // ── Land-class red flags (T-047: full property value at risk) ───────────────
+  // ROR-INS-030 = forest / jungle kisam. ROR-INS-035 = Neyanjori / Gair Khalsa
+  // (government notified). ROR-INS-034 = unknown kisam. All are construction
+  // / transferability red flags.
+  if (redFlagIds.has("ROR-INS-030")) {
+    items.push({ category: "Forest / jungle kisam — reserved land", amount: null,
+      exposure: `Full ${propValDisplay} at risk. Forest / jungle kisam land is reserved and cannot be transferred to a private buyer for construction.`,
+      severity: "at-risk", source: "Bhulekh RoR (ROR-INS-030)",
+      action: "Do not pay. Ask the seller for a forest-diversion order or a recorded change of land use." });
+  }
+  if (redFlagIds.has("ROR-INS-035")) {
+    items.push({ category: "Neyanjori / Gair Khalsa — government notified land", amount: null,
+      exposure: `Full ${propValDisplay} at risk. Government notified land (Neyanjori / Gair Khalsa) — if resumed by government, full purchase consideration is at risk with limited compensation.`,
+      severity: "at-risk", source: "Bhulekh RoR (ROR-INS-035)",
+      action: "Do not pay. Ask the seller for the state government's prior diversion / de-notification order." });
+  }
+  if (redFlagIds.has("ROR-INS-034")) {
+    items.push({ category: "Kisam / land class not in dictionary", amount: null,
+      exposure: `If an unknown kisam turns out to be restricted (forest / gochar / Neyanjori), full ${propValDisplay} is at risk. Manual verification required.`,
+      severity: "unquantified", source: "Bhulekh RoR (ROR-INS-034)",
+      action: "Open the RoR PDF from bhulekh.ori.nic.in and read the land class by hand." });
+  }
+
+  // ── Dakhal Kharaj mutation reference (ROR-INS-062) ───────────────────────────
+  if (redFlagIds.has("ROR-INS-062")) {
+    items.push({ category: "Dakhal Kharaj mutation reference on RoR page 2", amount: null,
+      exposure: `Possession-rent entry on the mutation chain — full ${propValDisplay} at risk if the underlying lease is not closed.`,
+      severity: "at-risk", source: "Bhulekh RoR page 2 (ROR-INS-062)",
+      action: "Ask the seller for the written mutation order and the underlying lease / tenancy document. Confirm with the tehsil that no further Dakhal Kharaj is outstanding." });
+  }
+
+  // ── Lease-deed Sthitiban stub (ROR-INS-033) — Patia pattern ─────────────────
+  if (watchoutIds.has("ROR-INS-033")) {
+    items.push({ category: "IGR lease-deed cross-check (Patia pattern)", amount: null,
+      exposure: `If a prior lease deed (RLD prefix) is on record at the IGR, full ${propValDisplay} is at risk under OGLS Act S.3B resumption. With limited statutory compensation, the buyer's recovery on resumption is typically 20-40% of the purchase price.`,
+      severity: "at-risk", source: "Bhulekh RoR + IGR stub (ROR-INS-033)",
+      action: "Ask the seller in writing whether any prior lease deed (RLD) is recorded at the IGR for this khatiyan. A yes means the land can be resumed by the government." });
+  }
+
+  // ── Asking-price vs benchmark stub (ROR-INS-130) ────────────────────────────
+  if (watchoutIds.has("ROR-INS-130")) {
+    const askPricePerSqft = (input as any).askPricePerSqft as number | undefined;
+    const circleRatePerSqft = (input as any).circleBenchmark?.ratePerSqft as number | undefined;
+    const sqft = input.plotArea?.sqft ?? null;
+    if (askPricePerSqft && circleRatePerSqft && askPricePerSqft > 2 * circleRatePerSqft && sqft) {
+      const overpay = Math.round((askPricePerSqft - circleRatePerSqft) * sqft);
+      items.push({ category: "Asking-price >2x IGR benchmark", amount: String(overpay),
+        exposure: `Estimated overpayment risk: ₹${overpay.toLocaleString("en-IN")} (premium above market comparable transactions at ₹${circleRatePerSqft.toLocaleString("en-IN")}/sqft).`,
+        severity: "at-risk", source: "IGR circle benchmark + asking price",
+        action: "Negotiate down toward the village benchmark or walk away. Comparable sales (Propstack / 99acres) should support a price within 20% of the IGR circle rate." });
+    } else {
+      items.push({ category: "Asking-price vs IGR benchmark check", amount: null,
+        exposure: "Asking price vs IGR circle-rate benchmark check is not yet wired. If the deal is priced >2x the village benchmark, estimated overpayment risk = ₹X (premium above market comparable transactions).",
+        severity: "unquantified", source: "IGR benchmark stub (ROR-INS-130)",
+        action: "Ask the seller for the IGR circle-rate benchmark for the village. Compare against asking price; negotiate or walk away if >2x." });
+    }
+  }
+
+  // ── No-mutation risk (RoR owner not in mutation chain) ──────────────────────
+  if (redFlagIds.has("ROR-INS-NOMUT") || watchoutIds.has("ROR-INS-NOMUT")) {
+    const capPerAcre = 500000; // ₹5 lakh/acre — Khordha peri-urban floor
+    const noMutExposure = acres ? Math.round(acres * capPerAcre * 0.08) + 75000 : null;
+    items.push({ category: "No mutation / owner missing from RoR mutation chain", amount: noMutExposure ? String(noMutExposure) : null,
+      exposure: noMutExposure
+        ? `Estimated ${acres} acre × ₹5 lakh × 8% annual return on tied-up capital over 12 months = ₹${(noMutExposure - 75000).toLocaleString("en-IN")} in lost opportunity + ₹50K-1L admin cost to regularize the mutation through the tehsil.`
+        : "If mutation is pending, the buyer inherits title without recorded RoR transfer — risk of double-allotment or stale encumbrance surfacing. Estimated exposure: ₹X (8% return on tied-up capital for 12 months) + ₹50K-1L admin cost.",
+      severity: "at-risk", source: "Bhulekh RoR mutation chain (ROR-INS-NOMUT)",
+      action: "File a mutation application at the tehsil immediately after registration. Budget 3-6 months for the mutation order. Until then, the RoR will not reflect your ownership." });
+  }
+
+  // ── Flood zone / road widening — not yet implemented rules, but listed for completeness ──
+  // T-041 (Bhuvan flood) and T-065 (BDA zoning overlay) are pending. These lines
+  // give a clear unquantified exposure if the corresponding insight fires in the future.
+  if (redFlagIds.has("ROR-INS-FLOOD") || watchoutIds.has("ROR-INS-FLOOD")) {
+    items.push({ category: "Plot in flood Zone B/C (Bhuvan)", amount: null,
+      exposure: "Annual insurance premium increase: ₹X-Y. Stilt construction added cost: ₹2-5 lakh.",
+      severity: "unquantified", source: "Bhuvan flood overlay (T-041)",
+      action: "Confirm flood-zone classification with Bhuvan portal. Budget for stilt construction or insurance before building." });
+  }
+  if (redFlagIds.has("ROR-INS-ROAD") || watchoutIds.has("ROR-INS-ROAD")) {
+    items.push({ category: "Road widening reservation", amount: null,
+      exposure: `If acquired, statutory compensation may be 40-60% below market value. Estimated loss: up to ${propValDisplay} (proportional share).`,
+      severity: "unquantified", source: "BDA Master Plan road widening reservation",
+      action: "Verify BDA Master Plan road-widening reservation. Negotiate a lower asking price or walk away if reservation is imminent." });
   }
 
   // ── Property value display (informational baseline) ─────────────────────────
@@ -2297,21 +2447,21 @@ function computeFinancialExposure(input: {
   }
 
   // ── PoA-based sale risk (Suraj Lamp / ceiling Section 1 Pattern 3) ───────────
-  const poaRisk = titleInsights.find((i: any) =>
-    i.label?.includes("PoA") || i.label?.includes("power of attorney") || i.label?.includes("attorney"));
+  const poaRisk = (input.riskInsights.redFlag ?? []).concat(input.riskInsights.watchout ?? [])
+    .find((i: any) => i.label?.includes("PoA") || i.label?.includes("power of attorney") || i.label?.includes("attorney"));
   if (poaRisk) {
     items.push({ category: "Power of Attorney — sale risk", amount: null,
-      exposure: "A PoA-based conveyance is not a valid title transfer per Supreme Court (Suraj Lamp vs. Parmeshwar, 2011). If the seller is selling via PoA rather than direct registration, the transaction may be legally void.",
+      exposure: `A PoA-based conveyance is not a valid title transfer per Supreme Court (Suraj Lamp vs. Parmeshwar, 2011). If the seller is selling via PoA rather than direct registration, full ${propValDisplay} may be at risk plus litigation cost of ₹1-3 lakh/year over 3-7 years.`,
       severity: "at-risk", source: "Supreme Court ruling + Odisha registration law",
       action: "Insist on direct registration in the seller's name. Do not proceed with a PoA-based sale." });
   }
 
   // ── Sub-divided plot without BDA layout approval ─────────────────────────────
-  const subdivRisk = titleInsights.find((i: any) =>
-    i.label?.includes("subdivided") || i.label?.includes("sub-division") || i.label?.includes("D/"));
+  const subdivRisk = (input.riskInsights.redFlag ?? []).concat(input.riskInsights.watchout ?? [])
+    .find((i: any) => i.label?.includes("subdivided") || i.label?.includes("sub-division") || i.label?.includes("D/"));
   if (subdivRisk || (acres && acres < 0.25)) {
     items.push({ category: "Sub-divided plot — BDA layout approval", amount: null,
-      exposure: "Plot appears sub-divided (sub-plot number or < 0.25 acre). Under BDA rules, layout approval is required before subdivision and sale. If the parent layout was not BDA-approved, future building permission may be denied.",
+      exposure: `Plot appears sub-divided (sub-plot number or < 0.25 acre). Under BDA rules, layout approval is required before subdivision and sale. If the parent layout was not BDA-approved, future building permission may be denied — and the buyer may pay ${propValDisplay} for unbuildable land.`,
       severity: "at-risk", source: "Bhulekh plot number analysis + BDA regulations",
       action: "Ask seller for BDA layout approval ID. Verify with BDA BPAS-Online portal (bda.gov.in) before purchase." });
   }
@@ -2340,6 +2490,9 @@ function buildFinancialExposureSummary(input: {
   plotNo: string;
   safeVillage: string;
   safeDistrict: string;
+  redFlagRuleIds?: Set<string>;
+  watchoutRuleIds?: Set<string>;
+  rorPayload?: any;
   backPage?: {
     encumbranceEntries?: Array<{ type?: string; amount?: string; description?: string }>;
   } | null;

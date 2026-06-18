@@ -4,7 +4,7 @@
  * Verifies that generateConsumerReport() produces valid HTML with all 6 sections.
  */
 import { describe, it, expect } from "vitest";
-import { generateConsumerReport, generateWhatsAppForward, mapToReportInput, buildFounderCuratedClusters } from "./index";
+import { generateConsumerReport, generateWhatsAppForward, mapToReportInput, buildFounderCuratedClusters, computeFinancialExposure } from "./index";
 import { transliterateOdiaWithConfidence } from "./lib";
 import { CONSUMER_REPORT_FIXTURE } from "../fixtures/golden-path";
 import { auditReport } from "../../output-auditor/src/index";
@@ -1607,6 +1607,175 @@ describe("A10 ConsumerReportWriter", () => {
         expect(i.actionItem).toBeTruthy();
         expect(i.ruleId).toMatch(/^ROR-INS-\d{3}$/);
       }
+    });
+  });
+
+  // T-047: Per-insight quantified ₹ exposure — fill the gaps
+  describe("T-047 computeFinancialExposure", () => {
+    const baseInput = {
+      riskInsights: { redFlag: [], watchout: [] },
+      plotArea: { acres: 0.2, sqft: 8712 } as any,
+      landClass: { standardizedKisam: "residential", conversionRequired: false, buildable: true } as any,
+      bhulekhUsable: true,
+      plotNo: "415",
+      safeVillage: "Mendhasala",
+      safeDistrict: "Khordha",
+    };
+
+    it("emits mortgage item with explicit ₹ amount when backPage encumbrance has amount", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        backPage: { encumbranceEntries: [{ type: "Mortgage", amount: "1500000", description: "HDFC" }] },
+      });
+      const mortgage = items.find(i => i.category.includes("mortgage"));
+      expect(mortgage).toBeTruthy();
+      expect(mortgage!.severity).toBe("at-risk");
+      expect(mortgage!.amount).toBe("1500000");
+      expect(mortgage!.exposure).toMatch(/₹/);
+    });
+
+    it("emits dues item with explicit ₹ amount when dues present and overdue", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        redFlagRuleIds: new Set(["ROR-INS-050"]),
+        dues: { amount: "12000", status: "overdue" },
+      });
+      const dues = items.find(i => i.category.toLowerCase().includes("revenue dues") || i.category.toLowerCase().includes("bhulekh"));
+      expect(dues).toBeTruthy();
+      expect(dues!.severity).toBe("at-risk");
+      expect(dues!.amount).toBe("12000");
+      expect(dues!.exposure).toMatch(/₹/);
+    });
+
+    it("emits court-attachment item with property-value ₹ when court case mentions attachment", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        riskInsights: {
+          redFlag: [{ label: "Court attachment on property", ruleId: "TEST" }],
+          watchout: [],
+        },
+      });
+      const court = items.find(i => i.category.toLowerCase().includes("court") || i.category.toLowerCase().includes("attachment"));
+      expect(court).toBeTruthy();
+      expect(court!.severity).toBe("at-risk");
+      expect(court!.exposure).toMatch(/₹/);
+    });
+
+    it("emits BDA industrial-zone item when red flag mentions BDA / industrial", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        riskInsights: {
+          redFlag: [{ label: "BDA Industrial zone — sold as residential", ruleId: "BDA-ZONE" }],
+          watchout: [],
+        },
+      });
+      const zone = items.find(i => i.category.toLowerCase().includes("bda") || i.category.toLowerCase().includes("zone"));
+      expect(zone).toBeTruthy();
+      expect(zone!.severity).toBe("at-risk");
+      expect(zone!.exposure).toMatch(/₹|Conversion|BDA/);
+    });
+
+    it("emits OGLS / lease item when backPage remarks contain lease keywords", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        backPage: { encumbranceEntries: [{ type: "remark", description: "lease surrender" }] } as any,
+      });
+      const lease = items.find(i => i.category.toLowerCase().includes("lease") || i.category.toLowerCase().includes("ogls"));
+      expect(lease).toBeTruthy();
+      expect(lease!.severity).toBe("at-risk");
+      expect(lease!.exposure).toMatch(/lease|OGLS|freehold/i);
+    });
+
+    it("emits PoA item when PoA red flag present (not ReferenceError)", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        riskInsights: {
+          redFlag: [{ label: "Sale via power of attorney (not direct registration)", ruleId: "POA-001" }],
+          watchout: [],
+        },
+      });
+      const poa = items.find(i => i.category.includes("Power of Attorney"));
+      expect(poa).toBeTruthy();
+      expect(poa!.severity).toBe("at-risk");
+      expect(poa!.exposure).toMatch(/₹|Suraj Lamp/i);
+    });
+
+    it("emits sub-divided plot item when red flag present", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        riskInsights: {
+          redFlag: [{ label: "Subdivided plot D/88", ruleId: "SUB-001" }],
+          watchout: [],
+        },
+      });
+      const sub = items.find(i => i.category.toLowerCase().includes("sub") || i.category.toLowerCase().includes("bda layout"));
+      expect(sub).toBeTruthy();
+      expect(sub!.severity).toBe("at-risk");
+      expect(sub!.exposure).toMatch(/₹|sub-divided|layout/i);
+    });
+
+    it("emits sub-divided plot item when plot < 0.25 acre and no red flag", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        plotArea: { acres: 0.1, sqft: 4356 } as any,
+      });
+      const sub = items.find(i => i.category.toLowerCase().includes("sub-divided"));
+      expect(sub).toBeTruthy();
+      expect(sub!.severity).toBe("at-risk");
+    });
+
+    it("emits conversion-fee item when landClass requires conversion and buildable", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        landClass: { standardizedKisam: "agricultural", conversionRequired: true, buildable: true } as any,
+        plotArea: { acres: 0.2, sqft: 8712 } as any,
+      });
+      const conv = items.find(i => i.category.toLowerCase().includes("conversion"));
+      expect(conv).toBeTruthy();
+      expect(conv!.severity).toBe("at-risk");
+      expect(conv!.exposure).toMatch(/₹|Conversion/i);
+    });
+
+    it("emits lease-deed-IGL red flag (Patia pattern) with full consideration risk", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        watchoutRuleIds: new Set(["ROR-INS-033"]),
+      });
+      const lease = items.find(i => i.category.toLowerCase().includes("lease"));
+      expect(lease).toBeTruthy();
+      expect(lease!.severity).toBe("at-risk");
+      expect(lease!.exposure).toMatch(/₹|freehold|OGLS|resume/i);
+    });
+
+    it("emits no-mutation item when ROR-INS-NOMUT rule fires", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        watchoutRuleIds: new Set(["ROR-INS-NOMUT"]),
+      });
+      const mut = items.find(i => i.category.toLowerCase().includes("mutation"));
+      expect(mut).toBeTruthy();
+      expect(mut!.severity).toBe("at-risk");
+      expect(mut!.exposure).toMatch(/₹|opportunity|admin/i);
+    });
+
+    it("emits overpayment item when askPrice > 2x circle benchmark (ROR-INS-130 + inputs)", () => {
+      const items = computeFinancialExposure({
+        ...baseInput,
+        watchoutRuleIds: new Set(["ROR-INS-130"]),
+        plotArea: { acres: 0.2, sqft: 8712 } as any,
+        circleBenchmark: { ratePerSqft: 4000 },
+        askPricePerSqft: 9500,
+      } as any);
+      const overpay = items.find(i => i.category.toLowerCase().includes("overpayment") || i.category.toLowerCase().includes("asking"));
+      expect(overpay).toBeTruthy();
+      expect(overpay!.severity).toBe("at-risk");
+      expect(overpay!.exposure).toMatch(/₹|premium|over/i);
+    });
+
+    it("does not throw when riskInsights empty — returns clean baseline items only", () => {
+      const items = computeFinancialExposure(baseInput);
+      // No items except possibly an empty risk insight map — should not throw
+      expect(Array.isArray(items)).toBe(true);
     });
   });
 });
