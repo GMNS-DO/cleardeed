@@ -373,6 +373,40 @@ async function setupForm(page: Page, districtCode: string): Promise<void> {
   await page.waitForTimeout(500);
 }
 
+// --- Apify parseforge delegation (Task 1.2 / Layer 1) ---
+//
+// The eCourtsIndia.com V6 portal (services.ecourts.gov.in/ecourtindia_v6) is
+// effectively dead — captcha + WAF + name-variant heuristics make the in-house
+// Playwright/OCR path slow and brittle. We pivot to the
+// `parseforge/court-records-ecourt-india-scraper` Apify actor, which solves
+// the captcha, performs the search, and returns structured rows.
+//
+// When APIFY_TOKEN is set, this module delegates to fetchEcourtsViaApify() and
+// converts the actor's contract shape to the legacy CourtCaseResult envelope
+// the report pipeline expects. When APIFY_TOKEN is not set, we fall through
+// to the existing Playwright/OCR path (no behavior change for that case).
+
+import { fetchEcourtsViaApify } from "./via-apify";
+
+function mapApifyStatusToCourtCaseStatus(
+  s: "ok" | "no_data" | "source_down" | "invalid_input" | "parse_error" | "manual_required"
+): "success" | "failed" | "partial" | "not_covered" {
+  switch (s) {
+    case "ok":
+      return "success";
+    case "no_data":
+      return "success"; // Zero cases is a valid result, not a failure.
+    case "source_down":
+      return "failed";
+    case "invalid_input":
+      return "failed";
+    case "parse_error":
+      return "partial";
+    case "manual_required":
+      return "not_covered";
+  }
+}
+
 // --- Main fetch function ---
 
 export async function ecourtsFetch(
@@ -380,6 +414,64 @@ export async function ecourtsFetch(
 ): Promise<z.infer<typeof CourtCaseResult>> {
   const fetchedAt = new Date().toISOString();
   const { partyName, courtComplex, tryNameVariants = true, doubleFetch = true } = input;
+
+  // Apify parseforge delegation: if APIFY_TOKEN is set, use the actor and
+  // convert its contract shape to the legacy CourtCaseResult envelope.
+  if (process.env.APIFY_TOKEN) {
+    const apifyRes = await fetchEcourtsViaApify({
+      partyName,
+      courtComplex:
+        typeof courtComplex === "string"
+          ? courtComplex
+          : Array.isArray(courtComplex)
+            ? courtComplex.join(",")
+            : undefined,
+    });
+
+    const cases = apifyRes.data.cases.map((c) => ({
+      caseNo: c.caseNo,
+      caseType: c.caseType,
+      court: c.court,
+      status: c.status,
+      ...(c.filingDate ? { filingDate: c.filingDate } : {}),
+      ...(c.nextHearingDate ? { nextHearingDate: c.nextHearingDate } : {}),
+      parties: [
+        ...(c.parties.petitioner
+          ? [{ name: c.parties.petitioner, role: "petitioner" as const }]
+          : []),
+        ...(c.parties.respondent
+          ? [{ name: c.parties.respondent, role: "respondent" as const }]
+          : []),
+      ],
+    }));
+
+    return {
+      source: "ecourts",
+      status: mapApifyStatusToCourtCaseStatus(apifyRes.status),
+      statusReason: apifyRes.error,
+      verification: {
+        level:
+          apifyRes.status === "ok" || apifyRes.status === "no_data"
+            ? "L2_validated"
+            : "L1_fetched",
+        basis: `Apify parseforge actor (${apifyRes.latencyMs}ms)`,
+        confidence: apifyRes.status === "ok" ? 0.85 : 0.4,
+      },
+      fetchedAt: apifyRes.fetchedAt,
+      parserVersion: "ecourts-apify-v1",
+      data: {
+        cases,
+        total: cases.length,
+        searchMetadata: {
+          districtName: input.districtName ?? "Khurda",
+          complexesTried: apifyRes.data.cases.length > 0 ? ["apify-actor"] : [],
+          negativeResultConfidence:
+            apifyRes.status === "no_data" ? "low" : "unconfirmed",
+        },
+      },
+      ...(apifyRes.error ? { error: apifyRes.error } : {}),
+    };
+  }
 
   const districtName = input.districtName ?? "Khurda";
   const districtCode = input.districtCode ?? KHURDA_DISTRICT_CODE;

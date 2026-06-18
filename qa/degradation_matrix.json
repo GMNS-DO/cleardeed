@@ -80,13 +80,15 @@
       }
     },
     "ecourts": {
-      "label": "eCourts (services.ecourts.gov.in)",
+      "label": "eCourts (Apify parseforge actor — court-records-ecourt-india-scraper)",
       "wired_in_v11": true,
       "is_primary_for_sections": ["section-encumbrance"],
+      "fetcher": "packages/fetchers/ecourts/src/via-apify.ts (delegated from src/index.ts when APIFY_TOKEN is set)",
+      "actor_id": "parseforge/court-records-ecourt-india-scraper",
       "source_down": {
         "section_id": "section-encumbrance",
         "degradation_tag": "ecourts_down",
-        "consumer_message": "Court case search unavailable — verify manually on services.ecourts.gov.in"
+        "consumer_message": "Court case search unavailable (Apify actor down) — verify manually on services.ecourts.gov.in"
       },
       "no_data": {
         "section_id": "section-encumbrance",
@@ -101,7 +103,12 @@
       "parse_error": {
         "section_id": "section-encumbrance",
         "degradation_tag": "ecourts_parse_error",
-        "consumer_message": "Court portal returned a malformed result — manual search required"
+        "consumer_message": "Apify actor returned a malformed result — manual search required"
+      },
+      "manual_required": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "ecourts_manual_required",
+        "consumer_message": "APIFY_TOKEN not set — eCourts search requires Apify parseforge actor; configure APIFY_TOKEN to enable"
       }
     },
     "igr-ec": {

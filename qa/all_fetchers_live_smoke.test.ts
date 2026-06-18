@@ -139,6 +139,48 @@ describe.skipIf(process.env.CI === "true")(
           }
         }
 
+        // 5b. eCourts via Apify (Task 1.2 — Layer 1.2).
+        // Skipped when APIFY_TOKEN is unset (mirrors the Bar 1/2/3 test gate).
+        // We don't probe apify.com first because the call IS the probe; the
+        // actor run is slow (5-30s) and we don't want a HEAD-then-actor
+        // double round-trip in the smoke battery.
+        if (!process.env.APIFY_TOKEN) {
+          smokeRuns.push({
+            fetcher: "ecourts-apify",
+            status: "skipped",
+            reason: "APIFY_TOKEN not set",
+            latencyMs: 0,
+            crashed: false,
+          });
+        } else {
+          const { fetchEcourtsViaApify } = await import(
+            "../../packages/fetchers/ecourts/src/via-apify"
+          );
+          const { result, elapsedMs, crashed, errorMessage } = await timeIt(
+            "ecourts-apify",
+            () => fetchEcourtsViaApify({ partyName: "Deeksha Mahapatra" })
+          );
+          if (crashed || !result) {
+            smokeRuns.push({
+              fetcher: "ecourts-apify",
+              status: "CRASH",
+              reason: "threw",
+              latencyMs: elapsedMs,
+              crashed: true,
+              errorMessage,
+            });
+          } else {
+            const r = result as { status?: string; error?: string };
+            smokeRuns.push({
+              fetcher: "ecourts-apify",
+              status: r.status ?? "?",
+              reason: r.error ?? "-",
+              latencyMs: elapsedMs,
+              crashed: false,
+            });
+          }
+        }
+
         // 6. CERSAI
         {
           const { result, elapsedMs, crashed, errorMessage } = await timeIt("cersai", () =>
@@ -321,7 +363,7 @@ describe.skipIf(process.env.CI === "true")(
         // Acceptance: 0 crashes (every fetcher returns a typed envelope)
         expect(crashedCount).toBe(0);
       },
-      30 * 60 * 1000 // 30 min budget for all 14 fetchers
+      30 * 60 * 1000 // 30 min budget for all 15 fetchers (incl. ecourts-apify)
     );
   }
 );
