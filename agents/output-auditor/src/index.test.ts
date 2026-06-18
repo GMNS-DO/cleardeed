@@ -282,10 +282,10 @@ describe("A11 OutputAuditor", () => {
 
     it("flags insight blocks that contain a prohibited phrase", () => {
       const html = fullReportHtml({
-        insightBlock: `<div class="insight insight-positive" data-rule="ROR-INS-X">
+        insightBlock: `<div class="insight-list"><div class="insight insight-positive" data-rule="ROR-INS-X">
   <h4>Owner verified</h4>
   <p>Ownership verified by RoR.</p>
-</div>`,
+</div></div>`,
       });
 
       const result = auditReport(html, {
@@ -296,6 +296,42 @@ describe("A11 OutputAuditor", () => {
       expect(
         result.violations.find((v) => v.match === "ownership verified")
       ).toBeDefined();
+    });
+
+    it("flags insight blocks whose disclosure is open by default", () => {
+      const html = fullReportHtml({
+        insightBlock: `<div class="insight-list"><div class="insight insight-watchout" data-rule="ROR-INS-X">
+  <h4>Mismatch</h4>
+  <details open><summary>How we checked this</summary></details>
+</div></div>`,
+      });
+
+      const result = auditReport(html, {
+        reportId: "test-id",
+        requireStructuralChecks: true,
+      });
+
+      expect(
+        result.violations.find((v) => v.match === "<details>")
+      ).toBeDefined();
+    });
+
+    it("passes insight blocks whose disclosure is closed by default", () => {
+      const html = fullReportHtml({
+        insightBlock: `<div class="insight-list"><div class="insight insight-watchout" data-rule="ROR-INS-X">
+  <h4>Mismatch</h4>
+  <details><summary>How we checked this</summary></details>
+</div></div>`,
+      });
+
+      const result = auditReport(html, {
+        reportId: "test-id",
+        requireStructuralChecks: true,
+      });
+
+      expect(
+        result.violations.find((v) => v.match === "<details>")
+      ).toBeUndefined();
     });
   });
 

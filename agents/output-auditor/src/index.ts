@@ -401,6 +401,21 @@ function auditStructuralRequirements(html: string): Violation[] {
     }
   }
 
+  // ── Check insight blocks for closed disclosure (no auto-open) ─────────
+  const insightBlocks = html.match(/<div class="insight[\s\S]*?<\/div>\s*(?:<\/details>\s*)?<\/div>/g) ?? [];
+  for (const block of insightBlocks) {
+    if (!block.includes("<details>") || block.includes("<details open")) {
+      violations.push({
+        type: "source_state_violation",
+        severity: "critical",
+        match: "<details>",
+        context: block.slice(0, 200),
+        recommendation:
+          "Insight blocks must include a closed <details> disclosure (no <details open>).",
+      });
+    }
+  }
+
   return violations;
 }
 
