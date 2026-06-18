@@ -11,6 +11,7 @@
  * This is the liability gate — no report publishes without passing A11.
  */
 import { z } from "zod";
+import { PROHIBITED_PHRASES } from "../../consumer-report-writer/src/insights/display-labels";
 
 // ─── Input / Output schemas ─────────────────────────────────────────────────────
 
@@ -381,6 +382,23 @@ function auditStructuralRequirements(html: string): Violation[] {
       recommendation:
         "Consumer report must include buyer action copy, including Encumbrance Certificate follow-up.",
     });
+  }
+
+  // ── Check insight blocks for prohibited phrases ───────────────────────
+  const insightMatches = html.match(/class="insight[^"]*"[\s\S]*?<\/div>/g) ?? [];
+  for (const block of insightMatches) {
+    const lowerBlock = block.toLowerCase();
+    for (const phrase of PROHIBITED_PHRASES) {
+      if (lowerBlock.includes(phrase)) {
+        violations.push({
+          type: "prohibited_word",
+          severity: "critical",
+          match: phrase,
+          context: block.slice(0, 200),
+          recommendation: `Insight block contains prohibited phrase "${phrase}".`,
+        });
+      }
+    }
   }
 
   return violations;

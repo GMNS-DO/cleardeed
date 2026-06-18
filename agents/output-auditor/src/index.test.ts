@@ -279,6 +279,24 @@ describe("A11 OutputAuditor", () => {
       expect(result.passed).toBe(false);
       expect(result.violations.some((v) => v.match === "No immediate regulatory flags were found")).toBe(true);
     });
+
+    it("flags insight blocks that contain a prohibited phrase", () => {
+      const html = fullReportHtml({
+        insightBlock: `<div class="insight insight-positive" data-rule="ROR-INS-X">
+  <h4>Owner verified</h4>
+  <p>Ownership verified by RoR.</p>
+</div>`,
+      });
+
+      const result = auditReport(html, {
+        reportId: "test-id",
+        requireStructuralChecks: true,
+      });
+
+      expect(
+        result.violations.find((v) => v.match === "ownership verified")
+      ).toBeDefined();
+    });
   });
 
   describe("edge cases", () => {
@@ -311,12 +329,14 @@ function fullReportHtml(options: {
   courtCopy?: string;
   regulatoryCopy?: string;
   regulatorySourceLine?: string;
+  insightBlock?: string;
 } = {}): string {
   const ecourtsStatus = options.ecourtsStatus ?? "success";
   const rccmsStatus = options.rccmsStatus ?? "success";
   const courtCopy = options.courtCopy ?? "Court and revenue-case checks returned source statuses shown below.";
   const regulatoryCopy = options.regulatoryCopy ?? "Regulatory overlay screening requires manual review for layers not listed as complete.";
   const regulatorySourceLine = options.regulatorySourceLine ?? "Overlay screening: completed overlay source(s) listed in findings above";
+  const insightBlock = options.insightBlock ?? "";
 
   return `<!DOCTYPE html>
     <html><body>
@@ -339,5 +359,6 @@ function fullReportHtml(options: {
         <p>Ask for the Encumbrance Certificate before paying anything.</p>
         <div class="disclaimer">This is not a legal opinion. Consult a lawyer.</div>
       </section>
+      ${insightBlock}
     </body></html>`;
 }
