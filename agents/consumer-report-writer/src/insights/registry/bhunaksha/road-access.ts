@@ -57,22 +57,12 @@ function allSidesAreKhaOrGovt(c: Record<string, ChauhaddiSide>): boolean {
   return allGovt;
 }
 
-// ROR-INS-080 — redFlag when no adjacent road is identified.
-// Until UP-006 (neighbours chain) is in production, surface as a parser_uncertain
-// stub so the buyer still sees a manual-verification prompt.
+// ROR-INS-080 — redFlag when chauhaddi is present and has no road on any side.
+// HIGH #5: split from the previous dual-emit shape. Returns null when
+// chauhaddi data is missing — that case is now handled by ROR-INS-083 below.
 function noAdjacentRoadRedFlag(input: RuleInput): Insight[] | null {
   const c = getChauhaddi(input);
-  if (!c) {
-    // No chauhaddi data at all — emit the UP-006 stub.
-    return [stubFor(
-      "ROR-INS-080",
-      "roadAccess",
-      "land_use_permission",
-      "parser_uncertain",
-      "We could not determine whether this plot has an adjacent road. The Bhunaksha chauhaddi data was not available, and the neighbours chain feature (UP-006) is not yet wired in.",
-      "Visit the plot in person and confirm whether at least one side touches a government Danga (road) or a private lane with right-of-way."
-    )];
-  }
+  if (!c) return null;
   if (!hasAnyRoadOnAnySide(c)) {
     return [{
       panel: "roadAccess",
@@ -87,6 +77,24 @@ function noAdjacentRoadRedFlag(input: RuleInput): Insight[] | null {
     }];
   }
   return null;
+}
+
+// ROR-INS-083 — parser_uncertain watchout when chauhaddi data is missing
+// entirely. Distinct ruleId from ROR-INS-080 because the previous code
+// emitted both a stub AND a redFlag under ROR-INS-080 with two different
+// severities — split here so each insight carries a single ruleId +
+// severity.
+function chauhaddiMissingStub(input: RuleInput): Insight[] | null {
+  const c = getChauhaddi(input);
+  if (c) return null;
+  return [stubFor(
+    "ROR-INS-083",
+    "roadAccess",
+    "land_use_permission",
+    "parser_uncertain",
+    "We could not determine whether this plot has an adjacent road. The Bhunaksha chauhaddi data was not available, and the neighbours chain feature (UP-006) is not yet wired in.",
+    "Visit the plot in person and confirm whether at least one side touches a government Danga (road) or a private lane with right-of-way."
+  )];
 }
 
 // ROR-INS-081 — watchout when plot is bounded entirely by KHA / government land.
@@ -132,4 +140,5 @@ export const bhunakshaRoadAccessRules: Rule[] = [
   { id: "ROR-INS-080", panel: "roadAccess", fn: noAdjacentRoadRedFlag, version: v },
   { id: "ROR-INS-081", panel: "roadAccess", fn: surroundedByKhaWatchout, version: v },
   { id: "ROR-INS-082", panel: "roadAccess", fn: roadOnAtLeastOneSidePositive, version: v },
+  { id: "ROR-INS-083", panel: "roadAccess", fn: chauhaddiMissingStub, version: v },
 ];

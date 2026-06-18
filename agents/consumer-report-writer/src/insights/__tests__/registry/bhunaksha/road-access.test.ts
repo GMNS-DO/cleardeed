@@ -21,8 +21,8 @@ const baseBhunaksha = {
 };
 
 describe("bhunaksha road-access rules", () => {
-  it("exports 3 rules", () => {
-    expect(bhunakshaRoadAccessRules.length).toBe(3);
+  it("exports 4 rules", () => {
+    expect(bhunakshaRoadAccessRules.length).toBe(4);
   });
 
   it("fires redFlag when no adjacent road is identified", () => {
@@ -79,5 +79,54 @@ describe("bhunaksha road-access rules", () => {
     );
     expect(positive).toBeDefined();
     expect(positive!.panel).toBe("roadAccess");
+  });
+
+  // HIGH #5 regression: split ROR-INS-080 (real redFlag) from ROR-INS-083
+  // (parser_uncertain stub when chauhaddi is missing).
+  it("fires ROR-INS-083 watchout when chauhaddi data is missing entirely", () => {
+    const out = runInsights(bhunakshaRoadAccessRules, {
+      bhunaksha: {
+        ...baseBhunaksha,
+        data: { ...baseBhunaksha.data, chauhaddi: undefined },
+      },
+    });
+    const stub = out.find(
+      (i) => i.severity === "watchout" && i.ruleId === "ROR-INS-083"
+    );
+    expect(stub).toBeDefined();
+    expect(stub!.panel).toBe("roadAccess");
+    // Sanity check on the body — distinct from the redFlag body.
+    expect(stub!.body).toMatch(/not yet wired|chauhaddi data was not available/);
+  });
+
+  it("preserves ROR-INS-080 redFlag when chauhaddi is present and has no road", () => {
+    // No road/rasta/danga on any side.
+    const out = runInsights(bhunakshaRoadAccessRules, {
+      bhunaksha: {
+        ...baseBhunaksha,
+        data: {
+          ...baseBhunaksha.data,
+          chauhaddi: {
+            north: { type: "private", plotNumber: "412" },
+            south: { type: "private", plotNumber: "418" },
+            east: { type: "private", plotNumber: "416" },
+            west: { type: "private", plotNumber: "414" },
+          },
+        },
+      },
+    });
+    expect(
+      out.find((i) => i.ruleId === "ROR-INS-080" && i.severity === "redFlag")
+    ).toBeDefined();
+    // And the new stub does NOT fire when chauhaddi is present.
+    expect(out.find((i) => i.ruleId === "ROR-INS-083")).toBeUndefined();
+  });
+
+  it("emits no roadAccess insight when chauhaddi is present and a road exists", () => {
+    const out = runInsights(bhunakshaRoadAccessRules, {
+      bhunaksha: baseBhunaksha,
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-080")).toBeUndefined();
+    expect(out.find((i) => i.ruleId === "ROR-INS-083")).toBeUndefined();
   });
 });
