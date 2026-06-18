@@ -16,6 +16,7 @@ export function renderInsightBlock(i: Insight): string {
   <p><strong>What we checked:</strong> ${escape(i.disclosure.whatWeChecked)}</p>
   <p><strong>How to verify:</strong> ${escape(i.disclosure.howToVerify)}</p>
   <p><strong>Limits of this check:</strong> ${escape(i.disclosure.limitsOfThisCheck)}</p>
+  <p><strong>Source:</strong> ${escape(i.source)} (rule ${escape(i.ruleId)}, evidence ${escape(i.evidenceStrength)}).</p>
 </details>`
     : `<details>
   <summary>How we checked this</summary>

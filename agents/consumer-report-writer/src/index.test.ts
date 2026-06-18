@@ -1266,7 +1266,10 @@ describe("A10 ConsumerReportWriter", () => {
       };
       const { html } = generateConsumerReport(noZoneInput as any);
 
-      expect(html).not.toContain("BDA Master Plan zone");
+      // The bda-card div is emitted only by buildBdaZoneCard when there is a row.
+      // Insight blocks now surface a "not yet wired" mention of BDA Master Plan zone,
+      // so we assert that no rendered BDA card element appears, not the label string.
+      expect(html).not.toMatch(/<div class="bda-card/);
     });
 
     it("BDA zone card flags watch-out zones (green_belt) with watchout styling", () => {

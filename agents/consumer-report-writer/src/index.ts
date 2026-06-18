@@ -26,6 +26,8 @@ import {
   ConsumerReportGenInputSchema,
   type ConsumerReportGenInputData,
 } from "./mapper";
+import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
+import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 import {
   buildRoRInsightGroups,
   buildRiskInsights,
@@ -33,11 +35,10 @@ import {
   type RoRInsight,
   type RiskInsight,
 } from "./ror-insights";
-import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
-import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 import { runInsights } from "./insights/engine";
 import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
+import { renderInsightList } from "./insights/render";
 
 export type ConsumerReportGenInput = ConsumerReportGenInputData;
 export { ConsumerReportGenInputSchema } from "./mapper";
@@ -962,7 +963,26 @@ function submitFeedbackComment(section, btn) {
   // input) is the contractually correct shape.
   const insights = runInsights(ALL_RULES, data as unknown as Parameters<typeof runInsights>[1]);
 
-  return { html, title, insights };
+  // Append the unified insight blocks (per panel) to the assembled HTML.
+  const completenessInsights = insights.filter((i) => i.panel === "completeness");
+  const plotInsights = insights.filter((i) => i.panel === "plot");
+  const ownerInsights = insights.filter((i) => i.panel === "owner");
+  const landInsights = insights.filter((i) => i.panel === "land");
+  const encumbranceInsights = insights.filter((i) => i.panel === "encumbrance" || i.panel === "deeds");
+  const courtInsights = insights.filter((i) => i.panel === "court");
+  const financialInsights = insights.filter((i) => i.panel === "financial");
+
+  const insightBlocks = [
+    renderInsightList(plotInsights),
+    renderInsightList(ownerInsights),
+    renderInsightList(landInsights),
+    renderInsightList(encumbranceInsights),
+    renderInsightList(courtInsights),
+    renderInsightList(financialInsights),
+    renderInsightList(completenessInsights),
+  ].join("\n");
+
+  return { html: html + "\n" + insightBlocks, title, insights };
 }
 
 // ─── Section builders ─────────────────────────────────────────────────────────

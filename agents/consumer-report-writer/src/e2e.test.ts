@@ -362,8 +362,11 @@ function assertDegradedRender(html: string) {
   // Section 3 — Land classification — Bhulekh failed → "not verified"
   expect(html).toContain('id="section-land"');
   expect(html).toContain("Classification not verified");
-  // BDA failed → no BDA zone card should appear
-  expect(html).not.toContain("BDA Master Plan zone");
+  // BDA failed → no BDA zone card body should appear. The bda-card CSS
+  // class is always in the inline <style> block (static stylesheet), so
+  // we assert against the rendered card's unique body text "What you can
+  // build" — only present when the card is actually rendered.
+  expect(html).not.toContain("What you can build");
 
   // Section 4 — Encumbrance — court sources failed, EC must still
   // render its panel (the panel is unconditional)
