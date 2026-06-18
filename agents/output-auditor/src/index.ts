@@ -402,7 +402,15 @@ function auditStructuralRequirements(html: string): Violation[] {
   }
 
   // ── Check insight blocks for closed disclosure (no auto-open) ─────────
-  const insightBlocks = html.match(/<div class="insight[\s\S]*?<\/div>\s*(?:<\/details>\s*)?<\/div>/g) ?? [];
+  // `renderInsightBlock` emits:
+  //   <div class="insight insight-{severity}" ...>
+  //     ...
+  //     <details>...</details>
+  //   </div>
+  // (one outer </div>, with the </details> just before it). Match the
+  // block bounded by the opening <div class="insight" and the closing
+  // </details></div> pair.
+  const insightBlocks = html.match(/<div class="insight[\s\S]*?<\/details>\s*<\/div>/g) ?? [];
   for (const block of insightBlocks) {
     if (!block.includes("<details>") || block.includes("<details open")) {
       violations.push({

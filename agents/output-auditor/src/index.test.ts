@@ -5,6 +5,8 @@
  */
 import { describe, it, expect } from "vitest";
 import { auditReport, auditOrThrow } from "./index";
+import { renderInsightBlock } from "../../consumer-report-writer/src/insights/render";
+import type { Insight } from "../../consumer-report-writer/src/insights/schema";
 
 describe("A11 OutputAuditor", () => {
   describe("passes clean HTML", () => {
@@ -322,6 +324,42 @@ describe("A11 OutputAuditor", () => {
   <h4>Mismatch</h4>
   <details><summary>How we checked this</summary></details>
 </div></div>`,
+      });
+
+      const result = auditReport(html, {
+        reportId: "test-id",
+        requireStructuralChecks: true,
+      });
+
+      expect(
+        result.violations.find((v) => v.match === "<details>")
+      ).toBeUndefined();
+    });
+
+    it("passes real renderInsightBlock output (no false closed-disclosure violation)", () => {
+      // Regression: the closed-disclosure regex must match the actual shape
+      // emitted by `renderInsightBlock` (one outer </div> after </details>),
+      // not a double-</div> shape. Use the real renderer so the test breaks
+      // if the renderer changes.
+      const insight: Insight = {
+        panel: "plot",
+        issueLens: "title_chain",
+        evidenceStrength: "document_anchor",
+        source: "bhulekh:ror:page-1",
+        severity: "watchout",
+        headline: "Owner mismatch",
+        body: "Owner does not match RoR.",
+        actionItem: "Ask seller.",
+        ruleId: "ROR-INS-001",
+        disclosure: {
+          whatWeChecked: "The RoR owner field on page 1.",
+          howToVerify: "Open the RoR PDF on bhulekh.ori.nic.in.",
+          limitsOfThisCheck: "We did not verify the mutation chain.",
+        },
+      };
+
+      const html = fullReportHtml({
+        insightBlock: `<div class="insight-list">${renderInsightBlock(insight)}</div>`,
       });
 
       const result = auditReport(html, {
