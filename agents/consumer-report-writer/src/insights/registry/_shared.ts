@@ -2,14 +2,18 @@
 import type { Insight, Rule, RuleInput, IssueLens, InsightPanel, EvidenceStrength } from "../schema";
 import { noProhibitedPhrases } from "../display-labels";
 
-export function runRule(rule: Rule, input: RuleInput): Insight | null {
+export function runRule(rule: Rule, input: RuleInput): Insight[] {
   try {
     const out = rule.fn(input);
-    if (!out) return null;
-    if (noProhibitedPhrases(out).length > 0) {
-      throw new Error(
-        `Rule ${rule.id} emitted prohibited phrase: ${noProhibitedPhrases(out).join(", ")}`
-      );
+    if (!out) return [];
+    // Per-insight prohibited-phrase check so one bad insight doesn't lose the others.
+    for (const i of out) {
+      const violations = noProhibitedPhrases(i);
+      if (violations.length > 0) {
+        throw new Error(
+          `Rule ${rule.id} emitted prohibited phrase in insight ${i.ruleId}: ${violations.join(", ")}`
+        );
+      }
     }
     return out;
   } catch (err) {
@@ -19,7 +23,7 @@ export function runRule(rule: Rule, input: RuleInput): Insight | null {
       // eslint-disable-next-line no-console
       console.warn(`[insights] rule ${rule.id} failed:`, err);
     }
-    return null;
+    return [];
   }
 }
 

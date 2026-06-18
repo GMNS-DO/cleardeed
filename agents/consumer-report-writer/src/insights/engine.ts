@@ -5,8 +5,9 @@ import { runRule } from "./registry/_shared";
 export function runInsights(rules: Rule[], input: RuleInput): Insight[] {
   const out: Insight[] = [];
   for (const r of rules) {
-    const i = runRule(r, input);
-    if (i) out.push(i);
+    for (const i of runRule(r, input)) {
+      out.push(i);
+    }
   }
   return out;
 }

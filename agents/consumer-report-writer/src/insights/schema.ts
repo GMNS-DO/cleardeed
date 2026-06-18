@@ -66,7 +66,7 @@ export type Insight = z.infer<typeof InsightSchema>;
 
 // Forward declaration; defined in registry/_shared.ts in Task 2.
 export type RuleInput = unknown;
-export type RuleFn = (input: RuleInput) => Insight | null;
+export type RuleFn = (input: RuleInput) => Insight[] | null;
 
 export const RuleSchema = z.object({
   id: z.string().regex(/^ROR-INS-\d{3}$/),

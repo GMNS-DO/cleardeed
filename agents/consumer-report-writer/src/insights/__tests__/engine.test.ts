@@ -9,17 +9,19 @@ const baseRule: Rule = {
   panel: "plot",
   fn: (input: any) =>
     input?.ror?.status === "verified"
-      ? {
-          panel: "plot",
-          issueLens: "title_chain",
-          evidenceStrength: "document_anchor",
-          source: "bhulekh:ror:page-1",
-          severity: "watchout",
-          headline: "Mismatch",
-          body: "Owner does not match RoR.",
-          actionItem: "Ask seller.",
-          ruleId: "ROR-INS-TEST",
-        }
+      ? [
+          {
+            panel: "plot",
+            issueLens: "title_chain",
+            evidenceStrength: "document_anchor",
+            source: "bhulekh:ror:page-1",
+            severity: "watchout",
+            headline: "Mismatch",
+            body: "Owner does not match RoR.",
+            actionItem: "Ask seller.",
+            ruleId: "ROR-INS-TEST",
+          },
+        ]
       : null,
   version: "1.0.0",
 };
@@ -27,21 +29,21 @@ const baseRule: Rule = {
 describe("registry _shared", () => {
   it("runRule returns insight when fn produces one", () => {
     const out = runRule(baseRule, { ror: { status: "verified" } });
-    expect(out?.ruleId).toBe("ROR-INS-TEST");
+    expect(out[0]?.ruleId).toBe("ROR-INS-TEST");
   });
 
-  it("runRule returns null when fn returns null", () => {
-    expect(runRule(baseRule, { ror: { status: "missing" } })).toBeNull();
+  it("runRule returns [] when fn returns null", () => {
+    expect(runRule(baseRule, { ror: { status: "missing" } })).toEqual([]);
   });
 
-  it("runRule catches throws and returns null (never blows up the engine)", () => {
+  it("runRule catches throws and returns [] (never blows up the engine)", () => {
     const bad: Rule = {
       ...baseRule,
       fn: () => {
         throw new Error("boom");
       },
     };
-    expect(runRule(bad, {})).toBeNull();
+    expect(runRule(bad, {})).toEqual([]);
   });
 
   it("liveDataPresent returns true when a path resolves to a non-empty value", () => {
@@ -87,5 +89,54 @@ describe("engine", () => {
     const map = groupByPanel(out);
     expect(map.get("plot")?.length).toBe(1);
     expect(map.get("owner")).toBeUndefined();
+  });
+});
+
+describe("runInsights accepts N insights per rule", () => {
+  it("flattens a rule that emits an array of 2 insights", () => {
+    const rule: Rule = {
+      id: "ROR-INS-901",
+      panel: "owner",
+      version: "1.0.0",
+      fn: () => [
+        {
+          panel: "owner",
+          issueLens: "title_chain",
+          evidenceStrength: "document_anchor",
+          source: "bhulekh.ror",
+          severity: "watchout",
+          headline: "Co-owner 1",
+          body: "First co-owner identified.",
+          actionItem: "Verify identity.",
+          ruleId: "ROR-INS-901",
+        },
+        {
+          panel: "owner",
+          issueLens: "title_chain",
+          evidenceStrength: "document_anchor",
+          source: "bhulekh.ror",
+          severity: "watchout",
+          headline: "Co-owner 2",
+          body: "Second co-owner identified.",
+          actionItem: "Verify identity.",
+          ruleId: "ROR-INS-902",
+        },
+      ],
+    };
+    const out = runInsights([rule], {} as any);
+    expect(out).toHaveLength(2);
+    expect(out[0].ruleId).toBe("ROR-INS-901");
+    expect(out[1].ruleId).toBe("ROR-INS-902");
+  });
+
+  it("treats an empty array the same as null (no fire)", () => {
+    const rule: Rule = {
+      id: "ROR-INS-903",
+      panel: "owner",
+      version: "1.0.0",
+      fn: () => [],
+    };
+    const out = runInsights([rule], {} as any);
+    expect(out).toHaveLength(0);
   });
 });
