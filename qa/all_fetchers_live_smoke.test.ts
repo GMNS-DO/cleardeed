@@ -367,3 +367,22 @@ describe.skipIf(process.env.CI === "true")(
     );
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 1.3 — IGR EC V3 (captcha-breaker ONNX) live path
+// Skipped by default. Set IGR_EC_LIVE=1 to exercise the V3 fast-path against
+// the real IGR portal. Requires the ONNX model file in
+// packages/captcha-breaker/onnx/ and a working igrodisha.gov.in session.
+// ─────────────────────────────────────────────────────────────────────────────
+describe.skipIf(process.env.IGR_EC_LIVE !== "1")(
+  "IGR EC V3 (captcha-breaker ONNX) — live smoke",
+  () => {
+    it("runs fetchIgrEcV3 against the real IGR EC portal", async () => {
+      // TODO(task-1.3): wire live test once captcha-breaker ONNX model is
+      // available. Skipped by default; enable with IGR_EC_LIVE=1.
+    });
+    it("V3 envelope maps to IgrEcContract under isSourceFired", async () => {
+      // TODO(task-1.3): assert live fetch maps to contract envelope.
+    });
+  }
+);

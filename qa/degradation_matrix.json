@@ -134,6 +134,21 @@
         "section_id": "section-encumbrance",
         "degradation_tag": "igr_ec_parse_error",
         "consumer_message": "IGR returned malformed EC data — request a certified copy at the SRO"
+      },
+      "igr_ec_v3_onnx_failed": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_v3_onnx_failed",
+        "consumer_message": "V3 captcha-breaker (ONNX) path failed — fell back to V1 manual instructions. To enable automated EC search, train or load the Khordha captcha model in packages/captcha-breaker/onnx/."
+      },
+      "igr_ec_v3_captcha_unsolved": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_v3_captcha_unsolved",
+        "consumer_message": "V3 captcha solver could not crack the IGR captcha after 5 attempts — manual EC retrieval required."
+      },
+      "igr_ec_v3_table_not_found": {
+        "section_id": "section-encumbrance",
+        "degradation_tag": "igr_ec_v3_table_not_found",
+        "consumer_message": "IGR EC V3 search returned a page without a recognisable results table — likely a portal change. Manual EC retrieval required."
       }
     },
     "cersai": {
