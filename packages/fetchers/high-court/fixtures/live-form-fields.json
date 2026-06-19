@@ -1,0 +1,98 @@
+{
+  "hasForm": true,
+  "formAction": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha",
+  "formMethod": "post",
+  "formId": "",
+  "fields": [
+    {
+      "tag": "INPUT",
+      "type": "hidden",
+      "name": "__csrf_magic",
+      "id": "",
+      "value": "sid:30a33c8348638fa33f0cd53f84a5742ba55968d4,17818",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "petres_name",
+      "id": "petres_name",
+      "value": "",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "rgyear",
+      "id": "rgyear",
+      "value": "",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "radio",
+      "name": "f",
+      "id": "radP",
+      "value": "Pending",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "radio",
+      "name": "f",
+      "id": "radD",
+      "value": "Disposed",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "radio",
+      "name": "f",
+      "id": "radB",
+      "value": "Both",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "captcha",
+      "id": "captcha",
+      "value": "",
+      "classes": "captchaClass"
+    },
+    {
+      "tag": "INPUT",
+      "type": "button",
+      "name": "submit1",
+      "id": "",
+      "value": "Go",
+      "classes": "button"
+    },
+    {
+      "tag": "INPUT",
+      "type": "button",
+      "name": "reset",
+      "id": "",
+      "value": "Reset",
+      "classes": "button"
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "txtmsg",
+      "value": "",
+      "classes": ""
+    },
+    {
+      "tag": "INPUT",
+      "type": "text",
+      "name": "",
+      "id": "waitmsg",
+      "value": "Please Wait",
+      "classes": ""
+    }
+  ],
+  "bodyText": "﻿\n\tE-COURTS\nHIGH COURTS OF INDIA\nHigh Court of Orissa\nCase Status : Search by Petitioners/Respondents Name\n* Petitioner/Respondent\nEnter Petitioner or Respondent Name Compulsory Field\n\n\nYear\nPlease Enter Year in 4 digit Compulsory Field\n\n\n \n Pending  Disposed  Both\n\n\nCaptcha\n \nCaptcha  \n*Enter Captcha\n \n\n\n \n     \n\n",
+  "fullHtml": 32491
+}

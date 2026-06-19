@@ -1,0 +1,27 @@
+{
+  "probe": "orissa-high-court-final",
+  "party": "Mohapatra",
+  "ocr": "72WPA",
+  "ocrConfidence": 90,
+  "submit": "form.submit()",
+  "url": "https://hcservices.ecourts.gov.in/ecourtindiaHC/cases/ki_petres.php?state_cd=11&dist_cd=1&court_code=1&stateNm=Odisha",
+  "title": "Case Status : Search by Petitioners/Respondents Name",
+  "errors": {
+    "errSpanVisible": null,
+    "txtmsg": "",
+    "txtmsgTitle": ""
+  },
+  "tableCount": 2,
+  "tables": [
+    {
+      "len": 266,
+      "firstRow": "<tr><td width=\"20%\" align=\"center\"><img src=\"../images/ecourts-logo.png\"></td><td width=\"80%\"><span class=\"head1\">E-COURTS</span><br><span class=\"head2\">High Courts of India</span></td></tr>"
+    },
+    {
+      "len": 19529,
+      "firstRow": "<tr>\n<th scope=\"col\">Sr No</th>\n<th scope=\"col\" width=\"\\&quot;50%\\&quot;\" style=\"\\&quot;text-align:left;\\&quot;\">Case Type/Case Number/Case Year</th>\n<th scope=\"col\" width=\"\\&quot;70%\\&quot;\" style=\"\\"
+    }
+  ],
+  "bodyText": "﻿\n\tE-COURTS\nHIGH COURTS OF INDIA\nHigh Court of Orissa\nCase Status : Search by Petitioners/Respondents Name\n* Petitioner/Respondent\nEnter Petitioner or Respondent Name Compulsory Field\n\n\nYear\nPlease Enter Year in 4 digit Compulsory Field\n\n\n \n Pending  Disposed  Both\n\n\nCaptcha\n \nCaptcha  \n*Enter Captcha\n \n\n\n \n     \n\n",
+  "bodyTextTail": "﻿\n\tE-COURTS\nHIGH COURTS OF INDIA\nHigh Court of Orissa\nCase Status : Search by Petitioners/Respondents Name\n* Petitioner/Respondent\nEnter Petitioner or Respondent Name Compulsory Field\n\n\nYear\nPlease Enter Year in 4 digit Compulsory Field\n\n\n \n Pending  Disposed  Both\n\n\nCaptcha\n \nCaptcha  \n*Enter Captcha\n \n\n\n \n     \n\n"
+}

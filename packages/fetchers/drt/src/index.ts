@@ -11,6 +11,16 @@
 // - case_type dropdown is AJAX-populated after schemaname selection (requires Playwright)
 // - Results in HTML table
 // - DRT main portal drt.gov.in requires login; CIS DRT is the public-facing portal
+//
+// Live validation findings (2026-06-19, fixtures/live-probe-*.json):
+// - The historical page1_advocate.php URL now renders the "MIS Report" admin page (title)
+//   instead of a public search form. The schemaname dropdown is populated but no
+//   case_type cascade fires, and no party-name input is present in the DOM.
+// - The CIS DRT portal now requires authentication (username + password + captcha) for
+//   search functionality. Public party-name search is no longer available at this URL.
+// - Status must remain manual_required until either (a) the portal restores public access,
+//   or (b) ClearDeed obtains authorized access via IT Act-compliant channel.
+// - To re-validate: scripts/probe/drt-live-probe.mjs <partyName>. See fixtures/.
 
 import { createHash } from "node:crypto";
 import { chromium, type Browser, type Page } from "playwright";
@@ -114,6 +124,24 @@ async function setupDRTSearch(page: Page, drtCode: string): Promise<void> {
   const url = `${BASE_URL}/order/page1_advocate.php`;
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.waitForTimeout(800);
+
+  // Live probe (2026-06-19): detect if the portal is now login-gated. The page renders
+  // the "MIS Report" admin page rather than a public search form. We check for the
+  // expected party-name input element BEFORE attempting any submission.
+  const hasPartyInput = await page.evaluate(() => {
+    return (
+      !!document.querySelector('input[name="petitioner respondent"]') ||
+      !!document.querySelector('input[name="party_name"]') ||
+      !!document.querySelector('input[name="free_text"]')
+    );
+  });
+
+  if (!hasPartyInput) {
+    throw new Error(
+      "drt_portal_login_gated: CIS DRT page1_advocate.php now requires authentication; " +
+        "public party-name search form not exposed. See fixtures/live-probe-*.json."
+    );
+  }
 
   // Select DRT/DRAT name — this triggers AJAX to populate case_type
   await page.selectOption("#schemaname", drtCode);
@@ -391,12 +419,28 @@ export async function drtFetch(input: DRTInput): Promise<z.infer<typeof CourtCas
 
     const rawArtifactHash = rawFragments.length > 0 ? sha256(rawFragments.join("\n")) : undefined;
 
+    // Live probe (2026-06-19): detect login-gated portal. setupDRTSearch throws
+    // "drt_portal_login_gated" when the public form is no longer exposed. Surface as
+    // manual_required with a clear statusReason so the report can show "DRT search
+    // requires manual verification" rather than implying a clean zero-case result.
+    const portalLoginGated =
+      portalErrorCount === drtCodes.length &&
+      allAttempts.length === 0;
+
     return {
       source: "drt",
-      status: portalErrorCount > drtCodes.length ? "failed" : allCases.length > 0 ? "success" : "partial",
+      status: portalLoginGated
+        ? "manual_required"
+        : portalErrorCount > drtCodes.length
+        ? "failed"
+        : allCases.length > 0
+        ? "success"
+        : "partial",
       statusReason:
         allCases.length > 0
           ? "cases_found"
+          : portalLoginGated
+          ? "drt_portal_login_gated_live_validated_2026_06_19"
           : portalErrorCount > 0
           ? "portal_error"
           : "no_cases_found",
@@ -417,6 +461,15 @@ export async function drtFetch(input: DRTInput): Promise<z.infer<typeof CourtCas
           status: nameVariants.length > 1 ? "passed" : "skipped",
           raw: { variants: nameVariants },
         },
+        {
+          name: "drt_portal_availability",
+          status: portalLoginGated ? "failed" : "passed",
+          raw: {
+            liveValidatedAt: "2026-06-19",
+            fixturePath: "packages/fetchers/drt/fixtures/live-probe-mohapatra.json",
+            notes: "CIS DRT page1_advocate.php now requires authentication; public form not exposed.",
+          },
+        },
       ],
       data: {
         cases: allCases.map((c) => ({
@@ -433,21 +486,25 @@ export async function drtFetch(input: DRTInput): Promise<z.infer<typeof CourtCas
           partyName,
           nameVariantsTried: nameVariants,
           attempts: allAttempts,
-          negativeResultConfidence:
-            allCases.length === 0
-              ? portalErrorCount > 0
-                ? "unconfirmed"
-                : "medium"
-              : "high",
+          negativeResultConfidence: portalLoginGated
+            ? "unconfirmed"
+            : allCases.length === 0
+            ? portalErrorCount > 0
+              ? "unconfirmed"
+              : "medium"
+            : "high",
         },
       },
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
+    const isLoginGated = errorMessage.startsWith("drt_portal_login_gated");
     return {
       source: "drt",
-      status: "failed",
-      statusReason: "fetch_failed",
+      status: isLoginGated ? "manual_required" : "failed",
+      statusReason: isLoginGated
+        ? "drt_portal_login_gated_live_validated_2026_06_19"
+        : "fetch_failed",
       verification: "manual_required",
       fetchedAt,
       attempts: 1,

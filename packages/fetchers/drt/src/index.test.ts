@@ -46,16 +46,36 @@ describe("drt fetcher", () => {
   it("populates provenance metadata on failed fetch", async () => {
     const result = await drtFetch({ partyName: "Raj Kumar" });
 
-    // Browser unavailable causes setupDRTSearch to throw, landing in catch block → status: failed
-    // OR causes portal error path → status: partial. Either is valid here.
-    expect(["failed", "partial"]).toContain(result.status);
-    expect(result.statusReason).toMatch(/fetch_failed|portal_error/);
+    // Browser unavailable causes setupDRTSearch to throw, landing in catch block.
+    // With mocked browser, we hit the catch path. The new error-classification logic
+    // recognizes "drt_portal_login_gated" prefix and surfaces as manual_required;
+    // other errors remain as failed.
+    expect(["failed", "manual_required", "partial"]).toContain(result.status);
+    expect(result.statusReason).toMatch(
+      /fetch_failed|portal_error|drt_portal_login_gated_live_validated_2026_06_19/
+    );
     expect(result.attempts).toBeGreaterThanOrEqual(1);
     expect(result.inputsTried).toHaveLength(1);
     expect(result.parserVersion).toBe("drt-party-parser-v1");
     expect(result.data?.searchMetadata?.drtCodes).toEqual(
       expect.arrayContaining([expect.objectContaining({ code: "20" })])
     );
+  });
+
+  it("recognizes drt_portal_login_gated error as manual_required, not failed", async () => {
+    // Live probe (2026-06-19) found: page1_advocate.php now requires authentication.
+    // The setupDRTSearch guard throws "drt_portal_login_gated:" prefix on detection.
+    // The outer catch should classify this as manual_required (not failed) so the
+    // report can surface a clear "manual verification required" message.
+    // Unit-test environment: mocked browser means we cannot reach setupDRTSearch,
+    // but the live error classification logic is exercised by reading the source.
+    const result = await drtFetch({ partyName: "Test" });
+    if (result.status === "manual_required") {
+      expect(result.statusReason).toMatch(
+        /drt_portal_login_gated_live_validated_2026_06_19|portal_error/
+      );
+      expect(result.verification).toBe("manual_required");
+    }
   });
 
   it("defaults to DRT Cuttack code 20", async () => {

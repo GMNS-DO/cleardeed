@@ -10,6 +10,18 @@
 // - Form: petres_name (>=3 chars), rgyear (4-digit year), f (Pending/Disposed/Both radio), captcha
 // - Results in HTML table format
 // - e-Courts blocks external requests. Playwright + Tesseract OCR is required.
+//
+// Live validation findings (2026-06-19, fixtures/live-probe-*.json):
+// - Form loads correctly: petres_name, rgyear, captcha_image, captcha input, submit all present.
+// - Submit button onclick handler is "validate()", with a hidden __csrf_magic token.
+// - OCR pipeline: Tesseract v5 resolves captcha at 88-92% confidence across multiple runs.
+// - After OCR + form.submit() with valid-looking captcha, the result page re-renders the
+//   empty form with a 19,529-byte table containing <tbody id="showList1"></tbody>.
+// - Tested with both "Mohapatra" and "Kumar" — same empty tbody returned regardless of input.
+// - Implication: the public party-name search endpoint either no longer returns results
+//   without an authenticated session, or it requires a captcha round-trip in the same
+//   authenticated session that we cannot preserve. Status must remain manual_required.
+// - To re-validate: scripts/probe/hc-final-attempt.mjs <partyName>. See fixtures/.
 
 import { createHash } from "node:crypto";
 import { chromium, type Browser, type Page } from "playwright";
@@ -285,6 +297,11 @@ async function runHCSearchAttempt(input: {
     outcome = "captcha_failed";
   } else if (cases.length > 0) {
     outcome = "cases_found";
+  } else if (/<tbody[^>]*id="showList1"[^>]*>\s*<\/tbody>/i.test(resultHtml)) {
+    // Live probe (2026-06-19) found: result page re-renders the empty form with an
+    // empty <tbody id="showList1"></tbody>. This is the portal's "no data" response
+    // pattern — distinct from captcha rejection. Treat as portal_returned_no_data.
+    outcome = "no_records";
   } else if (resultHtml.length > 200) {
     outcome = "cases_found"; // Non-empty table without "no records" likely has cases
   }
@@ -303,7 +320,12 @@ async function runHCSearchAttempt(input: {
       rawArtifactHash,
       captchaImageHash: captcha.imageHash,
       captchaAttempts: 1,
-      statusReason: outcome === "captcha_failed" ? "captcha_rejected" : undefined,
+      statusReason:
+        outcome === "captcha_failed"
+          ? "captcha_rejected"
+          : outcome === "no_records"
+          ? "hc_portal_returned_empty_tbody"
+          : undefined,
     },
   };
 }
@@ -456,14 +478,24 @@ export async function highCourtFetch(
 
       const rawArtifactHash = rawFragments.length > 0 ? sha256(rawFragments.join("\n")) : undefined;
 
+      // Live probe (2026-06-19) found: HC portal returns empty <tbody id="showList1"></tbody>
+      // for every submission, regardless of party name or captcha correctness. Until the
+      // portal behavior is restored (or we authenticate), no-cases-from-HC is NOT a clean
+      // negative result — it must stay manual_required.
+      const hcPortalReturnsEmptyTbody = variantAttempts.some(
+        (v) => v.searchAttempts.some((a) => a.statusReason === "hc_portal_returned_empty_tbody")
+      );
+
       return {
         source: "high_court",
-        status: allCases.length > 0 ? "success" : "partial",
+        status: allCases.length > 0 ? "success" : "manual_required",
         statusReason:
           allCases.length > 0
             ? "cases_found"
             : captchaFailedCount > 0
             ? "captcha_failed"
+            : hcPortalReturnsEmptyTbody
+            ? "hc_portal_returns_empty_tbody_live_validated_2026_06_19"
             : "no_cases_found",
         verification: allCases.length > 0 ? "verified" : "manual_required",
         fetchedAt,
@@ -481,6 +513,15 @@ export async function highCourtFetch(
             name: "hc_name_variants",
             status: nameVariants.length > 1 ? "passed" : "skipped",
             raw: { variants: nameVariants },
+          },
+          {
+            name: "hc_portal_behavior",
+            status: hcPortalReturnsEmptyTbody ? "failed" : "passed",
+            raw: {
+              liveValidatedAt: "2026-06-19",
+              fixturePath: "packages/fetchers/high-court/fixtures/live-probe-mohapatra.json",
+              notes: "HC public endpoint returns empty results tbody on every submission; cannot confirm zero-cases.",
+            },
           },
         ],
         data: {
