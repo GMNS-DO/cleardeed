@@ -52,6 +52,8 @@ import { igrDailyBulletinFetch } from "@cleardeed/fetcher-igr-daily-bulletin";
 import { publicDashboardFetch } from "@cleardeed/fetcher-public-dashboard";
 import { govtFeeFetch } from "@cleardeed/fetcher-govt-fee";
 import { igrCertifiedCopyFetch } from "@cleardeed/fetcher-igr-certified-copy";
+// T-041 — Bhuvan flood hazard WMS (planning-only license).
+import { fetch as bhuvanFloodFetch } from "@cleardeed/fetcher-bhuvan-flood";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import {
   isSourceFired,
@@ -464,6 +466,7 @@ export interface V11PipelineOutput {
     igrEc?: string;
     cersai?: string;
     rccms?: string;
+    bhuvanFlood?: string;
   };
   /** Fire map for every fetched source (Task 0.1, finding 3 contract).
    *  Assembled by `buildFireMap(sources)` so downstream tasks can read the
@@ -563,6 +566,27 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   } catch (err) {
     console.warn("[pipeline/v11] Bhunaksha fetch error:", err instanceof Error ? err.message : err);
     bhunakshaSummary = "fetch_error";
+  }
+
+  // ── Step 1b.2: Bhuvan flood hazard WMS (T-041) — planning-only data.
+  // Parallel to Bhunaksha. Skipped when village GPS is unresolved.
+  // NRSC Bhuvan data is published under planning-only license — formal
+  // licensing is required before this output appears in a paid report.
+  // Until then, the result is included in the report, but consumer
+  // copy frames it as "planning-only, verify with NRSC for legal use."
+  let bhuvanFloodResult: Awaited<ReturnType<typeof bhuvanFloodFetch>> | null = null;
+  if (villageGpsForDiagram) {
+    try {
+      bhuvanFloodResult = await bhuvanFloodFetch({
+        lat: villageGpsForDiagram.lat,
+        lon: villageGpsForDiagram.lon,
+      });
+    } catch (err) {
+      console.warn(
+        "[pipeline/v11] Bhuvan flood fetch error:",
+        err instanceof Error ? err.message : err
+      );
+    }
   }
 
   // ── Step 1c: Plot diagram (Task 35) — WFS compose + SVG render + upload ─
@@ -922,6 +946,8 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     ...buildSourceResult("public-dashboard", publicDashboardResult),
     ...buildSourceResult("govt-fee", govtFeeResult),
     ...buildSourceResult("igr-certified-copy", igrCertifiedCopyResult),
+    // T-041 — Bhuvan flood hazard WMS (planning-only license).
+    ...buildSourceResult("bhuvan-flood", bhuvanFloodResult),
   ];
 
   // ── Step 4b: EncumbranceReasoner (A7) ───────────────────────────────────────
@@ -1190,6 +1216,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       igrEc: igrEcResult?.status ?? "not_run",
       cersai: cersaiResult?.status ?? "not_run",
       rccms: rccmsResult?.status ?? "not_run",
+      bhuvanFlood: bhuvanFloodResult?.status ?? "not_run",
     },
     // Task 0.1 finding 3 contract — assemble the per-source fire map and
     // expose it on the pipeline output so downstream tasks can read the

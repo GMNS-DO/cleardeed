@@ -16,7 +16,9 @@ import { encumbranceRules } from "./registry/encumbrance";
 import { deedsRules } from "./registry/deeds";
 import { courtRules } from "./registry/court";
 import { financialRules } from "./registry/financial";
-import { completenessRules } from "./registry/completeness";
+import { completenessRules, plotDiagramRule } from "./registry/completeness";
+// T-041 — Bhuvan flood hazard WMS (planning-only license).
+import { bhuvanFloodRules } from "./bhuvan-flood/flood";
 
 import { chainRecursiveRules } from "./recursive/chain-recursive";
 import { neighboursRecursiveRules } from "./recursive/neighbours-recursive";
@@ -37,6 +39,8 @@ export const ALL_RULES: Rule[] = [
   ...courtRules,
   ...financialRules,
   ...completenessRules,
+  plotDiagramRule,
+  ...bhuvanFloodRules,
   ...chainRecursiveRules,
   ...neighboursRecursiveRules,
   ...zoningRules,

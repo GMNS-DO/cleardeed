@@ -291,6 +291,8 @@ export const ConsumerReportGenInputSchema = z.object({
   encumbranceReasoner: z.any().optional(),
   regulatoryScreener: z.any().optional(),
   larrRiskAssessment: z.any().optional(),
+  // T-041 — Bhuvan flood hazard data (planning-only license).
+  bhuvanFloodData: z.any().optional(),
   validationFindings: z.array(z.any()).optional().default([]),
   sourceStatus: z.record(z.string()).optional().default({}),
   sourceDetails: z.record(z.any()).optional().default({}),
@@ -311,6 +313,21 @@ export const ConsumerReportGenInputSchema = z.object({
   // Bhunaksha Plot Report (per-plot, plotreportOR.jsp) — independent ROR
   // cross-check. Contains cadastral map image (base64), owner block, khatiyan.
   bhunakshaPlotReport: z.any().optional().nullable(),
+  // Phase 8 / Task 36 — Plot Diagram (SVG) rendered above Land Classification.
+  // The orchestrator (Task 35) stores the storage URL on the report record.
+  // `status` is the WFS compose step result, `url` is the source of truth for
+  // rendering, `cacheHit` indicates a 7-day cache hit, `reason` carries the
+  // failure reason when status === "failed".
+  plotDiagram: z
+    .object({
+      status: z.enum(["success", "partial", "failed", "not_attempted"]),
+      url: z.string().url().nullish(),
+      reason: z.string().nullish(),
+      cacheHit: z.boolean().optional(),
+      rendered: z.boolean().optional(),
+    })
+    .nullish()
+    .optional(),
 });
 
 export type ConsumerReportGenInputData = z.infer<typeof ConsumerReportGenInputSchema>;
@@ -336,6 +353,8 @@ export function mapToReportInput(
   const cersai = sources.find((s) => s.source === "cersai");
   const larr = sources.find((s) => s.source === ("larr" as string));
   const bhunakshaPlotReport = sources.find((s) => s.source === "bhunaksha_plot_report");
+  // T-041 — Bhuvan flood hazard WMS (planning-only license).
+  const bhuvanFlood = sources.find((s) => s.source === "bhuvan-flood");
 
   const nominatimData = nominatim?.data as {
     displayName?: string;
@@ -561,6 +580,8 @@ export function mapToReportInput(
     encumbranceReasoner: tier2.encumbranceReasoner ?? null,
     regulatoryScreener: normalizeRegulatoryScreener(tier2.regulatoryScreener),
     larrRiskAssessment: larr?.data ?? null,
+    // T-041 — Bhuvan flood hazard data (planning-only).
+    bhuvanFloodData: bhuvanFlood?.data ?? null,
     validationFindings: validationFindings ?? [],
     sourceStatus: {
       nominatim: nominatim?.status ?? "not_run",
@@ -572,6 +593,7 @@ export function mapToReportInput(
       rccms: normalizeRccmsStatus(rccms),
       "igr-ec": igrEc?.status ?? "not_run",
       cersai: cersai?.status ?? "not_run",
+      "bhuvan-flood": bhuvanFlood?.status ?? "not_run",
     },
     sourceDetails: Object.fromEntries(
       sources.map((source) => [
