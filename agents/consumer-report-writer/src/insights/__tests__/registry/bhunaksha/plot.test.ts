@@ -16,8 +16,8 @@ const verifiedBhunaksha = {
 };
 
 describe("bhunaksha plot rules", () => {
-  it("exports 4 rules", () => {
-    expect(bhunakshaPlotRules.length).toBe(4);
+  it("exports 5 rules", () => {
+    expect(bhunakshaPlotRules.length).toBe(5);
   });
 
   it("fires redFlag when Bhunaksha area differs from RoR area by > 5%", () => {
@@ -80,5 +80,59 @@ describe("bhunaksha plot rules", () => {
     expect(out.find((i) => i.ruleId === "ROR-INS-072")).toBeUndefined();
     expect(out.find((i) => i.ruleId === "ROR-INS-071")).toBeUndefined();
     expect(out.find((i) => i.ruleId === "ROR-INS-073")).toBeUndefined();
+    expect(out.find((i) => i.ruleId === "ROR-INS-094")).toBeUndefined();
+  });
+
+  // Phase 8 / Task 36 — ROR-INS-094 positive signal
+  it("fires positive signal (ROR-INS-094) when plotDiagram.status === 'success' with a url", () => {
+    const out = runInsights(bhunakshaPlotRules, {
+      bhunaksha: verifiedBhunaksha,
+      plotDiagram: {
+        status: "success",
+        url: "https://example.supabase.co/storage/v1/object/sign/plot-diagrams/abc123.svg",
+        cacheHit: false,
+      },
+    });
+    const pos = out.find((i) => i.severity === "positive" && i.ruleId === "ROR-INS-094");
+    expect(pos).toBeDefined();
+    expect(pos!.panel).toBe("plot");
+    expect(pos!.issueLens).toBe("revenue_record");
+    expect(pos!.evidenceStrength).toBe("selected_plot_anchor");
+    expect(pos!.headline.toLowerCase()).toContain("plot diagram");
+  });
+
+  it("fires ROR-INS-094 also when plotDiagram.status === 'partial' (still has a url)", () => {
+    const out = runInsights(bhunakshaPlotRules, {
+      bhunaksha: verifiedBhunaksha,
+      plotDiagram: {
+        status: "partial",
+        url: "https://example.supabase.co/storage/v1/object/sign/plot-diagrams/abc123.svg",
+      },
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-094")).toBeDefined();
+  });
+
+  it("does NOT fire ROR-INS-094 when plotDiagram.status === 'failed'", () => {
+    const out = runInsights(bhunakshaPlotRules, {
+      bhunaksha: verifiedBhunaksha,
+      plotDiagram: { status: "failed", url: null, reason: "WFS compose returned empty polygon set" },
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-094")).toBeUndefined();
+  });
+
+  it("does NOT fire ROR-INS-094 when plotDiagram is null or absent", () => {
+    const out = runInsights(bhunakshaPlotRules, {
+      bhunaksha: verifiedBhunaksha,
+      plotDiagram: undefined,
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-094")).toBeUndefined();
+  });
+
+  it("does NOT fire ROR-INS-094 when plotDiagram.url is empty string", () => {
+    const out = runInsights(bhunakshaPlotRules, {
+      bhunaksha: verifiedBhunaksha,
+      plotDiagram: { status: "success", url: "" },
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-094")).toBeUndefined();
   });
 });

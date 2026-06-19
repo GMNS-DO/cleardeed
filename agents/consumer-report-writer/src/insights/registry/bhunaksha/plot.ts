@@ -114,9 +114,36 @@ function bhunakshaMissingSourceWatchout(input: RuleInput): Insight[] | null {
   )];
 }
 
+// Phase 8 / Task 36 — ROR-INS-094
+// Positive signal: the WFS compose step produced a plot diagram (the
+// visual artifact is available for the lawyer to inspect). The diagram
+// is a `selected_plot_anchor` evidence type because it is composed from
+// the target plot's own polygon, not from a derived field. It is
+// informational only and never gates other report content above this
+// section.
+function bhunakshaPlotDiagramRenderedPositive(input: RuleInput): Insight[] | null {
+  const pd = (input as { plotDiagram?: { status?: string; url?: string | null } } | undefined)
+    ?.plotDiagram;
+  if (!pd) return null;
+  if (pd.status !== "success" && pd.status !== "partial") return null;
+  if (typeof pd.url !== "string" || pd.url.length === 0) return null;
+  return [{
+    panel: "plot",
+    issueLens: "revenue_record",
+    evidenceStrength: "selected_plot_anchor",
+    source: "bhunaksha:wfs:plot-diagram",
+    severity: "positive",
+    headline: "Plot diagram rendered",
+    body: "A visual map of the target plot and its neighbours was generated from the Bhunaksha WFS compose step and is attached to this report. Use it to confirm the boundary, road access, and which neighbours share a border with the plot.",
+    actionItem: "Open the Plot Diagram section in the report to view the SVG. The diagram is a visual aid, not a substitute for the lawyer's own field verification.",
+    ruleId: "ROR-INS-094",
+  }];
+}
+
 export const bhunakshaPlotRules: Rule[] = [
   { id: "ROR-INS-070", panel: "plot", fn: bhunakshaAreaMismatchRedFlag, version: v },
   { id: "ROR-INS-071", panel: "plot", fn: bhunakshaNoDataParserWatchout, version: v },
   { id: "ROR-INS-072", panel: "plot", fn: bhunakshaPlotNumberMismatchWatchout, version: v },
   { id: "ROR-INS-073", panel: "plot", fn: bhunakshaMissingSourceWatchout, version: v },
+  { id: "ROR-INS-094", panel: "plot", fn: bhunakshaPlotDiagramRenderedPositive, version: v },
 ];

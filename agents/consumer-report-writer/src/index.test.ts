@@ -1778,4 +1778,87 @@ describe("A10 ConsumerReportWriter", () => {
       expect(Array.isArray(items)).toBe(true);
     });
   });
+
+  // Task 36 — Plot Diagram section + ROR-INS-170 watchout.
+  describe("T-036 Plot Diagram section", () => {
+    it("renders <img> with the storage URL when plotDiagram.status === 'success'", () => {
+      const { html } = generateConsumerReport({
+        ...CONSUMER_REPORT_FIXTURE,
+        plotDiagram: {
+          status: "success",
+          url: "https://example.supabase.co/storage/v1/object/sign/plot-diagrams/abc123.svg",
+          cacheHit: false,
+        },
+      } as any);
+      expect(html).toMatch(/<img[^>]+src="https:\/\/example\.supabase\.co[^"]+\.svg"/);
+      expect(html).toMatch(/Plot Diagram/i);
+      expect(html).toContain("section-plot-diagram");
+    });
+
+    it("renders 'could not be generated' copy when plotDiagram.status === 'failed'", () => {
+      const { html } = generateConsumerReport({
+        ...CONSUMER_REPORT_FIXTURE,
+        plotDiagram: {
+          status: "failed",
+          url: null,
+          reason: "WFS compose step returned empty polygon set",
+        },
+      } as any);
+      expect(html).toMatch(/Plot diagram unavailable — see Bhunaksha/i);
+      expect(html).toContain("WFS compose step returned empty polygon set");
+      // Failed diagram must never show an <img> tag.
+      expect(html).not.toMatch(/<img[^>]+alt="Plot diagram showing target plot/);
+    });
+
+    it("renders 'not yet generated' copy when plotDiagram is absent entirely", () => {
+      const { html } = generateConsumerReport({
+        ...CONSUMER_REPORT_FIXTURE,
+        plotDiagram: undefined,
+      } as any);
+      expect(html).toMatch(/Plot diagram not yet generated for this report/i);
+      expect(html).not.toMatch(/<img[^>]+alt="Plot diagram showing target plot/);
+    });
+
+    it("renders alt text that includes target plot number and village (a11y)", () => {
+      const { html } = generateConsumerReport({
+        ...CONSUMER_REPORT_FIXTURE,
+        plotDiagram: {
+          status: "success",
+          url: "https://example.supabase.co/storage/v1/object/sign/plot-diagrams/abc123.svg",
+        },
+      } as any);
+      expect(html).toMatch(/alt="Plot diagram showing plot [^"]+ in [^"]+ and 4-8 neighbour plots"/);
+    });
+
+    it("wraps the diagram in a collapsible <details> that defaults to closed", () => {
+      const { html } = generateConsumerReport({
+        ...CONSUMER_REPORT_FIXTURE,
+        plotDiagram: {
+          status: "success",
+          url: "https://example.supabase.co/storage/v1/object/sign/plot-diagrams/abc123.svg",
+        },
+      } as any);
+      // The summary must exist (so the section can be opened) and the
+      // <details> must NOT carry an `open` attribute (default closed).
+      const diagramIdx = html.indexOf("section-plot-diagram");
+      expect(diagramIdx).toBeGreaterThanOrEqual(0);
+      const slice = html.slice(diagramIdx, diagramIdx + 4000);
+      expect(slice).toMatch(/<details[^>]*>\s*<summary>Show plot diagram/i);
+      // No `open` attribute on the diagram <details>.
+      expect(slice).not.toMatch(/<details[^>]*open[^>]*>\s*<summary>Show plot diagram/i);
+    });
+
+    it("failed branch includes the canonical Bhunaksha fallback link", () => {
+      const { html } = generateConsumerReport({
+        ...CONSUMER_REPORT_FIXTURE,
+        plotDiagram: {
+          status: "failed",
+          url: null,
+          reason: "WFS compose step returned empty polygon set",
+        },
+      } as any);
+      expect(html).toMatch(/Plot diagram unavailable — see Bhunaksha/i);
+      expect(html).toContain("bhunaksha.ori.nic.in/plotreportOR.jsp");
+    });
+  });
 });
