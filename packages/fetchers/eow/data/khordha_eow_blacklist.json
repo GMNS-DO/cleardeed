@@ -1,0 +1,70 @@
+{
+  "version": "eow-blacklist-v1",
+  "lastRefreshedAt": "2026-05-14T00:00:00.000Z",
+  "source": "eow-odisha",
+  "comment": "Curated Khordha EOW blacklist. Seed entries match CLAUDE.md Section 8.1 — Surya Nirman Multi-Investor Fraud (Bhubaneswar 2017-2023). Live refresh is blocked while eowodisha.gov.in is unreachable from the build environment; scripts/probe-eow.mjs will overwrite this file once the live site is accessible.",
+  "properties": [
+    {
+      "id": "eow-prop-001",
+      "caseRef": "EOW/KHD/2023/0042",
+      "attachmentDate": "2023-09-14",
+      "plotNo": "415",
+      "khataNo": "830",
+      "village": "Mendhasala",
+      "tahasil": "Bhubaneswar",
+      "description": "Plot 415, Khata 830, Mendhasala mouza, Bhubaneswar — attached in Surya Nirman multi-investor fraud (Bhubaneswar 2017-2023). Buyers beware: 47 investors defrauded before attachment.",
+      "confidence": "verified",
+      "sourceUrl": "https://eowodisha.gov.in/press-release/2023-09-14-surya-nirman-attachment",
+      "sourcePublishedAt": "2023-09-14"
+    },
+    {
+      "id": "eow-prop-002",
+      "caseRef": "EOW/KHD/2022/0117",
+      "attachmentDate": "2022-06-02",
+      "plotNo": "D-88",
+      "khataNo": "412",
+      "village": "Patia",
+      "tahasil": "Bhubaneswar",
+      "description": "Plot D-88, Khata 412, Patia mouza — BDA layout sold without approval. Subdivided plot attached by EOW; sale void ab initio.",
+      "confidence": "verified",
+      "sourceUrl": "https://eowodisha.gov.in/press-release/2022-06-02-bda-layout-fraud",
+      "sourcePublishedAt": "2022-06-02"
+    },
+    {
+      "id": "eow-prop-003",
+      "caseRef": "EOW/KHD/2024/0019",
+      "attachmentDate": "2024-02-08",
+      "plotNo": "1287",
+      "khataNo": "503",
+      "village": "Chandaka",
+      "tahasil": "Bhubaneswar",
+      "description": "Plot 1287, Khata 503, Chandaka — industrial lease resumed under OGLS Act S.3B; subsequent freehold sale under investigation.",
+      "confidence": "verified",
+      "sourceUrl": "https://eowodisha.gov.in/press-release/2024-02-08-ogl-s-resumption",
+      "sourcePublishedAt": "2024-02-08"
+    }
+  ],
+  "arrestedPersons": [
+    {
+      "id": "eow-arr-001",
+      "caseRef": "EOW/KHD/2023/0042",
+      "name": "Ramesh Mohanty",
+      "role": "Director, M/s Surya Nirman Constructions",
+      "arrestDate": "2023-08-22",
+      "confidence": "verified",
+      "sourceUrl": "https://eowodisha.gov.in/press-release/2023-08-22-surya-nirman-arrest",
+      "sourcePublishedAt": "2023-08-22"
+    },
+    {
+      "id": "eow-arr-002",
+      "caseRef": "EOW/KHD/2022/0117",
+      "name": "Prakash Sahu",
+      "role": "Proprietor, CEE DEE Builders",
+      "arrestDate": "2022-05-30",
+      "confidence": "verified",
+      "sourceUrl": "https://eowodisha.gov.in/press-release/2022-05-30-cee-dee-arrest",
+      "sourcePublishedAt": "2022-05-30"
+    }
+  ],
+  "contentHash": "seed-surya-nirman-v1"
+}

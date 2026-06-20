@@ -1,0 +1,20 @@
+{
+  "name": "@cleardeed/fetcher-eow",
+  "version": "0.1.0",
+  "description": "EOW Odisha Khordha blacklist fetcher (Surya Nirman fraud detection, T-049)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "probe": "node scripts/probe-eow.mjs"
+  },
+  "dependencies": {
+    "@cleardeed/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "vitest": "^4.0.0"
+  }
+}
