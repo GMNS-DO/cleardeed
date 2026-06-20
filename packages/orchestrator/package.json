@@ -16,7 +16,8 @@
     "@cleardeed/fetcher-high-court": "workspace:*",
     "@cleardeed/fetcher-drt": "workspace:*",
     "@cleardeed/fetcher-larr": "workspace:*",
-    "@cleardeed/fetcher-civic-dues": "workspace:*"
+    "@cleardeed/fetcher-civic-dues": "workspace:*",
+    "@cleardeed/fetcher-eow": "workspace:*"
   },
   "scripts": {
     "test": "vitest run"

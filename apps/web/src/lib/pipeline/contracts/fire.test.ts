@@ -31,8 +31,8 @@ describe("isSourceFired — public surface", () => {
     expect(typeof isSourceFired).toBe("function");
   });
 
-  it("exposes 21 source ids", () => {
-    expect(ALL_SOURCE_IDS.length).toBe(21);
+  it("exposes 23 source ids", () => {
+    expect(ALL_SOURCE_IDS.length).toBe(23);
     const set = new Set<string>(ALL_SOURCE_IDS);
     for (const id of [
       "bhulekh",
@@ -56,6 +56,7 @@ describe("isSourceFired — public surface", () => {
       "igr-sro",
       "larr",
       "bhunaksha-plot-report",
+      "eow",
     ]) {
       expect(set.has(id)).toBe(true);
     }
@@ -286,16 +287,16 @@ describe("isSourceFired — FireEnvelope discriminant is exhaustive", () => {
     expectTypeOf<Extract<FireEnvelope, { source: "rera" }>>().toHaveProperty("registrationNo");
   });
 
-  it("SourceId union has 21 members", () => {
-    type _AssertLength21 = SourceId extends
+  it("SourceId union has 22 members", () => {
+    type _AssertLength22 = SourceId extends
       | "bhulekh" | "ecourts" | "rccms" | "igr-ec" | "rera" | "cersai"
       | "high-court" | "drt" | "bhunaksha" | "nominatim" | "bda-zoning"
       | "circle-rate" | "stamp-duty" | "igr-bmv" | "igr-daily-bulletin"
       | "public-dashboard" | "govt-fee" | "igr-certified-copy"
-      | "igr-sro" | "larr" | "bhunaksha-plot-report"
+      | "igr-sro" | "larr" | "bhunaksha-plot-report" | "bhuvan-flood"
       ? true
       : false;
-    const ok: _AssertLength21 = true;
+    const ok: _AssertLength22 = true;
     expect(ok).toBe(true);
   });
 });

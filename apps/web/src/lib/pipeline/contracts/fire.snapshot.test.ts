@@ -103,6 +103,18 @@ const firedPayload: Record<SourceId, unknown> = {
   },
   larr: { notificationId: null, notificationDate: null },
   "bhunaksha-plot-report": { plotNo: "128" },
+  eow: {
+    matches: [],
+    propertyCount: 0,
+    arrestedPersonCount: 0,
+    blacklistLastRefreshedAt: "2026-05-01",
+  },
+  "bhuvan-flood": {
+    zone: null,
+    floodFrequency: null,
+    coordinates: { lat: 20.272688, lng: 85.701271 },
+    assessedAt: "2026-05-01T00:00:00Z",
+  },
 };
 
 describe("fire envelope shape — per-source snapshot canaries", () => {

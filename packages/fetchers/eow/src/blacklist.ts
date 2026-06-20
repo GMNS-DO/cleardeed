@@ -27,7 +27,7 @@ import { createHash } from "node:crypto";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export const EOW_SOURCE = "eow-odisha";
+export const EOW_SOURCE = "eow";
 export const PARSER_VERSION = "eow-blacklist-v1";
 
 /**

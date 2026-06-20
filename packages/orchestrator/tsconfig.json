@@ -15,7 +15,8 @@
       "@cleardeed/fetcher-nominatim": ["../fetchers/nominatim/src/index.ts"],
       "@cleardeed/fetcher-bhunaksha": ["../fetchers/bhunaksha/src/index.ts"],
       "@cleardeed/fetcher-ecourts": ["../fetchers/ecourts/src/index.ts"],
-      "@cleardeed/fetcher-bhulekh": ["../fetchers/bhulekh/src/index.ts"]
+      "@cleardeed/fetcher-bhulekh": ["../fetchers/bhulekh/src/index.ts"],
+      "@cleardeed/fetcher-eow": ["../fetchers/eow/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.json"],

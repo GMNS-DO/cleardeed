@@ -293,6 +293,10 @@ export const ConsumerReportGenInputSchema = z.object({
   larrRiskAssessment: z.any().optional(),
   // T-041 — Bhuvan flood hazard data (planning-only license).
   bhuvanFloodData: z.any().optional(),
+  // T-049 — EOW Khordha blacklist match payload. The orchestrator
+  // runs `matchBlacklist()` from @cleardeed/fetcher-eow and the result
+  // is forwarded here for ROR-INS-210 / ROR-INS-211.
+  eowBlacklist: z.any().optional(),
   validationFindings: z.array(z.any()).optional().default([]),
   sourceStatus: z.record(z.string()).optional().default({}),
   sourceDetails: z.record(z.any()).optional().default({}),
@@ -582,6 +586,9 @@ export function mapToReportInput(
     larrRiskAssessment: larr?.data ?? null,
     // T-041 — Bhuvan flood hazard data (planning-only).
     bhuvanFloodData: bhuvanFlood?.data ?? null,
+    // T-049 — EOW Khordha blacklist match payload. Forwarded as-is;
+    // ROR-INS-210 / ROR-INS-211 read from `input.eowBlacklist.data`.
+    eowBlacklist: sources.find((s) => s.source === ("eow" as string))?.data ?? null,
     validationFindings: validationFindings ?? [],
     sourceStatus: {
       nominatim: nominatim?.status ?? "not_run",
@@ -594,6 +601,10 @@ export function mapToReportInput(
       "igr-ec": igrEc?.status ?? "not_run",
       cersai: cersai?.status ?? "not_run",
       "bhuvan-flood": bhuvanFlood?.status ?? "not_run",
+      // T-049 — EOW Khordha blacklist fetcher status (read-only
+      // mirror; the eowRules in the registry consult input.eowBlacklist
+      // for actual matches, not the source status string).
+      eow: sources.find((s) => s.source === ("eow" as string))?.status ?? "not_run",
     },
     sourceDetails: Object.fromEntries(
       sources.map((source) => [

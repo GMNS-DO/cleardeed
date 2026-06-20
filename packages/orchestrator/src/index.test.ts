@@ -142,9 +142,10 @@ describe("orchestrator — V1.1 Bhulekh-only", () => {
         villageCode: expect.any(String),
       })
     );
-    expect(output.sources).toHaveLength(1);
+    expect(output.sources).toHaveLength(2);
     expect(output.sources[0].source).toBe("bhulekh");
     expect(output.sources[0].status).toBe("success");
+    expect(output.sources[1].source).toBe("eow");
   });
 
   test("runReport returns bhulekh success with tenants in source array", async () => {
@@ -161,7 +162,7 @@ describe("orchestrator — V1.1 Bhulekh-only", () => {
       identifierLabel: "128",
     });
 
-    expect(output.sources).toHaveLength(1);
+    expect(output.sources).toHaveLength(2);
     expect(output.sources[0].source).toBe("bhulekh");
     expect(output.sources[0].status).toBe("success");
     const data = (output.sources[0] as SourceResult & { data?: Record<string, unknown> }).data;
@@ -183,7 +184,7 @@ describe("orchestrator — V1.1 Bhulekh-only", () => {
       identifierLabel: "500",
     });
 
-    expect(output.sources).toHaveLength(1);
+    expect(output.sources).toHaveLength(2);
     expect(output.sources[0].source).toBe("bhulekh");
     expect(output.sources[0].status).toBe("failed");
     expect(output.sources[0].statusReason).toContain("Village dropdown empty");
@@ -209,7 +210,7 @@ describe("orchestrator — V1.1 Bhulekh-only", () => {
       identifierLabel: "abc",
     });
 
-    expect(output.sources).toHaveLength(1);
+    expect(output.sources).toHaveLength(2);
     expect(output.sources[0].source).toBe("bhulekh");
     expect(output.sources[0].status).toBe("failed");
   });
@@ -248,8 +249,9 @@ describe("orchestrator — V1.1 Bhulekh-only", () => {
       fatherHusbandName: "Shyam Anabadi",
     });
 
-    expect(output.sources).toHaveLength(1);
+    expect(output.sources).toHaveLength(2);
     expect(output.sources[0].status).toBe("success");
+    expect(output.sources[1].source).toBe("eow");
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { completenessRules } from "../../../registry/registry/completeness";
+import { completenessRules, plotDiagramRule } from "../../../registry/registry/completeness";
 import { runInsights } from "../../../engine";
 
 describe("completeness rules", () => {
@@ -74,5 +74,47 @@ describe("completeness rules", () => {
       eowBlacklistAvailable: true,
     });
     expect(out.find((i) => i.ruleId === "ROR-INS-143")).toBeUndefined();
+  });
+
+  // ROR-INS-170 (Phase 8 / Task 36) — plot diagram missing watchout.
+  // Lives in its own exported `plotDiagramRule` so `completenessRules` stays at 4.
+  describe("ROR-INS-170 plot diagram missing", () => {
+    it("exports the rule with id ROR-INS-170", () => {
+      expect(plotDiagramRule.id).toBe("ROR-INS-170");
+    });
+
+    it("fires watchout (never redFlag) when bhunaksha is verified but plotDiagram is absent", () => {
+      const out = runInsights([plotDiagramRule], {
+        sourceStatuses: [{ source: "bhunaksha", status: "verified" }],
+        // plotDiagram absent entirely (legacy report)
+      });
+      expect(out.length).toBe(1);
+      expect(out[0].ruleId).toBe("ROR-INS-170");
+      expect(out[0].severity).toBe("watchout");
+      expect(out[0].issueLens).toBe("parser_source_quality");
+    });
+
+    it("stays quiet when plotDiagram is present and successful", () => {
+      const out = runInsights([plotDiagramRule], {
+        sourceStatuses: [{ source: "bhunaksha", status: "verified" }],
+        plotDiagram: { status: "success", url: "https://example.supabase.co/diagram.svg" },
+      });
+      expect(out.length).toBe(0);
+    });
+
+    it("stays quiet when plotDiagram is present but failed (section handles copy)", () => {
+      const out = runInsights([plotDiagramRule], {
+        sourceStatuses: [{ source: "bhunaksha", status: "verified" }],
+        plotDiagram: { status: "failed", url: null, reason: "WFS compose failed" },
+      });
+      expect(out.length).toBe(0);
+    });
+
+    it("stays quiet when bhunaksha is not verified (no plot context to render)", () => {
+      const out = runInsights([plotDiagramRule], {
+        sourceStatuses: [{ source: "bhunaksha", status: "partial" }],
+      });
+      expect(out.length).toBe(0);
+    });
   });
 });

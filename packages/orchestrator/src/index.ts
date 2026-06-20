@@ -21,6 +21,7 @@
 
 import type { SourceResult } from "@cleardeed/schema";
 import { fetch as bhulekhFetch } from "@cleardeed/fetcher-bhulekh";
+import { matchBlacklist as eowMatchBlacklist } from "@cleardeed/fetcher-eow";
 
 // Re-export schema types for consumers
 export type { SourceResult } from "@cleardeed/schema";
@@ -123,6 +124,27 @@ async function runAllFetchers(
       })
     );
     recordResult(bhulekhResult);
+
+    // T-049 — EOW Khordha blacklist cross-reference. Runs synchronously
+    // against the static khordha_eow_blacklist.json (no network I/O).
+    // Plot/khata/owner are sourced from the Bhulekh result when available;
+    // when Bhulekh fails, the input-level claimedOwnerName + identifierValue
+    // are passed so the cross-reference still has something to query.
+    const bhulekhData = (bhulekhResult.data ?? {}) as Record<string, unknown>;
+    const bhulekhTenants = Array.isArray(bhulekhData.tenants)
+      ? (bhulekhData.tenants as Array<Record<string, unknown>>)
+      : [];
+    const firstTenant = bhulekhTenants[0] ?? {};
+    const eowQuery = {
+      plotNo: String(firstTenant.plotNo ?? bhulekhData.plotNo ?? identifierVal ?? "").trim(),
+      khataNo: String(firstTenant.khataNo ?? bhulekhData.khatiyanNumber ?? "").trim() || undefined,
+      village: String(bhulekhData.village ?? input.village ?? "").trim() || undefined,
+      ownerName: String(
+        firstTenant.tenantName ?? input.claimedOwnerName ?? ""
+      ).trim() || "unknown",
+    };
+    const eowResult = runEowSource(eowQuery);
+    recordResult(eowResult);
     return Array.from(completedSources.values());
   }
 
@@ -160,6 +182,48 @@ function failedResult(source: string, reason: string): SourceResult {
     fetchedAt: new Date().toISOString(),
     error: reason,
   } as unknown as SourceResult;
+}
+
+/**
+ * T-049 — EOW Khordha blacklist cross-reference. Synchronous query
+ * against the static khordha_eow_blacklist.json (no network I/O, no
+ * timeout pressure). Surfaces plot/khata/owner matches as a SourceResult
+ * so the A10 mapper can feed `eowBlacklist` to ROR-INS-210 and
+ * ROR-INS-211.
+ *
+ * The function never throws: a missing curated blacklist returns a
+ * `partial` result with a `statusReason`; a match returns `success`
+ * with the full `EOWMatchResult` payload on `data`.
+ */
+function runEowSource(query: {
+  plotNo: string;
+  khataNo?: string;
+  village?: string;
+  ownerName: string;
+}): SourceResult {
+  const fetchedAt = new Date().toISOString();
+  try {
+    const result = eowMatchBlacklist(query);
+    return {
+      source: "eow",
+      status: result.status,
+      statusReason: result.statusReason,
+      verification: result.verification,
+      fetchedAt,
+      parserVersion: result.parserVersion,
+      data: result.data as unknown as Record<string, unknown>,
+    } as unknown as SourceResult;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      source: "eow",
+      status: "failed",
+      statusReason: `EOW query failed: ${msg}`,
+      verification: "manual_required",
+      fetchedAt,
+      error: msg,
+    } as unknown as SourceResult;
+  }
 }
 
 async function runFetcher(

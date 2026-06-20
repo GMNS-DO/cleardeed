@@ -114,9 +114,61 @@ function completenessEowBlacklistWatchout(input: RuleInput): Insight[] | null {
   ];
 }
 
+function completenessPlotDiagramMissingWatchout(input: RuleInput): Insight[] | null {
+  // Phase 8 / Task 36 — fire a watchout (never a redFlag) when the pipeline
+  // had a target polygon to render but produced no plot diagram. We only
+  // emit this on a non-trivial report: the geo source must have succeeded
+  // (we have a real plot context) and the diagram must be missing
+  // (absent, null, or explicitly not_attempted with no URL).
+  //
+  // Rationale: the plot diagram is a strong cross-check on the target
+  // plot's boundaries and neighbours. If the pipeline ran the WFS compose
+  // step and still came back empty, the user should know to ask the
+  // lawyer to manually verify the plot footprint on Bhunaksha. We do
+  // NOT fire on `failed` (the section itself shows the failed copy).
+  const statuses = getStatuses(input);
+  if (!statuses) return null;
+  const geoUsable = statuses.some((s) => s.source === "bhunaksha" && s.status === "verified");
+  if (!geoUsable) return null;
+  const pd = (input as { plotDiagram?: { status?: string; url?: string | null } } | undefined)
+    ?.plotDiagram;
+  // If the diagram is a success/partial result (URL present), there is
+  // nothing to warn about. If it failed, the section already shows the
+  // failed copy and a second warning would be redundant.
+  if (pd && (pd.status === "success" || pd.status === "partial")) return null;
+  if (pd && pd.status === "failed") return null;
+  // Fire when the diagram is missing entirely (legacy report), or when
+  // the pipeline explicitly skipped the step (not_attempted with no url).
+  return [
+    {
+      panel: "completeness",
+      issueLens: "parser_source_quality",
+      evidenceStrength: "missing_source",
+      source: "completeness:plot-diagram-missing",
+      severity: "watchout",
+      headline: "Plot diagram was not generated for this report",
+      body:
+        "The Bhunaksha WFS compose step did not produce a plot diagram (the step was skipped, the target polygon was missing, or the diagram feature was added after this report was created). The report still ships, but the plot footprint and neighbour context have not been visually verified.",
+      actionItem:
+        "Ask the buyer's lawyer to open the Bhunaksha plot-report page directly (bhunaksha.ori.nic.in/plotreportOR.jsp) and confirm the target plot's boundaries and the surrounding plots before signing.",
+      ruleId: "ROR-INS-170",
+    },
+  ];
+}
+
 export const completenessRules: Rule[] = [
   { id: "ROR-INS-140", panel: "completeness", fn: completenessNotImplementedRedFlag, version: v },
   { id: "ROR-INS-141", panel: "completeness", fn: completenessParserUncertainWatchout, version: v },
   { id: "ROR-INS-142", panel: "completeness", fn: completenessKeyFieldsMissingRedFlag, version: v },
   { id: "ROR-INS-143", panel: "completeness", fn: completenessEowBlacklistWatchout, version: v },
 ];
+
+// ROR-INS-170 (Phase 8 / Task 36) lives in its own export so the
+// existing `completenessRules.length === 4` invariant stays intact.
+// It is included in ALL_RULES via registry/index.ts.
+export const plotDiagramRule: Rule = {
+  id: "ROR-INS-170",
+  panel: "completeness",
+  fn: completenessPlotDiagramMissingWatchout,
+  version: v,
+};

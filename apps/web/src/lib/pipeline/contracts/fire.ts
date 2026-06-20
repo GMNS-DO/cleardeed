@@ -67,6 +67,8 @@ export const ALL_SOURCE_IDS = [
   "igr-sro",
   "larr",
   "bhunaksha-plot-report",
+  "bhuvan-flood",
+  "eow",
 ] as const;
 export type SourceId = (typeof ALL_SOURCE_IDS)[number];
 
@@ -103,7 +105,8 @@ export type FireEnvelope =
   | { source: "igr-certified-copy"; fired: true; certifiedCopyUrl: string | null }
   | { source: "igr-sro"; fired: true; sroName: string | null; sroAddress: string | null }
   | { source: "larr"; fired: true; notificationId: string | null; notificationDate: string | null }
-  | { source: "bhunaksha-plot-report"; fired: true; plotAreaSqm: number | null; perimeterM: number | null };
+  | { source: "bhunaksha-plot-report"; fired: true; plotAreaSqm: number | null; perimeterM: number | null }
+  | { source: "eow"; fired: true; matched: boolean; overallSeverity: "critical" | "high_watch_out" | null; entryCount: number };
 
 // ── Public FireResult (per the brief) ───────────────────────────────────────
 export type FireResult =
@@ -135,6 +138,7 @@ type SourceDataMap = {
   "igr-sro": z.infer<typeof IgrSroDataSchema>;
   larr: { notificationId: string | null; notificationDate: string | null };
   "bhunaksha-plot-report": z.infer<typeof BhunakshaPlotReportDataSchema>;
+  eow: { matched?: boolean; overallSeverity?: "critical" | "high_watch_out" | null; entryCount?: number };
 };
 
 /**
@@ -149,6 +153,7 @@ export const NO_SCHEMA_SOURCES: ReadonlySet<SourceId> = new Set<SourceId>([
   "high-court",
   "drt",
   "larr",
+  "eow",
 ]);
 
 /**
@@ -267,6 +272,8 @@ function buildEnvelope(source: SourceId, data: Record<string, unknown>): FireRes
         return fireLarr(data as SourceDataMap["larr"]);
       case "bhunaksha-plot-report":
         return fireBhunakshaPlotReport(BhunakshaPlotReportDataSchema.parse(data));
+      case "eow":
+        return fireEow(data as SourceDataMap["eow"]);
       default: {
         // Unreachable for the closed SourceId union, but kept as a
         // forward-compatibility net: if a new source id is added without
@@ -586,6 +593,26 @@ function fireBhunakshaPlotReport(d: SourceDataMap["bhunaksha-plot-report"]): Fir
       fired: true,
       plotAreaSqm: null,
       perimeterM: null,
+    },
+  };
+}
+
+function fireEow(d: SourceDataMap["eow"]): FireResult {
+  // Query-side check: wire step calls matchBlacklist() against the static
+  // khordha_eow_blacklist.json and surfaces the result here. Firing is gated
+  // on a positive match so the consumer report only renders EOW insights
+  // when the queried plot or owner appears in the blacklist.
+  if (!d || d.matched !== true) {
+    return { fired: false, reason: "no_data" };
+  }
+  return {
+    fired: true,
+    envelope: {
+      source: "eow",
+      fired: true,
+      matched: true,
+      overallSeverity: d.overallSeverity ?? null,
+      entryCount: d.entryCount ?? 0,
     },
   };
 }

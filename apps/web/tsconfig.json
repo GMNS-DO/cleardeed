@@ -39,7 +39,8 @@
       "@cleardeed/render": ["../../packages/render/src/plot-diagram-svg.ts"],
       "@cleardeed/fetcher-public-dashboard": ["../../packages/fetchers/public-dashboard/src/index.ts"],
       "@cleardeed/fetcher-govt-fee": ["../../packages/fetchers/govt-fee/src/index.ts"],
-      "@cleardeed/fetcher-igr-certified-copy": ["../../packages/fetchers/igr-certified-copy/src/index.ts"]
+      "@cleardeed/fetcher-igr-certified-copy": ["../../packages/fetchers/igr-certified-copy/src/index.ts"],
+      "@cleardeed/fetcher-bhuvan-flood": ["../../packages/fetchers/bhuvan-flood/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

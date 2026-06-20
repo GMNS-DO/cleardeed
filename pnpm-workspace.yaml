@@ -27,6 +27,8 @@ packages:
   - 'packages/fetchers/public-dashboard'
   - 'packages/fetchers/govt-fee'
   - 'packages/fetchers/igr-certified-copy'
+  - 'packages/fetchers/bhuvan-flood'
+  - 'packages/fetchers/eow'
   - 'agents/land-classifier'
   - 'agents/ownership-reasoner'
   - 'agents/output-auditor'
