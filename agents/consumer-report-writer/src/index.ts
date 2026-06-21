@@ -52,6 +52,19 @@ export { ConsumerReportGenInputSchema } from "./mapper";
 export type { Tier2Input, OwnershipReasonerResult, OrchestratorOutput } from "./mapper";
 export { mapToReportInput } from "./mapper";
 
+// ─── HTML escape helpers ───────────────────────────────────────────────────────
+
+function escapeText(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
 // ─── HTML generation ────────────────────────────────────────────────────────────
 
 export interface GenerateReportOptions {
@@ -988,6 +1001,224 @@ function submitFeedbackComment(section, btn) {
   return { html: html + "\n" + insightBlocks, title, insights };
 }
 
+// ── Layer split: Buyer (1-2 page compact) and Lawyer (full drill-down) ──────
+//
+// Both layers are derived from a shared `ReportContext` so the buyer page
+// and the lawyer page render the same domain facts. The buyer page is the
+// primary consumer-facing artifact (max 1-2 printed pages); the lawyer
+// page is the full drill-down with all raw tables, provenance, and source
+// audit. The route layer picks which one to render.
+function deriveReportContext(input: z.infer<typeof ConsumerReportGenInputSchema>) {
+  const data = input;
+  const { gpsCoordinates: gps, geoFetch, revenueRecords, courtCases, registryLinks,
+          landClassifier, encumbranceReasoner,
+          regulatoryScreener, validationFindings, adjacentPlots, synthesisInsights } = data;
+  const sourceStatus = data.sourceStatus ?? {};
+  const sourceDetails = data.sourceDetails ?? {};
+  const tenants: any[] = revenueRecords?.tenants ?? [];
+  const bhulekhUsable = sourceStatus.bhulekh === "success" && tenants.length > 0;
+  const bhunakshaUsable = sourceStatus.bhunaksha === "success";
+  const gpsDisplay = formatGpsDisplay(gps);
+
+  const plotVillage = geoFetch?.village ?? revenueRecords?.village ?? "—";
+  const plotTahasil = geoFetch?.tahasil ?? "—";
+  const plotDistrict = geoFetch?.district ?? registryLinks?.params?.district ?? "Not verified";
+  const targetPlotNo = geoFetch?.plotNo ?? registryLinks?.params?.plotNo ?? null;
+  const targetTenant = targetPlotNo
+    ? tenants.find((tenant) => plotNosMatch(tenant?.surveyNo, targetPlotNo))
+    : tenants[0];
+  const plotNo = targetPlotNo
+    ?? (bhulekhUsable ? targetTenant?.surveyNo ?? revenueRecords?.tenants?.[0]?.surveyNo : null)
+    ?? registryLinks?.params?.plotNo
+    ?? "—";
+  const bhulekhVillage = revenueRecords?.village ?? plotVillage;
+  const targetPlotRow = findTargetPlotRow(revenueRecords, plotNo);
+  const plotArea = buildPlotAreaDetails(targetTenant, targetPlotRow);
+  const plotRecordSummary = buildPlotRecordSummary({
+    plotNo,
+    khataNo: revenueRecords?.khataNo ?? null,
+    area: plotArea,
+    landClassOdia: targetPlotRow?.landTypeOdia ?? targetTenant?.landClassOdia ?? targetTenant?.landClass ?? null,
+    landClassEnglish: targetTenant?.landClassEnglish ?? null,
+  });
+
+  const ownerRecords = buildOwnerDisplayRecords(revenueRecords, tenants);
+  const primaryOwner = ownerRecords[0] ?? null;
+  const primaryOwnerName = primaryOwner?.latin || primaryOwner?.odia || "—";
+  const coOwners = ownerRecords.slice(1).map((owner) => owner.latin || owner.odia).filter(Boolean);
+
+  const primaryTenant = targetPlotNo ? targetTenant : revenueRecords?.tenants?.[0];
+  const landClassOdia = primaryTenant?.landClassOdia ?? targetPlotRow?.landTypeOdia ?? primaryTenant?.landClass ?? "";
+  const landClassEnglish = primaryTenant?.landClassEnglish
+    ?? (landClassOdia ? translateLandClass(landClassOdia) : "");
+
+  const classification = bhulekhUsable
+    ? formatLandClassDisplay(landClassEnglish, landClassOdia, primaryTenant?.landClass)
+    : "Not verified";
+  const conversionRequired = bhulekhUsable
+    ? primaryTenant?.conversionRequired ?? landClassifier?.conversionRequired ?? null
+    : null;
+  const conversionUnknown = bhulekhUsable && conversionRequired == null;
+  const classificationUnknown =
+    !bhulekhUsable ||
+    (!landClassEnglish || landClassEnglish === "Unknown") && !landClassOdia;
+  const bhulekhUnavailableReason = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
+  const landClassSourceStatus = sourceStatusLine(sourceDetails, sourceStatus, "bhulekh");
+  const classificationBasisText = bhulekhUsable
+    ? `Based on the selected plot row in the Bhulekh RoR (${landClassOdia || "—"})`
+    : "Not verified from Bhulekh in this run";
+  const landRestrictions = (landClassifier?.restrictions ?? []).map((restriction: any) => ({
+    flag: titleFromSnakeCase(restriction.type ?? "Restriction"),
+    severity: normalizeLandSeverity(restriction.severity),
+    description: restriction.description,
+    recommendedAction: restriction.action ?? restriction.citation ?? null,
+  }));
+  const redFlags = dedupeFlags(
+    [...(landClassifier?.redFlags ?? []), ...landRestrictions].filter((flag: any) =>
+      Boolean(flag?.flag?.trim?.() && flag?.description?.trim?.())
+    )
+  );
+
+  const nameMatch = bhulekhUsable
+    ? {
+        state: "ror_available" as const,
+        claimedName: data.claimedOwnerName ?? null,
+        officialName: primaryOwnerName !== "—" ? primaryOwnerName : null,
+        confidence: data.claimedOwnerName ? 0.7 : 0,
+        explanation: data.claimedOwnerName
+          ? "Bhulekh owner compared against seller-claimed name"
+          : "No seller name provided — RoR owner shown directly",
+      }
+    : { state: "unknown" as const };
+
+  const totalCases = courtCases?.total ?? 0;
+  const cases: any[] = courtCases?.cases ?? [];
+  const courtSourceStatuses = courtCases?.sources ?? {
+    ecourts: sourceStatus.ecourts ?? "not_run",
+    rccms: sourceStatus.rccms ?? "not_run",
+  };
+  const caseList = cases.length > 0
+    ? cases.map(c => ({
+        caseType: c.caseType ?? "—",
+        caseNo: c.caseNo ?? c.caseId ?? "—",
+        court: c.court ?? c.courtName ?? c.courtComplex ?? "—",
+        status: c.status ?? "—",
+        filing: c.filingDate ?? "—",
+        source: c.source ?? 'eCourts',
+      }))
+    : null;
+  const mutationReferencePanel = buildMutationReferencePanel(
+    revenueRecords?.mutationReferences ?? []
+  );
+
+  const insights: Insight[] = runInsights(
+    ALL_RULES,
+    data as unknown as Parameters<typeof runInsights>[1]
+  );
+  const rorInsights = rorInsightGroups(insights);
+  const riskInsights = riskInsightGroups(insights);
+
+  const redFlagRuleIds = new Set<string>();
+  const watchoutRuleIds = new Set<string>();
+  for (const i of insights) {
+    if (!i || !(i as any).ruleId) continue;
+    if ((i as any).severity === "redFlag") redFlagRuleIds.add((i as any).ruleId);
+    else if ((i as any).severity === "watchout") watchoutRuleIds.add((i as any).ruleId);
+  }
+
+  const regFlags = (regulatoryScreener?.flags ?? []).filter((flag: any) =>
+    Boolean(flag?.flag?.trim?.() && flag?.description?.trim?.())
+  );
+  const regulatoryVerified = isRegulatoryScreeningVerified(regulatoryScreener);
+
+  return {
+    data, gpsDisplay, plotVillage, plotTahasil, plotDistrict, targetPlotNo, plotNo,
+    bhulekhVillage, plotArea, plotRecordSummary, ownerRecords, primaryOwnerName,
+    coOwners, landClassOdia, landClassEnglish, classification, conversionRequired,
+    conversionUnknown, classificationUnknown, bhulekhUnavailableReason,
+    landClassSourceStatus, classificationBasisText, redFlags, nameMatch, totalCases,
+    caseList, courtSourceStatuses, mutationReferencePanel, insights, rorInsights,
+    riskInsights, redFlagRuleIds, watchoutRuleIds, regFlags, regulatoryVerified,
+    bhulekhUsable, bhunakshaUsable, tenants, sourceStatus, sourceDetails,
+    encumbranceReasoner, registryLinks, landClassifier, adjacentPlots,
+    synthesisInsights, validationFindings,
+  };
+}
+
+/**
+ * Generate the consumer-facing BUYER-LAYER report (max 1-2 pages).
+ * Compact, vivid, only the highest-value facts. Lawyer drill-down lives in
+ * a separate route. This is the default page rendered at /report/[id].
+ */
+export function generateBuyerLayerReport(
+  input: z.infer<typeof ConsumerReportGenInputSchema>
+): { html: string; title: string; insights: Insight[] } {
+  const parsed = ConsumerReportGenInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return generateErrorReport("Invalid report input. Please try again.");
+  }
+  const ctx = deriveReportContext(parsed.data);
+  const sections = buildBuyerSectionContents(ctx);
+  const buyerPageInput = {
+    reportId: ctx.data.reportId,
+    header: {
+      reportId: ctx.data.reportId,
+      plotVillage: ctx.plotVillage,
+      plotNo: ctx.plotNo,
+      plotAreaDisplay: formatPlotAreaSummary(ctx.plotArea),
+      ownerName: ctx.primaryOwnerName,
+    },
+    insights: ctx.insights,
+    riskInsights: {
+      redFlag: ctx.riskInsights.redFlag,
+      watchout: ctx.riskInsights.watchout,
+      positive: ctx.riskInsights.positive,
+    },
+    redFlagRuleIds: Array.from(ctx.redFlagRuleIds),
+    watchoutRuleIds: Array.from(ctx.watchoutRuleIds),
+    plotArea: ctx.plotArea,
+    landClass: {
+      rawKisam: ctx.landClassOdia,
+      standardizedKisam: ctx.landClassEnglish,
+      displayKisam: ctx.landClassEnglish,
+      conversionRequired: ctx.conversionRequired,
+      prohibited: null,
+      buildable: null,
+    },
+    bhulekhUsable: ctx.bhulekhUsable,
+    encumbranceInstructions: ctx.encumbranceReasoner?.instructions ?? null,
+    backPage: ctx.data.revenueRecords?.backPage,
+    dues: ctx.data.revenueRecords?.dues,
+    igrEcEntries: (ctx.encumbranceReasoner as any)?.igrEcEntries ?? [],
+    cersaiCharges: (ctx.encumbranceReasoner as any)?.cersaiCharges ?? [],
+    village: ctx.plotVillage,
+    district: ctx.plotDistrict,
+    plotNo: ctx.plotNo,
+    sections,
+    css: CSS,
+  };
+  return { html: buildBuyerPage(buyerPageInput), title: `ClearDeed — ${ctx.plotVillage}`, insights: ctx.insights };
+}
+
+/**
+ * Generate the LAWYER-LAYER drill-down report. Same domain data as the buyer
+ * page but expanded into a full source-by-source detail: raw RoR tenant table,
+ * full court rows, full EC entries, IGR instructions, provenance strip, audit
+ * panel, source-detail per source. Routed at /report/[id]?layer=lawyer and
+ * /api/report/[id]/pdf?layer=lawyer.
+ */
+export function generateLawyerLayerReport(
+  input: z.infer<typeof ConsumerReportGenInputSchema>
+): { html: string; title: string; insights: Insight[] } {
+  const parsed = ConsumerReportGenInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return generateErrorReport("Invalid report input. Please try again.");
+  }
+  // Lawyer layer = today's full long-form report. Delegate to the same path
+  // so the legacy template stays the single source of truth for the drill-down.
+  return generateConsumerReport(input);
+}
+
 // ─── Section builders ─────────────────────────────────────────────────────────
 
 function buildInsightHighlights(insights: (RoRInsight | RiskInsight)[]): string {
@@ -1807,6 +2038,347 @@ function isSourceFailureStatus(status: unknown): boolean {
   return ["error", "failed", "failure", "unavailable", "manual_required"].includes(String(status ?? "").toLowerCase());
 }
 
+// Defensive verdict card: shows the most-severe insight, or an all-clear band.
+// Schema: Insight.severity ∈ {"positive", "watchout", "redFlag"}. Picks redFlag > watchout > positive.
+export function buildVerdictCard(insights: Insight[]): string {
+  const eligible = insights
+    .filter((i) => i.severity === "redFlag" || i.severity === "watchout")
+    .sort((a, b) => (a.severity === "redFlag" ? -1 : 1));
+  const top = eligible[0];
+  if (!top) {
+    return `<section id="verdict" class="verdict-card" data-tier="proceed">
+      <span class="verdict-card-eyebrow">Buyer's verdict</span>
+      <h1 class="verdict-card-headline">No critical risks found</h1>
+      <p class="verdict-card-rationale">Verify the remaining items below before paying.</p>
+    </section>`;
+  }
+  // Map severity → tier (CSS uses [data-tier=...] to color the verdict strip).
+  const tier =
+    top.severity === "redFlag"
+      ? "hold"
+      : top.issueLens === "registry_ec" || top.issueLens === "encumbrance_charge"
+        ? "watch-out"
+        : "proceed-with-care";
+  const oneSentence = top.body.split(/\.\s+/)[0] + (top.body.includes(".") ? "." : "");
+  return `<section id="verdict" class="verdict-card" data-tier="${tier}">
+    <span class="verdict-card-eyebrow">Buyer's verdict</span>
+    <h1 class="verdict-card-headline">${escapeHtml(top.headline)}</h1>
+    <p class="verdict-card-rationale">${escapeHtml(oneSentence)}</p>
+    <div class="verdict-card-confidence">
+      <span><strong>Source:</strong> ${escapeHtml(top.source)}</span>
+      <span><strong>Next step:</strong> ${escapeHtml(top.actionItem)}</span>
+    </div>
+  </section>`;
+}
+
+// Exposure strip: up to 4 quantified FinancialExposureItems on the buyer page.
+// If items are absent, calls computeFinancialExposure() with the provided input.
+// Remaining items are summarized as "+N more" instead of rendered.
+export function buildExposureStrip(
+  input: Parameters<typeof computeFinancialExposure>[0],
+  items?: FinancialExposureItem[]
+): string {
+  const resolved = items ?? computeFinancialExposure(input);
+  const MAX_VISIBLE = 4;
+  if (resolved.length === 0) {
+    return `<section id="exposure-strip" class="exposure exposure-empty">
+      <div class="exposure-icon">&#9678;</div>
+      <div class="exposure-body">Nothing to expose at this stage. Manual checks remain listed below.</div>
+    </section>`;
+  }
+  const visible = resolved.slice(0, MAX_VISIBLE);
+  const hidden = resolved.length - visible.length;
+  const itemHtml = visible.map((item) => {
+    const cls =
+      item.severity === "at-risk" ? "exposure-at-risk" :
+      item.severity === "verified-clear" ? "exposure-clear" :
+      "exposure-unquantified";
+    const amount = item.amount ? `<span class="exposure-amount">${escapeHtml(item.amount)}</span>` : "";
+    return `<li class="exposure ${cls}">
+      <span class="exposure-dot" aria-hidden="true"></span>
+      <span class="exposure-cat">${escapeHtml(item.category)}</span>
+      ${amount}
+      <span class="exposure-text">${escapeHtml(item.exposure)}</span>
+      ${item.action ? `<span class="exposure-action">${escapeHtml(item.action)}</span>` : ""}
+    </li>`;
+  }).join("");
+  const moreNote = hidden > 0
+    ? `<li class="exposure exposure-more">+${hidden} more in the full lawyer report.</li>`
+    : "";
+  return `<section id="exposure-strip" class="exposure-strip">
+    <ul class="exposure-list">${itemHtml}${moreNote}</ul>
+  </section>`;
+}
+
+// Pill bar with 6 toggle panels. Only one open at a time (radio behavior, no JS).
+// Status colors: verified -> green, watchout -> amber, redflag -> red, manual -> blue.
+export function buildTogglePillBar(
+  panels: Array<{ id: string; label: string; status: string; contentHtml: string }>,
+  openId?: string
+): string {
+  if (panels.length === 0) return "";
+  const knownIds = new Set(panels.map((p) => p.id));
+  const resolvedOpen = openId && knownIds.has(openId) ? openId : panels[0].id;
+  // Tone attribute on the pill drives the count chip color in the editorial
+  // CSS (critical/high/watch). Mapping: redflag -> critical, watchout -> high,
+  // manual -> watch, verified -> default.
+  const tone = (status: string): string => {
+    if (status === "redflag") return "critical";
+    if (status === "watchout") return "high";
+    if (status === "manual") return "watch";
+    return "default";
+  };
+  const pills = panels.map((p) => {
+    const inputId = `toggle-${p.id}`;
+    return `<input type="radio" name="toggle-bar" id="${inputId}" value="${p.id}"${p.id === resolvedOpen ? " checked" : ""}>
+    <label class="pill toggle-pill" for="${inputId}" data-status="${escapeHtml(p.status)}" data-tone="${tone(p.status)}">${escapeHtml(p.label)}</label>`;
+  }).join("\n");
+  const articles = panels.map((p) => {
+    const articleId = `${p.id}-content`;
+    return `<article id="${articleId}" class="panel buyer-panel panel-${escapeHtml(p.status)}" data-status="${escapeHtml(p.status)}">
+      ${p.contentHtml}
+    </article>`;
+  }).join("\n");
+  return `<section class="toggle-bar toggle-pill-bar">
+    <nav class="pill-bar">${pills}</nav>
+    <div class="panel-stack">${articles}</div>
+  </section>`;
+}
+
+// Property header strip at the top of the buyer page.
+// Reports identifier (reportId or village/plot). Compact single-line metadata.
+export function buildPropertyHeader(input: {
+  reportId: string;
+  plotVillage: string;
+  plotNo: string;
+  plotAreaDisplay: string;
+  ownerName: string;
+  verdictHeadline: string;
+  verdictSubhead: string;
+  exposureMoney: string;
+  exposureCount: string;
+  sources: ReadonlyArray<{ name: string; fetchedAt: string; status: string }>;
+}): string {
+  const dotsHtml = input.sources
+    .map(
+      (s) =>
+        `<span class="property-header-dot status-dot" data-status="${escapeAttr(s.status)}" title="${escapeAttr(s.name)} · ${escapeAttr(s.fetchedAt)}"></span>`
+    )
+    .join("");
+
+  return `<header class="property-header" id="hero-verdict">
+    <div class="property-header-dots status-dots" aria-label="Source status">${dotsHtml}</div>
+    <div class="property-header-eyebrow">CLEARDEED VERDICT</div>
+    <h1 class="property-header-headline">${escapeText(input.verdictHeadline)}</h1>
+    <p class="property-header-subhead">${escapeText(input.verdictSubhead)}</p>
+    <div class="property-header-exposure" aria-label="Exposure summary">
+      <div class="property-header-exposure-cell">
+        <div class="property-header-exposure-amount">${escapeText(input.exposureMoney)}</div>
+        <div class="property-header-exposure-label">quantified at risk</div>
+      </div>
+      <div class="property-header-exposure-cell">
+        <div class="property-header-exposure-amount" data-counter="${escapeAttr(input.exposureCount)}">${escapeText(input.exposureCount)}</div>
+        <div class="property-header-exposure-label">items to verify manually</div>
+      </div>
+    </div>
+    <div class="property-header-actions">
+      <button type="button" class="property-header-action property-header-action-primary" data-action="share-lawyer">Share with lawyer</button>
+      <button type="button" class="property-header-action property-header-action-secondary" data-action="download-pdf">Download PDF</button>
+      <a href="#source-status" class="property-header-action property-header-action-tertiary">View sources</a>
+    </div>
+    <div class="property-header-meta">${escapeText(input.plotVillage)} · Plot ${escapeText(input.plotNo)} · ${escapeText(input.plotAreaDisplay)} · Owner: ${escapeText(input.ownerName)}</div>
+  </header>`;
+}
+
+// Single-line footer with the report id, the disclaimer, and the survey link.
+// The survey link is a placeholder; the app's feedback page is wired separately.
+export function buildFeedbackFooter(input: { reportId: string }): string {
+  const id = escapeHtml(input.reportId || "");
+  return `<footer class="feedback-footer">
+    <span class="feedback-footer-id">Report ${id}</span>
+    <span class="feedback-footer-disclaimer">Public records only — verify with a lawyer before transacting.</span>
+    <a class="feedback-footer-lawyer" href="/report/${encodeURIComponent(input.reportId)}?layer=lawyer">Full lawyer drill-down</a>
+    <a class="feedback-footer-survey" href="/survey?reportId=${encodeURIComponent(input.reportId)}">Tell us what you found</a>
+  </footer>`;
+}
+
+// Build the 6 toggle-panel contents for the buyer page. Each panel is a
+// short, scannable summary (3-6 lines) of one buyer-question domain. The
+// legacy long-form sections stay in the lawyer layer. This is the entire
+// "value-adding info for the end user" surface — the rest is hidden behind
+// the radio toggle until the user clicks a pill.
+function buildBuyerSectionContents(ctx: any): {
+  plot: string; owner: string; land: string;
+  registryCourt: string; financial: string; verify: string;
+} {
+  const insightHtml = (items: any[], fallback: string) => items.length === 0
+    ? `<p class="panel-empty">${escapeHtml(fallback)}</p>`
+    : `<ul class="panel-insights">${items.slice(0, 4).map((i) => `<li><strong>${escapeHtml(i.headline || i.label || "")}</strong> — ${escapeHtml(i.body || "")}</li>`).join("")}</ul>`;
+  const courtItems = ctx.insights.filter((i: any) => i.panel === "court");
+  const encumbranceItems = ctx.insights.filter((i: any) => i.panel === "encumbrance" || i.panel === "deeds");
+  const ownerItems = ctx.insights.filter((i: any) => i.panel === "owner" || i.panel === "ownershipChain");
+  const landItems = ctx.insights.filter((i: any) => i.panel === "land");
+  const plotItems = ctx.insights.filter((i: any) => i.panel === "plot" || i.panel === "plotTable");
+  const financialItems = ctx.insights.filter((i: any) => i.panel === "financial");
+  return {
+    plot: `
+      <div class="panel-keyvalue">
+        <div><span>Plot</span><b>${escapeHtml(ctx.plotNo)}</b></div>
+        <div><span>Village</span><b>${escapeHtml(ctx.plotVillage)}</b></div>
+        <div><span>Tahasil</span><b>${escapeHtml(ctx.plotTahasil)}</b></div>
+        <div><span>District</span><b>${escapeHtml(ctx.plotDistrict)}</b></div>
+        <div><span>Area</span><b>${escapeHtml(formatPlotAreaSummary(ctx.plotArea))}</b></div>
+        <div><span>Khata</span><b>${escapeHtml(ctx.data.revenueRecords?.khataNo ?? "—")}</b></div>
+      </div>
+      ${insightHtml(plotItems, "No plot-specific findings.")}`,
+    owner: `
+      <div class="panel-keyvalue">
+        <div><span>Bhulekh owner</span><b>${escapeHtml(ctx.primaryOwnerName)}</b></div>
+        <div><span>Co-owners</span><b>${ctx.coOwners.length === 0 ? "None" : ctx.coOwners.map((c: string) => escapeHtml(c)).join(", ")}</b></div>
+        <div><span>Name match</span><b>${escapeHtml(ctx.nameMatch.state ?? "unknown")}</b></div>
+      </div>
+      ${insightHtml(ownerItems, "No owner-specific findings.")}`,
+    land: `
+      <div class="panel-keyvalue">
+        <div><span>Classification</span><b>${escapeHtml(ctx.classification)}</b></div>
+        <div><span>Conversion</span><b>${ctx.conversionRequired == null ? "Unknown" : ctx.conversionRequired ? "Required" : "Not required"}</b></div>
+      </div>
+      ${insightHtml(landItems, "No land-specific findings.")}`,
+    registryCourt: `
+      <div class="panel-keyvalue">
+        <div><span>Court cases</span><b>${ctx.totalCases}</b></div>
+        <div><span>eCourts</span><b>${escapeHtml(ctx.courtSourceStatuses.ecourts ?? "—")}</b></div>
+        <div><span>RCCMS</span><b>${escapeHtml(ctx.courtSourceStatuses.rccms ?? "—")}</b></div>
+      </div>
+      ${insightHtml([...courtItems, ...encumbranceItems], "No court or encumbrance findings.")}`,
+    financial: `
+      ${insightHtml(financialItems, "No financial findings.")}`,
+    verify: `
+      <ol class="panel-verify">
+        <li>Open the Bhulekh portal: <a href="https://bhulekh.ori.nic.in/" target="_blank" rel="noopener">bhulekh.ori.nic.in</a></li>
+        <li>Open the eCourts portal: <a href="https://services.ecourts.gov.in/" target="_blank" rel="noopener">services.ecourts.gov.in</a></li>
+        <li>Open the IGR EC portal: <a href="https://igrodisha.gov.in/ecsearch" target="_blank" rel="noopener">igrodisha.gov.in</a></li>
+        <li>Share this report with a property lawyer before transacting.</li>
+      </ol>`,
+  };
+}
+
+// Compact one-or-two-page buyer layer.
+// Composes: property header → verdict card → exposure strip → 6 toggle panels → footer.
+// Each toggle panel content is pre-built by the caller (a `sections` object) so that
+// this composer stays focused on layout and the heavy lifting stays in the
+// existing domain builders.
+export function buildBuyerPage(input: {
+  reportId: string;
+  header: { reportId: string; plotVillage: string; plotNo?: string; plotAreaDisplay?: string; ownerName?: string };
+  insights: Insight[];
+  riskInsights: Record<string, any[]>;
+  redFlagRuleIds: string[];
+  watchoutRuleIds: string[];
+  plotArea: { acres?: number | null; sqft?: number | null } | null;
+  landClass: {
+    rawKisam?: string | null;
+    standardizedKisam?: string | null;
+    displayKisam?: string | null;
+    conversionRequired?: boolean | null;
+    prohibited?: boolean | null;
+    buildable?: boolean | null;
+  };
+  bhulekhUsable: boolean;
+  encumbranceInstructions: string | null;
+  backPage?: unknown;
+  dues?: unknown;
+  igrEcEntries?: unknown[];
+  cersaiCharges?: unknown[];
+  village?: string;
+  district?: string;
+  plotNo?: string;
+  sections: {
+    plot: string;
+    owner: string;
+    land: string;
+    registryCourt: string;
+    financial: string;
+    verify: string;
+  };
+  openPanel?: string;
+  css: string;
+}): string {
+  const exposure = computeFinancialExposure({
+    riskInsights: {
+      redFlag: input.riskInsights?.redFlag ?? [],
+      watchout: input.riskInsights?.watchout ?? [],
+      positive: input.riskInsights?.positive ?? [],
+    },
+    redFlagRuleIds: new Set(input.redFlagRuleIds),
+    watchoutRuleIds: new Set(input.watchoutRuleIds),
+    plotArea: input.plotArea,
+    landClass: input.landClass,
+    bhulekhUsable: input.bhulekhUsable,
+    encumbranceInstructions: input.encumbranceInstructions,
+    backPage: input.backPage as any,
+    dues: input.dues as any,
+    igrEcEntries: (input.igrEcEntries as any) ?? [],
+    cersaiCharges: (input.cersaiCharges as any) ?? [],
+    village: input.village,
+    district: input.district,
+    plotNo: input.plotNo,
+  });
+  const verdictHtml = buildVerdictCard(input.insights);
+  const exposureHtml = buildExposureStrip(exposure);
+  const panels = [
+    { id: "plot", label: "Plot", status: panelStatusFor("plot", input.insights), contentHtml: input.sections.plot },
+    { id: "owner", label: "Owner", status: panelStatusFor("owner", input.insights), contentHtml: input.sections.owner },
+    { id: "land", label: "Land", status: panelStatusFor("land", input.insights), contentHtml: input.sections.land },
+    { id: "registry-court", label: "Registry & Court", status: panelStatusFor("registry-court", input.insights), contentHtml: input.sections.registryCourt },
+    { id: "financial", label: "Financial", status: panelStatusFor("financial", input.insights), contentHtml: input.sections.financial },
+    { id: "verify", label: "Verify", status: panelStatusFor("verify", input.insights), contentHtml: input.sections.verify },
+  ];
+  const pillBar = buildTogglePillBar(panels, input.openPanel);
+  const headerHtml = buildPropertyHeader(input.header);
+  const footerHtml = buildFeedbackFooter({ reportId: input.reportId });
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClearDeed — Property Report ${escapeHtml(input.reportId)}</title>
+<style>${input.css}</style>
+</head>
+<body class="buyer-page">
+${headerHtml}
+${verdictHtml}
+${exposureHtml}
+${pillBar}
+${footerHtml}
+</body>
+</html>`;
+}
+
+// Map the insights that touch a given buyer-page panel to its pill status color.
+// Insight schema uses panel = plot | owner | land | encumbrance | court | financial | completeness | ...
+// Severity values: positive | watchout | redFlag.
+function panelStatusFor(panelId: string, insights: Insight[]): string {
+  const map: Record<string, string[]> = {
+    plot: ["plot", "plotTable"],
+    owner: ["owner", "ownershipChain", "chain"],
+    land: ["land"],
+    "registry-court": ["encumbrance", "court", "deeds"],
+    financial: ["financial", "dues"],
+    verify: ["completeness", "backPage"],
+  };
+  const panels = map[panelId] ?? [];
+  let worst = "verified";
+  for (const insight of insights) {
+    if (!panels.includes(insight.panel)) continue;
+    const sev = insight.severity;
+    if (sev === "redFlag") return "redflag";
+    if (sev === "watchout" && worst === "verified") worst = "watchout";
+    if (sev === "positive" && worst === "verified") worst = "verified";
+  }
+  return worst;
+}
+
 function buildBuyerSummary(input: {
   bhunakshaUsable: boolean;
   bhulekhUsable: boolean;
@@ -2208,7 +2780,8 @@ export function computeFinancialExposure(input: {
   // Today eCourts + High Court + DRT are stubs (ROR-INS-120..122) — when live,
   // they will fire redFlag/watchout with ruleId match. We also detect court
   // risk by substring on legacy RiskInsight for back-compat with earlier versions.
-  const courtRedFlagLegacy = (input.riskInsights.redFlag ?? []).some((i: any) =>
+  const legacyRedFlag = input.riskInsights?.redFlag ?? [];
+  const courtRedFlagLegacy = legacyRedFlag.some((i: any) =>
     i.label?.toLowerCase().match(/court|attachment|injunction|litigation/));
   if (courtRedFlagLegacy) {
     items.push({ category: "Court case / attachment risk", amount: null,
@@ -2302,7 +2875,7 @@ export function computeFinancialExposure(input: {
   }
 
   // ── Plot in BDA zone (from regulatory) ───────────────────────────────────────
-  const regRedFlags = (input.riskInsights.redFlag ?? []).filter((i: any) =>
+  const regRedFlags = legacyRedFlag.filter((i: any) =>
     i.label?.includes("BDA") || i.label?.includes("zoning") || i.label?.includes("Industrial"));
   if (regRedFlags.length > 0) {
     // Per CLAUDE.md "On the financial layer": industrial sold as residential → conversion fee.
@@ -2478,7 +3051,8 @@ export function computeFinancialExposure(input: {
   }
 
   // ── PoA-based sale risk (Suraj Lamp / ceiling Section 1 Pattern 3) ───────────
-  const poaRisk = (input.riskInsights.redFlag ?? []).concat(input.riskInsights.watchout ?? [])
+  const legacyWatchout = input.riskInsights?.watchout ?? [];
+  const poaRisk = legacyRedFlag.concat(legacyWatchout)
     .find((i: any) => i.label?.includes("PoA") || i.label?.includes("power of attorney") || i.label?.includes("attorney"));
   if (poaRisk) {
     items.push({ category: "Power of Attorney — sale risk", amount: null,
@@ -2488,7 +3062,7 @@ export function computeFinancialExposure(input: {
   }
 
   // ── Sub-divided plot without BDA layout approval ─────────────────────────────
-  const subdivRisk = (input.riskInsights.redFlag ?? []).concat(input.riskInsights.watchout ?? [])
+  const subdivRisk = legacyRedFlag.concat(legacyWatchout)
     .find((i: any) => i.label?.includes("subdivided") || i.label?.includes("sub-division") || i.label?.includes("D/"));
   if (subdivRisk || (acres && acres < 0.25)) {
     items.push({ category: "Sub-divided plot — BDA layout approval", amount: null,
@@ -4133,27 +4707,70 @@ const CSS = `
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --black:      #111111;
-  --gray-800:   #1f2937;
-  --gray-600:   #4b5563;
-  --gray-400:   #9ca3af;
-  --gray-200:   #e5e7eb;
-  --gray-100:   #f9fafb;
+  /* ── Editorial palette (buyer-layer friendly) ─────────────────────────── */
+  /* Warm off-white "paper" instead of clinical white gives the report the
+     feel of a printed magazine rather than a form. Deep navy "ink" is
+     softer than pure black and pairs with the paper. The accent (rust) is
+     the single attention magnet for CTAs and verdict emphasis. */
+  --paper:      #fbf8f3;
+  --paper-2:    #f5efe4;
+  --ink:        #0f2a44;
+  --ink-2:      #1f3a5c;
+  --ink-soft:   #4a5b70;
+  --rule:       #e3dccf;
+  --accent:     #b4513b;        /* rust — verdict, CTA, exposure */
+  --accent-2:   #d77a61;
+  --good:       #2f6b46;        /* forest green — verified clear */
+  --good-2:     #d8ead9;
+  --warn:       #a06a17;        /* amber ink — partial / watch */
+  --warn-2:     #f3e3c3;
+  --bad:        #962a2a;        /* deep red ink — CRITICAL watch-out */
+  --bad-2:      #f1d3d3;
+  --info:       #2c4a7a;        /* deep blue ink — manual verify */
+  --info-2:     #d3dceb;
+
+  /* Legacy tokens kept for backward compat with lawyer-layer sections that
+     predate the editorial split. New buyer-layer sections should prefer
+     the editorial tokens above. */
+  --black:      #0f2a44;
+  --gray-800:   #1f3a5c;
+  --gray-600:   #4a5b70;
+  --gray-400:   #8c97a8;
+  --gray-200:   #d8d3c5;
+  --gray-100:   #f5efe4;
   --white:      #ffffff;
-  --green-50:   #f0fdf4;
-  --green-700:  #15803d;
-  --green-200:  #bbf7d0;
-  --amber-50:   #fffbeb;
-  --amber-700:  #b45309;
-  --amber-200:  #fde68a;
-  --red-50:     #fef2f2;
-  --red-700:    #b91c1c;
-  --red-200:    #fecaca;
-  --blue-50:    #eff6ff;
-  --blue-700:   #1d4ed8;
-  --blue-200:   #bfdbfe;
-  --border:     1px solid var(--gray-200);
-  --radius:     6px;
+  --green-50:   #ecf3eb;
+  --green-700:  #2f6b46;
+  --green-200:  #c0d6c4;
+  --amber-50:   #faf1dd;
+  --amber-700:  #a06a17;
+  --amber-200:  #ecd9a9;
+  --red-50:     #f5e2e2;
+  --red-700:    #962a2a;
+  --red-200:    #ebb9b9;
+  --blue-50:    #e3ebf5;
+  --blue-700:   #2c4a7a;
+  --blue-200:   #b8c6dc;
+
+  --border:     1px solid var(--rule);
+  --radius:     4px;
+  --radius-lg:  10px;
+
+  /* Editorial type — sans for body, serif accent for verdict / numbers. */
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-serif: 'Source Serif Pro', 'Georgia', 'Times New Roman', serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Page rhythm — generous vertical air for the buyer layer. */
+  --page-max:   920px;
+  --gutter:     clamp(16px, 4vw, 40px);
+  --space-1:    4px;
+  --space-2:    8px;
+  --space-3:    12px;
+  --space-4:    18px;
+  --space-5:    28px;
+  --space-6:    44px;
+  --space-7:    64px;
 }
 
 .report-actions { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -4172,12 +4789,313 @@ const CSS = `
 
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  font-size: 14px;
-  color: var(--black);
-  background: var(--white);
-  line-height: 1.65;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (max-width: 640px) {
+  body { font-size: 14.5px; }
+}
+
+/* ── Buyer layer (editorial) ───────────────────────────────────────────── */
+.buyer-page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--gutter) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.property-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+.property-header-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.property-header-title {
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 4.6vw, 40px);
+  line-height: 1.12;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.property-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.property-header-meta strong {
+  color: var(--ink);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* ── Verdict card ──────────────────────────────────────────────────────── */
+.verdict-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 100%);
+  border: 1px solid var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+.verdict-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: var(--accent);
+}
+.verdict-card[data-tier="proceed"]::before { background: var(--good); }
+.verdict-card[data-tier="proceed-with-care"]::before { background: var(--accent); }
+.verdict-card[data-tier="watch-out"]::before { background: var(--warn); }
+.verdict-card[data-tier="hold"]::before { background: var(--bad); }
+.verdict-card[data-tier="insufficient"]::before { background: var(--ink-soft); }
+.verdict-card-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.verdict-card-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 3.4vw, 30px);
+  line-height: 1.2;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.verdict-card[data-tier="proceed"] .verdict-card-headline { color: var(--good); }
+.verdict-card[data-tier="proceed-with-care"] .verdict-card-headline { color: var(--accent); }
+.verdict-card[data-tier="watch-out"] .verdict-card-headline { color: var(--warn); }
+.verdict-card[data-tier="hold"] .verdict-card-headline { color: var(--bad); }
+.verdict-card-rationale {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+.verdict-card-confidence {
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.verdict-card-confidence strong { color: var(--ink); font-weight: 600; }
+
+/* ── Exposure strip ────────────────────────────────────────────────────── */
+.exposure-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.exposure-strip-cell {
+  background: var(--paper);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.exposure-strip-cell-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.exposure-strip-cell-value {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.exposure-strip-cell-value.is-zero { color: var(--good); }
+.exposure-strip-cell-value.is-risk { color: var(--accent); }
+.exposure-strip-cell-meta { font-size: 12px; color: var(--ink-soft); }
+
+@media (max-width: 520px) {
+  .exposure-strip { grid-template-columns: 1fr; }
+}
+
+/* ── Toggle pill bar ──────────────────────────────────────────────────── */
+.toggle-pill-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+}
+.toggle-pill {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.toggle-pill:hover { color: var(--ink); }
+.toggle-pill[aria-pressed="true"] {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+  box-shadow: 0 1px 0 var(--rule);
+}
+.toggle-pill-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 1px 8px;
+  min-width: 18px;
+  text-align: center;
+}
+.toggle-pill[data-tone="critical"] .toggle-pill-count,
+.toggle-pill[aria-pressed="true"][data-tone="critical"] { color: var(--bad); }
+.toggle-pill[data-tone="high"] .toggle-pill-count,
+.toggle-pill[aria-pressed="true"][data-tone="high"] { color: var(--accent); }
+.toggle-pill[data-tone="watch"] .toggle-pill-count,
+.toggle-pill[aria-pressed="true"][data-tone="watch"] { color: var(--warn); }
+
+/* ── Buyer panel (the only "rich" surface — kept short) ───────────────── */
+.buyer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+}
+.buyer-panel-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.buyer-panel-question {
+  font-family: var(--font-serif);
+  font-size: clamp(18px, 2.4vw, 22px);
+  line-height: 1.3;
+  color: var(--ink);
+  font-weight: 600;
+}
+.buyer-panel-summary {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 64ch;
+}
+.buyer-panel-summary strong { color: var(--ink); font-weight: 600; }
+.buyer-panel-summary .highlight-good { color: var(--good); font-weight: 600; }
+.buyer-panel-summary .highlight-warn { color: var(--warn); font-weight: 600; }
+.buyer-panel-summary .highlight-bad { color: var(--bad); font-weight: 600; }
+.buyer-panel-summary .highlight-accent { color: var(--accent); font-weight: 600; }
+.buyer-panel-source {
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.buyer-panel-source-chip {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.buyer-panel-source-time { color: var(--ink-soft); }
+.buyer-panel-link {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-2);
+  margin-top: var(--space-1);
+}
+.buyer-panel-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+@media (max-width: 520px) {
+  .buyer-panel { padding: var(--space-4); }
+}
+
+/* ── Feedback footer ──────────────────────────────────────────────────── */
+.feedback-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+  padding: var(--space-4) 0 var(--space-2);
+  font-size: 12px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+}
+.feedback-footer-id { font-family: var(--font-mono); font-weight: 600; color: var(--ink-2); }
+.feedback-footer-disclaimer { flex: 1 1 auto; min-width: 200px; }
+.feedback-footer-lawyer,
+.feedback-footer-survey {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-2);
+}
+.feedback-footer-lawyer:hover,
+.feedback-footer-survey:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* ── Print: keep to 1-2 pages, hide non-essential surfaces ────────────── */
+@media print {
+  body { background: white; font-size: 11px; }
+  .buyer-page { padding: 0; gap: var(--space-3); }
+  .toggle-pill-bar { display: none; }
+  .feedback-footer { border-top: 0; padding-top: 0; }
+  .property-header { border-bottom: 1px solid #444; }
+  .verdict-card, .exposure-strip, .buyer-panel { break-inside: avoid; }
 }
 
 .page { max-width: 760px; margin: 0 auto; padding: 36px 48px; }
