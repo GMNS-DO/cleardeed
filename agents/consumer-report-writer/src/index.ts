@@ -2167,6 +2167,63 @@ export function buildQGrid(
   return `<div class="q-grid" id="q-grid">${tiles}</div>`;
 }
 
+// Q-detail: expanded section for one Buyer Question. Renders when a buyer clicks
+// a q-tile in the q-grid. Each Q has its own anchor (id="{id}-detail") that
+// matches the q-tile's href. Shows the question, 1-line answer, key-fact cards,
+// sub-finding chips (toggleable), and a provenance strip with verify URL.
+export function buildQDetail(input: {
+  id: string;
+  index: number;
+  question: string;
+  oneLineAnswer: string;
+  keyFacts: ReadonlyArray<{ label: string; value: string; status?: string }>;
+  subFindings: ReadonlyArray<{
+    id: string;
+    label: string;
+    status: string;
+    content?: string;
+  }>;
+  provenance: { source: string; fetchedAt: string; verifyUrl?: string };
+}): string {
+  const factsHtml = input.keyFacts
+    .map(
+      (f) =>
+        `<div class="q-detail-fact"${f.status ? ` data-status="${escapeAttr(f.status)}"` : ""}>
+          <div class="q-fact-key">${escapeText(f.label)}</div>
+          <div class="q-fact-value">${escapeText(f.value)}</div>
+        </div>`
+    )
+    .join("");
+
+  const chipsHtml = input.subFindings
+    .map(
+      (sf) =>
+        `<button type="button" class="q-detail-chip" data-status="${escapeAttr(sf.status)}" data-finding-id="${escapeAttr(sf.id)}" aria-expanded="false">
+          <span class="q-chip-icon" aria-hidden="true"></span>
+          <span class="q-chip-text">${escapeText(sf.label)}</span>
+          ${sf.content ? `<div class="q-chip-body" hidden>${escapeText(sf.content)}</div>` : ""}
+        </button>`
+    )
+    .join("");
+
+  const verifyHtml = input.provenance.verifyUrl
+    ? `<a href="${escapeAttr(input.provenance.verifyUrl)}" target="_blank" rel="noopener noreferrer" class="q-detail-verify">↗ Verify yourself</a>`
+    : "";
+
+  return `<section class="q-detail" id="${escapeAttr(input.id)}-detail" aria-labelledby="${escapeAttr(input.id)}-detail-title">
+    <div class="q-detail-eyebrow">Q${input.index}</div>
+    <h2 class="q-detail-title" id="${escapeAttr(input.id)}-detail-title">${escapeText(input.question)}</h2>
+    <p class="q-detail-answer">${escapeText(input.oneLineAnswer)}</p>
+    <div class="q-detail-key-facts">${factsHtml}</div>
+    <div class="q-detail-sub-list" role="list">${chipsHtml}</div>
+    <div class="q-detail-provenance">
+      <div class="q-detail-provenance-source">Source: ${escapeText(input.provenance.source)}</div>
+      <div class="q-detail-provenance-time">Fetched: ${escapeText(input.provenance.fetchedAt)}</div>
+      ${verifyHtml}
+    </div>
+  </section>`;
+}
+
 // Property header strip at the top of the buyer page.
 // Reports identifier (reportId or village/plot). Compact single-line metadata.
 export function buildPropertyHeader(input: {
