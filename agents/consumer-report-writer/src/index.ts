@@ -2190,6 +2190,24 @@ export function buildPropertyHeader(input: {
   </header>`;
 }
 
+// Source status strip — one chip per data source between the hero and Q-grid.
+// Anchors the hero's "View sources" link via id="source-status".
+export function buildSourceStatusStrip(
+  sources: ReadonlyArray<{ name: string; fetchedAt: string; status: string }>
+): string {
+  const chips = sources
+    .map(
+      (s) =>
+        `<span class="source-status-chip" data-status="${escapeAttr(s.status)}" title="${escapeAttr(s.name)} · fetched ${escapeAttr(s.fetchedAt)}">
+          <span class="source-status-chip-dot"></span>
+          <span class="source-status-chip-name">${escapeText(s.name)}</span>
+          <span class="source-status-chip-time">${escapeText(s.fetchedAt)}</span>
+        </span>`
+    )
+    .join("");
+  return `<div class="source-status-strip" id="source-status" aria-label="Data source status">${chips}</div>`;
+}
+
 // Single-line footer with the report id, the disclaimer, and the survey link.
 // The survey link is a placeholder; the app's feedback page is wired separately.
 export function buildFeedbackFooter(input: { reportId: string }): string {
