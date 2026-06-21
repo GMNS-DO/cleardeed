@@ -229,6 +229,16 @@ export interface Tier2Input {
       buyerAction?: string;
     }>;
   }>;
+  /**
+   * T-051b — Owner's residence GPS for distance-aware Malipada detection
+   * (Pattern 3, ROR-INS-026). Geocoded from the Bhulekh page-1 owner
+   * address via a second Nominatim search call (separate cache, 30-day
+   * TTL). Null when Bhulekh did not return a residence, the residence
+   * string is empty, or Nominatim returned no hit. When null, ROR-INS-026
+   * skips the distance check and renders an "unverified" status with a
+   * "consult local SRO to verify owner's current address" action item.
+   */
+  ownerResidenceGPS?: { lat: number; lon: number } | null;
 }
 
 /** A5 OwnershipReasoner output (inlined to avoid cross-package import). */
@@ -555,11 +565,12 @@ export function mapToReportInput(
     gpsCoordinates: { latitude: tier2.gps.lat, longitude: tier2.gps.lon },
     // T-051 — plotGPS (lat/lon) is the distance-comparison anchor for
     // ROR-INS-026 (Malipada distance check). `ownerResidenceGPS` is a
-    // T-051b follow-up — the orchestrator needs to geocode the owner's
-    // residence from the RoR via Nominatim before this rule fires on
-    // real customer input.
+    // T-051b follow-up — the orchestrator now geocodes the owner's
+    // residence from the RoR via Nominatim search before building the
+    // Tier2Input. When null (empty residence, geocode failure, or Bhulekh
+    // didn't return a record), the rule falls back to "unverified" status.
     plotGPS: { lat: tier2.gps.lat, lon: tier2.gps.lon },
-    ownerResidenceGPS: null, // T-051b
+    ownerResidenceGPS: tier2.ownerResidenceGPS ?? null, // T-051b
     claimedOwnerName: tier2.claimedOwnerName,
     geoFetch,
     revenueRecords: bhulekhData

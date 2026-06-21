@@ -157,3 +157,156 @@ describe("buildBuyerPage", () => {
     expect(html).toContain(".buyer-page { font-family: serif; }");
   });
 });
+
+describe("buildBuyerPage — trust strip plumbing from sourceMeta", () => {
+  it("Q1 trust strip pulls rawArtifactHash, parserVersion, fetchedAt from sourceMeta.bhulekh", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      sourceMeta: {
+        bhulekh: {
+          fetchedAt: "2026-04-12T14:32:00.000Z",
+          rawArtifactHash: "7a3f9b2c8d1e4f6a5b9c0d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a",
+          parserVersion: "Bhulekh v3.2",
+          warnings: [],
+        },
+      },
+      css: "",
+    } as any);
+    // The summary line in the rendered trust strip should include the
+    // real hash and parser version, not the demo strings.
+    const q1Section = html.match(/<section class="q-detail" id="q1-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(q1Section).toContain("q-trust-strip");
+    expect(q1Section).toContain("7a3f9b2c8d1e");
+    expect(q1Section).toContain("Bhulekh v3.2");
+    // Demo strings should NOT be present.
+    expect(q1Section).not.toContain("7a3f9b2c... (sha256 of raw HTML)");
+  });
+
+  it("Q1 trust strip falls back to minimal summary when sourceMeta is absent", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      css: "",
+    } as any);
+    const q1Section = html.match(/<section class="q-detail" id="q1-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    // No sourceMeta — summary line shows only the source URL and "2h ago"
+    // (no fake hash, no fake parser version). Trust strip still renders
+    // because buyers must always see it, but with minimal content.
+    expect(q1Section).toContain("q-trust-strip");
+    expect(q1Section).toContain("2h ago");
+    expect(q1Section).not.toContain("🔒 hash 7a3f9b2c");
+  });
+
+  it("Q1 trust strip shows casteFlag when casteOdia is provided", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      sourceMeta: {
+        bhulekh: {
+          fetchedAt: "2026-04-12T14:32:00.000Z",
+          rawArtifactHash: "abc123",
+          casteOdia: "SC",
+        },
+      },
+      css: "",
+    } as any);
+    const q1Section = html.match(/<section class="q-detail" id="q1-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(q1Section).toContain("⚖️ Transferability");
+    expect(q1Section).toContain("RoR shows SC owner");
+    expect(q1Section).toContain("Odisha Land Reforms Act §22");
+  });
+
+  it("Q1 trust strip omits casteFlag when casteOdia is null or empty", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      sourceMeta: {
+        bhulekh: {
+          fetchedAt: "2026-04-12T14:32:00.000Z",
+          rawArtifactHash: "abc123",
+          casteOdia: null,
+        },
+      },
+      css: "",
+    } as any);
+    const q1Section = html.match(/<section class="q-detail" id="q1-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(q1Section).not.toContain("⚖️ Transferability");
+  });
+
+  it("Q3 trust strip pulls attempts from sourceMeta.eCourts", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      sourceMeta: {
+        eCourts: {
+          fetchedAt: "2026-04-12T14:32:00.000Z",
+          rawArtifactHash: "captcha-response-hash",
+          parserVersion: "ecourts-apify-v1",
+          attempts: "2 captcha attempt(s) accepted",
+          warnings: ["Captcha hard — Tesseract confidence 65%"],
+        },
+      },
+      css: "",
+    } as any);
+    const q3Section = html.match(/<section class="q-detail" id="q3-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(q3Section).toContain("q-trust-strip");
+    expect(q3Section).toContain("2 captcha attempt(s) accepted");
+    expect(q3Section).toContain("Captcha hard — Tesseract confidence 65%");
+  });
+
+  it("Q3 trust strip falls back to minimal summary when eCourts sourceMeta is absent", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      css: "",
+    } as any);
+    const q3Section = html.match(/<section class="q-detail" id="q3-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(q3Section).toContain("q-trust-strip");
+    // Without sourceMeta, the summary line falls back to "2h ago" only
+    // — no real hash, no real parser version, no real attempts to display.
+    expect(q3Section).toContain("2h ago");
+    expect(q3Section).not.toContain("🔁");
+    expect(q3Section).not.toContain("1 captcha");
+  });
+
+  it("renders rawOdia in Q1 when sourceMeta provides it", () => {
+    const html = buildBuyerPage({
+      reportId: "X",
+      header: buildHeader({ plotVillage: "Mendhasala" }),
+      insights: [],
+      ...baseProps,
+      sections: baseSections,
+      sourceMeta: {
+        bhulekh: {
+          fetchedAt: "2026-04-12T14:32:00.000Z",
+          rawArtifactHash: "abc",
+          rawOdia: { odia: "କୃଷ୍ଣଚନ୍ଦ୍ର", english: "Krushnachandra" },
+        },
+      },
+      css: "",
+    } as any);
+    const q1Section = html.match(/<section class="q-detail" id="q1-detail"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(q1Section).toContain("📜 Original (Odia)");
+    expect(q1Section).toContain("କୃଷ୍ଣଚନ୍ଦ୍ର");
+    expect(q1Section).toContain("Krushnachandra");
+  });
+});

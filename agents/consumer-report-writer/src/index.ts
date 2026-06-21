@@ -1204,6 +1204,49 @@ export function generateBuyerLayerReport(
   }
   const ctx = deriveReportContext(parsed.data);
   const sections = buildBuyerSectionContents(ctx);
+
+  // T13 plumbing — pull raw fetcher provenance for the trust strip.
+  // data.sourceDetails[sourceName] is the SourceResultBase projection
+  // that the mapper emits. We forward only the fields the strip reads.
+  const sd = (ctx.data as any).sourceDetails ?? {};
+  const ecourtsSearchMeta = (ctx as any).courtCases?.searchMetadata ?? null;
+  const sourceMeta: NonNullable<BuyerPageInternalInput["sourceMeta"]> = {
+    bhulekh: sd.bhulekh
+      ? {
+          fetchedAt: sd.bhulekh.fetchedAt,
+          rawArtifactHash: sd.bhulekh.rawArtifactHash,
+          parserVersion: sd.bhulekh.parserVersion,
+          warnings: sd.bhulekh.warnings,
+          rawOdia: ctx.data.revenueRecords?.recordMeta
+            ? {
+                odia: (ctx.data.revenueRecords.tenants?.[0] as any)?.landClassOdia ?? "",
+                english: ctx.data.revenueRecords.tenants?.[0]?.landClass ?? "",
+              }
+            : undefined,
+          casteOdia: ctx.data.revenueRecords?.tenants?.[0]?.casteOdia ?? null,
+        }
+      : undefined,
+    eCourts: sd.ecourts
+      ? {
+          fetchedAt: sd.ecourts.fetchedAt,
+          rawArtifactHash: sd.ecourts.rawArtifactHash,
+          parserVersion: sd.ecourts.parserVersion,
+          attempts: ecourtsSearchMeta?.captchaAcceptedCount
+            ? `${ecourtsSearchMeta.captchaAcceptedCount} captcha attempt(s) accepted`
+            : undefined,
+          warnings: sd.ecourts.warnings,
+        }
+      : undefined,
+    bhunaksha: sd.bhunaksha
+      ? {
+          fetchedAt: sd.bhunaksha.fetchedAt,
+          rawArtifactHash: sd.bhunaksha.rawArtifactHash,
+          parserVersion: sd.bhunaksha.parserVersion,
+          warnings: sd.bhunaksha.warnings,
+        }
+      : undefined,
+  };
+
   const buyerPageInput = {
     reportId: ctx.data.reportId,
     header: {
@@ -1240,6 +1283,7 @@ export function generateBuyerLayerReport(
     district: ctx.plotDistrict,
     plotNo: ctx.plotNo,
     sections,
+    sourceMeta,
     css: CSS,
   };
   return { html: buildBuyerPage(buyerPageInput), title: `ClearDeed — ${ctx.plotVillage}`, insights: ctx.insights };
@@ -2631,6 +2675,13 @@ export function buildBuyerPage(input: {
     financial: string;
     verify: string;
   };
+  // T13 — raw fetcher provenance for the trust strip. Optional; when
+  // absent (e.g. demo path), deriveQDetail falls back to demo strings.
+  sourceMeta?: {
+    bhulekh?: SourceProvenance;
+    eCourts?: SourceProvenance;
+    bhunaksha?: SourceProvenance;
+  };
   css: string;
 }): string {
   const riskInsightsInput = input.riskInsights;
@@ -2714,6 +2765,7 @@ export function buildBuyerPage(input: {
     district: input.district,
     plotNo: input.plotNo,
     sections: input.sections,
+    sourceMeta: input.sourceMeta,
   };
   const ctx = deriveBuyerPageContext(normalized, input.css);
   const body = renderBuyerPageHtml(ctx);
@@ -2756,6 +2808,33 @@ interface BuyerPageInternalInput {
     financial: string;
     verify: string;
   };
+  // T13 plumbing — raw fetcher provenance for the trust strip. Each
+  // entry mirrors the SourceResultBase fields that fetchers populate.
+  // When a source is absent or the report used the demo path, the
+  // corresponding entry is undefined and deriveQDetail falls back to
+  // demo strings (see commit 26fc951).
+  sourceMeta?: {
+    bhulekh?: SourceProvenance;
+    eCourts?: SourceProvenance;
+    bhunaksha?: SourceProvenance;
+  };
+}
+
+// SourceProvenance: the subset of SourceResultBase that the trust strip
+// reads. Trimmed to the fields that matter for buyer trust (hash,
+// parser version, attempts, raw Odia). See packages/schema/src/index.ts
+// for the full SourceResultBase.
+interface SourceProvenance {
+  fetchedAt?: string;
+  rawArtifactHash?: string;
+  parserVersion?: string;
+  templateHash?: string;
+  attempts?: string;
+  inputsTried?: ReadonlyArray<{ label?: string; input?: Record<string, unknown> }>;
+  warnings?: ReadonlyArray<string>;
+  rawOdia?: { english: string; odia: string };
+  casteOdia?: string | null;
+  cacheServedAt?: string;
 }
 
 interface BuyerPageContext {
@@ -3065,6 +3144,63 @@ function deriveQDetail(
   const fetchedAt = "2026-04-12 14:32 IST";
   const verifyUrl = "https://bhulekh.ori.nic.in/";
 
+  // T13 helper — build trust strip from real source metadata when available,
+  // otherwise fall back to demo strings (for demo path or when source failed).
+  const buildQ1TrustStrip = (): TrustStrip => {
+    const bhulekh = input.sourceMeta?.bhulekh;
+    const fetchedAtRel = bhulekh?.fetchedAt
+      ? new Date(bhulekh.fetchedAt).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "2h ago";
+    return {
+      summary: `📍 bhulekh.ori.nic.in · ⏱ ${fetchedAtRel}${
+        bhulekh?.rawArtifactHash ? ` · 🔒 hash ${bhulekh.rawArtifactHash.slice(0, 12)}` : ""
+      }${bhulekh?.parserVersion ? ` · 🔧 ${bhulekh.parserVersion}` : ""}`,
+      sourceHash: bhulekh?.rawArtifactHash
+        ? `${bhulekh.rawArtifactHash.slice(0, 12)}... (sha256 of raw HTML)`
+        : undefined,
+      parserVersion: bhulekh?.parserVersion,
+      attempts: bhulekh?.warnings ? "1 attempt" : undefined,
+      inputsTried: bhulekh?.inputsTried
+        ? bhulekh.inputsTried.map((t) => t.label ?? JSON.stringify(t.input ?? {}))
+        : undefined,
+      warnings: bhulekh?.warnings ? [...bhulekh.warnings] : undefined,
+      rawOdia: bhulekh?.rawOdia,
+      casteFlag: bhulekh?.casteOdia
+        ? `RoR shows ${bhulekh.casteOdia} owner. Land in reserved categories may have transfer restrictions under Odisha Land Reforms Act §22. Verify with the tehsildar before purchase.`
+        : undefined,
+    };
+  };
+
+  const buildQ3TrustStrip = (): TrustStrip => {
+    const ecourts = input.sourceMeta?.eCourts;
+    const fetchedAtRel = ecourts?.fetchedAt
+      ? new Date(ecourts.fetchedAt).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "2h ago";
+    return {
+      summary: `📍 services.ecourts.gov.in · ⏱ ${fetchedAtRel}${
+        ecourts?.attempts ? ` · 🔁 ${ecourts.attempts}` : ""
+      }${ecourts?.parserVersion ? ` · 🔧 ${ecourts.parserVersion}` : ""}`,
+      sourceHash: ecourts?.rawArtifactHash
+        ? `${ecourts.rawArtifactHash.slice(0, 12)}... (sha256 of eCourts response)`
+        : undefined,
+      parserVersion: ecourts?.parserVersion,
+      attempts: ecourts?.attempts,
+      warnings: ecourts?.warnings ? [...ecourts.warnings] : undefined,
+    };
+  };
+
   if (id === "q1") {
     return {
       id: "q1",
@@ -3090,22 +3226,9 @@ function deriveQDetail(
       ],
       provenance: {
         source: "Bhulekh RoR (Plot, Village)",
-        fetchedAt,
+        fetchedAt: input.sourceMeta?.bhulekh?.fetchedAt ?? fetchedAt,
         verifyUrl,
-        trustStrip: {
-          summary: "📍 bhulekh.ori.nic.in · ⏱ 2h ago · 🔒 hash 7a3f9b2c · 🔧 Bhulekh v3.2",
-          sourceHash: "7a3f9b2c... (sha256 of raw HTML)",
-          parserVersion: "Bhulekh v3.2",
-          templateHashDate: "2026-04-12",
-          attempts: "1 attempt",
-          inputsTried: ["Searched Plot 309 (Mendhasala)", "then Khata 830"],
-          rawOdia: {
-            odia: "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା",
-            english: input.header.ownerName,
-          },
-          casteFlag:
-            "RoR shows SC/ST owner. Land in reserved categories may have transfer restrictions under Odisha Land Reforms Act §22. Verify with the tehsildar before purchase.",
-        },
+        trustStrip: buildQ1TrustStrip(),
       },
     };
   }
@@ -3179,14 +3302,8 @@ function deriveQDetail(
           ],
       provenance: {
         source: "eCourts + RCCMS + IGR (manual)",
-        fetchedAt,
-        trustStrip: {
-          summary: "📍 eCourts · ⏱ 2h ago · 🔁 1 attempt (captcha solved)",
-          sourceHash: "a1b2c3... (eCourts captcha response)",
-          parserVersion: "eCourts v1.1 + Tesseract OCR",
-          attempts: "1 attempt (captcha solved)",
-          warnings: ["'No cases found' is not a clean negative until the captcha succeeds — run manual search before relying on this."],
-        },
+        fetchedAt: input.sourceMeta?.eCourts?.fetchedAt ?? fetchedAt,
+        trustStrip: buildQ3TrustStrip(),
       },
     };
   }
