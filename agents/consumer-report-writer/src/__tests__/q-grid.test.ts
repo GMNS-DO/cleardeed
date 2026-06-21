@@ -14,7 +14,7 @@ describe("q-grid", () => {
   it("renders 6 hero cards", () => {
     const html = buildQGrid(fixtureQuestions);
     expect(html).toContain('class="q-grid"');
-    const cardCount = (html.match(/q-tile/g) ?? []).length;
+    const cardCount = (html.match(/class="q-tile"/g) ?? []).length;
     expect(cardCount).toBe(6);
   });
 
