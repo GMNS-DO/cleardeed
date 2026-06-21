@@ -93,7 +93,7 @@ async function LiveReport({ reportId }: { reportId: string }) {
 // ── Demo report ───────────────────────────────────────────────────────────────
 
 async function DemoReport() {
-  const { generateConsumerReport } = await import("@cleardeed/consumer-report-writer");
+  const { generateBuyerLayerReport } = await import("@cleardeed/consumer-report-writer");
 
   const fixtureInput = {
     ...CONSUMER_REPORT_FIXTURE,
@@ -101,7 +101,7 @@ async function DemoReport() {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { html } = generateConsumerReport(fixtureInput as any);
+  const { html } = generateBuyerLayerReport(fixtureInput as any);
 
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
