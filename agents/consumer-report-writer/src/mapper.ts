@@ -284,6 +284,33 @@ export const ConsumerReportGenInputSchema = z.object({
   // The HTML renderer handles nulls gracefully with explicit null checks
   geoFetch: z.any().optional(),
   revenueRecords: z.any().optional(),
+  // V1.5 Phase 0 — normalized ror payload for the insight engine.
+  // The bhulekh registry rules read from a flat `ror.page1 / page2 /
+  // plotTable / tenants / chauhaddiByPlot / section6 / mutationReferences`
+  // shape. The orchestrator emits `revenueRecords` (a slim consumer view)
+  // and `revenueRecords.rorDocument` (a nested document). The mapper
+  // flattens the document into the rule-readable shape and exposes it
+  // here. Without this field, all bhulekh rules that read `input.ror.*`
+  // never fire on real customer input.
+  ror: z.any().optional(),
+  // V1.5 Phase 0 — normalized bhunaksha payload for the insight engine.
+  // Recursive area-cross (ROR-INS-079) reads from `input.bhunaksha.area`
+  // (polygon area in km²) to compare against Bhulekh recorded area.
+  bhunaksha: z.any().optional(),
+  // T-069 — IGR-EC rollup for the title-chain PoA rule. The IGR-EC
+  // fetcher annotates each EC entry with `modeOfTransfer` and rolls up
+  // to `poaOnRecord: true` when any registered instrument is a GPA
+  // sale. ROR-INS-075 reads `input.igrEc.poaOnRecord` as its primary
+  // signal for the Suraj Lamp red flag, with the Bhulekh textual
+  // inference as fallback.
+  igrEc: z.any().optional(),
+  // T-051 — GPS coordinates for distance-aware owner-residence rules.
+  // `plotGPS` is always populated from the user query. `ownerResidenceGPS`
+  // is a T-051b follow-up: the orchestrator needs a second Nominatim
+  // call on ror.page1.ownerAddress to populate it. Until that ships,
+  // ROR-INS-026 (Malipada impersonation distance check) will not fire.
+  plotGPS: z.any().optional(),
+  ownerResidenceGPS: z.any().optional(),
   courtCases: z.any().optional(),
   registryLinks: z.any().optional(),
   ownershipReasoner: z.any().optional(),
@@ -374,6 +401,13 @@ export function mapToReportInput(
     village?: string;
     tahasil?: string;
     area?: number;
+    district?: string;
+    mouza?: string;
+    mouzaOdia?: string;
+    areaUnit?: string;
+    geometry?: unknown;
+    chauhaddi?: unknown;
+    neighbours?: unknown[];
   } | null;
 
   const geoFetch = {
@@ -390,6 +424,7 @@ export function mapToReportInput(
   const bhulekhData = bhulekh?.data as {
     khataNo?: string;
     village?: string;
+    district?: string;
     tenants?: Array<{
       tenantName?: string;
       fatherHusbandName?: string;
@@ -518,6 +553,13 @@ export function mapToReportInput(
     reportId,
     generatedAt: completedAt,
     gpsCoordinates: { latitude: tier2.gps.lat, longitude: tier2.gps.lon },
+    // T-051 — plotGPS (lat/lon) is the distance-comparison anchor for
+    // ROR-INS-026 (Malipada distance check). `ownerResidenceGPS` is a
+    // T-051b follow-up — the orchestrator needs to geocode the owner's
+    // residence from the RoR via Nominatim before this rule fires on
+    // real customer input.
+    plotGPS: { lat: tier2.gps.lat, lon: tier2.gps.lon },
+    ownerResidenceGPS: null, // T-051b
     claimedOwnerName: tier2.claimedOwnerName,
     geoFetch,
     revenueRecords: bhulekhData
@@ -548,6 +590,302 @@ export function mapToReportInput(
           screenshots: bhulekhRawDocument?.screenshots ?? null,
           tenants,
         }
+      : null,
+    // V1.5 Phase 0 — wire `bhunaksha` for the insight engine.
+    //
+    // The bhunaksha rules (src/insights/registry/bhunaksha/* and the
+    // area-cross rule in src/insights/registry/recursive/area-cross.ts)
+    // read from a normalized `input.bhunaksha.*` shape. Without this
+    // block the rules pass in unit tests but never fire on real reports
+    // because the mapper only used bhunaksha data internally for
+    // revenueRecords (a slim consumer view). The recursive area-cross
+    // rule (ROR-INS-079) specifically needs `bhunaksha.area` as the
+    // polygon-area in km² to compare against Bhulekh recorded area.
+    bhunaksha: bhunakshaData
+      ? {
+          status: bhunaksha?.status === "success" ? "verified" : bhunaksha?.status ?? "not_run",
+          fetchedAt: bhunaksha?.fetchedAt ?? null,
+          plotNo: bhunakshaData?.plotNo ?? null,
+          village: bhunakshaData?.village ?? null,
+          tahasil: bhunakshaData?.tahasil ?? null,
+          district: bhunakshaData?.district ?? null,
+          mouza: bhunakshaData?.mouza ?? null,
+          mouzaOdia: bhunakshaData?.mouzaOdia ?? null,
+          // Area as the WFS source emits it — km². ROR-INS-079 multiplies
+          // by 247.105 to get acres and compares against Bhulekh's
+          // recorded area. Surfacing it as the source delivered it
+          // keeps the unit conversion in one place (the rule).
+          area: bhunakshaData?.area ?? null,
+          areaUnit: (bhunakshaData as any)?.areaUnit ?? "km2",
+          geometry: (bhunakshaData as any)?.geometry ?? null,
+          chauhaddi: (bhunakshaData as any)?.chauhaddi ?? null,
+          neighbours: (bhunakshaData as any)?.neighbours ?? [],
+        }
+      : null,
+    // T-069 — wire `igrEc` for the Suraj Lamp PoA rule.
+    //
+    // The IGR-EC fetcher annotates each EC entry with `modeOfTransfer`
+    // (sale_deed / gpa_sale / court_order / gift / lease / mortgage) and
+    // rolls up to a boolean `poaOnRecord` flag — true if any registered
+    // instrument in the search window is a GPA sale. ROR-INS-075 reads
+    // `input.igrEc.poaOnRecord` as its primary signal for the Suraj Lamp
+    // red flag; the Bhulekh textual inference on the rights field is
+    // the fallback when IGR data is unavailable.
+    igrEc: igrEc?.data
+      ? {
+          status: igrEc?.status === "success" ? "verified" : igrEc?.status ?? "not_run",
+          ecAvailable: (igrEc.data as any).ecAvailable ?? false,
+          poaOnRecord: (igrEc.data as any).poaOnRecord === true,
+          sro: (igrEc.data as any).sro ?? null,
+          district: (igrEc.data as any).district ?? null,
+          searchPeriod: (igrEc.data as any).searchPeriod ?? null,
+          entryCount: Array.isArray((igrEc.data as any).entries)
+            ? (igrEc.data as any).entries.length
+            : 0,
+          gpaEntries: Array.isArray((igrEc.data as any).entries)
+            ? ((igrEc.data as any).entries as any[])
+                .filter((e) => e.modeOfTransfer === "gpa_sale")
+                .map((e) => ({
+                  docNo: e.docNo ?? null,
+                  regDate: e.regDate ?? null,
+                  docType: e.docType ?? null,
+                  party1: e.party1 ?? null,
+                  party2: e.party2 ?? null,
+                }))
+            : [],
+          fetchedAt: igrEc?.fetchedAt ?? null,
+        }
+      : null,
+    // V1.5 Phase 0 — wire `ror` for the insight engine.
+    //
+    // The bhulekh registry rules (src/insights/registry/bhulekh/*) read
+    // from a normalized `input.ror.*` shape — page1 / page2 / plotTable /
+    // tenants / chauhaddiByPlot / section6 / mutationReferences. Without
+    // this block the rules pass in unit tests (where we mock `ror` directly)
+    // but never fire on real customer reports, because the orchestrator
+    // only emits `revenueRecords` (a slim consumer view) and
+    // `revenueRecords.rorDocument` (a parsed-but-nested document).
+    //
+    // This block flattens the document into the shape the rules expect.
+    // It is best-effort: any field that the parser didn't capture surfaces
+    // as `null` and the rule engine treats it as "no signal" (defensive
+    // null-checks throughout). See the V1.5 Phase 0 wiring regression
+    // test at `src/__tests__/pipeline_input.test.ts`.
+    ror: bhulekhData
+      ? (() => {
+          const record = bhulekhRawDocument?.record ?? {};
+          const loc = bhulekhRawDocument?.location ?? {};
+          const rawRows: any[] =
+            bhulekhRawDocument?.plotTable?.rows ??
+            bhulekhData?.tenants?.map((t: any) => ({
+              plotNo: t.surveyNo ?? null,
+              khataNo: bhulekhData.khataNo ?? null,
+              area: t.area ?? null,
+              tenantName: t.tenantName ?? null,
+            })) ??
+            [];
+          const ownerBlocks: any[] = record.ownerBlocks ?? [];
+          const firstOwnerBlock = ownerBlocks[0] ?? {};
+          const rightsOdia: string | null =
+            record.rightsOdia ?? bhulekhBackPage?.rightsOdia ?? null;
+          const ownerEnglish =
+            bhulekhData?.tenants?.[0]?.tenantName ??
+            firstOwnerBlock?.tenantNameOdia ??
+            null;
+          const ownerAddress =
+            firstOwnerBlock?.residenceOdia ??
+            record.residenceOdia ??
+            null;
+          // District comes from Nominatim (English) or Bhulekh (Odia). V1
+          // is Khordha-only so a small transliteration map covers the
+          // handful of variants the parser actually emits. If neither
+          // path yields a value, fall back to the canonical English name
+          // (the V1 cohort is Khordha by construction).
+          const districtFromOdia = (odia: string | null | undefined): string | null => {
+            if (!odia) return null;
+            const trimmed = odia.trim();
+            const map: Record<string, string> = {
+              "ଖୋର୍ଦ୍ଧା": "Khordha",
+              "ଭୁବନେଶ୍ୱର": "Bhubaneswar",
+              "କଟକ": "Cuttack",
+              "ପୁରୀ": "Puri",
+              "ଗଞ୍ଜାମ": "Ganjam",
+              "ମୟୂରଭଞ୍ଜ": "Mayurbhanj",
+            };
+            return map[trimmed] ?? trimmed;
+          };
+          const plotDistrictEnglish =
+            bhulekhData?.district ??
+            nominatimData?.district ??
+            districtFromOdia(loc.districtOdia) ??
+            "Khordha";
+          // Tenure signal: Bhulekh writes "ପଟ୍ଟା ରୁକା" (Patta Ruka) for freehold
+          // and "ଲିଜ ରୁକା" for lease. The land-kisam dictionary may normalize
+          // the raw word to "khalsa" before the rule engine sees it, so we
+          // re-derive the lease hint from the raw Odia here (preserves it
+          // even when dictionary normalization is aggressive — Patia test).
+          const tenureRawOdia = rightsOdia ?? "";
+          const hasPattaTenure = /patta|ପଟ୍ଟା/i.test(tenureRawOdia);
+          const hasLeaseTenure = /lease|ଲିଜ/i.test(tenureRawOdia);
+          // Page 1 surface — every field read by any bhulekh rule.
+          const zamindarKhewatOdia =
+            (bhulekhRawDocument?.record as any)?.zamindarKhewatOdia ??
+            (bhulekhRawDocument?.record as any)?.landlordOdia ??
+            null;
+          // Extract khewat number from the zamindar khewat string.
+          // Bhulekh shows strings like "ଓଡ଼ିଶା ସରକାର ଖେୱାଟ ନମ୍ବର 1" or
+          // "Government Khewat No. 1". Extract trailing Arabic or Odia digits.
+          const odiaDigits = ["୦", "୧", "୨", "୩", "୪", "୫", "୬", "୭", "୮", "୯"];
+          const odiaToArabic = (s: string): string => {
+            let out = s;
+            for (let i = 0; i < odiaDigits.length; i++) {
+              out = out.replace(new RegExp(odiaDigits[i], "g"), String(i));
+            }
+            return out;
+          };
+          const khewatNoRaw = zamindarKhewatOdia ?? "";
+          const khewatNoMatch = khewatNoRaw.match(
+            /(\d+|[୦-୯]+)[\s​]*$/
+          );
+          const khewatNo = khewatNoMatch
+            ? odiaToArabic(khewatNoMatch[1])
+            : null;
+          // V1.5 Phase 0 — infer hasPoA from rights text.
+          // The RoR rights field (gvfront_ctl02_lblStatua) sometimes
+          // contains "ପ୍ରାଧିକାର" or "ପ୍ରାଧିକୃତ" (authorized/attorney)
+          // as a weak PoA signal. A stronger signal is from IGR deed
+          // records (which list GPA/PoA instruments). This inference
+          // enables ROR-INS-075 to fire on Bhulekh-only reports when
+          // the rights field contains the keyword.
+          const rightsText = rightsOdia ?? "";
+          const hasPoA = /ପ୍ରାଧିକାର|ପ୍ରାଧିକୃତ|ସାଧାରଣ ପ୍ରାଧିକାର|GPA|Power of Attorney|attorney/i.test(
+            rightsText
+          );
+          const page1 = {
+            khatiyanNumber: record.khatiyanNo ?? bhulekhData?.khataNo ?? null,
+            owner: ownerEnglish,
+            ownerAddress,
+            ownerOdia: firstOwnerBlock?.tenantNameOdia ?? null,
+            fatherHusbandName:
+              firstOwnerBlock?.guardianNameOdia ??
+              record.guardianNameOdia ??
+              null,
+            // The plot's village / mouza / district come from the Bhulekh
+            // location graph, with Nominatim / Bhunaksha as fallbacks.
+            plotVillage: bhulekhData?.village ?? null,
+            plotMouza: loc.mouzaOdia ?? null,
+            plotTehsil: loc.tehsilOdia ?? null,
+            plotDistrict: plotDistrictEnglish,
+            landClass: bhulekhData?.tenants?.[0]?.landClass ?? null,
+            landClassOdia: bhulekhData?.tenants?.[0]?.landClassOdia ?? null,
+            landClassEnglish: bhulekhData?.tenants?.[0]?.landClassEnglish ?? null,
+            rightsOdia,
+            // Khewat — Zamindari-era head-of-household. Surfaced so the
+            // Zamindari chain-gap rule (ROR-INS-076) can fire on era-1980
+            // khatiyans. The fetcher reads it from gvfront_ctl02_lblLandlordName.
+            zamindarKhewatOdia,
+            khewatNo,
+            hasPoA,
+            leaseIndicators: {
+              hasPattaTenure,
+              hasLeaseTenure,
+              tenureRawOdia,
+            },
+          };
+          // Page 2 surface — the user's queried plot + every row in the
+          // plot table. The "selected plot" is the first row whose plotNo
+          // matches the tenant surveyNo we fetched, falling back to the
+          // first row (most Bhulekh queries return the queried plot first).
+          const selectedPlotNumber =
+            bhulekhData?.tenants?.[0]?.surveyNo ?? rawRows[0]?.plotNo ?? null;
+          const plots = rawRows.map((row: any) => ({
+            plotNo: row.plotNo ?? null,
+            khataNo: row.khataNo ?? bhulekhData?.khataNo ?? null,
+            area: row.area ?? null,
+            areaAcres: row.areaAcres ?? row.area ?? null,
+            areaDecimals: row.areaDecimals ?? null,
+            areaHectares: row.areaHectares ?? null,
+            tenantName: row.tenantName ?? null,
+            kisam: row.kisam ?? row.landClass ?? bhulekhData?.tenants?.[0]?.landClass ?? null,
+            // Per-row remarks first; fall back to the document-level
+            // remarks object (which the parser surfaces as a single
+            // free-text block on the back page). Concatenate so the
+            // Section 6 / government-land detector can match either
+            // the row annotation or the back-page note.
+            remarksOdia: [
+              row.remarksOdia,
+              row.remarks,
+              typeof bhulekhRawDocument?.remarks === "string"
+                ? bhulekhRawDocument.remarks
+                : typeof bhulekhRawDocument?.remarks === "object" &&
+                    bhulekhRawDocument?.remarks
+                  ? Object.values(bhulekhRawDocument.remarks)
+                      .filter((v: any) => typeof v === "string")
+                      .join(" | ")
+                  : null,
+            ]
+              .filter((s) => typeof s === "string" && s.length > 0)
+              .join(" | ") || null,
+          }));
+          const targetRow =
+            plots.find((p: any) => p.plotNo === selectedPlotNumber) ??
+            plots[0] ??
+            null;
+          // The selected-plot row may not carry a village (the parser only
+          // attaches village to the khata header). Thread it into targetRow
+          // so rules that read `targetRow.village` (e.g. ROR-INS-080
+          // tenancy-over-claim cross-check) and the test contract
+          // (`expect(targetRow.village).toBe("Mendhasala")`) both work.
+          if (targetRow) {
+            (targetRow as any).village = bhulekhData?.village ?? null;
+          }
+          // Section 6 / government land — surfaced from remarks if present.
+          const remarksObj = bhulekhRawDocument?.remarks ?? {};
+          const section6Present = Object.values(remarksObj).some((v: any) =>
+            /section\s*6|ଧାରା\s*୬|government|ସରକାରୀ/i.test(String(v ?? ""))
+          );
+          const chauhaddiByPlot =
+            bhulekhRawDocument?.chauhaddiByPlot ??
+            bhulekhBackPage?.chauhaddiByPlot ??
+            null;
+          return {
+            status: bhulekh?.status === "success" ? "verified" : bhulekh?.status ?? "not_run",
+            khataNo: bhulekhData?.khataNo ?? null,
+            village: bhulekhData?.village ?? null,
+            district: plotDistrictEnglish,
+            fetchedAt: bhulekh?.fetchedAt ?? null,
+            page1,
+            page2: {
+              selectedPlotNumber,
+              plots,
+            },
+            plotTable: {
+              rows: rawRows,
+              targetRow,
+              totals: bhulekhRawDocument?.plotTable?.totals ?? null,
+            },
+            tenants,
+            chauhaddiByPlot,
+            section6: {
+              present: section6Present,
+              referenceCount: section6Present ? 1 : 0,
+              areaAcres: null,
+            },
+            mutationReferences: (bhulekhData?.mutationReferences ?? []).map(
+              (reference: any) => ({
+                caseType: reference.caseType ?? null,
+                caseNo: reference.caseNo ?? null,
+                orderDate: reference.orderDate ?? null,
+                plotNo: reference.plotNo ?? null,
+                sourceField: reference.sourceField ?? null,
+                rawText: reference.rawText ?? null,
+              })
+            ),
+            backPage: bhulekhBackPage,
+            sourceMeta: bhulekhRawDocument?.source ?? null,
+            recordMeta: record ?? null,
+          };
+        })()
       : null,
     courtCases: {
       total: allCases.length,

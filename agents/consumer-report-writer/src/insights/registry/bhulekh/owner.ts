@@ -151,11 +151,100 @@ function ownerFieldMissingStub(input: RuleInput): Insight[] | null {
   return null;
 }
 
+// POA-001 — Power of Attorney on record. The RoR carries a PoA flag,
+// indicating the person signing is not the recorded owner but an
+// attorney holder. Per Supreme Court judgment (Suraj Lamp vs. State of
+// Haryana, 1 SCC 656), a GPA-based sale does NOT convey title; only a
+// registered sale deed executed by the owner conveys title.
+function poAOnRecordWatchout(input: RuleInput): Insight[] | null {
+  const r = (input as any).ror;
+  if (!r || r.status !== "verified") return null;
+  const p1 = r.page1;
+  if (!p1) return null;
+  if (p1.hasPoA !== true) return null;
+  return [{
+    panel: "owner",
+    issueLens: "title_chain",
+    evidenceStrength: "document_anchor",
+    source: "bhulekh:ror:page-1",
+    severity: "watchout",
+    headline: "Power of Attorney recorded on RoR",
+    body: "The RoR page 1 records that a Power of Attorney is on file for this khatiyan. A GPA holder can sign documents on behalf of the owner, but a sale executed through a GPA does NOT itself convey title — per the Supreme Court's Suraj Lamp judgment, only a registered sale deed by the owner conveys title.",
+    actionItem: "Ask the seller to produce the registered PoA document and verify the owner's identity directly. Confirm the sale deed will be executed by the recorded owner, not solely through the GPA.",
+    ruleId: "POA-001",
+  }];
+}
+
+// ROR-INS-026 — Owner residence is >50km from plot AND no PoA.
+// Pattern 3 (Malipada Impersonation Scam): the EOW Khordha case
+// (2020-2023) involved an impersonator selling property while the
+// real owner lived in a different district. Distance amplifies the
+// impersonation risk because the owner cannot easily monitor the
+// property. T-051 implements this as a distance-aware escalation
+// of ROR-INS-021.
+//
+// NOTE: This rule requires `input.plotGPS` and `input.ownerResidenceGPS`
+// to be populated by the orchestrator (a separate Nominatim lookup on
+// the owner's residence address from the RoR). In V1, the orchestrator
+// does not yet fetch owner residence GPS, so this rule will NOT fire on
+// real customer input until the orchestrator is extended to run a
+// second Nominatim call on ror.page1.ownerAddress.
+function ownerResidenceDistanceRedFlag(input: RuleInput): Insight[] | null {
+  const r = (input as any).ror;
+  if (!r || r.status !== "verified") return null;
+  const p1 = r.page1;
+  if (!p1) return null;
+  // T-069 — IGR-EC poaOnRecord is the ground-truth signal. Read it.
+  const igrPoA = (input as any).igrEc?.poaOnRecord === true;
+  const bhulekhPoA = p1.hasPoA === true;
+  if (igrPoA || bhulekhPoA) return null; // PoA present → distance doesn't matter
+  const plotGPS = (input as any).plotGPS as { lat: number; lon: number } | undefined;
+  const ownerResidenceGPS = (input as any).ownerResidenceGPS as { lat: number; lon: number } | undefined;
+  if (!plotGPS || !ownerResidenceGPS) return null;
+  const distKm = haversineKm(
+    plotGPS.lat,
+    plotGPS.lon,
+    ownerResidenceGPS.lat,
+    ownerResidenceGPS.lon
+  );
+  if (distKm > 50) {
+    return [{
+      panel: "owner",
+      issueLens: "title_chain",
+      evidenceStrength: "document_anchor",
+      source: "bhulekh:ror:page-1 + nominatim:owner_residence",
+      severity: "redFlag",
+      headline: `Owner residence is ${Math.round(distKm)} km from the plot and no Power of Attorney is on record`,
+      body: `The RoR owner's recorded residence is ${Math.round(distKm)} km from this plot, and no Power of Attorney authorizing a remote sale is registered at the IGR. Pattern 3 (Malipada Impersonation Scam, EOW Khordha 2020-2023) involved an impersonator selling property while the real owner lived in a different district. Distance amplifies impersonation risk because the owner cannot easily monitor the property.`,
+      actionItem: "Arrange a video KYC call with the recorded owner before paying any advance. Confirm the sale is being executed by the owner, not an impersonator.",
+      ruleId: "ROR-INS-026",
+    }];
+  }
+  return null;
+}
+
+/**
+ * Haversine distance in km between two GPS points.
+ */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export const bhulekhOwnerRules: Rule[] = [
   { id: "ROR-INS-020", panel: "owner", fn: multipleCoOwnersRedFlag, version: v },
   { id: "ROR-INS-021", panel: "owner", fn: ownerAddressMismatchRedFlag, version: v },
   { id: "ROR-INS-022", panel: "owner", fn: governmentKhatiyanRedFlag, version: v },
   { id: "ROR-INS-023", panel: "owner", fn: singleTokenOwnerMatchWatchout, version: v },
   { id: "ROR-INS-024", panel: "owner", fn: sellerNameNotMatchedRedFlag, version: v },
+  { id: "POA-001", panel: "owner", fn: poAOnRecordWatchout, version: v },
   { id: "ROR-INS-025", panel: "owner", fn: ownerFieldMissingStub, version: v },
+  { id: "ROR-INS-026", panel: "owner", fn: ownerResidenceDistanceRedFlag, version: v },
 ];

@@ -35,6 +35,12 @@ import type { Insight } from "./insights/schema";
 export type { Insight } from "./insights/schema";
 import { renderInsightList, renderInsightListBySource } from "./insights/render";
 import {
+  evaluatePatterns,
+  buildTestedPatternsPanel,
+  type PatternResult,
+} from "./components/tested-patterns";
+import { buildV12FieldPanel } from "./components/v12-fields";
+import {
   tallyInsightsByBuyerQuestion,
   getUnimplementedExplanation,
   BUYER_QUESTIONS,
@@ -404,6 +410,24 @@ export function generateConsumerReport(
     ? `<div class="demo-banner">DEMO REPORT — Using cached sample data &nbsp;|&nbsp; <a href="/?demo=false">Run a real search</a></div>`
     : "";
 
+  // T1 — Tested Fraud Patterns Panel (Khordha 2024–2026).
+  // Always evaluated even when no Bhulekh data — buyer sees explicit
+  // pass/fail per pattern with the rules that tested it.
+  const firedRuleIds = new Set<string>([
+    ...Array.from(redFlagRuleIds),
+    ...Array.from(watchoutRuleIds),
+  ]);
+  const patternResults: PatternResult[] = evaluatePatterns({
+    insights,
+    revenueRecords,
+    firedRuleIds,
+  });
+  const patternPanelHtml = buildTestedPatternsPanel({
+    results: patternResults,
+    fetchedAt: fetchedDate,
+  });
+  const patternTriggeredCount = patternResults.filter((r) => r.state === "triggered").length;
+
   const sixBuyerQuestions = buildSixBuyerQuestions({
     bhulekhUsable,
     primaryOwnerName,
@@ -510,6 +534,9 @@ ${buildFinancialExposureSummary({
 
 ${buildSourceAuditPanel(sourceDetails)}
 
+<!-- ── Tested Fraud Patterns (T1) ──────────────────────────────────── -->
+${patternPanelHtml}
+
 <!-- ── Provenance Strip ──────────────────────────────────────────────── -->
 ${buildProvenanceStrip({
     bhulekhUsable,
@@ -555,6 +582,7 @@ ${buildProvenanceStrip({
       ${bhulekhUsable ? buildVerifyLink("https://bhulekh.ori.nic.in/", "Bhulekh", "Open the Bhulekh RoR portal") : ""}
     </div>
     ${rorCompletenessPanel}
+    ${buildV12FieldPanel({ revenueRecords, plotNo })}
     ${rorPlotTablePanel}
     ${bhunakshaMapPanel}
   </div>
@@ -1126,6 +1154,22 @@ function deriveReportContext(input: z.infer<typeof ConsumerReportGenInputSchema>
     if ((i as any).severity === "redFlag") redFlagRuleIds.add((i as any).ruleId);
     else if ((i as any).severity === "watchout") watchoutRuleIds.add((i as any).ruleId);
   }
+
+  // T1 — Tested Fraud Patterns Panel (Khordha 2024–2026) for the
+  // buyer-layer view. Same evaluation logic as the full report.
+  const buyerFiredRuleIds = new Set<string>([
+    ...Array.from(redFlagRuleIds),
+    ...Array.from(watchoutRuleIds),
+  ]);
+  const buyerPatternResults: PatternResult[] = evaluatePatterns({
+    insights,
+    revenueRecords: revenueRecords ?? null,
+    firedRuleIds: buyerFiredRuleIds,
+  });
+  const buyerPatternPanelHtml = buildTestedPatternsPanel({
+    results: buyerPatternResults,
+    fetchedAt: fetchedDate,
+  });
 
   const regFlags = (regulatoryScreener?.flags ?? []).filter((flag: any) =>
     Boolean(flag?.flag?.trim?.() && flag?.description?.trim?.())
@@ -6056,5 +6100,174 @@ body {
   .property-header { border: none; box-shadow: none; }
   .q-tile { break-inside: avoid; }
   .q-detail { break-inside: avoid; }
+  .tested-patterns { break-inside: avoid; }
+  .v12-fields { break-inside: avoid; }
+  .v12-card { break-inside: avoid; }
+}
+
+/* ── T1: Tested Fraud Patterns Panel ─────────────────────────── */
+
+.tested-patterns {
+  max-width: 980px;
+  margin: 24px auto 0;
+  padding: 18px 22px;
+  border: 1px solid #d7dae3;
+  border-radius: 10px;
+  background: #fbfbff;
+  font-family: inherit;
+}
+.tp-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ebedf5;
+}
+.tp-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #525b7a;
+  text-transform: uppercase;
+}
+.tp-summary {
+  font-size: 13px;
+  color: #3c4257;
+}
+.tp-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.tp-row {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e6e9f3;
+}
+.tp-row[data-state="triggered"] {
+  border-color: #f59f7b;
+  background: linear-gradient(180deg, #fff8f4, #fff);
+}
+.tp-icon { font-size: 16px; line-height: 1.4; }
+.tp-body {}
+.tp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tp-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2437;
+}
+.tp-name { font-size: 14px; font-weight: 600; color: #1f2437; }
+.tp-state {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.tp-state[data-state="passed"]  { background: #e8f7ee; color: #14734a; }
+.tp-state[data-state="triggered"] { background: #fde8e0; color: #8a2c11; }
+.tp-state[data-state="untested"] { background: #f4f3fb; color: #4b4688; }
+.tp-check {
+  font-size: 12.5px;
+  color: #3c4257;
+  margin-bottom: 4px;
+}
+.tp-result {
+  font-size: 13px;
+  color: #1f2437;
+  margin-bottom: 6px;
+}
+.tp-evidence {
+  font-size: 11.5px;
+  color: #525b7a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+.tp-evidence code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.tp-evidence a { color: #2563eb; text-decoration: none; }
+.tp-evidence a:hover { text-decoration: underline; }
+.tp-action {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6a2c1a;
+  font-weight: 600;
+}
+
+/* ── T10: V1.2 Ground-Truth Field Panel ─────────────────────── */
+
+.v12-fields {
+  max-width: 980px;
+  margin: 18px auto 0;
+  padding: 0;
+  font-family: inherit;
+}
+.v12-header {
+  margin-bottom: 8px;
+}
+.v12-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #525b7a;
+  text-transform: uppercase;
+}
+.v12-sub {
+  display: block;
+  font-size: 12.5px;
+  color: #6b7394;
+  margin-top: 4px;
+}
+.v12-card {
+  margin-bottom: 10px;
+  border: 1px solid #e6e9f3;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 14px;
+}
+.v12-card summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2437;
+  cursor: pointer;
+  user-select: none;
+}
+.v12-prose {
+  margin: 8px 0 6px;
+  font-size: 13px;
+  color: #3c4257;
+  line-height: 1.5;
+}
+.v12-table { margin-top: 6px; }
+.v12-table .key { width: 38%; }
+.v12-empty { color: #6b7394; }
+.v12-warn { color: #7a2b0e; font-weight: 600; }
+.v12-ok { color: #14734a; }
+.v12-trust {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #6b7394;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+.v12-trust span::before {
+  content: none;
 }
 `;

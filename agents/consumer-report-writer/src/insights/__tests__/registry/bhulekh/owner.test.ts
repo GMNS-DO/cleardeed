@@ -13,8 +13,8 @@ const verifiedRor = {
 };
 
 describe("bhulekh owner rules", () => {
-  it("exports 6 rules", () => {
-    expect(bhulekhOwnerRules.length).toBe(6);
+  it("exports 8 rules", () => {
+        expect(bhulekhOwnerRules.length).toBe(8);
   });
 
   it("fires redFlag for government khatiyan (owner is empty)", () => {
@@ -80,5 +80,79 @@ describe("bhulekh owner rules", () => {
     expect(
       out.find((i) => i.ruleId === "ROR-INS-024" && i.severity === "redFlag")
     ).toBeDefined();
+  });
+
+  // POA-001 — Power of Attorney on record.
+  it("POA-001 — fires watchout when hasPoA is true", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama", hasPoA: true } },
+    });
+    const r = out.find((i) => i.ruleId === "POA-001");
+    expect(r).toBeDefined();
+    expect(r?.severity).toBe("watchout");
+  });
+
+  it("POA-001 — does NOT fire when hasPoA is false or null", () => {
+    const f = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama", hasPoA: false } },
+    });
+    expect(f.find((i) => i.ruleId === "POA-001")).toBeUndefined();
+    const n = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama" } },
+    });
+    expect(n.find((i) => i.ruleId === "POA-001")).toBeUndefined();
+  });
+
+  // ROR-INS-026 — Malipada impersonation distance check (Pattern 3).
+  // Fires redFlag when plotGPS and ownerResidenceGPS are both populated,
+  // distance > 50km, and no PoA on record (Bhulekh or IGR-EC).
+  it("ROR-INS-026 — fires redFlag when owner residence is >50km from plot and no PoA", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama", hasPoA: false } },
+      plotGPS: { lat: 20.27, lon: 85.84 }, // Bhubaneswar
+      ownerResidenceGPS: { lat: 22.57, lon: 88.36 }, // Kolkata — ~500 km away
+    });
+    const r = out.find((i) => i.ruleId === "ROR-INS-026");
+    expect(r).toBeDefined();
+    expect(r?.severity).toBe("redFlag");
+    // Body should mention the actual distance in km
+    expect(r?.body).toMatch(/\d+ km/);
+  });
+
+  it("ROR-INS-026 — does NOT fire when owner residence is <50km from plot", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama", hasPoA: false } },
+      plotGPS: { lat: 20.27, lon: 85.84 }, // Bhubaneswar
+      ownerResidenceGPS: { lat: 20.30, lon: 85.85 }, // 3km away
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-026")).toBeUndefined();
+  });
+
+  it("ROR-INS-026 — does NOT fire when Bhulekh PoA is true", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama", hasPoA: true } },
+      plotGPS: { lat: 20.27, lon: 85.84 },
+      ownerResidenceGPS: { lat: 22.57, lon: 88.36 },
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-026")).toBeUndefined();
+  });
+
+  it("ROR-INS-026 — does NOT fire when IGR-EC poaOnRecord is true (ground truth)", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama" } },
+      igrEc: { poaOnRecord: true },
+      plotGPS: { lat: 20.27, lon: 85.84 },
+      ownerResidenceGPS: { lat: 22.57, lon: 88.36 },
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-026")).toBeUndefined();
+  });
+
+  it("ROR-INS-026 — does NOT fire when ownerResidenceGPS is missing (orchestrator follow-up)", () => {
+    const out = runInsights(bhulekhOwnerRules, {
+      ror: { status: "verified", page1: { owner: "Rama" } },
+      plotGPS: { lat: 20.27, lon: 85.84 },
+      // ownerResidenceGPS intentionally absent
+    });
+    expect(out.find((i) => i.ruleId === "ROR-INS-026")).toBeUndefined();
   });
 });
