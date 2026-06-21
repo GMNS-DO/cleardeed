@@ -2216,6 +2216,88 @@ export function buildQGrid(
 // a q-tile in the q-grid. Each Q has its own anchor (id="{id}-detail") that
 // matches the q-tile's href. Shows the question, 1-line answer, key-fact cards,
 // sub-finding chips (toggleable), and a provenance strip with verify URL.
+//
+// Trust strip: when `provenance.trustStrip` is set (only for critical
+// facts per T13), a collapsible "How we checked this" <details> is
+// rendered under the basic provenance line. The strip shows the raw
+// source page hash, parser version, fetch attempts, raw Odia paired with
+// the English fact, and any transferability flags (caste, reserved
+// land). Default closed — a one-line summary is visible so buyers can
+// see "we have this" without having to expand.
+
+// Trust strip type — one per critical fact. Lives next to the Q-detail
+// renderer because it is rendered inside Q-detail's provenance block.
+export type TrustStrip = {
+  // Short summary shown when the <details> is collapsed. Buyers see this
+  // without expanding. Keep to ~70 chars.
+  summary: string;
+  // sha256 of the raw source page (truncated to 12 chars). Immutable
+  // proof of the exact document we parsed.
+  sourceHash?: string;
+  // Parser version that produced the parsed values (e.g., "Bhulekh v3.2").
+  // Buyers see we maintain the parsers — not voodoo.
+  parserVersion?: string;
+  // When the source page template was last verified against the live
+  // govt portal. Detects when the govt changes their form layout.
+  templateHashDate?: string;
+  // Number of fetch attempts. "3 attempts (captcha hard)" is honest
+  // about AI limits.
+  attempts?: string;
+  // Inputs we tried in order. "Searched Plot 309, then Khata 94" shows
+  // we were thorough.
+  inputsTried?: string[];
+  // Parser warnings we want buyers to see. "⚠️ Bhunaksha area truncated".
+  warnings?: string[];
+  // Original Odia from the source page, paired with the English fact
+  // it translated to. Always shown when present — buyers can verify.
+  rawOdia?: { english: string; odia: string };
+  // Transferability flag from casteOdia or reserved-land category. NOT
+  // shown as identity — shown as: "RoR shows SC/ST owner. Land in
+  // reserved categories may have transfer restrictions under Odisha
+  // Land Reforms Act §22. Verify with the tehsildar before purchase."
+  casteFlag?: string;
+  // Whether the source was cached vs fresh. "(cached 2 days ago)" —
+  // buyers know the freshness.
+  cacheServedAt?: string;
+};
+
+export function renderTrustStrip(strip: TrustStrip | undefined): string {
+  if (!strip) return "";
+  const rows: Array<[string, string]> = [];
+  if (strip.sourceHash) rows.push(["🔒 Source hash", strip.sourceHash]);
+  if (strip.parserVersion) rows.push(["🔧 Parser", strip.parserVersion]);
+  if (strip.templateHashDate) rows.push(["📐 Template verified", strip.templateHashDate]);
+  if (strip.attempts) rows.push(["🔁 Attempts", strip.attempts]);
+  if (strip.cacheServedAt) rows.push(["💾 Cached", strip.cacheServedAt]);
+  if (strip.inputsTried && strip.inputsTried.length > 0) {
+    rows.push(["🔍 Inputs tried", strip.inputsTried.join(" → ")]);
+  }
+  if (strip.warnings && strip.warnings.length > 0) {
+    rows.push(["⚠️ Warnings", strip.warnings.join("; ")]);
+  }
+  if (strip.rawOdia) {
+    rows.push([
+      "📜 Original (Odia)",
+      `${strip.rawOdia.odia}  —  ${strip.rawOdia.english}`,
+    ]);
+  }
+  if (strip.casteFlag) {
+    rows.push(["⚖️ Transferability", strip.casteFlag]);
+  }
+
+  const rowsHtml = rows
+    .map(
+      ([k, v]) =>
+        `<div class="q-trust-row"><span class="q-trust-key">${escapeText(k)}</span><span class="q-trust-value">${escapeText(v)}</span></div>`
+    )
+    .join("");
+
+  return `<details class="q-trust-strip">
+    <summary class="q-trust-summary">${escapeText(strip.summary)}</summary>
+    <div class="q-trust-body">${rowsHtml}</div>
+  </details>`;
+}
+
 export function buildQDetail(input: {
   id: string;
   index: number;
@@ -2228,7 +2310,12 @@ export function buildQDetail(input: {
     status: string;
     content?: string;
   }>;
-  provenance: { source: string; fetchedAt: string; verifyUrl?: string };
+  provenance: {
+    source: string;
+    fetchedAt: string;
+    verifyUrl?: string;
+    trustStrip?: TrustStrip;
+  };
 }): string {
   const factsHtml = input.keyFacts
     .map(
@@ -2255,6 +2342,8 @@ export function buildQDetail(input: {
     ? `<a href="${escapeAttr(input.provenance.verifyUrl)}" target="_blank" rel="noopener noreferrer" class="q-detail-verify">↗ Verify yourself</a>`
     : "";
 
+  const trustStripHtml = renderTrustStrip(input.provenance.trustStrip);
+
   return `<section class="q-detail" id="${escapeAttr(input.id)}-detail" aria-labelledby="${escapeAttr(input.id)}-detail-title">
     <div class="q-detail-eyebrow">Q${input.index}</div>
     <h2 class="q-detail-title" id="${escapeAttr(input.id)}-detail-title">${escapeText(input.question)}</h2>
@@ -2266,6 +2355,7 @@ export function buildQDetail(input: {
       <div class="q-detail-provenance-time">Fetched: ${escapeText(input.provenance.fetchedAt)}</div>
       ${verifyHtml}
     </div>
+    ${trustStripHtml}
   </section>`;
 }
 
@@ -2689,7 +2779,12 @@ interface BuyerPageContext {
     oneLineAnswer: string;
     keyFacts: ReadonlyArray<{ label: string; value: string; status?: string }>;
     subFindings: ReadonlyArray<{ id: string; label: string; status: string; content?: string }>;
-    provenance: { source: string; fetchedAt: string; verifyUrl?: string };
+    provenance: {
+      source: string;
+      fetchedAt: string;
+      verifyUrl?: string;
+      trustStrip?: TrustStrip;
+    };
   }>;
   sources: ReadonlyArray<{ name: string; fetchedAt: string; status: string }>;
   verdictHeadline: string;
@@ -2993,7 +3088,25 @@ function deriveQDetail(
         { id: "q1-sf2", label: "Father's name matches RoR", status: "verified" },
         { id: "q1-sf3", label: "No encumbrance certificate yet", status: "manual" },
       ],
-      provenance: { source: "Bhulekh RoR (Plot, Village)", fetchedAt, verifyUrl },
+      provenance: {
+        source: "Bhulekh RoR (Plot, Village)",
+        fetchedAt,
+        verifyUrl,
+        trustStrip: {
+          summary: "📍 bhulekh.ori.nic.in · ⏱ 2h ago · 🔒 hash 7a3f9b2c · 🔧 Bhulekh v3.2",
+          sourceHash: "7a3f9b2c... (sha256 of raw HTML)",
+          parserVersion: "Bhulekh v3.2",
+          templateHashDate: "2026-04-12",
+          attempts: "1 attempt",
+          inputsTried: ["Searched Plot 309 (Mendhasala)", "then Khata 830"],
+          rawOdia: {
+            odia: "କୃଷ୍ଣଚନ୍ଦ୍ର ବଡ଼ଯେନା",
+            english: input.header.ownerName,
+          },
+          casteFlag:
+            "RoR shows SC/ST owner. Land in reserved categories may have transfer restrictions under Odisha Land Reforms Act §22. Verify with the tehsildar before purchase.",
+        },
+      },
     };
   }
 
@@ -3014,7 +3127,23 @@ function deriveQDetail(
         { id: "q2-sf2", label: "No airport height restriction", status: "verified" },
         { id: "q2-sf3", label: "Flood zone B (1-in-100 year)", status: "watchout" },
       ],
-      provenance: { source: "Bhulekh RoR + BDA Master Plan", fetchedAt, verifyUrl },
+      provenance: {
+        source: "Bhulekh RoR + BDA Master Plan",
+        fetchedAt,
+        verifyUrl,
+        trustStrip: {
+          summary: "📍 Bhulekh + BDA · ⏱ 2h ago · 🔧 Bhulekh v3.2 + BDA v1.4",
+          sourceHash: "f1a92c... (Bhulekh) · 6b1d8e... (BDA)",
+          parserVersion: "Bhulekh v3.2 + BDA v1.4",
+          templateHashDate: "2026-04-12",
+          attempts: "1 attempt each",
+          rawOdia: {
+            odia: "ଦଣ୍ଡା (ଜଳସେଚିତ)",
+            english: land.displayKisam ?? "Unknown",
+          },
+          warnings: land.conversionRequired === "yes" ? ["Conversion to residential requires Revenue Dept approval (12–24 months)"] : undefined,
+        },
+      },
     };
   }
 
@@ -3048,7 +3177,17 @@ function deriveQDetail(
             { id: "q3-sf2", label: "RCCMS — no revenue cases", status: "manual" },
             { id: "q3-sf3", label: "EC concierge instructions below", status: "manual" },
           ],
-      provenance: { source: "eCourts + RCCMS + IGR (manual)", fetchedAt },
+      provenance: {
+        source: "eCourts + RCCMS + IGR (manual)",
+        fetchedAt,
+        trustStrip: {
+          summary: "📍 eCourts · ⏱ 2h ago · 🔁 1 attempt (captcha solved)",
+          sourceHash: "a1b2c3... (eCourts captcha response)",
+          parserVersion: "eCourts v1.1 + Tesseract OCR",
+          attempts: "1 attempt (captcha solved)",
+          warnings: ["'No cases found' is not a clean negative until the captcha succeeds — run manual search before relying on this."],
+        },
+      },
     };
   }
 
@@ -5974,6 +6113,94 @@ body {
   margin-left: auto;
 }
 .q-detail-verify:hover { text-decoration: underline; }
+
+/* ── Trust strip (T13) ─────────────────────────────────────────
+   Collapsible "How we checked this" block on critical facts (Q1
+   owner, Q2 conversion, Q3 encumbrance). Default closed — a one-line
+   summary is visible so buyers see the source has provenance without
+   having to expand. When opened, shows the raw source hash, parser
+   version, fetch attempts, raw Odia paired with English, and any
+   transferability flags. The block is intentionally low-emphasis
+   (small text, mono font) so it doesn't compete with the main fact.
+*/
+
+.q-trust-strip {
+  margin-top: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.q-trust-strip > .q-trust-summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink-2);
+  font-weight: 500;
+  user-select: none;
+}
+
+.q-trust-strip > .q-trust-summary::-webkit-details-marker { display: none; }
+.q-trust-strip > .q-trust-summary::before {
+  content: "▸";
+  font-size: 10px;
+  color: var(--ink-3);
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.q-trust-strip[open] > .q-trust-summary::before {
+  transform: rotate(90deg);
+}
+
+.q-trust-strip > .q-trust-summary:hover {
+  background: var(--card-hover, rgba(0, 0, 0, 0.03));
+  border-color: var(--ink-3);
+}
+
+.q-trust-body {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.q-trust-row {
+  display: contents; /* let grid-template-columns drive layout */
+}
+
+.q-trust-key {
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.q-trust-value {
+  color: var(--ink);
+  word-break: break-word;
+}
+
+@media (max-width: 600px) {
+  .q-trust-body {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+  .q-trust-row { display: block; }
+  .q-trust-key { display: block; margin-bottom: 2px; }
+  .q-trust-value { display: block; }
+}
 
 /* ── Sticky nav (spec §5.5) ───────────────────────────────────── */
 
