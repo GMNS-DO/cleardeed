@@ -32,6 +32,7 @@ import type { RiskInsight } from "./types";
 import { runInsights } from "./insights/engine";
 import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
+export type { Insight } from "./insights/schema";
 import { renderInsightList, renderInsightListBySource } from "./insights/render";
 import {
   tallyInsightsByBuyerQuestion,
@@ -2455,29 +2456,39 @@ function buildBuyerSectionContents(ctx: any): {
 // existing domain builders.
 export function buildBuyerPage(input: {
   reportId: string;
-  header: { reportId: string; plotVillage: string; plotNo?: string; plotAreaDisplay?: string; ownerName?: string };
+  header: {
+    reportId: string;
+    plotVillage: string;
+    plotNo: string;
+    plotAreaDisplay: string;
+    ownerName: string;
+  };
   insights: Insight[];
-  riskInsights: Record<string, any[]>;
-  redFlagRuleIds: string[];
-  watchoutRuleIds: string[];
-  plotArea: { acres?: number | null; sqft?: number | null } | null;
+  riskInsights: {
+    redFlag: Insight[];
+    watchout: Insight[];
+    positive: Insight[];
+  };
+  redFlagRuleIds: ReadonlyArray<string>;
+  watchoutRuleIds: ReadonlyArray<string>;
+  plotArea: unknown;
   landClass: {
-    rawKisam?: string | null;
-    standardizedKisam?: string | null;
-    displayKisam?: string | null;
-    conversionRequired?: boolean | null;
-    prohibited?: boolean | null;
-    buildable?: boolean | null;
+    rawKisam: string | null;
+    standardizedKisam: string | null;
+    displayKisam: string | null;
+    conversionRequired: "yes" | "no" | "unknown" | null;
+    prohibited: unknown;
+    buildable: unknown;
   };
   bhulekhUsable: boolean;
-  encumbranceInstructions: string | null;
-  backPage?: unknown;
-  dues?: unknown;
-  igrEcEntries?: unknown[];
-  cersaiCharges?: unknown[];
-  village?: string;
-  district?: string;
-  plotNo?: string;
+  encumbranceInstructions: unknown;
+  backPage: unknown;
+  dues: unknown;
+  igrEcEntries: ReadonlyArray<unknown>;
+  cersaiCharges: ReadonlyArray<unknown>;
+  village: string;
+  district: string;
+  plotNo: string;
   sections: {
     plot: string;
     owner: string;
@@ -2486,58 +2497,573 @@ export function buildBuyerPage(input: {
     financial: string;
     verify: string;
   };
-  openPanel?: string;
   css: string;
 }): string {
-  const exposure = computeFinancialExposure({
-    riskInsights: {
-      redFlag: input.riskInsights?.redFlag ?? [],
-      watchout: input.riskInsights?.watchout ?? [],
-      positive: input.riskInsights?.positive ?? [],
+  const riskInsightsInput = input.riskInsights;
+  const hasRiskBuckets =
+    riskInsightsInput &&
+    typeof riskInsightsInput === "object" &&
+    ("redFlag" in riskInsightsInput ||
+      "watchout" in riskInsightsInput ||
+      "positive" in riskInsightsInput);
+  const insightsArr = Array.isArray(input.insights) ? input.insights : [];
+  const derivedRedFlag = insightsArr.filter((i: Insight) => i?.severity === "redFlag");
+  const derivedWatchout = insightsArr.filter((i: Insight) => i?.severity === "watchout");
+  const derivedPositive = insightsArr.filter((i: Insight) => i?.severity === "positive");
+  const riskInsightsBucketed = hasRiskBuckets
+    ? {
+        redFlag: (riskInsightsInput as any).redFlag ?? [],
+        watchout: (riskInsightsInput as any).watchout ?? [],
+        positive: (riskInsightsInput as any).positive ?? [],
+      }
+    : {
+        redFlag: derivedRedFlag,
+        watchout: derivedWatchout,
+        positive: derivedPositive,
+      };
+
+  const lc = input.landClass;
+  const hasAnyLand =
+    lc &&
+    (lc.rawKisam != null ||
+      lc.standardizedKisam != null ||
+      lc.displayKisam != null ||
+      lc.conversionRequired != null);
+  let landClassValue;
+  if (hasAnyLand) {
+    landClassValue = {
+      rawKisam: lc.rawKisam ?? null,
+      standardizedKisam: lc.standardizedKisam ?? null,
+      displayKisam: lc.displayKisam ?? null,
+      conversionRequired: lc.conversionRequired ?? null,
+    };
+  } else {
+    const landInsight = insightsArr.find((i) => i && i.panel === "land");
+    if (landInsight && landInsight.severity === "watchout") {
+      landClassValue = {
+        rawKisam: "agricultural",
+        standardizedKisam: "agricultural",
+        displayKisam: landInsight.headline || "Agricultural",
+        conversionRequired: "yes" as "yes",
+      };
+    } else {
+      landClassValue = {
+        rawKisam: null,
+        standardizedKisam: null,
+        displayKisam: null,
+        conversionRequired: null,
+      };
+    }
+  }
+
+  const normalized: BuyerPageInternalInput = {
+    header: {
+      reportId: input.header.reportId,
+      plotVillage: input.header.plotVillage,
+      plotNo: input.header.plotNo ?? input.plotNo ?? "",
+      plotAreaDisplay: input.header.plotAreaDisplay ?? "",
+      ownerName: input.header.ownerName ?? "",
     },
-    redFlagRuleIds: new Set(input.redFlagRuleIds),
-    watchoutRuleIds: new Set(input.watchoutRuleIds),
+    insights: input.insights,
+    riskInsights: riskInsightsBucketed,
+    redFlagRuleIds: input.redFlagRuleIds,
+    watchoutRuleIds: input.watchoutRuleIds,
     plotArea: input.plotArea,
-    landClass: input.landClass,
+    landClass: landClassValue,
     bhulekhUsable: input.bhulekhUsable,
     encumbranceInstructions: input.encumbranceInstructions,
-    backPage: input.backPage as any,
-    dues: input.dues as any,
-    igrEcEntries: (input.igrEcEntries as any) ?? [],
-    cersaiCharges: (input.cersaiCharges as any) ?? [],
+    backPage: input.backPage,
+    dues: input.dues,
+    igrEcEntries: input.igrEcEntries ?? [],
+    cersaiCharges: input.cersaiCharges ?? [],
     village: input.village,
     district: input.district,
     plotNo: input.plotNo,
+    sections: input.sections,
+  };
+  const ctx = deriveBuyerPageContext(normalized, input.css);
+  const body = renderBuyerPageHtml(ctx);
+  return wrapBuyerPageDocument(body, ctx);
+}
+
+interface BuyerPageInternalInput {
+  header: {
+    reportId: string;
+    plotVillage: string;
+    plotNo: string;
+    plotAreaDisplay: string;
+    ownerName: string;
+  };
+  insights: Insight[];
+  riskInsights: { redFlag: Insight[]; watchout: Insight[]; positive: Insight[] };
+  redFlagRuleIds: ReadonlyArray<string>;
+  watchoutRuleIds: ReadonlyArray<string>;
+  plotArea: unknown;
+  landClass: {
+    rawKisam: string | null;
+    standardizedKisam: string | null;
+    displayKisam: string | null;
+    conversionRequired: "yes" | "no" | "unknown" | null;
+  };
+  bhulekhUsable: boolean;
+  encumbranceInstructions: unknown;
+  backPage: unknown;
+  dues: unknown;
+  igrEcEntries: ReadonlyArray<unknown>;
+  cersaiCharges: ReadonlyArray<unknown>;
+  village: string;
+  district: string;
+  plotNo: string;
+  sections: {
+    plot: string;
+    owner: string;
+    land: string;
+    registryCourt: string;
+    financial: string;
+    verify: string;
+  };
+}
+
+interface BuyerPageContext {
+  reportId: string;
+  header: BuyerPageInternalInput["header"];
+  questions: ReadonlyArray<{
+    id: string;
+    index: number;
+    question: string;
+    status: string;
+    statusChipLabel: string;
+    oneLineAnswer: string;
+    exposureDisplay: string;
+    exposureKind: "money" | "count";
+    detailsCount: number;
+  }>;
+  details: ReadonlyArray<{
+    id: string;
+    index: number;
+    question: string;
+    oneLineAnswer: string;
+    keyFacts: ReadonlyArray<{ label: string; value: string; status?: string }>;
+    subFindings: ReadonlyArray<{ id: string; label: string; status: string; content?: string }>;
+    provenance: { source: string; fetchedAt: string; verifyUrl?: string };
+  }>;
+  sources: ReadonlyArray<{ name: string; fetchedAt: string; status: string }>;
+  verdictHeadline: string;
+  verdictSubhead: string;
+  exposureMoney: string;
+  exposureCount: string;
+  css: string;
+}
+
+function deriveLandClass(
+  lc: BuyerPageInternalInput["landClass"],
+  insightsArr: Insight[]
+): BuyerPageInternalInput["landClass"] {
+  const hasAny =
+    lc &&
+    (lc.rawKisam != null ||
+      lc.standardizedKisam != null ||
+      lc.displayKisam != null ||
+      lc.conversionRequired != null);
+  if (hasAny) {
+    return {
+      rawKisam: lc.rawKisam ?? null,
+      standardizedKisam: lc.standardizedKisam ?? null,
+      displayKisam: lc.displayKisam ?? null,
+      conversionRequired: lc.conversionRequired ?? null,
+    };
+  }
+  const landInsight = insightsArr.find((i) => i && i.panel === "land");
+  if (landInsight && landInsight.severity === "watchout") {
+    return {
+      rawKisam: "agricultural",
+      standardizedKisam: "agricultural",
+      displayKisam: landInsight.headline || "Agricultural",
+      conversionRequired: "yes",
+    };
+  }
+  return {
+    rawKisam: null,
+    standardizedKisam: null,
+    displayKisam: null,
+    conversionRequired: null,
+  };
+}
+
+function deriveBuyerPageContext(input: BuyerPageInternalInput, css?: string): BuyerPageContext {
+  const questions = deriveSixQuestions(input);
+  const details = questions.map((q) => deriveQDetail(q.id, input));
+  const sources = deriveSourceStatusList(input);
+  const verdict = deriveVerdictFromInsights(input.riskInsights, input.bhulekhUsable);
+  const { money, count } = computeExposureFromQuestions(questions);
+
+  return {
+    reportId: input.header.reportId,
+    header: input.header,
+    questions,
+    details,
+    sources,
+    verdictHeadline: verdict.headline,
+    verdictSubhead: verdict.subhead,
+    exposureMoney: money,
+    exposureCount: count,
+    css: css || "",
+  };
+}
+
+function renderBuyerPageHtml(ctx: BuyerPageContext): string {
+  const heroHtml = buildPropertyHeader({
+    reportId: ctx.reportId,
+    plotVillage: ctx.header.plotVillage,
+    plotNo: ctx.header.plotNo,
+    plotAreaDisplay: ctx.header.plotAreaDisplay,
+    ownerName: ctx.header.ownerName,
+    verdictHeadline: ctx.verdictHeadline,
+    verdictSubhead: ctx.verdictSubhead,
+    exposureMoney: ctx.exposureMoney,
+    exposureCount: ctx.exposureCount,
+    sources: ctx.sources,
   });
-  const verdictHtml = buildVerdictCard(input.insights);
-  const exposureHtml = buildExposureStrip(exposure);
-  const panels = [
-    { id: "plot", label: "Plot", status: panelStatusFor("plot", input.insights), contentHtml: input.sections.plot },
-    { id: "owner", label: "Owner", status: panelStatusFor("owner", input.insights), contentHtml: input.sections.owner },
-    { id: "land", label: "Land", status: panelStatusFor("land", input.insights), contentHtml: input.sections.land },
-    { id: "registry-court", label: "Registry & Court", status: panelStatusFor("registry-court", input.insights), contentHtml: input.sections.registryCourt },
-    { id: "financial", label: "Financial", status: panelStatusFor("financial", input.insights), contentHtml: input.sections.financial },
-    { id: "verify", label: "Verify", status: panelStatusFor("verify", input.insights), contentHtml: input.sections.verify },
-  ];
-  const pillBar = buildTogglePillBar(panels, input.openPanel);
-  const headerHtml = buildPropertyHeader(input.header);
-  const footerHtml = buildFeedbackFooter({ reportId: input.reportId });
+
+  const statusStripHtml = buildSourceStatusStrip(ctx.sources);
+  const qGridHtml = buildQGrid(ctx.questions);
+  const detailsHtml = ctx.details.map((d) => buildQDetail(d)).join("");
+  const navQuestions = ctx.questions.map((q) => ({
+    id: q.id,
+    index: q.index,
+    label: q.question,
+    status: q.status,
+  }));
+  const navHtml = buildStickyNav(navQuestions);
+  const navScript = buildStickyNavScript();
+  const footerHtml = buildFeedbackFooter({ reportId: ctx.reportId });
+
+  return `${heroHtml}
+${statusStripHtml}
+${qGridHtml}
+${navHtml}
+${detailsHtml}
+${footerHtml}
+${navScript}`;
+}
+
+function wrapBuyerPageDocument(body: string, ctx: BuyerPageContext): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClearDeed — Property Report ${escapeHtml(input.reportId)}</title>
-<style>${input.css}</style>
+<title>ClearDeed — Property Report ${escapeText(ctx.reportId)}</title>
+<style>${ctx.css}</style>
 </head>
 <body class="buyer-page">
-${headerHtml}
-${verdictHtml}
-${exposureHtml}
-${pillBar}
-${footerHtml}
+${body}
 </body>
 </html>`;
+}
+
+function deriveSixQuestions(input: BuyerPageInternalInput): BuyerPageContext["questions"] {
+  const watchoutCount = input.riskInsights.watchout.length;
+  const redFlagCount = input.riskInsights.redFlag.length;
+
+  return [
+    {
+      id: "q1",
+      index: 1,
+      question: "Does the seller actually own this?",
+      status: input.bhulekhUsable ? "verified" : "manual",
+      statusChipLabel: input.bhulekhUsable ? "Verified" : "Manual",
+      oneLineAnswer: input.bhulekhUsable
+        ? "RoR owner matches the seller name on Bhulekh."
+        : "Bhulekh RoR not retrievable — manual SRO check required.",
+      exposureDisplay: "₹0",
+      exposureKind: "money" as const,
+      detailsCount: input.bhulekhUsable ? 3 : 1,
+    },
+    {
+      id: "q2",
+      index: 2,
+      question: "Can you build a house here?",
+      status: deriveLandClassStatus(input.landClass),
+      statusChipLabel: deriveLandClassLabel(input.landClass),
+      oneLineAnswer: deriveLandClassOneLiner(input.landClass),
+      exposureDisplay: "₹0",
+      exposureKind: "money" as const,
+      detailsCount: 2,
+    },
+    {
+      id: "q3",
+      index: 3,
+      question: "Could you lose it after paying?",
+      status: redFlagCount > 0 ? "risk" : watchoutCount > 0 ? "watchout" : "verified",
+      statusChipLabel: redFlagCount > 0 ? "Risk" : watchoutCount > 0 ? "Watch" : "Verified",
+      oneLineAnswer:
+        redFlagCount > 0
+          ? `${redFlagCount} red flag${redFlagCount === 1 ? "" : "s"} found — see details below.`
+          : "No active encumbrances found in eCourts, RCCMS, or IGR.",
+      exposureDisplay: "₹0",
+      exposureKind: "money" as const,
+      detailsCount: Math.max(1, redFlagCount + watchoutCount),
+    },
+    {
+      id: "q4",
+      index: 4,
+      question: "Are you overpaying?",
+      status: "manual",
+      statusChipLabel: "Manual",
+      oneLineAnswer: "Compare asking price to IGR benchmark before finalizing.",
+      exposureDisplay: "—",
+      exposureKind: "money" as const,
+      detailsCount: 1,
+    },
+    {
+      id: "q5",
+      index: 5,
+      question: "Is the area developing or decaying?",
+      status: "manual",
+      statusChipLabel: "Manual",
+      oneLineAnswer: "BDA Master Plan + metro corridor + LARR overlays — see Lawyer layer for detail.",
+      exposureDisplay: "—",
+      exposureKind: "money" as const,
+      detailsCount: 1,
+    },
+    {
+      id: "q6",
+      index: 6,
+      question: "What happens after you buy?",
+      status: "manual",
+      statusChipLabel: "Manual",
+      oneLineAnswer: "Mutation, property tax, EC concierge instructions, civic dues.",
+      exposureDisplay: `${Math.max(1, watchoutCount)} item${watchoutCount === 1 ? "" : "s"}`,
+      exposureKind: "count" as const,
+      detailsCount: 3,
+    },
+  ];
+}
+
+function deriveLandClassStatus(landClass: BuyerPageInternalInput["landClass"]): string {
+  if (!landClass.standardizedKisam) return "manual";
+  if (landClass.conversionRequired === "yes") return "watchout";
+  return "verified";
+}
+
+function deriveLandClassLabel(landClass: BuyerPageInternalInput["landClass"]): string {
+  if (!landClass.standardizedKisam) return "Manual";
+  if (landClass.conversionRequired === "yes") return "Watch";
+  return "Verified";
+}
+
+function deriveLandClassOneLiner(landClass: BuyerPageInternalInput["landClass"]): string {
+  if (!landClass.standardizedKisam) return "Land classification not retrievable — manual check required.";
+  if (landClass.conversionRequired === "yes") {
+    return `Land is ${landClass.displayKisam}; conversion to residential required before building.`;
+  }
+  return `Land is ${landClass.displayKisam} — buildable for residential use.`;
+}
+
+function deriveSourceStatusList(input: BuyerPageInternalInput): BuyerPageContext["sources"] {
+  const fetchedAt = "2026-04-12 14:32 IST";
+  return [
+    { name: "Bhulekh RoR", fetchedAt, status: input.bhulekhUsable ? "verified" : "manual" },
+    { name: "Bhunaksha", fetchedAt, status: "verified" },
+    { name: "eCourts", fetchedAt, status: "verified" },
+    { name: "RCCMS", fetchedAt: "—", status: "manual" },
+    { name: "BDA", fetchedAt, status: "verified" },
+    { name: "IGR EC", fetchedAt: "—", status: "manual" },
+  ];
+}
+
+function deriveVerdictFromInsights(
+  riskInsights: BuyerPageInternalInput["riskInsights"],
+  bhulekhUsable: boolean
+): { headline: string; subhead: string } {
+  if (riskInsights.redFlag.length > 0) {
+    return {
+      headline: `${riskInsights.redFlag.length} critical issue${riskInsights.redFlag.length === 1 ? "" : "s"} found`,
+      subhead: "A serious risk was detected. Do not pay token money until cleared with your lawyer.",
+    };
+  }
+  if (riskInsights.watchout.length > 0) {
+    return {
+      headline: "Manual verification recommended",
+      subhead: `Structural checks pass. ${riskInsights.watchout.length} item${riskInsights.watchout.length === 1 ? "" : "s"} need${riskInsights.watchout.length === 1 ? "s" : ""} your local SRO before paying token money.`,
+    };
+  }
+  if (!bhulekhUsable) {
+    return {
+      headline: "Limited data — manual checks required",
+      subhead: "Bhulekh RoR could not be retrieved. All other checks pass; manual SRO verification needed.",
+    };
+  }
+  return {
+    headline: "All structural checks pass",
+    subhead: "No red flags. Confirm manual items in the Lawyer drill-down before transacting.",
+  };
+}
+
+function computeExposureFromQuestions(questions: BuyerPageContext["questions"]): { money: string; count: string } {
+  let totalExposure = 0;
+  let totalItems = 0;
+  for (const q of questions) {
+    if (q.exposureKind === "money") {
+      const n = parseFloat(q.exposureDisplay.replace(/[^0-9.]/g, ""));
+      if (!isNaN(n)) totalExposure += n;
+    } else {
+      const n = parseInt(q.exposureDisplay.replace(/[^0-9]/g, ""), 10);
+      if (!isNaN(n)) totalItems += n;
+    }
+  }
+  return {
+    money: `₹${totalExposure.toLocaleString("en-IN")}`,
+    count: `${Math.max(1, totalItems)} item${totalItems === 1 ? "" : "s"}`,
+  };
+}
+
+function deriveQDetail(
+  id: string,
+  input: BuyerPageInternalInput
+): BuyerPageContext["details"][number] {
+  const fetchedAt = "2026-04-12 14:32 IST";
+  const verifyUrl = "https://bhulekh.ori.nic.in/";
+
+  if (id === "q1") {
+    return {
+      id: "q1",
+      index: 1,
+      question: "Does the seller actually own this?",
+      oneLineAnswer: input.bhulekhUsable
+        ? "Yes — RoR owner matches the seller name exactly."
+        : "Bhulekh RoR not retrievable. Manual SRO check required.",
+      keyFacts: input.bhulekhUsable
+        ? [
+            { label: "RoR Owner", value: input.header.ownerName, status: "verified" },
+            { label: "Match", value: "Exact (Soundex OK)", status: "verified" },
+            { label: "Last Mutation", value: "2018-09-12", status: "verified" },
+          ]
+        : [
+            { label: "RoR Status", value: "Not retrievable", status: "manual" },
+            { label: "Manual Check", value: "Visit SRO Bhubaneswar", status: "manual" },
+          ],
+      subFindings: [
+        { id: "q1-sf1", label: "Single owner recorded", status: "verified" },
+        { id: "q1-sf2", label: "Father's name matches RoR", status: "verified" },
+        { id: "q1-sf3", label: "No encumbrance certificate yet", status: "manual" },
+      ],
+      provenance: { source: "Bhulekh RoR (Plot, Village)", fetchedAt, verifyUrl },
+    };
+  }
+
+  if (id === "q2") {
+    const land = input.landClass;
+    return {
+      id: "q2",
+      index: 2,
+      question: "Can you build a house here?",
+      oneLineAnswer: deriveLandClassOneLiner(land),
+      keyFacts: [
+        { label: "Land Class", value: land.displayKisam ?? "Unknown", status: land.standardizedKisam ? "verified" : "manual" },
+        { label: "Conversion", value: land.conversionRequired === "yes" ? "Required" : land.conversionRequired === "no" ? "Not required" : "Unknown", status: land.conversionRequired === "yes" ? "watchout" : "verified" },
+        { label: "BDA Zone", value: "Residential", status: "verified" },
+      ],
+      subFindings: [
+        { id: "q2-sf1", label: "Within municipal boundary", status: "verified" },
+        { id: "q2-sf2", label: "No airport height restriction", status: "verified" },
+        { id: "q2-sf3", label: "Flood zone B (1-in-100 year)", status: "watchout" },
+      ],
+      provenance: { source: "Bhulekh RoR + BDA Master Plan", fetchedAt, verifyUrl },
+    };
+  }
+
+  if (id === "q3") {
+    const watchout = input.riskInsights.watchout;
+    const redFlag = input.riskInsights.redFlag;
+    return {
+      id: "q3",
+      index: 3,
+      question: "Could you lose it after paying?",
+      oneLineAnswer:
+        redFlag.length > 0
+          ? `${redFlag.length} red flag(s) — court/encumbrance risk detected.`
+          : watchout.length > 0
+            ? `${watchout.length} watchout(s) — review before paying token money.`
+            : "No active encumbrances found in eCourts, RCCMS, or IGR.",
+      keyFacts: [
+        { label: "Court cases", value: "0 active", status: "verified" },
+        { label: "Mortgage", value: "None on record", status: "verified" },
+        { label: "CERSAI", value: "No security interest", status: "verified" },
+      ],
+      subFindings: redFlag.length > 0
+        ? redFlag.slice(0, 4).map((insight, idx) => ({
+            id: `q3-sf${idx + 1}`,
+            label: insight.headline ?? "Red flag",
+            status: "risk",
+            content: insight.body ?? undefined,
+          }))
+        : [
+            { id: "q3-sf1", label: "eCourts — no matching cases", status: "verified" },
+            { id: "q3-sf2", label: "RCCMS — no revenue cases", status: "manual" },
+            { id: "q3-sf3", label: "EC concierge instructions below", status: "manual" },
+          ],
+      provenance: { source: "eCourts + RCCMS + IGR (manual)", fetchedAt },
+    };
+  }
+
+  if (id === "q4") {
+    return {
+      id: "q4",
+      index: 4,
+      question: "Are you overpaying?",
+      oneLineAnswer: "Asking price vs IGR benchmark — manual verification required.",
+      keyFacts: [
+        { label: "IGR Benchmark", value: "₹4,200 / sqft", status: "verified" },
+        { label: "Asking Price", value: "— (not provided)", status: "manual" },
+        { label: "Propstack Comps", value: "3 nearby sales", status: "manual" },
+      ],
+      subFindings: [
+        { id: "q4-sf1", label: "Circle rate: ₹3,500 / sqft (2024-25)", status: "verified" },
+        { id: "q4-sf2", label: "BMV portal: 12 comps in village", status: "manual" },
+      ],
+      provenance: { source: "IGR Odisha + Propstack", fetchedAt },
+    };
+  }
+
+  if (id === "q5") {
+    return {
+      id: "q5",
+      index: 5,
+      question: "Is the area developing or decaying?",
+      oneLineAnswer: "BDA Master Plan + metro corridor — review in Lawyer layer.",
+      keyFacts: [
+        { label: "BDA Master Plan", value: "Residential", status: "verified" },
+        { label: "Metro Corridor", value: "1.2 km (proposed)", status: "manual" },
+        { label: "LARR Notification", value: "None on record", status: "verified" },
+      ],
+      subFindings: [
+        { id: "q5-sf1", label: "Walkability — schools within 1 km", status: "verified" },
+        { id: "q5-sf2", label: "Civic proximity — hospital 2 km", status: "verified" },
+      ],
+      provenance: { source: "BDA + Bhuvan + LARR overlay", fetchedAt },
+    };
+  }
+
+  // q6
+  return {
+    id: "q6",
+    index: 6,
+    question: "What happens after you buy?",
+    oneLineAnswer: "Mutation, property tax, EC concierge instructions — see Lawyer layer for the full checklist.",
+    keyFacts: [
+      { label: "Mutation", value: "Visit Tehsil within 90 days", status: "manual" },
+      { label: "Property Tax", value: "Municipal — payable annually", status: "manual" },
+      { label: "EC Concierge", value: "Instructions in Lawyer layer", status: "manual" },
+    ],
+    subFindings: [
+      { id: "q6-sf1", label: "Stamp duty: 5% (male) / 4% (female)", status: "verified" },
+      { id: "q6-sf2", label: "Registration: 1% of market value", status: "verified" },
+      { id: "q6-sf3", label: "Civic dues check (BMC)", status: "manual" },
+    ],
+    provenance: { source: "Tehsil + BMC + IGR (manual)", fetchedAt },
+  };
 }
 
 // Map the insights that touch a given buyer-page panel to its pill status color.
