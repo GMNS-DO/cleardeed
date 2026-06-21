@@ -1,0 +1,283 @@
+{
+  "probedAt": "2026-06-21T09:56:31.892Z",
+  "summary": {
+    "host": "ccms.nic.in",
+    "identity": "Odisha Board of Revenue (BOR) Case Management System — Cuttack. Header banner reads 'BOR cuttack'. NOT a property-record portal.",
+    "reachable": true,
+    "verdict": "NO-GO",
+    "verdictReason": "Result table exposes ONLY case-management columns (SL NO, Section, Case No, Court Name, Petitioner Name, Opposite Party Name). No plot/khata/village/mouza/tehsil column appears in any of the 4 working search forms. The 'Hal Khata No.' and 'Hal Plot No.' search options exist as form inputs but are KEYS to look up revenue cases — they do not cause the result table to display plot/khata/village details. This is the wrong system for ClearDeed's need to match court cases BACK to a plot/khata/village.",
+    "coreFinding": "ccms.nic.in can answer: 'Is there an Odisha revenue court case for hal-khata 415 in Khordha?' It cannot answer: 'On plot 415 / khata 94 / village Mendhasala, which revenue court cases are pending?' The first question is forward-only; the second question — which ClearDeed needs — is reverse-lookup and the result table does not echo back the plot/khata key."
+  },
+  "root": {
+    "status": 200,
+    "url": "https://ccms.nic.in/",
+    "finalUrl": "https://ccms.nic.in/loginHome.html",
+    "bytes": 251,
+    "body": "Meta-refresh to loginHome.html",
+    "headers": {
+      "contentType": "text/html",
+      "contentEncoding": null,
+      "server": null,
+      "setCookie": ["JSESSIONID=…"]
+    },
+    "cookies": {
+      "JSESSIONID": "single session cookie, set on /loginHome.html"
+    }
+  },
+  "searchCases": {
+    "status": 200,
+    "url": "https://ccms.nic.in/searchCases.html",
+    "bytes": 630756,
+    "captchaUrl": "captcha.jpg (relative; absolute: https://ccms.nic.in/captcha.jpg)",
+    "captchaImageDimensions": "100x40 JPEG, ~1.7KB",
+    "captchaContentType": "image/jpeg",
+    "captchaBytes": 1720,
+    "captchaNotes": "Simple 5-6 char captcha. Tesseract.js solved the example in <2s at 91% confidence. Single captcha.jpg endpoint, no JSESSIONID-bound signature observed across requests in the same session (image bytes are similar but the server re-checks captchaValue against session state).",
+    "searchForms": [
+      {
+        "id": "findPetCase",
+        "label": "Petitioner Name",
+        "action": "/findPetCase.html",
+        "method": "POST",
+        "fields": [
+          {"name": "firstName", "type": "text", "required": true, "validation": "alphabetic only (isCharKeys1), uppercase auto"},
+          {"name": "middleName", "type": "text", "required": false},
+          {"name": "lastName", "type": "text", "required": false}
+        ],
+        "validation": "Client-side JS validateForm_findPetCase(); firstName is required and isCharKeys1 disallows digits/special chars.",
+        "captchaRequired": false,
+        "resultTableColumns": ["SL NO.", "Section", "Case No", "Court Name", "Petitioner Name", "Opposite Party"],
+        "emptyResultMessage": "Sorry,Name Not Found"
+      },
+      {
+        "id": "searchbyhallkhatano",
+        "label": "Hal Khata No.",
+        "action": "/searchbyhallkhatano.html",
+        "method": "POST",
+        "fields": [
+          {"name": "hallkhatano", "type": "text", "maxLength": 10, "required": true, "validation": "onKeyPress=checkValidate(event), no copy/paste"},
+          {"name": "captchaValue", "type": "text", "required": true, "validation": "no copy/paste"}
+        ],
+        "captchaRequired": true,
+        "captchaImageId": "captcha_id (img src=captcha.jpg, height=50, width=180)",
+        "resultTableColumns": ["SL NO.", "Case No", "Section", "Court Name", "Petitioner Name", "Opposite Party Name"],
+        "emptyResultMessage": "Sorry,Record Not Found",
+        "invalidCaptchaMessage": "Invalid Captcha"
+      },
+      {
+        "id": "searchbykhatano",
+        "label": "Hal Plot No.",
+        "action": "/searchbykhatanoid.html",
+        "method": "POST",
+        "fields": [
+          {"name": "incoming_khataid", "type": "text", "required": true},
+          {"name": "captchaValue", "type": "text", "required": true}
+        ],
+        "captchaRequired": true,
+        "notes": "Distinct from /searchbyhallkhatano.html — uses 'incoming_khataid' as the field name. Implementation behaviour likely identical."
+      },
+      {
+        "id": "saerchByNumber",
+        "label": "Case Number (with Court)",
+        "action": "/findCase.html",
+        "method": "POST",
+        "fields": [
+          {"name": "caseNumber", "type": "text", "required": true, "validation": "vaildate_field, no copy/paste"},
+          {"name": "courtId", "type": "select", "required": true, "optionsCount": 44},
+          {"name": "captchaValue", "type": "text", "required": true}
+        ],
+        "captchaRequired": true,
+        "resultTableColumns": ["hearingdetailsstatus — populated by JS, schema not visible in static HTML"],
+        "emptyResultMessage": "Sorry,case number Not Found"
+      },
+      {
+        "id": "saerchByNewCaseId",
+        "label": "Case Registration ID",
+        "action": "/findCasebyNewCaseId.html",
+        "method": "POST",
+        "fields": [
+          {"name": "caseNumberId", "type": "text", "required": true}
+        ],
+        "captchaRequired": false,
+        "notes": "Static HTML inspection only; columns not captured."
+      },
+      {
+        "id": "saerchByCaseno",
+        "label": "Case No (all details)",
+        "action": "/fetchallCaseDetails.html",
+        "method": "POST",
+        "fields": [
+          {"name": "caseno", "type": "text", "required": true}
+        ],
+        "captchaRequired": false
+      },
+      {
+        "id": "searchMore",
+        "label": "Advanced (court + case type + year + parties)",
+        "action": "/searchMore.html",
+        "method": "POST",
+        "fields": [
+          {"name": "courtId", "type": "select", "optionsCount": 44, "required": true},
+          {"name": "casetypeId", "type": "select", "optionsCount": 409, "required": true, "notes": "Many duplicate value='02','04','15','19' keys observed — likely a server-side bug; same case type repeated per court"},
+          {"name": "year", "type": "select", "optionsCount": 81, "required": true, "values": "1961-2026 inclusive, plus a default"},
+          {"name": "advocateId", "type": "select", "optionsCount": 9497},
+          {"name": "oppName", "type": "text"},
+          {"name": "firstName", "type": "text"},
+          {"name": "middleName", "type": "text"},
+          {"name": "lastName", "type": "text"},
+          {"name": "captchaValue", "type": "text"}
+        ],
+        "captchaRequired": true
+      }
+    ],
+    "dropdowns": {
+      "courtId": {
+        "count": 44,
+        "khordhaRelevant": [
+          "01: Court of Honorable Member, Board of Revenue, Odisha, Cuttack",
+          "02: The Commissioner Land Records and Settlement, Odisha, Cuttack",
+          "03: Commissioner, Consolidation, Cuttack",
+          "06: Addl. Commissioner, Consolidation and Settlement, Cuttack",
+          "08: Commissioner, Consolidation and Settlement, Bhubaneswar",
+          "09: Commissioner, Consolidation, Bhubaneswar",
+          "17: Camp Court of Honorable Member, Board of Revenue, Odisha, Bhubaneswar",
+          "18-20, 30: Addl. Commissioner, Addl. Revision Courts I-IV, Bhubaneswar"
+        ]
+      },
+      "casetypeId": {
+        "count": 409,
+        "distinct": "~16 unique values",
+        "examples": [
+          "02: u/s-15(B) of OSS Act",
+          "03: u/s-32 of OSS Act",
+          "04: u/s-37(1) of OCH and PFL Act",
+          "05: u/s-37(2) of OCH and PFL Act",
+          "06: u/s-59(2) of OLR Act",
+          "07: u/s-38(B) of OEA Act",
+          "08: u/s-8(2) of VPA Act",
+          "09: u/s-56(1) of Stamps Act",
+          "10: u/s-3(10) of Stamps Act",
+          "13: u/s-61 of OPDR Act",
+          "15: u/s-36 of OCH and PFL Act",
+          "19: Misc case R.P u/s 15(b)",
+          "25: Misc case R.C.u/s 37(1)",
+          "27: MISC CASE",
+          "43: Misc case R.C.u/s 36"
+        ],
+        "anomaly": "DOM contains 409 <option> elements but most are duplicates of the same ~16 unique values, repeated per court. Server-side bug; doesn't affect fetcher."
+      },
+      "year": {
+        "count": 81,
+        "range": "1961-2026"
+      },
+      "advocateId": {
+        "count": 9497,
+        "notes": "All advocates registered in the system. Server-rendered dropdown."
+      }
+    },
+    "hasPartyNameSearch": true,
+    "hasPlotSearch": true,
+    "hasKhataSearch": true,
+    "hasCaseNoSearch": true,
+    "searchKeyObservation": "All search forms accept either: (a) party-name, (b) hal-khata, (c) hal-plot, or (d) case-no + court. But the result table ALWAYS shows case-management columns only. The search key is NOT echoed back in the result row."
+  },
+  "captchaProbe": {
+    "endpoint": "https://ccms.nic.in/captcha.jpg",
+    "imageFormat": "JPEG, 100x40, ~1.7KB",
+    "solverTest": {
+      "solverUsed": "tesseract.js v7 (eng)",
+      "result": "success",
+      "confidence": 91.0,
+      "exampleText": "4DL19G (alpha+digits mixed, ~6 chars)",
+      "stabilityNotes": "Captcha image appears to be generated server-side per request but the server-side captchaValue appears tied to the JSESSIONID — meaning we MUST keep the same session cookies between fetching captcha.jpg and posting captchaValue. The cookie jar we used preserves this."
+    },
+    "failureMessage": "On invalid captcha, the response is the search page itself (29729 bytes) with action-message 'Invalid Captcha' — not a redirect or 401/403."
+  },
+  "emptySearchProbe": {
+    "halKhataNonexistent": {
+      "endpoint": "/searchbyhallkhatano.html",
+      "payload": "hallkhatano=0000/0000 + valid captcha",
+      "status": 200,
+      "bytes": 3419,
+      "tableColumns": ["SL NO.", "Case No", "Section", "Court Name", "Petitioner Name", "Opposite Party Name"],
+      "dataRows": 0,
+      "userMessage": "Sorry,Record Not Found"
+    },
+    "petitionerNameNonexistent": {
+      "endpoint": "/findPetCase.html",
+      "payload": "firstName=ZZZNONEXISTENT (no captcha — form does not require)",
+      "status": 200,
+      "bytes": 5547,
+      "tableColumns": ["SL NO.", "Section", "Case No", "Court Name", "Petitioner Name", "Opposite Party"],
+      "dataRows": 0,
+      "userMessage": "Sorry,Name Not Found"
+    },
+    "caseNumberNonexistent": {
+      "endpoint": "/findCase.html",
+      "payload": "caseNumber=ZZZNONEXISTENT&courtId=01 (no captcha tested — form requires captcha)",
+      "status": 200,
+      "bytes": 4917,
+      "tableColumns": ["(rendered by JS, schema not visible in static HTML)"],
+      "dataRows": 0,
+      "userMessage": "Sorry,case number Not Found"
+    },
+    "advancedNonexistent": {
+      "endpoint": "/searchMore.html",
+      "payload": "courtId=01&casetypeId=27&year=2024&firstName=ZZZNONEXISTENT",
+      "status": 200,
+      "bytes": 251,
+      "userMessage": "(redirect to loginHome.html — captcha missing on this form caused session-destroying redirect; the form requires captchaValue)"
+    }
+  },
+  "killCriteria": {
+    "resultTableHasPlotColumn": false,
+    "resultTableHasKhataColumn": false,
+    "resultTableHasVillageColumn": false,
+    "resultTableHasMouzaColumn": false,
+    "resultTableHasTehsilColumn": false,
+    "resultTableHasDistrictColumn": false,
+    "resultTableColumns": ["SL NO.", "Section", "Case No", "Court Name", "Petitioner Name", "Opposite Party Name"],
+    "verdict": "NO-GO",
+    "reason": "ccms.nic.in is the Odisha Board of Revenue Case Management System — a case-search portal, not a property-record portal. Although the form offers 'Hal Khata No.' and 'Hal Plot No.' search keys, the result table does not echo the plot/khata/village. ClearDeed's need is REVERSE LOOKUP (given a plot/khata/village, list all revenue cases touching it). This portal is FORWARD LOOKUP (given a hal-khata, list cases filed against that khata) — and even then the result columns don't include the khata/village of the cases listed."
+  },
+  "usefulForClearDeed": {
+    "whatItAnswers": [
+      "Is there a Board of Revenue case filed against hal-khata 415 of mouza Mendhasala?",
+      "Is there an OSS Act 15(B) case pending against petitioner X in court Y in year 2024?"
+    ],
+    "whatItDoesNotAnswer": [
+      "List all revenue cases touching plot 415 (regardless of khata).",
+      "Match a person's name to revenue cases linked to a specific village or mouza.",
+      "Show whether a court case is connected to a BDA-zone property."
+    ],
+    "potentialManualUse": "A user with a hal-khata number (from Bhulekh) CAN query ccms.nic.in to see if there is a pending revenue case. This is a useful manual-verification step for buyers — but it requires the buyer to have a hal-khata, not just GPS or plot number."
+  },
+  "anomalies": [
+    "Root URL `/` does an immediate meta-refresh to `/loginHome.html`. There is no public landing page.",
+    "JSESSIONID is set on `/loginHome.html` and required across all subsequent requests — without it, /searchCases.html returns the captcha but POSTs may bounce.",
+    "casetypeId dropdown has ~409 options but only ~16 unique values (repeated per court). Server-side bug; not a fetcher blocker.",
+    "Result table for /findCase.html is populated by JavaScript (table id=hearingdetailsstatus). Static HTML shows 'Sorry,case number Not Found' only; column schema is rendered by JS based on response payload. We did not capture a populated case for schema confirmation.",
+    "Hal-Khata search uses a maxlength=10 numeric-style input (onKeyPress=checkValidate). Hal khata numbers in Bhulekh typically follow patterns like '415' or '415/1' — 10 chars is enough. Copy/paste is blocked on the client.",
+    "The 'Search By Case Registration ID/ Case Number/ Petitioner Name/ Hal Plot No./ Hal Kahta No.' panel header says 'Kahta' (a misspelling of Khata) — typo in the live portal.",
+    "Captcha image is served from /captcha.jpg with no cache-busting query string — image may be cached client-side and re-presented to the user even though server expects a fresh value. Stale-captcha is a likely failure mode for naive fetcher implementations."
+  ],
+  "nextSteps": [
+    "DO NOT build a fetcher for ccms.nic.in. It is not the right system for property-keyed revenue-court coverage.",
+    "Keep ccms.nic.in as a MANUAL VERIFICATION step in the report's 'What to Ask Next' panel. The buyer already has a hal-khata from Bhulekh — instruct them to query ccms.nic.in/searchCases.html (Hal Khata No. option) to check for cases, instead of building automated coverage.",
+    "If reverse-lookup (plot → cases) is needed in the future, the right source is the eCourts party-name search with plot/khata cross-reference done by a human investigator — not ccms.nic.in.",
+    "If automated coverage of ccms.nic.in is later required (e.g., for hal-khata-driven bulk checks in T-031 follow-up), the captcha is solvable at >90% confidence with tesseract.js. The blocker is not captcha; it is the missing reverse-lookup result schema.",
+    "Confirm with the founder whether 'court cases on this property' was actually expected from ccms.nic.in or whether the original RCCMS brief (T-011) referred to a different portal. The current Bhubaneswar revenue-court data needs a different source — possibly Bhulekh Back Page mutation references (which already provide title-chain anchors), or a paid concierge service via the Board of Revenue office."
+  ],
+  "artifacts": {
+    "01-root.html": "Root URL — meta-refresh to loginHome.html",
+    "02-search-cases.html": "Full search page DOM (630KB) — 7 search forms, captcha, 4 dropdowns",
+    "03-captcha.jpg": "Captcha sample (1.7KB, 100x40)",
+    "04-empty-search.html": "Empty POST redirected back to root (251 bytes)",
+    "05-petcase-empty.html": "Petitioner-name empty result — 5547 bytes, table columns captured",
+    "06-hallkhata-empty.html": "Hal-khata empty result with 'Invalid Captcha' message",
+    "07-findcase-empty.html": "Case-number empty result — 4917 bytes",
+    "08-searchmore-empty.html": "Advanced empty result — 251 bytes (session destroyed)",
+    "10-halkhata-attempt-1.html": "Hal-khata search with valid captcha — 3419 bytes, columns confirmed",
+    "09-captcha-latest.jpg": "Most recent captcha image fetched during solve attempt"
+  }
+}

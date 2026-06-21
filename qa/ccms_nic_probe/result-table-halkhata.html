@@ -1,0 +1,154 @@
+
+    
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Insert title here</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="font-awesome/css/font-awesome.min.css" rel="stylesheet"
+	type="text/css">
+<link href="css/bootstrap.min.css" rel="stylesheet" />
+<link href="css/sb-admin.css" rel="stylesheet" />
+
+<link href="css/stepwizard.css" rel="stylesheet" />
+
+<link href="css/styles.css" rel="stylesheet" />
+
+<script type="text/javascript">
+	var context = "";
+</script>
+<script src="js/jquery.js" type="text/javascript"></script>
+<script src="js/bootstrap.min.js" type="text/javascript"></script>
+<script src="bootstrap-datepicker-1.5.1/js/bootstrap-datepicker.min.js"
+	type="text/javascript"></script>
+
+
+
+<style>
+thead {background-color:#333366;}
+thead > tr > th{color:white;}
+</style>
+
+<style>
+#mytbl {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+.col-lg-offset-2 {
+    margin-left: 9.666667%;
+}
+
+.col-lg-8 {
+    width: 81.666667%;
+}
+
+
+#mytbl td, #mytbl th {
+  border: 1px solid #333;;
+  padding: 12px;
+}
+
+#mytbl tr:nth-child(even){background-color:hsl(0, 20%, 50%);}
+
+#mytbl tr:hover {background-color: #ddd;}
+
+#mytbl th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #333366;
+  color: white;
+}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body>
+
+
+<div class="container-fluid header">
+<div class="container">
+<div align="center" class="col-lg-12 col-lg-offset-1">
+<img src="img/BOR cuttack.png" alt="logo" />
+</div>
+</div>
+</div>
+
+<div class="add-height">
+<div class="panel-heading" style="color: red;" align="center">Sorry,Record Not Found </div>
+
+</div>
+
+
+<div class="container" style="padding-top:130px;background: antiquewhite;">
+
+	               <div class="container-fluid">
+				<div class="panel panel-default col-lg-8 col-lg-offset-2">
+				
+					<div class="panel-heading row"><input type="button" class="btn" value="Case Detail" disabled/>
+					<input type="button" class="btn btn-primary" value="Make another search" style="margin-left: 13px;"
+							onclick="location.href='/searchCases.html'" />
+					
+						<a href="loginHome.html"><input type="button" class="btn btn-success" value="Back to Home Page" style="margin-left: 13px;"/></a>
+						
+							
+					</div>
+					
+				</div>
+				
+	</div>
+	             
+	 
+<h4 align="center" style="height:0px;">Details</h4>
+<br>
+<table  class="table" id="mytbl">
+													
+												<thead>
+													<tr>
+														<th>SL NO.</th>
+														<th> Case No</th>
+														<th>Section</th>
+														
+														<th> Court Name</th>
+														
+														<th>Petitioner Name</th>
+														<th>Opposite Party Name</th>
+														
+													
+													</tr>
+												</thead>
+												
+												<tbody id="viewBody">
+												
+												
+ 
+  
+													 
+													 
+													 
+													 
+													 
+						  
+			
+											
+													 
+												</tbody>
+												
+		                            </table>
+		                      
+</div>
+</body>
+</html>

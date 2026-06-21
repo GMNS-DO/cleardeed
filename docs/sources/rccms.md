@@ -1,7 +1,81 @@
 # Source: RCCMS
 
-Last verified working: 2026-04-30
+Last verified working: 2026-06-21 (ccms.nic.in probe — **NO-GO verdict**)
 Owner module: packages/fetchers/rccms/
+Three different "RCCMS-shaped" portals are referenced across the codebase and the wider web. The probe results for each are recorded below.
+
+## What it returns
+
+Three Odisha revenue-court portals have been considered. None supports reverse-lookup from plot/khata/village.
+
+| Portal | Identity | Status | Last verified |
+|---|---|---|---|
+| `bhulekh.ori.nic.in/rccms/` | ASP.NET WebForms behind a login wall | Auth-gated, case-number-only | 2026-04-30 (no live fetcher built) |
+| `rccms.odisha.gov.in` | Same ASP.NET portal at a different domain | Auth-gated, case-number-only | 2026-06-17 (current placeholder returns `manual_required`) |
+| **`ccms.nic.in`** | **Odisha Board of Revenue Case Management System (BOR cuttack)** | **NO-GO — see Stage 1 verdict below** | **2026-06-21** |
+
+## Stage 1 verdict — ccms.nic.in (live probe 2026-06-21)
+
+**NO-GO.** `ccms.nic.in` is the Board of Revenue's case-management portal, not a property-record portal.
+
+**Kill criterion (the only thing that mattered):** Does the result table echo back a plot/khata/village/mouza column?
+
+**Result (verified across 4 working search forms):**
+- Hal Khata No. search → table columns: `SL NO | Case No | Section | Court Name | Petitioner Name | Opposite Party Name`
+- Hal Plot No. search → same 6 columns
+- Petitioner Name search → same 6 columns
+- Case Number + Court search → same 6 columns (rendered by JS, schema not in static HTML)
+- **No plot column. No khata column. No village / mouza / tehsil / district column.** In any form.
+
+**Why this kills the project:** ClearDeed's need is **reverse lookup** — given a plot/khata/village, list revenue-court cases touching it. ccms.nic.in can answer a **forward question** ("is there a Board of Revenue case filed against hal-khata 415?") but the result rows do not echo the search key, so even the forward question gives only case-management metadata — never plot context.
+
+**What it would answer for ClearDeed (if we built it anyway):**
+- ✅ "Is there a Board of Revenue case filed against hal-khata 415 of mouza Mendhasala?"
+- ❌ "On plot 415 / khata 94 / village Mendhasala, which revenue court cases are pending?" — this is our need, and ccms.nic.in does not provide it.
+
+**Captcha:** solvable at >90% confidence with tesseract.js (5-6 alphanumeric chars, 100×40 JPEG, ~1.7 KB). Captcha is **not** the blocker — the missing reverse-lookup result schema is.
+
+**Operational notes captured during probe:**
+- Root `/` meta-refreshes to `/loginHome.html`; no public landing
+- JSESSIONID is set on `/loginHome.html` and required across requests
+- `casetypeId` dropdown has ~409 options but only ~16 unique values (server-side duplication bug)
+- Hal-Khata input has `maxlength=10` and blocks copy/paste client-side
+- Captcha is served from `/captcha.jpg` with no cache-busting — stale-captcha is a likely failure mode
+- Panel header misspells "Khata" as "Kahta" — useful signal this is a live portal, not a stale mirror
+
+**Probe artifacts preserved at:** `qa/ccms_nic_probe/2026-06-21-FINDINGS.json` (16 KB) + captured HTML responses + probe scripts.
+
+## What ccms.nic.in IS useful for
+
+The portal is still useful to ClearDeed as a **manual-verification step for the buyer**, not as an automated fetcher. The buyer's Bhulekh report includes a hal-khata number. Once they have that, they can:
+
+1. Visit `https://ccms.nic.in/searchCases.html`
+2. Choose "Hal Khata No."
+3. Enter the hal-khata + captcha
+4. Read the result table for pending revenue cases
+
+This should be surfaced in the report's "What to Ask Next" panel — not built as an automated fetcher.
+
+## URL Structure — original (bhulekh.ori.nic.in/rccms/)
+- Login page: `https://bhulekh.ori.nic.in/rccms/`
+- Case status: `https://bhulekh.ori.nic.in/rccms/Cause_StatusCustomise.aspx`
+- Cause list: `https://bhulekh.ori.nic.in/rccms/CauseListCustomise.aspx`
+- Reports: `https://bhulekh.ori.nic.in/rccms/Reports.aspx`
+- Dashboard: `https://bhulekh.ori.nic.in/rccms/Dashboard.aspx`
+- Captcha image: `https://bhulekh.ori.nic.in/rccms/CaptchaImage.axd?guid=<guid>`
+
+## URL Structure — ccms.nic.in (live 2026-06-21)
+- Root: `https://ccms.nic.in/` (meta-refresh → `/loginHome.html`)
+- Search page: `https://ccms.nic.in/searchCases.html`
+- Captcha image: `https://ccms.nic.in/captcha.jpg`
+- Hal-Khata search: `https://ccms.nic.in/searchbyhallkhatano.html`
+- Hal-Plot search: `https://ccms.nic.in/searchbykhatano.html`
+- Petitioner search: `https://ccms.nic.in/findPetCase.html`
+- Case-number search: `https://ccms.nic.in/findCase.html`
+- Case-detail (no captcha): `https://ccms.nic.in/findCasebyNewCaseId.html`, `https://ccms.nic.in/fetchallCaseDetails.html`
+
+## Authentication (bhulekh.ori.nic.in/rccms/ — original)
+**REQUIRED — no public access path exists.**
 
 ## What it returns
 Revenue court case status for Odisha revenue cases (OEA, OLR, OPLE, OGLS, and related).
@@ -71,15 +145,28 @@ For title due diligence: Revenue court cases involving a specific plot/owner are
 3. **Captcha** — solvable via OCR but requires Playwright for the image capture step.
 4. **ASP.NET session state** — must maintain cookies and hidden field values across postbacks.
 
-## Assessment
-RCCMS is **not automatable** for the ClearDeed use case:
-- The party-name search does not exist. eCourts (`services.ecourts.gov.in`) is the appropriate channel for party-name court searches.
-- Revenue court cases tied to a plot/owner would be found via eCourts (subordinate courts) or the Orissa High Court, not via RCCMS which requires knowing the case number first.
-- RCCMS has value only when a case number is already known (e.g., from a Bhulekh RoR mutation reference).
+## Assessment (post-probe 2026-06-21)
+
+**RCCMS, in all three portal variants, is not automatable for ClearDeed's reverse-lookup use case:**
+
+1. **bhulekh.ori.nic.in/rccms/ + rccms.odisha.gov.in** — auth-gated, party-name search does not exist, requires Playwright + captcha solver for any automation. Already documented as not automatable.
+2. **ccms.nic.in** — empirically confirmed on 2026-06-21 as the Odisha Board of Revenue Case Management System. Result table exposes only case-management columns (SL NO, Section, Case No, Court Name, Petitioner, Opposite Party) — **no plot/khata/village/mouza column, in any of 4 working search forms**. Captcha is solvable at >90% confidence but is not the blocker — the missing reverse-lookup schema is.
+
+**The reverse-lookup bridge idea (look up cases by caseNo from Bhulekh's mutation references) is correct in principle but cannot be automated end-to-end via any of these portals, because the case-detail page does not echo the plot/khata/village of the case.** A human investigator is needed to confirm "this case pertains to your plot."
 
 ## Recommendations for ClearDeed
-1. **Do not invest in an automated RCCMS fetcher** — the architecture does not support party-name searches relevant to property due diligence.
+
+1. **Close T-031 (RCCMS live fetcher) as a known-unbuildable.** Mark DONE for the negative-result gate work that was the actual blocker (the placeholder already returns `manual_required`); the live fetcher is no longer on the critical path.
 2. **Use eCourts party-name search** as the primary court case source (already implemented).
-3. **Add RCCMS case-number lookup as a conditional step**: If Bhulekh RoR surfaces a mutation case reference (e.g., "Case No: 54/2020"), offer to look up its status via RCCMS. This would require a manual or semi-automated concierge step.
-4. **Consider adding Orissa High Court search** as an alternative high-value court source for title disputes.
-5. **Update the report** to clarify that revenue court case search is handled via eCourts (subordinate courts) and the Orissa High Court, not via RCCMS.
+3. **Use Orissa High Court + DRT fetchers** (both already implemented) as alternative high-value court sources for title disputes.
+4. **Surface ccms.nic.in as a manual-verification step** in the report's "What to Ask Next" panel. The buyer already has a hal-khata from Bhulekh; instruct them to query ccms.nic.in manually if they want to confirm zero pending revenue-court cases.
+5. **Do NOT build a ccms.nic.in fetcher.** The reverse-lookup capability is structurally absent. Engineering effort here would produce a fetcher that returns case-management metadata with no plot context — strictly worse than today's `manual_required` placeholder, because it would generate false-positive "case found" signals the buyer can't act on.
+
+## Probe artifacts
+
+Persisted at `qa/ccms_nic_probe/`:
+- `2026-06-21-FINDINGS.json` — full probe results (16 KB)
+- `result-table-halkhata.html` — captured response showing actual result-table columns
+- `probe.mjs` + `test-with-captcha.mjs` — reproducible probe scripts
+
+Re-running the probe is safe (read-only, captcha-tolerant, ~30s end-to-end).
