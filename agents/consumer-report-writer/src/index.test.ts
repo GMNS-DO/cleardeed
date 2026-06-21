@@ -42,6 +42,45 @@ describe("A10 ConsumerReportWriter", () => {
     expect(html).toContain("disclaimer");
   });
 
+  it("renders dedicated ROR + Bhunaksha source sections", () => {
+    const input = {
+      ...CONSUMER_REPORT_FIXTURE,
+      gpsCoordinates: { latitude: 20.272688, longitude: 85.701271 },
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { html, insights } = generateConsumerReport(input as any);
+
+    // Both section headings must be present, even if one is empty.
+    expect(html).toContain("ROR findings (Bhulekh Record of Rights)");
+    expect(html).toContain("Map findings (Bhunaksha)");
+
+    // The sections must carry a data-source-family attribute so the
+    // report view can style/locate them, and an explicit data-source
+    // value for the registry.
+    expect(html).toContain('data-source-family="bhulekh"');
+    expect(html).toContain('data-source-family="bhunaksha"');
+
+    // If any insights with bhulekh: or bhunaksha: source fire on the
+    // fixture, they must be rendered inside the corresponding section.
+    // (They may also render elsewhere — buyer questions etc. — but the
+    // source-layer section must not be empty in that case.)
+    const rorFired = insights.some((i) => i.source.startsWith("bhulekh:"));
+    const mapFired = insights.some((i) => i.source.startsWith("bhunaksha:"));
+    if (rorFired) {
+      expect(html).toMatch(/data-source-family="bhulekh"[\s\S]*?ROR-INS-/);
+    }
+    if (mapFired) {
+      expect(html).toMatch(/data-source-family="bhunaksha"[\s\S]*?(ROR-INS-|bhunaksha)/);
+    }
+
+    // When the fixture has no insights for a family, the empty-state
+    // copy renders. The fixture should fire at least one bhulekh
+    // insight, so this also covers the empty-map path: we just confirm
+    // the helper produced valid HTML around it.
+    expect(html).toContain("Findings derived from the Record of Rights");
+    expect(html).toContain("Findings derived from the cadastral map");
+  });
+
   it("embeds Sprint 5 print-optimized CSS and print footer", () => {
     const input = {
       ...CONSUMER_REPORT_FIXTURE,

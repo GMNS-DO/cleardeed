@@ -35,3 +35,27 @@ export function renderInsightList(insights: Insight[]): string {
   if (insights.length === 0) return "";
   return `<div class="insight-list">${insights.map(renderInsightBlock).join("\n")}</div>`;
 }
+
+/**
+ * Render an insight list grouped by source family, with a section heading
+ * and one-line preamble. Empty inputs render an explicit "no findings"
+ * empty state — never silent absence — so a buyer reading the report can
+ * tell the layer ran and produced zero matches, vs. the layer not running
+ * at all.
+ */
+export function renderInsightListBySource(
+  heading: string,
+  preamble: string,
+  insights: Insight[],
+  dataSource: string,
+): string {
+  const inner =
+    insights.length > 0
+      ? renderInsightList(insights)
+      : `<p class="insight-empty">No ${escape(heading.toLowerCase())} for this plot.</p>`;
+  return `<section class="insight-section insight-source-${escape(dataSource)}" data-source-family="${escape(dataSource)}">
+  <h3 class="insight-section-heading">${escape(heading)}</h3>
+  <p class="insight-section-preamble">${escape(preamble)}</p>
+  ${inner}
+</section>`;
+}

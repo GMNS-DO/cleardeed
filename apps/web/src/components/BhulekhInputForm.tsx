@@ -2,19 +2,12 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { KHRDHA_TEHSIL_OPTIONS } from "@/lib/khordha-location";
+import { fetchVillages, searchVillages, type Village } from "@/lib/villages";
 import { createRazorpayOrder } from "@/lib/payment";
 import { MapboxBoundaryMap } from "@/components/MapboxBoundaryMap";
 
 type SearchMode = "Plot" | "Khatiyan" | "Tenant";
 type FormState = "form" | "ordering" | "paying" | "generating" | "success" | "error";
-
-interface VillageOption {
-  name_en: string;
-  name_or: string;
-  bhulekhVillageCode: string;
-  nameEnAlternates: string[];
-  nameOrAlternates: string[];
-}
 
 interface FormData {
   tehsilValue: string;
@@ -34,16 +27,6 @@ const TEHSIL_OPTIONS = KHRDHA_TEHSIL_OPTIONS.map((t) => ({
   label: `${t.name_en} (${t.name_or})`,
   name_en: t.name_en,
 }));
-
-function getVillages(tehsilBhulekhValue: string): VillageOption[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tehsil = (KHRDHA_TEHSIL_OPTIONS as unknown as any[]).find(
-    (t: { bhulekh_value: string }) => t.bhulekh_value === tehsilBhulekhValue
-  );
-  if (!tehsil) return [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (tehsil.riCircles as any).flatMap((ri: { villages: VillageOption[] }) => ri.villages);
-}
 
 const SEARCH_LABELS: Record<SearchMode, string> = {
   Plot: "Plot number",
@@ -88,6 +71,8 @@ export function BhulekhInputForm() {
     bhunakshaPolygon?: number[][][] | null;
   } | null>(null);
   const [villageQuery, setVillageQuery] = useState("");
+  const [villagesByTahasil, setVillagesByTahasil] = useState<Record<string, Village[]>>({});
+  const [villagesDoc, setVillagesDoc] = useState<{ totalVillages: number; tahasilCount: number } | null>(null);
   const razorpayLoaded = useRef(false);
 
   const [form, setForm] = useState<FormData>({
@@ -111,23 +96,39 @@ export function BhulekhInputForm() {
     });
   }, []);
 
+  // Load the village directory once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    fetchVillages()
+      .then((doc) => {
+        if (cancelled) return;
+        const byCode: Record<string, Village[]> = {};
+        for (const v of doc.villages) {
+          const key = v.bhulekhTahasilCode;
+          if (!byCode[key]) byCode[key] = [];
+          byCode[key].push(v);
+        }
+        setVillagesByTahasil(byCode);
+        setVillagesDoc({ totalVillages: doc.totalVillages, tahasilCount: doc.tahasilCount });
+      })
+      .catch((e) => {
+        // If the directory fails to load, the village input stays empty.
+        // This is a non-fatal UX degradation — the rest of the form
+        // (tehsil, search, contact) still works.
+        console.warn("[BhulekhInputForm] villages directory failed to load:", e);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const villages = useMemo(() => {
     if (!form.tehsilValue) return [];
-    return getVillages(form.tehsilValue);
-  }, [form.tehsilValue]);
+    return villagesByTahasil[form.tehsilValue] ?? [];
+  }, [form.tehsilValue, villagesByTahasil]);
 
   const filteredVillages = useMemo(() => {
-    if (!villageQuery.trim()) return villages.slice(0, 50);
-    const q = villageQuery.toLowerCase();
-    return villages
-      .filter(
-        (v) =>
-          v.name_en.toLowerCase().includes(q) ||
-          v.name_or.includes(villageQuery) ||
-          v.nameEnAlternates.some((a: string) => a.toLowerCase().includes(q)) ||
-          v.nameOrAlternates.some((a: string) => a.includes(villageQuery))
-      )
-      .slice(0, 50);
+    return searchVillages(villageQuery, villages, 50);
   }, [villages, villageQuery]);
 
   const canAdvanceStep2 = Boolean(form.tehsilValue && form.village && form.villageCode);
@@ -530,21 +531,23 @@ export function BhulekhInputForm() {
                   <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded border border-[#d9ddd4] bg-white shadow-md">
                     {filteredVillages.length > 0 ? (
                       filteredVillages.map((v) => (
-                        <li key={`${v.bhulekhVillageCode}-${v.name_en}`}>
+                        <li key={`${v.bhulekhVillageCode}-${v.english || v.odia}`}>
                           <button
                             type="button"
                             onClick={() => {
                               setForm((f) => ({
                                 ...f,
-                                village: v.name_en,
+                                village: v.english || v.odia,
                                 villageCode: v.bhulekhVillageCode,
                               }));
                               setVillageQuery("");
                             }}
                             className="w-full px-3 py-2 text-left text-sm hover:bg-[#eef1ea]"
                           >
-                            <span className="font-medium">{v.name_en}</span>
-                            <span className="ml-2 text-[#5b665f]">{v.name_or}</span>
+                            <span className="font-medium">{v.english || v.odia}</span>
+                            {v.english && (
+                              <span className="ml-2 text-[#5b665f]">{v.odia}</span>
+                            )}
                           </button>
                         </li>
                       ))
@@ -568,6 +571,12 @@ export function BhulekhInputForm() {
                     >
                       Change
                     </button>
+                  </p>
+                )}
+                {!villageQuery && !form.village && villagesDoc && (
+                  <p className="mt-1.5 text-xs text-[#5b665f]">
+                    {villagesDoc.totalVillages.toLocaleString("en-IN")} villages ·{" "}
+                    {villagesDoc.tahasilCount} tahasils. Type to search.
                   </p>
                 )}
               </div>

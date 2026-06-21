@@ -32,7 +32,7 @@ import type { RiskInsight } from "./types";
 import { runInsights } from "./insights/engine";
 import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
-import { renderInsightList } from "./insights/render";
+import { renderInsightList, renderInsightListBySource } from "./insights/render";
 import {
   tallyInsightsByBuyerQuestion,
   getUnimplementedExplanation,
@@ -955,6 +955,14 @@ function submitFeedbackComment(section, btn) {
   const courtInsights = insights.filter((i) => i.panel === "court");
   const financialInsights = insights.filter((i) => i.panel === "financial");
 
+  // ROR + Bhunaksha source-layer sections. These mirror the same insights
+  // already rendered above but are grouped by data source so the buyer (and
+  // the lawyer reviewing the report) can see what came from the Record of
+  // Rights vs. what came from the geometry/map. Empty inputs render an
+  // explicit "no findings" line — never silent absence.
+  const rorSourceInsights = insights.filter((i) => i.source.startsWith("bhulekh:"));
+  const mapSourceInsights = insights.filter((i) => i.source.startsWith("bhunaksha:"));
+
   const insightBlocks = [
     renderInsightList(plotInsights),
     renderInsightList(ownerInsights),
@@ -963,6 +971,18 @@ function submitFeedbackComment(section, btn) {
     renderInsightList(courtInsights),
     renderInsightList(financialInsights),
     renderInsightList(completenessInsights),
+    renderInsightListBySource(
+      "ROR findings (Bhulekh Record of Rights)",
+      "Findings derived from the Record of Rights — owner names, khata number, plot details, land class, dues, and back-page entries.",
+      rorSourceInsights,
+      "bhulekh",
+    ),
+    renderInsightListBySource(
+      "Map findings (Bhunaksha)",
+      "Findings derived from the cadastral map — plot boundary, area, neighbours, road access, and shape.",
+      mapSourceInsights,
+      "bhunaksha",
+    ),
   ].join("\n");
 
   return { html: html + "\n" + insightBlocks, title, insights };

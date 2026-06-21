@@ -40,6 +40,7 @@ export default defineConfig({
       "agents/land-classifier/**/*.test.ts",
       "packages/pdf-renderer/src/**/*.test.ts",
       "apps/web/src/lib/track.test.ts",
+      "apps/web/src/lib/villages.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.snapshot.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.wire.test.ts",
