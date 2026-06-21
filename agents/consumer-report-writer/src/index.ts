@@ -2224,6 +2224,94 @@ export function buildQDetail(input: {
   </section>`;
 }
 
+// Sticky horizontal nav that appears after the hero scrolls out of view.
+// One pill per Buyer Question. Highlights the currently visible Q-detail
+// section via an IntersectionObserver scroll-spy. Hidden by default
+// (data-visible="false"); CSS will hide the nav until the hero is offscreen,
+// and the scroll-spy script sets data-visible="true" on first Q-detail
+// entering the viewport.
+//
+// Two variants are emitted so the same content works at every breakpoint:
+//   - `.sticky-nav`         → vertical right-rail on desktop (>=768px)
+//   - `.sticky-nav-mobile`  → horizontal bottom-bar on mobile  (<768px)
+// CSS in the buyer page stylesheet handles the responsive toggle.
+export function buildStickyNav(
+  questions: ReadonlyArray<{ id: string; index: number; label: string; status: string }>
+): string {
+  const pillsHtml = questions
+    .map(
+      (q) =>
+        `<a href="#${escapeAttr(q.id)}-detail" class="sticky-nav-link" data-q="${escapeAttr(q.id)}" data-status="${escapeAttr(q.status)}" data-tone="${escapeAttr(q.status)}">
+          <span class="q-pill-q">Q${q.index}</span>
+          <span class="q-pill-label">${escapeText(q.label)}</span>
+        </a>`
+    )
+    .join("");
+
+  return `<nav class="sticky-nav" id="q-sticky-nav" data-visible="false" aria-label="Buyer questions">
+    <div class="sticky-nav-inner">${pillsHtml}</div>
+  </nav>`;
+}
+
+// Returns the scroll-spy <script> for the sticky nav.
+// Behavior:
+//   - Watch all elements matching `.q-detail` via IntersectionObserver.
+//   - When the top hero (`.property-header`) is in view, hide the nav
+//     (data-visible="false").
+//   - When any Q-detail is in view, set data-visible="true" and mark the
+//     matching pill with data-current="true" (other pills lose it).
+//   - Pills without a matching visible section default to no current.
+//
+// The script is idempotent: re-runs safely if the page re-renders the nav.
+export function buildStickyNavScript(): string {
+  return `<script>(function() {
+  var nav = document.getElementById('q-sticky-nav');
+  var hero = document.querySelector('.property-header, #property-header');
+  var pills = document.querySelectorAll('.sticky-nav-link');
+  var sections = document.querySelectorAll('.q-detail');
+  if (!nav || !sections.length) return;
+
+  function setCurrent(id) {
+    for (var i = 0; i < pills.length; i++) {
+      if (pills[i].getAttribute('data-q') === id) {
+        pills[i].setAttribute('data-current', 'true');
+      } else {
+        pills[i].removeAttribute('data-current');
+      }
+    }
+  }
+
+  function setVisible(visible) {
+    if (visible) nav.setAttribute('data-visible', 'true');
+    else nav.setAttribute('data-visible', 'false');
+  }
+
+  var heroVisible = true;
+  if (hero && 'IntersectionObserver' in window) {
+    var heroObs = new IntersectionObserver(function(entries) {
+      heroVisible = entries[0].isIntersecting;
+      setVisible(!heroVisible);
+    }, { threshold: 0 });
+    heroObs.observe(hero);
+  }
+
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var id = entry.target.id.replace(/-detail$/, '');
+          setCurrent(id);
+          if (!heroVisible) setVisible(true);
+        }
+      });
+    }, { rootMargin: '-30% 0px -50% 0px', threshold: 0 });
+    for (var j = 0; j < sections.length; j++) {
+      obs.observe(sections[j]);
+    }
+  }
+})();</script>`;
+}
+
 // Property header strip at the top of the buyer page.
 // Reports identifier (reportId or village/plot). Compact single-line metadata.
 export function buildPropertyHeader(input: {
