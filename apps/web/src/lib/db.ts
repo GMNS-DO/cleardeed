@@ -78,6 +78,7 @@ export interface DbReport {
   father_husband_name: string | null;
   plot_description: string | null;
   report_html: string | null;
+  report_html_lawyer: string | null;
   report_title: string | null;
   report_status: string;
   nominatim_status: string | null;
@@ -110,7 +111,8 @@ export interface CreateReportParams {
   claimedOwnerName: string;
   fatherHusbandName?: string;
   plotDescription?: string;
-  userId?: string;
+  /** T-013: optional auth.uid() — null means anonymous purchase (legacy). */
+  userId?: string | null;
 }
 
 export interface SourceResultParams {
@@ -127,6 +129,7 @@ export interface SourceResultParams {
 export interface UpdateReportParams {
   reportId: string;
   reportHtml: string;
+  reportHtmlLawyer?: string | null;
   reportTitle: string;
   nominatimStatus?: string;
   bhunakshaStatus?: string;
@@ -224,6 +227,7 @@ export async function updateReportResults(params: UpdateReportParams): Promise<v
     p_validation_findings: params.validationFindings ?? [],
     p_source_summary: params.sourceSummary ?? {},
     p_error_message: params.errorMessage ?? null,
+    p_report_html_lawyer: params.reportHtmlLawyer ?? null,
   });
 
   if (error) throw new Error(`update_report_results failed: ${error.message}`);

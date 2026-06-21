@@ -25,7 +25,7 @@ export function ReportRowActions({ reportId, token, filename }: ReportRowActions
     setBusy("rerun");
     setMessage(null);
     try {
-      const response = await fetch("/api/dashboard/rerun", {
+      const response = await fetch("/api/admin/dashboard/rerun", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -237,11 +237,23 @@ export function BhulekhInputForm() {
         preGeneratedTitle: null,
         preGeneratedBhunakshaPolygon: null,
       };
-      await fetch("/api/checkout", {
+      // T-013: hard auth gate. /api/checkout returns 401 when no session —
+      // redirect to /login BEFORE opening the Razorpay modal so the buyer
+      // doesn't see a payment flow they can't complete.
+      const checkoutRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(checkoutPayload),
-      }).catch((e) => console.warn("[BhulekhInputForm] Checkout session store failed:", e));
+      });
+      if (checkoutRes.status === 401) {
+        const data = (await checkoutRes.json().catch(() => ({}))) as { next?: string };
+        const next = data.next ?? `/login?next=${encodeURIComponent("/")}`;
+        window.location.href = next;
+        return;
+      }
+      if (!checkoutRes.ok) {
+        console.warn("[BhulekhInputForm] Checkout session store failed:", checkoutRes.status);
+      }
 
       // When pre-gen finishes, patch the session with the result so the
       // webhook/success route can use the cached HTML (or the persisted

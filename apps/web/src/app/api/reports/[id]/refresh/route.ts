@@ -13,7 +13,8 @@
  * Razorpay. The client then redirects to /report/{id} on success.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, getReport, isReportExpired } from "@/lib/db";
+import { supabaseAdmin, getReport, isReportExpired, type DbReport } from "@/lib/db";
+import { getAuthUser } from "@/lib/auth-helpers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,20 @@ export async function POST(
     return NextResponse.json({ error: "Missing report id" }, { status: 400 });
   }
 
+  // T-013: capture auth.uid() for ownership verification. Hard-gate: a
+  // report can only be refreshed by its authenticated owner.
+  const authUser = await getAuthUser();
+  if (!authUser) {
+    return NextResponse.json(
+      {
+        error: "login_required",
+        message: "Sign in to refresh your report.",
+        next: `/login?next=${encodeURIComponent(`/report/${reportId}`)}`,
+      },
+      { status: 401 }
+    );
+  }
+
   const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -40,9 +55,12 @@ export async function POST(
     );
   }
 
-  // ── Sanity-check the report exists and is actually expired (or close to it) ──
+  // ── Sanity-check the report exists, is actually expired, and belongs to the
+  //    calling user. T-013: a paid report can only be refreshed by its owner.
   try {
-    const { report } = await getReport(reportId);
+    const { report } = await getReport(reportId) as {
+      report: (DbReport & { userId?: string | null; expiresAt?: string | null; revokedAt?: string | null }) | null;
+    };
     if (!report) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
@@ -50,6 +68,13 @@ export async function POST(
       return NextResponse.json(
         { error: "Report is still valid — no refresh needed." },
         { status: 409 }
+      );
+    }
+    const ownerId = report.userId ?? report.user_id ?? null;
+    if (ownerId && authUser?.id !== ownerId) {
+      return NextResponse.json(
+        { error: "You can only refresh your own reports." },
+        { status: 403 }
       );
     }
   } catch (err) {
@@ -109,6 +134,7 @@ export async function POST(
           session_data: {
             kind: "refresh",
             reportId,
+            auth_uid: authUser?.id ?? null,
           },
           expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         },

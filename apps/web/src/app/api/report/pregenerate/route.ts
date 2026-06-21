@@ -17,6 +17,7 @@ import { generateReportV11 } from "@/lib/pipeline";
 import { createReport, updateReportResults } from "@/lib/db";
 import { addReportAccessTokensToHtml } from "@/lib/report-access";
 import { validateInputPrePayment } from "@/lib/validation/pre-payment";
+import { getAuthUser } from "@/lib/auth-helpers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,6 +73,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // T-013: resolve auth.uid() once per request. Nullable for anonymous pregens.
+  const authUser = await getAuthUser();
+  const resolvedUserId = authUser?.id ?? null;
+
   // Create report record first (needed for token-scoped URL)
   let reportId: string | undefined;
   let persistenceEnabled = false;
@@ -80,6 +85,7 @@ export async function POST(req: NextRequest) {
       gpsLat: 0,
       gpsLon: 0,
       claimedOwnerName: claimedOwnerName || identifier,
+      userId: resolvedUserId,
     });
     reportId = dbResult.reportId;
     persistenceEnabled = true;

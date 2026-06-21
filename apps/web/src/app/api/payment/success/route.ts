@@ -24,6 +24,7 @@ import { createReport, updateReportResults, getReport, supabaseAdmin } from "@/l
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import { trackEvent } from "@/lib/track";
+import { getAuthUser } from "@/lib/auth-helpers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,8 @@ interface CheckoutSession {
   claimedOwnerName?: string;
   email?: string;
   whatsapp?: string;
+  /** T-013: auth.uid() captured at checkout time. */
+  auth_uid?: string | null;
   preGeneratedReportId?: string | null;
   /** Pre-generated HTML stored directly in session as backup */
   preGeneratedHtml?: string | null;
@@ -135,6 +138,11 @@ export async function POST(req: NextRequest) {
 
   const polygonFromSession = checkoutSession?.preGeneratedBhunakshaPolygon;
   console.info(`[/api/payment/success] bhunakshaPolygon from session: ${polygonFromSession != null ? "found" : "NULL"}`);
+
+  // T-013: resolve auth.uid() from session cookie, fall back to checkout-session auth_uid.
+  // Both are nullable — anonymous purchases still work, they just produce a row with user_id=NULL.
+  const authUser = await getAuthUser();
+  const resolvedUserId = authUser?.id ?? checkoutSession?.auth_uid ?? null;
 
   // ── Fast path: report was pre-generated during checkout ────────────────────
   if (resolvedPreGeneratedReportId || resolvedPreGeneratedHtml) {
@@ -275,6 +283,7 @@ export async function POST(req: NextRequest) {
       gpsLat: 0,
       gpsLon: 0,
       claimedOwnerName: resolvedClaimedOwnerName || resolvedIdentifier,
+      userId: resolvedUserId,
     });
     reportId = dbResult.reportId;
     persistenceEnabled = true;

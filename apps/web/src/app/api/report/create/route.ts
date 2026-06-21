@@ -16,6 +16,7 @@ import { createReport, updateReportResults, upsertSourceResult } from "@/lib/db"
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import { trackError } from "@/lib/track";
+import { getAuthUser } from "@/lib/auth-helpers";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import { validateKhordhaGPS } from "@cleardeed/schema";
 
@@ -48,6 +49,10 @@ interface V11Input {
 type ReportInput = V10Input | V11Input;
 
 export async function POST(req: NextRequest) {
+  // T-013: resolve auth.uid() once per request. Nullable — anonymous purchases
+  // remain supported, they just create a row with user_id = NULL.
+  const authUser = await getAuthUser();
+  const resolvedUserId = authUser?.id ?? null;
   try {
     // Report creation is open for concierge launch (no token gate in launch phase)
     // Admin token is only required for /admin routes.
@@ -74,6 +79,7 @@ export async function POST(req: NextRequest) {
           gpsLat: 0, // V1.1 doesn't use GPS
           gpsLon: 0,
           claimedOwnerName: v11.claimedOwnerName ?? v11.identifier,
+          userId: resolvedUserId,
         });
         reportId = dbResult.reportId;
         persistenceEnabled = true;
@@ -119,6 +125,7 @@ export async function POST(req: NextRequest) {
           await updateReportResults({
             reportId,
             reportHtml,
+            reportHtmlLawyer: pipelineOutput.htmlLawyer ?? null,
             reportTitle: pipelineOutput.title,
             bhulekhStatus: pipelineOutput.sourceSummary.bhulekh,
             validationFindings: pipelineOutput.validationFindings,
@@ -194,6 +201,7 @@ export async function POST(req: NextRequest) {
         claimedOwnerName,
         fatherHusbandName,
         plotDescription,
+        userId: resolvedUserId,
       });
       reportId = dbResult.reportId;
       persistenceEnabled = true;

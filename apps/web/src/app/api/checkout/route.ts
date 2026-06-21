@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db";
 import { trackEvent } from "@/lib/track";
+import { getAuthUser } from "@/lib/auth-helpers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,21 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  // T-013: capture auth.uid() into checkout session so webhook can attach it
+  // to the report even if the buyer's session cookie has expired by the time
+  // the payment confirmation lands. Hard-gate: every purchase must be authed.
+  const authUser = await getAuthUser();
+  if (!authUser) {
+    return NextResponse.json(
+      {
+        error: "login_required",
+        message: "Sign in with your phone to continue.",
+        next: `/login?next=${encodeURIComponent("/checkout")}`,
+      },
+      { status: 401 }
+    );
   }
 
   const { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName, email, whatsapp } = body as {
@@ -57,6 +73,7 @@ export async function POST(req: NextRequest) {
     claimedOwnerName: (claimedOwnerName as string) || undefined,
     email: (email as string) || undefined,
     whatsapp: (whatsapp as string) || undefined,
+    auth_uid: authUser?.id ?? null,
     preGeneratedReportId: (body as { preGeneratedReportId?: string }).preGeneratedReportId ?? null,
     preGeneratedBhunakshaPolygon: polygonRaw,
   };

@@ -17,6 +17,7 @@ import { NextRequest } from "next/server";
 
 const getReportMock = vi.fn();
 const supabaseUpsertMock = vi.fn();
+const getAuthUserMock = vi.fn();
 
 vi.mock("../../../../../lib/db", () => ({
   // The route imports { supabaseAdmin, getReport, isReportExpired } from "@/lib/db".
@@ -35,6 +36,12 @@ vi.mock("../../../../../lib/db", () => ({
   }),
 }));
 
+// T-013: hard auth gate. Default to "authenticated buyer". Tests for the
+// 401 path override this mock to return null.
+vi.mock("../../../../../lib/auth-helpers", () => ({
+  getAuthUser: () => getAuthUserMock(),
+}));
+
 import { POST } from "./route";
 
 const originalEnv = { ...process.env };
@@ -45,6 +52,8 @@ describe("POST /api/reports/:id/refresh", () => {
     getReportMock.mockReset();
     supabaseUpsertMock.mockReset();
     supabaseUpsertMock.mockResolvedValue({ error: null });
+    getAuthUserMock.mockReset();
+    getAuthUserMock.mockResolvedValue({ id: "user-test", phone: "+919876543210" });
     process.env.RAZORPAY_KEY_ID = "rzp_test_key";
     process.env.RAZORPAY_KEY_SECRET = "rzp_test_secret";
   });
@@ -52,6 +61,17 @@ describe("POST /api/reports/:id/refresh", () => {
   afterEach(() => {
     process.env = { ...originalEnv };
     global.fetch = originalFetch;
+  });
+
+  it("returns 401 when not authenticated (T-013 hard auth gate)", async () => {
+    getAuthUserMock.mockResolvedValue(null);
+
+    const req = new NextRequest("http://localhost/api/reports/rep_1/refresh", { method: "POST" });
+    const res = await POST(req, { params: Promise.resolve({ id: "rep_1" }) });
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBe("login_required");
+    expect(body.next).toContain("/login?next=");
   });
 
   it("returns 500 when Razorpay credentials are not configured", async () => {
@@ -79,7 +99,7 @@ describe("POST /api/reports/:id/refresh", () => {
     // .expires_at (snake_case) per the production DbReport type. We match
     // that contract here so the test exercises the real check.
     getReportMock.mockResolvedValue({
-      report: { id: "rep_fresh", expires_at: future, revoked_at: null, html: "<p>x</p>", status: "complete" },
+      report: { id: "rep_fresh", userId: "user-test", expires_at: future, revoked_at: null, html: "<p>x</p>", status: "complete" },
     });
 
     const req = new NextRequest("http://localhost/api/reports/rep_fresh/refresh", { method: "POST" });
@@ -90,7 +110,7 @@ describe("POST /api/reports/:id/refresh", () => {
   it("creates a Razorpay order for ₹299 and stores a refresh session when the report is expired", async () => {
     const past = new Date(Date.now() - 1000).toISOString();
     getReportMock.mockResolvedValue({
-      report: { id: "rep_expired", expires_at: past, revoked_at: null, html: "<p>x</p>", status: "complete" },
+      report: { id: "rep_expired", userId: "user-test", expires_at: past, revoked_at: null, html: "<p>x</p>", status: "complete" },
     });
 
     // Mock the Razorpay order creation.
@@ -130,7 +150,7 @@ describe("POST /api/reports/:id/refresh", () => {
     // The session was stored in checkout_sessions tagged as kind: "refresh".
     expect(supabaseUpsertMock).toHaveBeenCalledTimes(1);
     const stored = supabaseUpsertMock.mock.calls[0][0];
-    expect(stored.session_data).toEqual({ kind: "refresh", reportId: "rep_expired" });
+    expect(stored.session_data).toEqual({ kind: "refresh", reportId: "rep_expired", auth_uid: "user-test" });
     expect(stored.expires_at).toBeTruthy();
   });
 });

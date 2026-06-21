@@ -32,6 +32,8 @@ interface CheckoutSession {
   claimedOwnerName?: string;
   email?: string;
   whatsapp?: string;
+  /** T-013: auth.uid() captured at checkout time. */
+  auth_uid?: string | null;
   preGeneratedReportId?: string | null;
   /** "refresh" for pay-to-refresh; absent (or anything else) for first purchase. */
   kind?: string;
@@ -221,6 +223,7 @@ export async function POST(req: NextRequest) {
       gpsLat: 0,
       gpsLon: 0,
       claimedOwnerName: session.claimedOwnerName ?? session.identifier,
+      userId: session.auth_uid ?? null,
     });
     reportId = dbResult.reportId;
     persistenceEnabled = true;
