@@ -2149,7 +2149,7 @@ export function buildQGrid(
   const tiles = questions
     .map(
       (q) =>
-        `<a href="#${q.id}-detail" class="q-tile" data-status="${escapeAttr(q.status)}" data-tone="${escapeAttr(q.status)}">
+        `<a href="#${escapeAttr(q.id)}-detail" class="q-tile" data-status="${escapeAttr(q.status)}" data-tone="${escapeAttr(q.status)}">
           <div class="q-tile-index">Q${q.index} of ${questions.length}</div>
           <h2 class="q-tile-question">${escapeText(q.question)}</h2>
           <div class="q-tile-status">
