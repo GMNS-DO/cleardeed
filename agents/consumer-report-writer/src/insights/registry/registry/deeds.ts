@@ -16,7 +16,8 @@ function deedsSellerMatchesRorStub(input: RuleInput) {
       "title_chain",
       "parser_uncertain",
       "Seller-vs-RoR owner comparison is not yet checked. Will activate once the IGR sale-deed bridge ships.",
-      "Ask the seller for the last registered sale deed and compare the seller name with the RoR owner name (and guardian/father field) before signing."
+      "Ask the seller for the last registered sale deed and compare the seller name with the RoR owner name (and guardian/father field) before signing.",
+      "IGR sale-deed not wired — ask for the last sale deed"
     ),
   ];
 }
@@ -30,7 +31,8 @@ function deedsSellerMismatchesRorStub(input: RuleInput) {
       "title_chain",
       "parser_uncertain",
       "Seller-vs-RoR owner mismatch is not yet checked. Will activate once the IGR sale-deed bridge ships.",
-      "If the seller name does not match the RoR owner, demand a registered Power of Attorney (PoA) or chain of inheritance deeds linking them."
+      "If the seller name does not match the RoR owner, demand a registered Power of Attorney (PoA) or chain of inheritance deeds linking them.",
+      "IGR sale-deed not wired — demand a registered PoA"
     ),
   ];
 }
@@ -44,7 +46,8 @@ function deedsBelowBenchmarkStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "Last-deed value vs IGR benchmark is not yet checked. Will activate once the IGR sale-deed bridge ships and IGR benchmark coverage lands.",
-      "Compare the consideration value in the last sale deed with the IGR circle-rate benchmark for the village. A deal priced far below benchmark is a watch-out — ask the seller why."
+      "Compare the consideration value in the last sale deed with the IGR circle-rate benchmark for the village. A deal priced far below benchmark is a watch-out — ask the seller why.",
+      "IGR benchmark not wired — compare consideration with circle rate"
     ),
   ];
 }
@@ -58,7 +61,8 @@ function deedsNoSaleDeedStub(input: RuleInput) {
       "title_chain",
       "parser_uncertain",
       "Sale-deed retrievability check is not yet wired. Will activate once the IGR sale-deed bridge ships.",
-      "If no sale deed is retrievable for the period, the chain of title is incomplete — request certified copies from the Sub-Registrar office where the deed was registered."
+      "If no sale deed is retrievable for the period, the chain of title is incomplete — request certified copies from the Sub-Registrar office where the deed was registered.",
+      "IGR sale-deed not wired — get certified copies from SRO"
     ),
   ];
 }
@@ -72,7 +76,8 @@ function deedsPartitionUntracedStub(input: RuleInput) {
       "title_chain",
       "parser_uncertain",
       "Partition-with-untraced-branch check is not yet wired. Will activate once the IGR sale-deed bridge ships.",
-      "If the RoR shows a partition, ask the seller for the partition deed and confirm that all coparceners signed. An untraced branch is a title defect."
+      "If the RoR shows a partition, ask the seller for the partition deed and confirm that all coparceners signed. An untraced branch is a title defect.",
+      "IGR sale-deed not wired — ask for the partition deed"
     ),
   ];
 }

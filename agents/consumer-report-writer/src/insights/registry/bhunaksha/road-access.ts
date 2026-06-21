@@ -93,7 +93,8 @@ function chauhaddiMissingStub(input: RuleInput): Insight[] | null {
     "land_use_permission",
     "parser_uncertain",
     "We could not determine whether this plot has an adjacent road. The Bhunaksha chauhaddi data was not available, and the neighbours chain feature (UP-006) is not yet wired in.",
-    "Visit the plot in person and confirm whether at least one side touches a government Danga (road) or a private lane with right-of-way."
+    "Visit the plot in person and confirm whether at least one side touches a government Danga (road) or a private lane with right-of-way.",
+    "Plot road access unconfirmed — visit in person"
   )];
 }
 

@@ -46,7 +46,8 @@ export function stubFor(
   lens: IssueLens,
   _evidence: EvidenceStrength,
   body: string,
-  actionItem: string
+  actionItem: string,
+  headline?: string
 ): Insight {
   return {
     panel,
@@ -54,7 +55,11 @@ export function stubFor(
     evidenceStrength: "parser_uncertain",
     source: `${ruleId}:stub`,
     severity: "watchout",
-    headline: "Manual verification recommended",
+    // T12 — Rule-specific headlines. When a stub fires, the buyer used to
+    // see "Manual verification recommended" 20 times — a wall of grey. Each
+    // rule now supplies a specific headline that names the source gap and
+    // the verification action in one line.
+    headline: headline ?? "Manual verification recommended",
     body,
     actionItem,
     ruleId,

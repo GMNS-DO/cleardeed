@@ -141,7 +141,8 @@ function floodDataUnavailableStub(input: RuleInput): Insight[] | null {
         "natural_hazard",
         "parser_uncertain",
         "Bhuvan flood hazard data was not retrieved for this plot. We could not classify the historical flood frequency for this GPS.",
-        "Open https://bhuvan-ras2.nrsc.gov.in and zoom to this plot's coordinates. Note any flood-frequency zone the map shows. Bhuvan data is published for planning purposes only — verify with NRSC for any legal decision."
+        "Open https://bhuvan-ras2.nrsc.gov.in and zoom to this plot's coordinates. Note any flood-frequency zone the map shows. Bhuvan data is published for planning purposes only — verify with NRSC for any legal decision.",
+        "Bhuvan flood data not retrieved — zoom the map manually"
       ),
     ];
   }
@@ -163,7 +164,8 @@ function floodDataUnavailableStub(input: RuleInput): Insight[] | null {
       "natural_hazard",
       "parser_uncertain",
       body,
-      "Open https://bhuvan-ras2.nrsc.gov.in and zoom to this plot's coordinates. Note any flood-frequency zone the map shows. Bhuvan data is published for planning purposes only — verify with NRSC for any legal decision."
+      "Open https://bhuvan-ras2.nrsc.gov.in and zoom to this plot's coordinates. Note any flood-frequency zone the map shows. Bhuvan data is published for planning purposes only — verify with NRSC for any legal decision.",
+      "Bhuvan flood data not retrieved — zoom the map manually"
     ),
   ];
 }

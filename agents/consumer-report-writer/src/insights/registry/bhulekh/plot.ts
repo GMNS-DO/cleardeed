@@ -133,7 +133,8 @@ function rorMissingStub(input: RuleInput): Insight[] | null {
       "revenue_record",
       "parser_uncertain",
       "Bhulekh RoR was not retrieved for this query.",
-      "Re-run the report, or pull the RoR PDF from bhulekh.ori.nic.in manually."
+      "Re-run the report, or pull the RoR PDF from bhulekh.ori.nic.in manually.",
+      "Bhulekh RoR not retrieved — re-run or open the PDF"
     )];
   }
   return null;

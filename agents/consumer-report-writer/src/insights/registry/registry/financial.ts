@@ -14,7 +14,8 @@ function financialAskingPriceVsBenchmarkStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "Asking-price vs IGR benchmark check is not yet wired. Will activate once the benchmark and cost-of-risk modules ship.",
-      "Compare the asking price with the IGR circle-rate benchmark for the village. A deal priced more than 2x the benchmark is an overpayment red flag — walk away or renegotiate."
+      "Compare the asking price with the IGR circle-rate benchmark for the village. A deal priced more than 2x the benchmark is an overpayment red flag — walk away or renegotiate.",
+      "Asking price not benchmarked — compare with IGR circle rate"
     ),
   ];
 }
@@ -28,7 +29,8 @@ function financialEcFinancialAttachmentStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "EC financial-attachment check is not yet wired. Will activate once the benchmark and cost-of-risk modules ship and the IGR EC bridge is live.",
-      "Any EC entry showing IT recovery, tax attachment, or coercive recovery means the seller's other liabilities could follow the property. Ask for a clearance certificate from the attaching authority."
+      "Any EC entry showing IT recovery, tax attachment, or coercive recovery means the seller's other liabilities could follow the property. Ask for a clearance certificate from the attaching authority.",
+      "EC not retrieved — ask for IT/tax clearance certificate"
     ),
   ];
 }
@@ -42,7 +44,8 @@ function financialMultipleEncumbrancesStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "Combined-encumbrance exposure check is not yet wired. Will activate once the benchmark and cost-of-risk modules ship and the IGR EC bridge is live.",
-      "If multiple high-value encumbrances appear on the EC, the combined ₹ exposure can exceed the property value itself. The buyer's lawyer must compute total exposure before any token is paid."
+      "If multiple high-value encumbrances appear on the EC, the combined ₹ exposure can exceed the property value itself. The buyer's lawyer must compute total exposure before any token is paid.",
+      "EC not retrieved — lawyer must compute total exposure"
     ),
   ];
 }

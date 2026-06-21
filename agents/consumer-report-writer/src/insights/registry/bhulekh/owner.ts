@@ -145,7 +145,8 @@ function ownerFieldMissingStub(input: RuleInput): Insight[] | null {
       "title_chain",
       "parser_uncertain",
       "The owner field on RoR page 1 could not be read at all. The RoR may have an unusual layout, or the page failed to render.",
-      "Open the RoR PDF from bhulekh.ori.nic.in manually and read the owner name by hand."
+      "Open the RoR PDF from bhulekh.ori.nic.in manually and read the owner name by hand.",
+      "RoR owner field unreadable — read the PDF by hand"
     )];
   }
   return null;

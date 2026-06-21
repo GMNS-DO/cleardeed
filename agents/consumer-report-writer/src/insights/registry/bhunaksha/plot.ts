@@ -110,7 +110,8 @@ function bhunakshaMissingSourceWatchout(input: RuleInput): Insight[] | null {
     "parser_source_quality",
     "missing_source",
     "Bhunaksha revenue-map data was not retrieved for this query, so the plot polygon could not be cross-checked.",
-    "Open the Bhunaksha plot report at mapserver.odisha4kgeo.in and verify the plot polygon manually."
+    "Open the Bhunaksha plot report at mapserver.odisha4kgeo.in and verify the plot polygon manually.",
+    "Bhunaksha map not retrieved — verify the polygon at the portal"
   )];
 }
 

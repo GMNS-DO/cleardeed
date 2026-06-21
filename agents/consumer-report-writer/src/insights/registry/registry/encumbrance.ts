@@ -17,7 +17,8 @@ function encumbranceActiveMortgageStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "Active mortgage in EC entries is not yet checked. Will activate once the IGR EC bridge ships.",
-      "Request the latest Encumbrance Certificate (EC) covering at least the last 30 years from the Sub-Registrar office, and look for any unreleased mortgage, charge, or lien."
+      "Request the latest Encumbrance Certificate (EC) covering at least the last 30 years from the Sub-Registrar office, and look for any unreleased mortgage, charge, or lien.",
+      "EC not retrieved — request a 30-year Encumbrance Certificate"
     ),
   ];
 }
@@ -31,7 +32,8 @@ function encumbranceNonDischargedChargeStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "Non-discharged charge in the EC is not yet checked. Will activate once the IGR EC bridge ships.",
-      "Ask the seller to produce a No-Objection Certificate (NOC) or release deed for any prior charge appearing on the EC."
+      "Ask the seller to produce a No-Objection Certificate (NOC) or release deed for any prior charge appearing on the EC.",
+      "EC not retrieved — ask for a release deed or NOC"
     ),
   ];
 }
@@ -45,7 +47,8 @@ function encumbranceSatisfactionEntryStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "Satisfaction-of-charge entry is not yet checked. Will activate once the IGR EC bridge ships.",
-      "Verify the satisfaction entry on the EC and confirm the corresponding release deed is registered."
+      "Verify the satisfaction entry on the EC and confirm the corresponding release deed is registered.",
+      "EC not retrieved — verify the satisfaction entry on the EC"
     ),
   ];
 }
@@ -77,7 +80,8 @@ function encumbranceCersaiChargeStub(input: RuleInput): Insight[] | null {
         "registry_ec",
         "document_anchor",
         "CERSAI active-charge check is not yet wired. Will activate once the CERSAI bridge ships (after the IGR EC bridge).",
-        "Search CERSAI for any active security interest on this asset at cersai.org.in before signing."
+        "Search CERSAI for any active security interest on this asset at cersai.org.in before signing.",
+        "CERSAI not checked — search cersai.org.in before signing"
       ),
     ];
   }
@@ -93,7 +97,8 @@ function encumbranceNarrowWindowStub(input: RuleInput) {
       "registry_ec",
       "parser_uncertain",
       "EC window-coverage check is not yet wired. Will activate once the IGR EC bridge ships.",
-      "Make sure the EC period covers at least 30 years (or the full chain of ownership) — a narrow EC does not rule out earlier encumbrances."
+      "Make sure the EC period covers at least 30 years (or the full chain of ownership) — a narrow EC does not rule out earlier encumbrances.",
+      "EC window not verified — request 30-year coverage from SRO"
     ),
   ];
 }

@@ -14,7 +14,8 @@ const neighboursRecursive: Rule = {
       "land_use_permission",
       "parser_uncertain",
       "Adjacent-plot recursive lookup is not yet wired. Will activate once Bhulekh batched query lands (UP-006).",
-      "Manually check the Bhulekh entries for plots on all four sides of the queried plot."
+      "Manually check the Bhulekh entries for plots on all four sides of the queried plot.",
+      "Neighbour chain not wired — manually check Bhulekh on all 4 sides"
     ),
   ],
   version: v,

@@ -113,7 +113,8 @@ function leaseDeedSthitibanStub(input: RuleInput): Insight[] | null {
     "land_use_permission",
     "parser_uncertain",
     "This khatiyan is a Sthitiban / Raiyati record. The IGR lease-deed cross-check that detects the Patia Industrial-Lease Scam is not yet wired into ClearDeed.",
-    "Ask the seller in writing whether any prior lease deed (RLD) is recorded against this khatiyan at the IGR. A yes means the land can be resumed by the government."
+    "Ask the seller in writing whether any prior lease deed (RLD) is recorded against this khatiyan at the IGR. A yes means the land can be resumed by the government.",
+    "IGR lease-deed cross-check not wired — ask seller about prior RLD"
   )];
 }
 
@@ -166,7 +167,8 @@ function kisamUnknownWatchout(input: RuleInput): Insight[] | null {
     "parser_source_quality",
     "parser_uncertain",
     "Bhulekh RoR was not retrieved for this query, so the land class could not be verified.",
-    "Re-run the report, or pull the RoR PDF from bhulekh.ori.nic.in manually and read the kisam by hand."
+    "Re-run the report, or pull the RoR PDF from bhulekh.ori.nic.in manually and read the kisam by hand.",
+    "RoR not retrieved — re-run the report or read the PDF"
   )];
 }
 

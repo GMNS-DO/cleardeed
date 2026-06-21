@@ -14,7 +14,8 @@ const chainRecursive: Rule = {
       "title_chain",
       "parser_uncertain",
       "Title-chain recursion across old/new khatiyans is not yet wired. Will activate once IGR deeds ship (UP-007).",
-      "Ask the seller's lawyer for the chain of sale deeds from the last personal RoR owner to today."
+      "Ask the seller's lawyer for the chain of sale deeds from the last personal RoR owner to today.",
+      "IGR deeds not wired — ask for the chain of sale deeds"
     ),
   ],
   version: v,
