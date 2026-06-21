@@ -1,0 +1,20 @@
+{
+  "probedAt": "2026-06-21T08:05:55.530Z",
+  "district": "Khordha",
+  "districtCode": "20",
+  "tahasilCount": 10,
+  "totalVillages": 1669,
+  "perTahasilCount": {
+    "1": 276,
+    "2": 184,
+    "3": 141,
+    "4": 173,
+    "5": 235,
+    "6": 121,
+    "7": 208,
+    "8": 98,
+    "9": 88,
+    "10": 145
+  },
+  "sessionOk": true
+}

@@ -802,7 +802,7 @@ export async function fetch(input: {
     }
 
     districtCode = DISTRICT_CODE;
-    tahasilCode = resolvedVillageInfo.bhulekhTahasilCode;
+    tahasilCode = resolvedVillageInfo.bhulekhTahasilCode ?? "";
     resolvedVillageCode = resolvedVillageInfo.bhulekhVillageCode ?? "";
 
     if (!resolvedVillageCode) {
