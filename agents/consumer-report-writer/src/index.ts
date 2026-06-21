@@ -2112,37 +2112,59 @@ export function buildExposureStrip(
 
 // Pill bar with 6 toggle panels. Only one open at a time (radio behavior, no JS).
 // Status colors: verified -> green, watchout -> amber, redflag -> red, manual -> blue.
+/**
+ * @deprecated Replaced by `buildQGrid` (Task 3). The pill-bar UX is superseded by
+ * a 2x3 grid of hero cards anchored to per-question detail sections. This stub
+ * returns an empty string so callers do not error; the real implementation is
+ * retained in git history for the toggle-bar test fixture update in Task 6.
+ */
 export function buildTogglePillBar(
   panels: Array<{ id: string; label: string; status: string; contentHtml: string }>,
   openId?: string
 ): string {
-  if (panels.length === 0) return "";
-  const knownIds = new Set(panels.map((p) => p.id));
-  const resolvedOpen = openId && knownIds.has(openId) ? openId : panels[0].id;
-  // Tone attribute on the pill drives the count chip color in the editorial
-  // CSS (critical/high/watch). Mapping: redflag -> critical, watchout -> high,
-  // manual -> watch, verified -> default.
-  const tone = (status: string): string => {
-    if (status === "redflag") return "critical";
-    if (status === "watchout") return "high";
-    if (status === "manual") return "watch";
-    return "default";
-  };
-  const pills = panels.map((p) => {
-    const inputId = `toggle-${p.id}`;
-    return `<input type="radio" name="toggle-bar" id="${inputId}" value="${p.id}"${p.id === resolvedOpen ? " checked" : ""}>
-    <label class="pill toggle-pill" for="${inputId}" data-status="${escapeHtml(p.status)}" data-tone="${tone(p.status)}">${escapeHtml(p.label)}</label>`;
-  }).join("\n");
-  const articles = panels.map((p) => {
-    const articleId = `${p.id}-content`;
-    return `<article id="${articleId}" class="panel buyer-panel panel-${escapeHtml(p.status)}" data-status="${escapeHtml(p.status)}">
-      ${p.contentHtml}
-    </article>`;
-  }).join("\n");
-  return `<section class="toggle-bar toggle-pill-bar">
-    <nav class="pill-bar">${pills}</nav>
-    <div class="panel-stack">${articles}</div>
-  </section>`;
+  void panels;
+  void openId;
+  return "";
+}
+
+// Q-grid: 2x3 responsive grid of 6 hero cards, one per Buyer Question (Q1..Q6).
+// Each tile is an anchor that links to its detail section ({id}-detail).
+// Status colors: verified -> #0E9F6E (green), watchout -> #C77700 (amber),
+// risk -> #DC2626 (red), manual -> #1D4ED8 (blue). The CSS targets
+// `data-status` and `data-tone` attributes for color and tone mapping.
+export function buildQGrid(
+  questions: ReadonlyArray<{
+    id: string;
+    index: number;
+    question: string;
+    statusChipLabel: string;
+    status: string;
+    oneLineAnswer: string;
+    exposureDisplay: string;
+    exposureKind: "money" | "count";
+    detailsCount: number;
+  }>
+): string {
+  const tiles = questions
+    .map(
+      (q) =>
+        `<a href="#${q.id}-detail" class="q-tile" data-status="${escapeAttr(q.status)}" data-tone="${escapeAttr(q.status)}">
+          <div class="q-tile-index">Q${q.index} of ${questions.length}</div>
+          <h2 class="q-tile-question">${escapeText(q.question)}</h2>
+          <div class="q-tile-status">
+            <span class="q-tile-status-icon" aria-hidden="true"></span>
+            <span class="q-tile-status-label">${escapeText(q.statusChipLabel)}</span>
+          </div>
+          <div class="q-tile-answer">${escapeText(q.oneLineAnswer)}</div>
+          <div class="q-tile-exposure" data-kind="${escapeAttr(q.exposureKind)}">
+            <div class="q-tile-exposure-amount">${escapeText(q.exposureDisplay)}</div>
+            <div class="q-tile-exposure-label">${escapeText(q.exposureKind === "money" ? "at risk exposure" : "to verify manually")}</div>
+          </div>
+          <div class="q-tile-details">${q.detailsCount} detail${q.detailsCount === 1 ? "" : "s"} <span aria-hidden="true">→</span></div>
+        </a>`
+    )
+    .join("");
+  return `<div class="q-grid" id="q-grid">${tiles}</div>`;
 }
 
 // Property header strip at the top of the buyer page.
