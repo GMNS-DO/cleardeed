@@ -13,8 +13,8 @@ describe("recursive stubs", () => {
     expect(neighboursRecursiveRules.length).toBe(1);
   });
 
-  it("zoning exports 2 rules", () => {
-    expect(zoningRules.length).toBe(2);
+  it("zoning exports 1 rule (ROR-INS-152 moved to bhulekh/bda-layout.ts)", () => {
+    expect(zoningRules.length).toBe(1);
   });
 
   it("chain fires parser_uncertain stub", () => {
@@ -33,18 +33,18 @@ describe("recursive stubs", () => {
     expect(out[0].panel).toBe("neighbours");
   });
 
-  it("zoning fires two parser_uncertain stubs", () => {
+  it("zoning fires one parser_uncertain stub (ROR-INS-153 only)", () => {
     const out = runInsights(zoningRules, {});
-    expect(out.length).toBe(2);
+    expect(out.length).toBe(1);
     expect(out.every((i) => i.evidenceStrength === "parser_uncertain")).toBe(true);
     const ids = out.map((i) => i.ruleId).sort();
-    expect(ids).toEqual(["ROR-INS-152", "ROR-INS-153"]);
+    expect(ids).toEqual(["ROR-INS-153"]);
   });
 
-  it("all recursive stubs together fire 4 insights", () => {
+  it("all recursive stubs together fire 3 insights", () => {
     const all = [...chainRecursiveRules, ...neighboursRecursiveRules, ...zoningRules];
     const out = runInsights(all, {});
-    expect(out.length).toBe(4);
+    expect(out.length).toBe(3);
     expect(out.every((i) => i.evidenceStrength === "parser_uncertain")).toBe(true);
   });
 

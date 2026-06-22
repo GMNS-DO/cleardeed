@@ -52,7 +52,10 @@ const STUB_RULES_WITH_UNIQUE_HEADLINE: Array<{
   { ruleId: "ROR-INS-132", expectedSubstring: "lawyer must" },
   { ruleId: "ROR-INS-150", expectedSubstring: "sale deeds" },
   { ruleId: "ROR-INS-151", expectedSubstring: "4 sides" },
-  { ruleId: "ROR-INS-152", expectedSubstring: "BDA" },
+  // ROR-INS-152 was a stub in the recursive/zoning rules but T-052
+  // moved it to bhulekh/bda-layout.ts as a real rule that fires on
+  // sub-plot indicators. Drop it from STUB_RULES_WITH_UNIQUE_HEADLINE
+  // — it's no longer a stub.
   { ruleId: "ROR-INS-153", expectedSubstring: "BDA" },
   { ruleId: "ROR-INS-201", expectedSubstring: "Bhuvan" },
 ];

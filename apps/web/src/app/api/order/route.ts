@@ -1,15 +1,16 @@
 /**
  * POST /api/order
  *
- * Creates a Razorpay order for ₹1 (100 paise).
+ * Creates a Razorpay order for the chosen tier (Standard ₹699, Verified
+ * ₹1,999, Guaranteed ₹4,999). The amount is sourced server-side from
+ * pricing.ts — never trust a client-supplied amount.
  *
- * Input: { email?: string, plotDescription?: string }
- * Output: { orderId, amount, currency, receipt }
+ * Input: { tier: "standard" | "verified" | "guaranteed", email?: string, plotDescription?: string }
+ * Output: { orderId, amount, currency, receipt, tier }
  */
 import { NextRequest, NextResponse } from "next/server";
 import { assertRazorpaySafe, getRazorpayKeys } from "@/lib/razorpay-config";
-
-const RAZORPAY_AMOUNT_PAISE = 100; // ₹1
+import { parseTier, TIERS } from "@/lib/pricing";
 
 export async function POST(req: NextRequest) {
   // Safety guard: refuse to call Razorpay with a live key in non-production
@@ -27,8 +28,6 @@ export async function POST(req: NextRequest) {
 
   console.log(`[/api/order] Razorpay mode: ${mode} (NODE_ENV=${process.env.NODE_ENV})`);
   if (!keys) {
-    // Defensive: assertRazorpaySafe would have thrown above. If we reach
-    // this line, the env changed between the two calls.
     return NextResponse.json(
       { error: "Razorpay keys disappeared mid-request (env race condition)" },
       { status: 503 },
@@ -36,14 +35,29 @@ export async function POST(req: NextRequest) {
   }
   const { keyId, keySecret } = keys;
 
-  let body: { email?: string; plotDescription?: string };
+  let body: { tier?: unknown; email?: string; plotDescription?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const receipt = `cd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  // T-014: validate tier server-side. Refuse "free_preview" (that's a
+  // direct /api/report/create call, not a checkout flow) and any bogus
+  // value. The amount comes from pricing.ts, not from the request.
+  const tier = parseTier(body.tier);
+  if (!tier || tier === "free_preview") {
+    return NextResponse.json(
+      {
+        error: "Invalid tier. Must be one of: standard, verified, guaranteed.",
+        allowed: ["standard", "verified", "guaranteed"],
+      },
+      { status: 400 }
+    );
+  }
+  const tierInfo = TIERS[tier];
+
+  const receipt = `cd_${tier}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
@@ -55,10 +69,11 @@ export async function POST(req: NextRequest) {
         Authorization: `Basic ${auth}`,
       },
       body: JSON.stringify({
-        amount: RAZORPAY_AMOUNT_PAISE,
+        amount: tierInfo.amountPaise,
         currency: "INR",
         receipt,
         notes: {
+          tier,
           email: body.email ?? "",
           plot: body.plotDescription ?? "",
         },
@@ -87,6 +102,7 @@ export async function POST(req: NextRequest) {
       amount: order.amount,
       currency: order.currency,
       receipt: order.receipt,
+      tier,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

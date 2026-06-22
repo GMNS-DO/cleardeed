@@ -10,6 +10,10 @@ import { bhulekhPlotTableRules } from "./bhulekh/plot-table";
 import { bhulekhDuesRules } from "./bhulekh/dues";
 import { bhulekhBackPageRules } from "./bhulekh/back-page";
 import { bhulekhBackPageRecencyRules } from "./bhulekh/back-page-recency";
+// T-050 — IGR lease-deed detection (Patia Industrial-Lease pre-flag).
+import { bhulekhLeaseRules } from "./bhulekh/lease";
+// T-052 — BDA layout approval sub-plot detector.
+import { bhulekhBdaLayoutRules } from "./bhulekh/bda-layout";
 
 import { bhunakshaPlotRules } from "./bhunaksha/plot";
 import { bhunakshaRoadAccessRules } from "./bhunaksha/road-access";
@@ -54,4 +58,6 @@ export const ALL_RULES: Rule[] = [
   ...zoningRules,
   ...areaCrossRules,
   ...eowRules,
+  ...bhulekhLeaseRules,
+  ...bhulekhBdaLayoutRules,
 ];

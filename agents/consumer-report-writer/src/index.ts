@@ -30,6 +30,7 @@ import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 import type { RiskInsight } from "./types";
 import { runInsights } from "./insights/engine";
+import { getThemeTokens, getThemeAttribute } from "./theme";
 import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
 export type { Insight } from "./insights/schema";
@@ -1297,6 +1298,7 @@ export function generateBuyerLayerReport(
     sections,
     sourceMeta,
     css: CSS,
+    theme: ((ctx.data as { theme?: { premium?: boolean } }).theme) ?? {},
   };
   return { html: buildBuyerPage(buyerPageInput), title: `ClearDeed — ${ctx.plotVillage}`, insights: ctx.insights };
 }
@@ -2695,6 +2697,14 @@ export function buildBuyerPage(input: {
     bhunaksha?: SourceProvenance;
   };
   css: string;
+  // Phase 0 — premium theme toggle. Default {} keeps the rendered
+  // document byte-for-byte identical to the pre-Phase-0 baseline
+  // (the load-bearing compatibility contract). When premium is true,
+  // getThemeTokens() injects a [data-cleardeed-theme] CSS block and
+  // the body wrapper adds the matching data-attribute so the tokens
+  // cascade. Later phases will reskin existing rules to consume
+  // these tokens; for now the tokens simply have no consumers.
+  theme?: { premium?: boolean };
 }): string {
   const riskInsightsInput = input.riskInsights;
   const hasRiskBuckets =
@@ -2830,6 +2840,13 @@ interface BuyerPageInternalInput {
     eCourts?: SourceProvenance;
     bhunaksha?: SourceProvenance;
   };
+  // Phase 0 — premium theme toggle forwarded from buildBuyerPage. When
+  // { premium: true } is set, getThemeTokens() emits the
+  // [data-cleardeed-theme] block and the body wrapper sets the
+  // data-attribute. Default {} (no flag) keeps the rendered document
+  // byte-for-byte identical to the pre-Phase-0 baseline — the
+  // load-bearing compatibility contract.
+  theme?: { premium?: boolean };
 }
 
 // SourceProvenance: the subset of SourceResultBase that the trust strip
@@ -2883,6 +2900,13 @@ interface BuyerPageContext {
   exposureMoney: string;
   exposureCount: string;
   css: string;
+  // Phase 0 — premium theme toggle forwarded from the caller. When
+  // { premium: true } is set, wrapBuyerPageDocument injects a
+  // [data-cleardeed-theme] CSS block and the body wrapper sets the
+  // data-attribute. Default {} (no flag) keeps the rendered document
+  // byte-for-byte identical to the pre-Phase-0 baseline — the
+  // load-bearing compatibility contract.
+  theme?: { premium?: boolean };
 }
 
 function deriveLandClass(
@@ -2938,6 +2962,7 @@ function deriveBuyerPageContext(input: BuyerPageInternalInput, css?: string): Bu
     exposureMoney: money,
     exposureCount: count,
     css: css || "",
+    theme: input.theme ?? {},
   };
 }
 
@@ -2978,15 +3003,32 @@ ${navScript}`;
 }
 
 function wrapBuyerPageDocument(body: string, ctx: BuyerPageContext): string {
+  // Phase 0 — premium theme tokens. When premium is set, getThemeTokens()
+  // emits a [data-cleardeed-theme="premium"] { ... } block; the body
+  // tag gets the matching data-attribute so the tokens cascade. In
+  // classic mode (default), getThemeTokens returns "" and the
+  // data-attribute is absent — so the rendered output is byte-for-byte
+  // identical to the pre-Phase-0 document (load-bearing compatibility
+  // contract). CSS is injected FIRST so the body class is already
+  // styled by ctx.css, then theme tokens override on top.
+  const themeOpts = { premium: ctx.theme?.premium === true };
+  const themeTokens = getThemeTokens(themeOpts);
+  const themeAttr = getThemeAttribute(themeOpts);
+  const themeAttrStr = themeAttr
+    ? " " +
+      Object.entries(themeAttr)
+        .map(([k, v]) => `${k}="${escapeText(v)}"`)
+        .join(" ")
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ClearDeed — Property Report ${escapeText(ctx.reportId)}</title>
-<style>${ctx.css}</style>
+<style>${ctx.css}${themeTokens}</style>
 </head>
-<body class="buyer-page">
+<body class="buyer-page"${themeAttrStr}>
 ${body}
 </body>
 </html>`;
