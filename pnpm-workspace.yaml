@@ -4,6 +4,7 @@ packages:
   - 'packages/schema'
   - 'packages/orchestrator'
   - 'packages/pdf-renderer'
+  - 'packages/render'
   - 'packages/fetchers/nominatim'
   - 'packages/fetchers/bhunaksha'
   - 'packages/fetchers/bhunaksha-plot-report'
