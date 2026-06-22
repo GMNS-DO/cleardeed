@@ -36,6 +36,7 @@ export default defineConfig({
       "agents/ownership-reasoner/**/*.test.ts",
       "agents/encumbrance-reasoner/**/*.test.ts",
       "agents/consumer-report-writer/src/**/*.test.ts",
+      "apps/web/public/mapcard-v1.test.js",
       "agents/output-auditor/src/**/*.test.ts",
       "agents/land-classifier/**/*.test.ts",
       "packages/pdf-renderer/src/**/*.test.ts",

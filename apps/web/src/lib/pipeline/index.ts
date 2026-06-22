@@ -383,7 +383,8 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
       validationFindings: orchestratorOutput.validationFindings ?? [],
       igrLink,
     },
-    tier2Input
+    tier2Input,
+    plotDiagram
   );
 
   // ── Step 7: A10 ConsumerReportWriter ───────────────────────────────────────
@@ -1026,7 +1027,8 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       validationFindings: orchestratorOutput.validationFindings ?? [],
       igrLink,
     },
-    tier2Input
+    tier2Input,
+    plotDiagram
   );
   reportInput.geoFetch = {
     ...(reportInput.geoFetch ?? {}),

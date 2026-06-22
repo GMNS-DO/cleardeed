@@ -359,6 +359,14 @@ export const ConsumerReportGenInputSchema = z.object({
   // `status` is the WFS compose step result, `url` is the source of truth for
   // rendering, `cacheHit` indicates a 7-day cache hit, `reason` carries the
   // failure reason when status === "failed".
+  //
+  // Phase 2 v1 — transient geo fields. These are populated in-memory by the
+  // mapper from the bhunaksha_plot_report source, but NOT persisted to the
+  // reports table. They live in the rendered HTML's data-* attributes for
+  // the mapcard-v1.js bootstrap script to consume. Adding them here is the
+  // load-bearing contract: if a future mapper refactor drops these fields,
+  // MapCard v1 silently falls back to the v0 static SVG. The regression
+  // test in `src/__tests__/pipeline_input.test.ts` pins this contract.
   plotDiagram: z
     .object({
       status: z.enum(["success", "partial", "failed", "not_attempted"]),
@@ -366,6 +374,33 @@ export const ConsumerReportGenInputSchema = z.object({
       reason: z.string().nullish(),
       cacheHit: z.boolean().optional(),
       rendered: z.boolean().optional(),
+      // GeoJSON Polygon (WGS84) — the target plot polygon, single feature.
+      // `z.any()` because GeoJSON's full shape is verbose; the renderer
+      // passes it through as a JSON-encoded data attribute.
+      targetPolygon: z.any().nullish(),
+      // Up to 8 neighbour features (WFS share-edge detection).
+      // Each: { plotNo, owner?, geometry, riskLevel? }
+      neighbors: z.array(z.any()).nullish(),
+      // LineString features from the WFS roads layer. Often empty (the
+      // WFS roads layer is frequently unavailable — runPlotDiagramStep
+      // logs "road_layer_unavailable" and emits an empty array).
+      roads: z.array(z.any()).nullish(),
+      // Bounding box of all features in WGS84. The bootstrap script
+      // uses this to fit the MapLibre viewport; it clamps to the
+      // Khordha district box regardless.
+      bounds: z
+        .object({
+          minLat: z.number(),
+          maxLat: z.number(),
+          minLon: z.number(),
+          maxLon: z.number(),
+        })
+        .nullish(),
+      // Server-built Bhulekh deep-link URL. The bootstrap script wires
+      // this into the "Verify on Bhulekh" CTA. Optional — when absent
+      // (e.g. we couldn't derive the URL from village+tahasil), the
+      // CTA falls back to the Bhulekh homepage.
+      bhulekhUrl: z.string().nullish(),
     })
     .nullish()
     .optional(),
@@ -376,11 +411,61 @@ export type ConsumerReportGenInputData = z.infer<typeof ConsumerReportGenInputSc
 // ─── Mapper ────────────────────────────────────────────────────────────────────
 
 /**
+ * Minimal shape of the plot-diagram step result the mapper needs.
+ *
+ * The full type lives in `apps/web/src/lib/plot-diagram-step.ts`. We
+ * re-declare the subset of fields the mapper surfaces so the consumer
+ * report-writer doesn't have to depend on the pipeline package.
+ * Adding new optional fields here is the load-bearing contract: if a
+ * future refactor drops one, the corresponding `input.plotDiagram.*`
+ * field becomes `undefined` and MapCard v1 silently falls back to
+ * the v0 static SVG. The regression test in
+ * `src/__tests__/pipeline_input.test.ts` pins this contract.
+ */
+export type MapperPlotDiagramInput = {
+  status: "success" | "partial" | "failed" | "not_attempted";
+  url: string | null;
+  reason?: string;
+  cacheHit?: boolean;
+  rendered?: boolean;
+  // Phase 2 v1 — transient geo data for the interactive map. See
+  // apps/web/src/lib/plot-diagram-step.ts for the full PlotDiagramStepResult
+  // type. All optional because cache-hit / not_attempted / failed paths
+  // do not have the polygon data in scope.
+  targetPolygon?: { type: "Polygon"; coordinates: number[][] } | null;
+  neighbors?: Array<{
+    plotNo: string;
+    village: string;
+    tehsil: string;
+    polygon: { type: "Polygon"; coordinates: number[][] };
+    areaSqKm: number;
+    kisam?: string;
+  }>;
+  roads?: Array<{
+    name?: string;
+    path: number[][] | number[][][];
+    roadClass?: string;
+  }>;
+  bounds?: {
+    minLat: number;
+    maxLat: number;
+    minLon: number;
+    maxLon: number;
+  } | null;
+} | null;
+
+/**
  * Map orchestrator sources to A10 ConsumerReportGenInput.
  */
 export function mapToReportInput(
   orchestratorOutput: OrchestratorOutput,
-  tier2: Tier2Input
+  tier2: Tier2Input,
+  // Phase 2 v1 — the plot diagram step result. Threaded through as a
+  // third optional arg so existing call sites in tests that pass only
+  // the first two args continue to work. When null/undefined, the
+  // resulting `input.plotDiagram` is null (the v0 behavior — no
+  // map card rendered).
+  plotDiagram?: MapperPlotDiagramInput
 ): ConsumerReportGenInputData {
   const { reportId, sources, completedAt, validationFindings, igrLink } =
     orchestratorOutput;
@@ -1010,7 +1095,76 @@ export function mapToReportInput(
     // the cadastral map image in Section 1 and add cross-check lines in
     // Sections 2 and 5 when present.
     bhunakshaPlotReport: bhunakshaPlotReport?.data ?? null,
+    // Phase 2 v1 — plot diagram from the pipeline step. Threaded
+    // through as the third arg of mapToReportInput. When null/absent
+    // (legacy call sites in tests, or the diagram step never ran), the
+    // schema validates as null and the v0 map card silently returns ""
+    // (which is the v0 behavior — pre-Phase-2 reports are unchanged).
+    plotDiagram: plotDiagram
+      ? {
+          status: plotDiagram.status,
+          url: plotDiagram.url,
+          reason: plotDiagram.reason ?? null,
+          cacheHit: plotDiagram.cacheHit ?? false,
+          rendered: plotDiagram.rendered ?? false,
+          // Phase 2 v1 transient fields — emitted as data-* attrs
+          // on the map div by map-card.ts. Undefined when not
+          // present (cache-hit, not_attempted, failed) — the bootstrap
+          // script bails to the v0 fallback.
+          targetPolygon: plotDiagram.targetPolygon ?? null,
+          neighbors: plotDiagram.neighbors ?? [],
+          roads: plotDiagram.roads ?? [],
+          bounds: plotDiagram.bounds ?? null,
+          // Built server-side from village+tahasil+plotNo; falls
+          // back to the Bhulekh homepage when the mapper cannot
+          // derive the deep link. The bootstrap script reads this
+          // into the Verify-on-Bhulekh CTA.
+          bhulekhUrl: buildBhulekhUrl(
+            geoFetch.village,
+            geoFetch.tahasil,
+            geoFetch.plotNo
+          ),
+        }
+      : null,
   };
+}
+
+/**
+ * Build the Bhulekh deep-link URL for the Verify-on-Bhulekh CTA.
+ *
+ * Bhulekh's actual deep-link scheme (https://bhulekh.ori.nic.in/...) does
+ * not accept plot/village/tahasil as query params in a stable way — the
+ * site's ASP.NET ViewState-based form requires a Playwright bootstrap. So
+ * for the v1 CTA we send the buyer to Bhulekh's tenant-search homepage,
+ * pre-populating whatever query params the site accepts (none today).
+ *
+ * Future: when Bhulekh ships stable deep links, replace this with the
+ * real URL builder. The function exists today so the v1 CTA has a
+ * stable contract — even when it points to the homepage, it gives the
+ * buyer a clear next step.
+ *
+ * Hand-rolled query-string builder (instead of URLSearchParams) to
+ * avoid pulling the DOM lib into the consumer-report-writer's
+ * TypeScript config. The shape is identical to URLSearchParams.
+ */
+function buildBhulekhUrl(
+  village: string | null,
+  tahasil: string | null,
+  plotNo: string | null
+): string {
+  const base = "https://bhulekh.ori.nic.in/RoRView.aspx";
+  const parts: string[] = [];
+  const add = (k: string, v: string) => {
+    // Minimal percent-encoding — query params from this builder only
+    // ever carry ASCII identifiers (plotNo, village, tahasil). The
+    // encodeURIComponent fallback handles spaces and unicode just
+    // in case.
+    parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+  };
+  if (plotNo && plotNo.trim()) add("plot", plotNo.trim());
+  if (village && village.trim()) add("village", village.trim());
+  if (tahasil && tahasil.trim()) add("tahasil", tahasil.trim());
+  return parts.length ? `${base}?${parts.join("&")}` : base;
 }
 
 function normalizeRccmsStatus(rccms: SourceResult | undefined): string {

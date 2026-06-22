@@ -66,6 +66,32 @@ export interface PlotDiagramStepResult {
   rendered: boolean;
   /** Wall-clock duration in ms, excluding the cache-only path. */
   durationMs: number;
+  // Phase 2 v1 — transient geo data for MapCard v1 (the interactive
+  // map). Lives in memory during report generation; emitted as
+  // data-* attributes on the map div. NOT persisted to the DB. All
+  // fields are optional because:
+  //   - Cache-hit paths (primary + secondary) do not have the polygon
+  //     data in scope — we read the SVG, not the WFS.
+  //   - The not_attempted and failed paths return before fetchPlotDiagram
+  //     runs.
+  //   - The renderer (MapCard v1) treats absence as "fall back to
+  //     the v0 static SVG" — which is exactly the v0 behavior, so
+  //     pre-Phase-2 reports are byte-for-byte identical.
+  targetPolygon?: { type: "Polygon"; coordinates: number[][] } | null;
+  neighbors?: Array<{
+    plotNo: string;
+    village: string;
+    tehsil: string;
+    polygon: { type: "Polygon"; coordinates: number[][] };
+    areaSqKm: number;
+    kisam?: string;
+  }>;
+  roads?: Array<{
+    name?: string;
+    path: number[][] | number[][][];
+    roadClass?: string;
+  }>;
+  bounds?: { minLat: number; maxLat: number; minLon: number; maxLon: number } | null;
 }
 
 /**
@@ -196,6 +222,22 @@ export async function runPlotDiagramStep(
       cacheHit: false,
       rendered: true,
       durationMs: Date.now() - startedAt,
+      // Phase 2 v1 — surface the geo data for the interactive map.
+      // `diagram.bounds` uses minX/maxX (lon) and minY/maxY (lat);
+      // we rename to the lon/lat keys the v1 schema and bootstrap
+      // script expect. The polygon stays as-is — it's already a
+      // GeoJSON Polygon in WGS84, which is what MapLibre needs.
+      targetPolygon: diagram.target?.polygon ?? null,
+      neighbors: diagram.neighbors ?? [],
+      roads: diagram.roads ?? [],
+      bounds: diagram.bounds
+        ? {
+            minLat: diagram.bounds.minY,
+            maxLat: diagram.bounds.maxY,
+            minLon: diagram.bounds.minX,
+            maxLon: diagram.bounds.maxX,
+          }
+        : null,
     };
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
