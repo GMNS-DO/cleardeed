@@ -956,17 +956,39 @@ export function mapToReportInput(
       eow: sources.find((s) => s.source === ("eow" as string))?.status ?? "not_run",
     },
     sourceDetails: Object.fromEntries(
-      sources.map((source) => [
-        source.source,
-        {
+      sources.map((source) => {
+        const base = {
           status: source.source === "rccms" ? normalizeRccmsStatus(source) : source.status,
           fetchedAt: source.fetchedAt,
           statusReason: source.statusReason ?? source.error ?? null,
           parserVersion: source.parserVersion ?? null,
           rawArtifactHash: source.rawArtifactHash ?? null,
+          templateHash: source.templateHash ?? null,
+          inputsTried: source.inputsTried ?? null,
           warnings: source.warnings ?? [],
-        },
-      ])
+        };
+
+        // For Bhulekh, add rawOdia and casteOdia from the first tenant
+        // so the trust strip can display the transferability flag without
+        // duck-typing into ctx.data.revenueRecords.tenants[0].
+        if (source.source === "bhulekh" && bhulekhRawDocument?.record?.ownerBlocks?.[0]) {
+          const firstOwner = bhulekhRawDocument.record.ownerBlocks[0] as {
+            casteOdia?: string | null;
+            residenceOdia?: string | null;
+            tenantNameOdia?: string;
+            landClassOdia?: string;
+            landClass?: string;
+          };
+          (base as any).rawOdia = {
+            odia: firstOwner.landClassOdia ?? "",
+            english: firstOwner.landClass ?? "",
+          };
+          (base as any).casteOdia = firstOwner.casteOdia ?? null;
+          (base as any).residenceOdia = firstOwner.residenceOdia ?? null;
+        }
+
+        return [source.source, base];
+      })
     ),
     disclaimerText: tier2.disclaimerText,
     // Sprint 4 — pass through to renderer for Section 7 (What is it worth) and

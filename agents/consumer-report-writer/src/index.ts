@@ -1216,14 +1216,26 @@ export function generateBuyerLayerReport(
           fetchedAt: sd.bhulekh.fetchedAt,
           rawArtifactHash: sd.bhulekh.rawArtifactHash,
           parserVersion: sd.bhulekh.parserVersion,
+          templateHash: sd.bhulekh.templateHash,
+          inputsTried: sd.bhulekh.inputsTried,
           warnings: sd.bhulekh.warnings,
-          rawOdia: ctx.data.revenueRecords?.recordMeta
+          // Prefer the mapper's pre-extracted provenance; fall back to the
+          // duck-typed revenueRecords path for the demo branch (which
+          // doesn't go through mapToReportInput).
+          rawOdia: sd.bhulekh.rawOdia
             ? {
-                odia: (ctx.data.revenueRecords.tenants?.[0] as any)?.landClassOdia ?? "",
-                english: ctx.data.revenueRecords.tenants?.[0]?.landClass ?? "",
+                odia: sd.bhulekh.rawOdia.odia ?? "",
+                english: sd.bhulekh.rawOdia.english ?? "",
               }
-            : undefined,
-          casteOdia: ctx.data.revenueRecords?.tenants?.[0]?.casteOdia ?? null,
+            : ctx.data.revenueRecords?.recordMeta
+              ? {
+                  odia: (ctx.data.revenueRecords.tenants?.[0] as any)?.landClassOdia ?? "",
+                  english: ctx.data.revenueRecords.tenants?.[0]?.landClass ?? "",
+                }
+              : undefined,
+          casteOdia: sd.bhulekh.casteOdia
+            ?? ctx.data.revenueRecords?.tenants?.[0]?.casteOdia
+            ?? null,
         }
       : undefined,
     eCourts: sd.ecourts
