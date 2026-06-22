@@ -30,7 +30,9 @@ import type { EncumbranceResult } from "@cleardeed/encumbrance-reasoner";
 import type { RegulatoryScreenerResult } from "@cleardeed/regulatory-screener";
 import type { RiskInsight } from "./types";
 import { runInsights } from "./insights/engine";
-import { getThemeTokens, getThemeAttribute } from "./theme";
+import { getThemeTokens, getThemeAttribute, getThemeBridge, getPremiumStyles } from "./theme";
+import { renderReportShell } from "./report-shell";
+import { renderMapCard } from "./map-card";
 import { ALL_RULES } from "./insights/registry";
 import type { Insight } from "./insights/schema";
 export type { Insight } from "./insights/schema";
@@ -1299,6 +1301,8 @@ export function generateBuyerLayerReport(
     sourceMeta,
     css: CSS,
     theme: ((ctx.data as { theme?: { premium?: boolean } }).theme) ?? {},
+    shell: ((ctx.data as { shell?: { enabled?: boolean } }).shell) ?? { enabled: false },
+    plotDiagram: ctx.data.plotDiagram,
   };
   return { html: buildBuyerPage(buyerPageInput), title: `ClearDeed — ${ctx.plotVillage}`, insights: ctx.insights };
 }
@@ -2705,6 +2709,15 @@ export function buildBuyerPage(input: {
   // cascade. Later phases will reskin existing rules to consume
   // these tokens; for now the tokens simply have no consumers.
   theme?: { premium?: boolean };
+  // Phase 2 — MapCard hero data. When undefined, renderMapCard()
+  // returns "" so reports without a diagram are byte-for-byte
+  // identical to the pre-Phase-2 baseline.
+  plotDiagram?: {
+    status: "success" | "partial" | "failed" | "not_attempted";
+    url?: string | null;
+    reason?: string | null;
+    cacheHit?: boolean;
+  };
 }): string {
   const riskInsightsInput = input.riskInsights;
   const hasRiskBuckets =
@@ -2788,6 +2801,7 @@ export function buildBuyerPage(input: {
     plotNo: input.plotNo,
     sections: input.sections,
     sourceMeta: input.sourceMeta,
+    plotDiagram: input.plotDiagram,
   };
   const ctx = deriveBuyerPageContext(normalized, input.css);
   const body = renderBuyerPageHtml(ctx);
@@ -2847,6 +2861,22 @@ interface BuyerPageInternalInput {
   // byte-for-byte identical to the pre-Phase-0 baseline — the
   // load-bearing compatibility contract.
   theme?: { premium?: boolean };
+  // Phase 1 — ReportShell toggle forwarded from buildBuyerPage. When
+  // { enabled: true } is set, wrapBuyerPageDocument wraps the body in
+  // <main id="main-content"> and prepends a skip-link. Default (no
+  // flag) is passthrough — body is rendered verbatim, preserving the
+  // pre-Phase-1 baseline.
+  shell?: { enabled?: boolean };
+  // Phase 2 — MapCard hero data. The data path (Bhunaksha WFS → cached
+  // SVG) is already shipped; this carries the result into the hero
+  // fold. When undefined, renderMapCard() returns "" so reports
+  // without a diagram are byte-for-byte identical.
+  plotDiagram?: {
+    status: "success" | "partial" | "failed" | "not_attempted";
+    url?: string | null;
+    reason?: string | null;
+    cacheHit?: boolean;
+  };
 }
 
 // SourceProvenance: the subset of SourceResultBase that the trust strip
@@ -2907,6 +2937,22 @@ interface BuyerPageContext {
   // byte-for-byte identical to the pre-Phase-0 baseline — the
   // load-bearing compatibility contract.
   theme?: { premium?: boolean };
+  // Phase 1 — premium ReportShell toggle. When { shell: true } is
+  // set, wrapBuyerPageDocument wraps the body in <main id="main-content">
+  // and prepends a skip-link. Orthogonal to the theme toggle today;
+  // the dark theme in Phase 3+ will key off [data-cleardeed-shell="v1"]
+  // for re-skin selectors. Default (no flag) is passthrough — body
+  // is rendered verbatim, preserving the pre-Phase-1 baseline.
+  shell?: { enabled?: boolean };
+  // Phase 2 — MapCard hero data forwarded from BuyerPageInternalInput.
+  // When undefined, renderMapCard() returns "" so reports without a
+  // diagram are byte-for-byte identical.
+  plotDiagram?: {
+    status: "success" | "partial" | "failed" | "not_attempted";
+    url?: string | null;
+    reason?: string | null;
+    cacheHit?: boolean;
+  };
 }
 
 function deriveLandClass(
@@ -2963,6 +3009,8 @@ function deriveBuyerPageContext(input: BuyerPageInternalInput, css?: string): Bu
     exposureCount: count,
     css: css || "",
     theme: input.theme ?? {},
+    shell: input.shell,
+    plotDiagram: input.plotDiagram,
   };
 }
 
@@ -2981,6 +3029,11 @@ function renderBuyerPageHtml(ctx: BuyerPageContext): string {
   });
 
   const statusStripHtml = buildSourceStatusStrip(ctx.sources);
+  const mapCardHtml = renderMapCard({
+    plotDiagram: ctx.plotDiagram ?? null,
+    plotNo: ctx.header.plotNo,
+    village: ctx.header.plotVillage,
+  });
   const qGridHtml = buildQGrid(ctx.questions);
   const detailsHtml = ctx.details.map((d) => buildQDetail(d)).join("");
   const navQuestions = ctx.questions.map((q) => ({
@@ -2995,6 +3048,7 @@ function renderBuyerPageHtml(ctx: BuyerPageContext): string {
 
   return `${heroHtml}
 ${statusStripHtml}
+${mapCardHtml}
 ${qGridHtml}
 ${navHtml}
 ${detailsHtml}
@@ -3003,16 +3057,29 @@ ${navScript}`;
 }
 
 function wrapBuyerPageDocument(body: string, ctx: BuyerPageContext): string {
-  // Phase 0 — premium theme tokens. When premium is set, getThemeTokens()
-  // emits a [data-cleardeed-theme="premium"] { ... } block; the body
-  // tag gets the matching data-attribute so the tokens cascade. In
-  // classic mode (default), getThemeTokens returns "" and the
-  // data-attribute is absent — so the rendered output is byte-for-byte
-  // identical to the pre-Phase-0 document (load-bearing compatibility
-  // contract). CSS is injected FIRST so the body class is already
-  // styled by ctx.css, then theme tokens override on top.
+  // Phase 0/1 — premium theme tokens. When premium is set, getThemeTokens()
+  // emits a [data-cleardeed-theme="premium"] { ... } block defining the
+  // --cd-* palette; getThemeBridge() emits a second block that remaps the
+  // legacy :root token names (--paper, --ink, --accent, --bad, ...) onto
+  // the --cd-* palette so the existing 900-line CSS in ctx.css
+  // automatically picks up the dark palette via cascade. The body tag
+  // gets the matching data-attribute so the tokens cascade. In classic
+  // mode (default), both functions return "" and the data-attribute is
+  // absent — the rendered output is byte-for-byte identical to the
+  // pre-Phase-0 document (load-bearing compatibility contract).
+  // CSS injection order: ctx.css first, then --cd-* tokens, then the
+  // bridge — so the bridge (which references --cd-* names) resolves.
+  //
+  // Phase 1 — ReportShell. When ctx.shell?.enabled === true, the body
+  // markup is wrapped in <main id="main-content"> and a skip-link is
+  // prepended. The shell is the structural foundation Phase 3+ will
+  // re-skin via [data-cleardeed-shell] CSS selectors. In classic mode
+  // (default), the body is returned verbatim — byte-for-byte identical
+  // to the pre-Phase-1 baseline.
   const themeOpts = { premium: ctx.theme?.premium === true };
   const themeTokens = getThemeTokens(themeOpts);
+  const themeBridge = getThemeBridge(themeOpts);
+  const premiumStyles = getPremiumStyles(themeOpts);
   const themeAttr = getThemeAttribute(themeOpts);
   const themeAttrStr = themeAttr
     ? " " +
@@ -3020,16 +3087,17 @@ function wrapBuyerPageDocument(body: string, ctx: BuyerPageContext): string {
         .map(([k, v]) => `${k}="${escapeText(v)}"`)
         .join(" ")
     : "";
+  const shellBody = renderReportShell(body, { shell: ctx.shell?.enabled === true });
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ClearDeed — Property Report ${escapeText(ctx.reportId)}</title>
-<style>${ctx.css}${themeTokens}</style>
+<style>${ctx.css}${themeTokens}</style>${themeBridge ? `<style>${themeBridge}</style>` : ""}${premiumStyles ? `<style>${premiumStyles}</style>` : ""}
 </head>
 <body class="buyer-page"${themeAttrStr}>
-${body}
+${shellBody}
 </body>
 </html>`;
 }
