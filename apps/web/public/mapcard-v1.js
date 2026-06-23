@@ -60,6 +60,13 @@
     neighborLabel: '#1f2937',
     neighborLabelHalo: '#ffffff',
     chauhaddiStroke: '#C9A961',
+    // MapCard v1.1 — approximate-mode tokens. Soft slate-400 outline
+    // at low opacity so the district fills the frame without competing
+    // visually with the gold target marker.
+    districtFill: '#94a3b8',
+    districtFillOpacity: 0.04,
+    districtLine: '#94a3b8',
+    districtLineWidth: 1.25,
   };
 
   function log(msg) {
@@ -142,6 +149,18 @@
       roads: parse('roads') || [],
       bounds: parseCsv('bounds'),
       centroid: parseCsv('target-centroid'),
+      // MapCard v1.1 — approximate-mode plumbing.
+      // mode = "approximate" means Bhunaksha returned no polygon, so
+      // the map shows the Khordha district boundary + a centroid marker
+      // instead of the target polygon. Default to "exact" so v1.0 reports
+      // (no data-mode) keep their current behaviour.
+      mode: el.getAttribute('data-mode') === 'approximate' ? 'approximate' : 'exact',
+      // The Khordha district boundary GeoJSON, parsed from the
+      // data-district attribute (only present in approximate mode).
+      // ~17KB of GeoJSON — emitted by the server when the diagram
+      // step took the fallback path. Tolerant of missing/empty
+      // (returns null and the layer simply isn't added).
+      district: parse('district'),
       bhulekhUrl: el.getAttribute('data-bhulekh-url') || null,
       plotNo: el.getAttribute('data-plot-no') || null,
       village: el.getAttribute('data-village') || null,
@@ -180,8 +199,14 @@
    * source contains the target plot (role='target') and the
    * neighbours (role='neighbor'). The map style filters by role
    * to render the layers.
+   *
+   * Approximate-mode extension: when `mode === 'approximate'` and a
+   * Khordha district boundary is supplied, a second `district` source
+   * is added (role='district') and rendered as a thin outline +
+   * subtle fill — the only "context" the buyer has when no plot
+   * polygon exists.
    */
-  function buildStyle(plot, neighbors, visibility) {
+  function buildStyle(plot, neighbors, visibility, district) {
     var features = [];
     if (plot) {
       features.push({
@@ -205,87 +230,116 @@
         }
       });
     }
+    var sources = {
+      satellite: {
+        type: 'raster',
+        tiles: [ESRI_TILE_URL],
+        tileSize: 256,
+        attribution: ESRI_ATTRIBUTION,
+      },
+      cad: {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: features },
+      },
+    };
+    // District outline source. Only present in approximate mode and
+    // only when the boundary data survived the round-trip from the
+    // server. The data-district attribute is a GeoJSON Feature (the
+    // Khordha district polygon wrapped in a Feature envelope).
+    if (district && district.type === 'Feature' && district.geometry) {
+      sources.district = {
+        type: 'geojson',
+        data: district,
+      };
+    }
+    var layers = [
+      {
+        id: 'satellite',
+        type: 'raster',
+        source: 'satellite',
+        layout: { visibility: visibility.satellite ? 'visible' : 'none' },
+      },
+    ];
+    // District outline sits below the cadastral polygons so the
+    // gold target outline still reads as the foreground feature
+    // even when the user is at district zoom.
+    if (sources.district) {
+      layers.push({
+        id: 'district-fill',
+        type: 'fill',
+        source: 'district',
+        paint: { 'fill-color': COLOR.districtFill, 'fill-opacity': COLOR.districtFillOpacity },
+      });
+      layers.push({
+        id: 'district-line',
+        type: 'line',
+        source: 'district',
+        paint: { 'line-color': COLOR.districtLine, 'line-width': COLOR.districtLineWidth },
+      });
+    }
+    layers.push({
+      id: 'cad-fill',
+      type: 'fill',
+      source: 'cad',
+      filter: ['==', ['get', 'role'], 'target'],
+      paint: { 'fill-color': COLOR.targetFill, 'fill-opacity': COLOR.targetFillOpacity },
+    });
+    layers.push({
+      id: 'cad-line',
+      type: 'line',
+      source: 'cad',
+      filter: ['==', ['get', 'role'], 'target'],
+      paint: { 'line-color': COLOR.targetLine, 'line-width': COLOR.targetLineWidth },
+    });
+    layers.push({
+      id: 'neighbors-fill',
+      type: 'fill',
+      source: 'cad',
+      filter: ['==', ['get', 'role'], 'neighbor'],
+      paint: { 'fill-color': COLOR.cadastralFill, 'fill-opacity': COLOR.cadastralFillOpacity },
+    });
+    layers.push({
+      id: 'neighbors-line',
+      type: 'line',
+      source: 'cad',
+      filter: ['==', ['get', 'role'], 'neighbor'],
+      paint: {
+        'line-color': [
+          'match',
+          ['get', 'riskLevel'],
+          'red', COLOR.neighborLineRed,
+          'risk', COLOR.neighborLineRisk,
+          COLOR.neighborLine,
+        ],
+        'line-width': [
+          'match',
+          ['get', 'riskLevel'],
+          'red', 2,
+          'risk', 1.5,
+          1,
+        ],
+      },
+    });
+    layers.push({
+      id: 'neighbors-label',
+      type: 'symbol',
+      source: 'cad',
+      filter: ['==', ['get', 'role'], 'neighbor'],
+      layout: {
+        'text-field': ['get', 'plotNo'],
+        'text-size': 11,
+        'text-allow-overlap': false,
+      },
+      paint: {
+        'text-color': COLOR.neighborLabel,
+        'text-halo-color': COLOR.neighborLabelHalo,
+        'text-halo-width': 1.5,
+      },
+    });
     return {
       version: 8,
-      sources: {
-        satellite: {
-          type: 'raster',
-          tiles: [ESRI_TILE_URL],
-          tileSize: 256,
-          attribution: ESRI_ATTRIBUTION,
-        },
-        cad: {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: features },
-        },
-      },
-      layers: [
-        {
-          id: 'satellite',
-          type: 'raster',
-          source: 'satellite',
-          layout: { visibility: visibility.satellite ? 'visible' : 'none' },
-        },
-        {
-          id: 'cad-fill',
-          type: 'fill',
-          source: 'cad',
-          filter: ['==', ['get', 'role'], 'target'],
-          paint: { 'fill-color': COLOR.targetFill, 'fill-opacity': COLOR.targetFillOpacity },
-        },
-        {
-          id: 'cad-line',
-          type: 'line',
-          source: 'cad',
-          filter: ['==', ['get', 'role'], 'target'],
-          paint: { 'line-color': COLOR.targetLine, 'line-width': COLOR.targetLineWidth },
-        },
-        {
-          id: 'neighbors-fill',
-          type: 'fill',
-          source: 'cad',
-          filter: ['==', ['get', 'role'], 'neighbor'],
-          paint: { 'fill-color': COLOR.cadastralFill, 'fill-opacity': COLOR.cadastralFillOpacity },
-        },
-        {
-          id: 'neighbors-line',
-          type: 'line',
-          source: 'cad',
-          filter: ['==', ['get', 'role'], 'neighbor'],
-          paint: {
-            'line-color': [
-              'match',
-              ['get', 'riskLevel'],
-              'red', COLOR.neighborLineRed,
-              'risk', COLOR.neighborLineRisk,
-              COLOR.neighborLine,
-            ],
-            'line-width': [
-              'match',
-              ['get', 'riskLevel'],
-              'red', 2,
-              'risk', 1.5,
-              1,
-            ],
-          },
-        },
-        {
-          id: 'neighbors-label',
-          type: 'symbol',
-          source: 'cad',
-          filter: ['==', ['get', 'role'], 'neighbor'],
-          layout: {
-            'text-field': ['get', 'plotNo'],
-            'text-size': 11,
-            'text-allow-overlap': false,
-          },
-          paint: {
-            'text-color': COLOR.neighborLabel,
-            'text-halo-color': COLOR.neighborLabelHalo,
-            'text-halo-width': 1.5,
-          },
-        },
-      ],
+      sources: sources,
+      layers: layers,
     };
   }
 
@@ -396,6 +450,13 @@
           map.setLayoutProperty('cad-fill', 'visibility', showCad ? 'visible' : 'none');
           map.setLayoutProperty('cad-line', 'visibility', showCad ? 'visible' : 'none');
         }
+        // District layer toggles with the cadastral layer — they're
+        // both "context" the buyer turns on/off together. Tolerant of
+        // missing (the layer only exists in approximate mode).
+        if (map.getLayer('district-fill')) {
+          map.setLayoutProperty('district-fill', 'visibility', showCad ? 'visible' : 'none');
+          map.setLayoutProperty('district-line', 'visibility', showCad ? 'visible' : 'none');
+        }
       });
     });
   }
@@ -418,8 +479,22 @@
       fail(el, 'bad data-* attr: ' + e.message);
       return;
     }
-    if (!data.plot || !data.plot.coordinates || !data.plot.coordinates[0] || data.plot.coordinates[0].length < 4) {
-      fail(el, 'data-plot is missing or has < 4 vertices');
+    // MapCard v1.1 — approximate mode. When the diagram step fell
+    // back (Bhunaksha returned no polygon), `data.plot` is null and
+    // the buyer is looking at a district outline + a centroid marker
+    // rather than a target polygon. We still want the interactive map;
+    // we just don't have neighbors to draw chauhaddi arrows to.
+    var isApproximate = data.mode === 'approximate';
+    if (!isApproximate) {
+      if (!data.plot || !data.plot.coordinates || !data.plot.coordinates[0] || data.plot.coordinates[0].length < 4) {
+        fail(el, 'data-plot is missing or has < 4 vertices');
+        return;
+      }
+    } else if (!data.district) {
+      // Approximate mode requires a district boundary. If the server
+      // somehow emitted the marker without the polygon, fall back to
+      // the v0 poster (rather than rendering an empty map).
+      fail(el, 'approximate mode requires data-district');
       return;
     }
 
@@ -433,7 +508,7 @@
 
     loadMapLibre().then(function (maplibregl) {
       try {
-        var style = buildStyle(data.plot, data.neighbors, visibility);
+        var style = buildStyle(data.plot, data.neighbors, visibility, data.district);
         var fitBounds = clampBounds(data.bounds);
         var mapOpts = {
           container: el,
@@ -461,10 +536,15 @@
           if (poster) poster.style.display = 'none';
         });
 
-        // Chauhaddi arrows — drawn after the map settles.
-        map.once('idle', function () {
-          drawChauhaddiArrows(map, el, data.centroid, data.neighbors);
-        });
+        // Chauhaddi arrows — only on the exact path. In approximate
+        // mode there are no neighbour polygons to point at; the gold
+        // marker sits on the village centroid with no chauhaddi to
+        // draw, and the four-arrow overlay would be misleading.
+        if (!isApproximate) {
+          map.once('idle', function () {
+            drawChauhaddiArrows(map, el, data.centroid, data.neighbors);
+          });
+        }
 
         // Wire the toggle buttons (they're siblings of #mapcard-v1
         // inside .map-card-frame).

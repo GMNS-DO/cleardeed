@@ -21,6 +21,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mocks = vi.hoisted(() => ({
   fetchPlotDiagram: vi.fn(),
   renderPlotDiagramSvg: vi.fn(),
+  renderDistrictOutlineSvg: vi.fn(),
   storePlotDiagram: vi.fn(),
   findCachedByReportId: vi.fn(),
   findCachedByGps: vi.fn(),
@@ -35,6 +36,7 @@ vi.mock("@cleardeed/fetcher-bhunaksha", () => ({
 
 vi.mock("@cleardeed/render", () => ({
   renderPlotDiagramSvg: mocks.renderPlotDiagramSvg,
+  renderDistrictOutlineSvg: mocks.renderDistrictOutlineSvg,
 }));
 
 vi.mock("./plot-diagram-storage", () => ({
@@ -127,6 +129,7 @@ const SUCCESS_URL =
 beforeEach(() => {
   mocks.fetchPlotDiagram.mockReset();
   mocks.renderPlotDiagramSvg.mockReset();
+  mocks.renderDistrictOutlineSvg.mockReset();
   mocks.storePlotDiagram.mockReset();
   mocks.findCachedByReportId.mockReset();
   mocks.findCachedByGps.mockReset();
@@ -308,6 +311,118 @@ describe("runPlotDiagramStep — cache hit by reportId", () => {
     // We DO persist on the current report row so the next rerun hits the
     // primary (reportId) cache path.
     expect(mocks.persistedRows[0]?.plot_diagram_url).toBe(cachedUrl);
+  });
+});
+
+describe("runPlotDiagramStep — approximate path (MapCard v1 fallback)", () => {
+  const APPROX_INPUT = {
+    reportId: "rep_approx",
+    gps: { lat: 20.27, lon: 85.84 },
+    village: "Somevillage",
+    plotNo: "415",
+    fallback: {
+      reason: "no_containing_polygon",
+      centroid: { lat: 20.27, lon: 85.84 },
+    },
+  };
+
+  it("renders a district outline SVG, uploads, and surfaces the synthesized geo", async () => {
+    mocks.renderDistrictOutlineSvg.mockReturnValue(
+      '<svg xmlns="http://www.w3.org/2000/svg"><title>Approximate</title></svg>'
+    );
+    mocks.storePlotDiagram.mockResolvedValue({
+      url: SUCCESS_URL,
+      path: "reports/rep_approx/approximate/plot-diagram-20.27,85.84|415|somevillage.svg",
+    });
+
+    const result = await runPlotDiagramStep(APPROX_INPUT);
+
+    expect(result.status).toBe("success");
+    expect(result.approximate).toBe(true);
+    expect(result.approximateReason).toBe("no_containing_polygon");
+    expect(result.url).toBe(SUCCESS_URL);
+    expect(result.rendered).toBe(true);
+    // The synthesized polygon is the 60m square at the village GPS.
+    expect(result.targetPolygon).toBeTruthy();
+    expect(result.targetPolygon?.type).toBe("Polygon");
+    expect(result.bounds).toBeTruthy();
+    // The precise path was NOT used.
+    expect(mocks.fetchPlotDiagram).not.toHaveBeenCalled();
+    expect(mocks.renderPlotDiagramSvg).not.toHaveBeenCalled();
+  });
+
+  it("uses the caller's pre-synthesized payload when present (no re-synthesis)", async () => {
+    mocks.renderDistrictOutlineSvg.mockReturnValue("<svg/>");
+    mocks.storePlotDiagram.mockResolvedValue({ url: SUCCESS_URL, path: "x" });
+
+    const synthesized = {
+      polygon: { type: "Polygon" as const, coordinates: [[[85.84, 20.27]]] },
+      targetPolygon: { type: "Polygon" as const, coordinates: [[85.84, 20.27]] },
+      centroid: { lat: 20.27, lon: 85.84 },
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      khordhaBoundary: { data: { type: "Feature" as const, properties: { title: "" }, geometry: { type: "Polygon" as const, coordinates: [[[85, 20]]] } } },
+      mode: "approximate" as const,
+      reason: "no_containing_polygon",
+      plotNo: "415",
+      village: "Somevillage",
+    };
+
+    const result = await runPlotDiagramStep({
+      ...APPROX_INPUT,
+      fallback: {
+        reason: "no_containing_polygon",
+        centroid: { lat: 20.27, lon: 85.84 },
+        synthesized,
+      },
+    });
+
+    expect(result.status).toBe("success");
+    expect(result.targetPolygon).toEqual(synthesized.targetPolygon);
+    expect(result.bounds).toEqual(synthesized.bounds);
+  });
+
+  it("returns status: 'failed' when the district-outline renderer throws", async () => {
+    mocks.renderDistrictOutlineSvg.mockImplementation(() => {
+      throw new Error("renderer_bug");
+    });
+
+    const result = await runPlotDiagramStep(APPROX_INPUT);
+
+    expect(result.status).toBe("failed");
+    expect(result.reason).toBe("renderer_bug");
+    expect(result.approximate).toBe(true);
+    expect(result.approximateReason).toBe("no_containing_polygon");
+    expect(mocks.persistedRows[0]?.plot_diagram_status).toBe("failed");
+  });
+
+  it("re-resolves the geo payload on cache hits (no WFS call)", async () => {
+    mocks.findCachedByReportId.mockResolvedValue({
+      url: SUCCESS_URL,
+      status: "success",
+      renderedAt: new Date().toISOString(),
+      reportId: "rep_approx",
+    });
+
+    const result = await runPlotDiagramStep(APPROX_INPUT);
+
+    expect(result.status).toBe("success");
+    expect(result.cacheHit).toBe(true);
+    expect(result.approximate).toBe(true);
+    expect(result.targetPolygon).toBeTruthy();
+    expect(result.bounds).toBeTruthy();
+    // No WFS, no renderer call.
+    expect(mocks.fetchPlotDiagram).not.toHaveBeenCalled();
+    expect(mocks.renderDistrictOutlineSvg).not.toHaveBeenCalled();
+  });
+
+  it("prefixes the storage key with 'approximate/' so precise and approximate entries never collide", async () => {
+    mocks.renderDistrictOutlineSvg.mockReturnValue("<svg/>");
+    mocks.storePlotDiagram.mockResolvedValue({ url: SUCCESS_URL, path: "x" });
+
+    await runPlotDiagramStep(APPROX_INPUT);
+
+    const uploadCall = mocks.storePlotDiagram.mock.calls[0][0];
+    expect(uploadCall.plotDiagramKey).toMatch(/^approximate\//);
   });
 });
 

@@ -66,6 +66,25 @@ const SAMPLE_POLYGON = {
     ],
   ],
 };
+// A minimal Khordha district Feature for the approximate-mode tests.
+// A real one is ~1900 vertices; one vertex is enough to exercise the
+// branch that adds the district source + layers.
+const SAMPLE_DISTRICT = {
+  type: "Feature",
+  properties: { title: "Khordha" },
+  geometry: {
+    type: "Polygon",
+    coordinates: [
+      [
+        [85.0, 19.8],
+        [86.0, 19.8],
+        [86.0, 20.5],
+        [85.0, 20.5],
+        [85.0, 19.8],
+      ],
+    ],
+  },
+};
 const SAMPLE_NEIGHBORS = [
   {
     plotNo: "128",
@@ -94,6 +113,8 @@ function buildMapDiv(attrs) {
   if (attrs.bhulekhUrl) div.setAttribute("data-bhulekh-url", attrs.bhulekhUrl);
   if (attrs.plotNo) div.setAttribute("data-plot-no", attrs.plotNo);
   if (attrs.village) div.setAttribute("data-village", attrs.village);
+  if (attrs.mode) div.setAttribute("data-mode", attrs.mode);
+  if (attrs.district !== undefined) div.setAttribute("data-district", JSON.stringify(attrs.district));
   // The bootstrap expects the div to be inside a .map-card-frame,
   // and there to be a poster <img> + toggle buttons.
   const frame = document.createElement("div");
@@ -347,5 +368,132 @@ describe("mapcard-v1.js — maplibre-gl load failure", () => {
 
     // Restore.
     document.createElement = orig;
+  });
+});
+
+describe("mapcard-v1.js — approximate mode (MapCard v1.1 fallback)", () => {
+  it("instantiates MapLibre with the district source + layers, no target polygon", async () => {
+    const stub = makeMaplibreStub();
+    window.maplibregl = stub.maplibregl;
+
+    buildMapDiv({
+      state: "verified",
+      // No `plot` — Bhunaksha returned no polygon.
+      neighbors: [],
+      roads: [],
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      centroid: { lat: 20.27, lon: 85.84 },
+      mode: "approximate",
+      district: SAMPLE_DISTRICT,
+      plotNo: "415",
+      village: "Somevillage",
+    });
+
+    loadAndRunScript();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(stub.calls.constructor.length).toBe(1);
+    const opts = stub.calls.constructor[0];
+    const style = opts.style;
+    // District source is added; the cad source is added (with 0 features
+    // because there's no target and no neighbors).
+    expect(style.sources.district).toBeTruthy();
+    expect(style.sources.district.data).toEqual(SAMPLE_DISTRICT);
+    expect(style.sources.cad.data.features).toEqual([]);
+    // Layer order: satellite → district-fill → district-line → cad-fill → cad-line → neighbors-*
+    const layerIds = style.layers.map((l) => l.id);
+    expect(layerIds).toContain("district-fill");
+    expect(layerIds).toContain("district-line");
+    // District layers come BEFORE the cad layers (so the gold target
+    // marker stays in front when the user is at district zoom).
+    expect(layerIds.indexOf("district-fill")).toBeLessThan(layerIds.indexOf("cad-fill"));
+  });
+
+  it("uses the Khordha bounds for fitBounds (snaps to district zoom)", async () => {
+    const stub = makeMaplibreStub();
+    window.maplibregl = stub.maplibregl;
+
+    buildMapDiv({
+      state: "verified",
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      mode: "approximate",
+      district: SAMPLE_DISTRICT,
+    });
+
+    loadAndRunScript();
+    await new Promise((r) => setTimeout(r, 0));
+
+    const opts = stub.calls.constructor[0];
+    expect(opts.bounds[0]).toEqual([85, 19.8]);
+    expect(opts.bounds[1]).toEqual([86, 20.5]);
+  });
+
+  it("bails to .mapcard-failed when in approximate mode but district is missing", async () => {
+    const stub = makeMaplibreStub();
+    window.maplibregl = stub.maplibregl;
+
+    const { frame } = buildMapDiv({
+      state: "verified",
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      mode: "approximate",
+      // No district — the server somehow forgot it.
+    });
+
+    loadAndRunScript();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(frame.classList.contains("mapcard-failed")).toBe(true);
+    expect(stub.calls.constructor.length).toBe(0);
+  });
+
+  it("toggling cadastral off also hides the district layers", async () => {
+    const stub = makeMaplibreStub();
+    window.maplibregl = stub.maplibregl;
+
+    const { toggle } = buildMapDiv({
+      state: "verified",
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      mode: "approximate",
+      district: SAMPLE_DISTRICT,
+    });
+    loadAndRunScript();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Switch to "satellite" (cadastral + district OFF).
+    toggle.querySelector('[data-layer="satellite"]').click();
+
+    const districtFill = stub.calls.setLayoutProperty.find(
+      (c) => c.layer === "district-fill" && c.prop === "visibility"
+    );
+    const districtLine = stub.calls.setLayoutProperty.find(
+      (c) => c.layer === "district-line" && c.prop === "visibility"
+    );
+    expect(districtFill).toBeTruthy();
+    expect(districtFill.value).toBe("none");
+    expect(districtLine.value).toBe("none");
+  });
+
+  it("default mode is 'exact' when data-mode is absent (backwards compatible)", async () => {
+    const stub = makeMaplibreStub();
+    window.maplibregl = stub.maplibregl;
+
+    // No mode, no district — this is the v1.0 exact path.
+    buildMapDiv({
+      state: "verified",
+      plot: SAMPLE_POLYGON,
+      bounds: SAMPLE_BOUNDS,
+    });
+
+    loadAndRunScript();
+    await new Promise((r) => setTimeout(r, 0));
+
+    const opts = stub.calls.constructor[0];
+    // No district source on the exact path.
+    expect(opts.style.sources.district).toBeUndefined();
+    // And the target polygon is rendered.
+    const cad = opts.style.sources.cad.data.features.find(
+      (f) => f.properties.role === "target"
+    );
+    expect(cad).toBeTruthy();
   });
 });

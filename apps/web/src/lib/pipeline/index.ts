@@ -40,6 +40,7 @@ import { fetch as bdaZoningFetch } from "@cleardeed/fetcher-bda-zoning";
 // + SVG render + Supabase Storage upload into the V1.1 report pipeline
 // with a 30s timeout, 7-day cache, and non-blocking failure semantics.
 import { runPlotDiagramStep, type PlotDiagramStepResult } from "../plot-diagram-step";
+import { synthesizePlotPolygon } from "../synthesize-plot-polygon";
 // Sprint V5b — IGR public-data fetchers (PI-V.5). Typed-degradation siblings to
 // the existing circle-rate / igr-ec pipeline calls. The renderer sub-cards are
 // added in `agents/consumer-report-writer/src/index.ts` buildBenchmarkSection.
@@ -595,15 +596,42 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   // an additive UX surface (rendered as <img> in the consumer report) — the
   // rest of the report still ships. 30s overall budget; 7-day cache by
   // reportId (primary) or (gps+plot#+village) (secondary).
+  //
+  // Phase 2 v1 fallback: when Bhunaksha returned no polygon (~30-40% of
+  // Khordha plots) we still render a useful map. The step is given a
+  // synthesized fallback payload; it produces a Khordha district outline
+  // + target marker SVG and surfaces the geo data so MapCard v1 boots in
+  // approximate mode.
   let plotDiagram: PlotDiagramStepResult | null = null;
-  if (bhunakshaPolygon && villageGpsForDiagram) {
+  if (villageGpsForDiagram) {
+    const plotNo = bhunakshaResult?.data?.plotNo ?? input.identifier;
+    const isApproximate = !bhunakshaPolygon;
     try {
+      const synthesized = isApproximate
+        ? synthesizePlotPolygon({
+            gps: villageGpsForDiagram,
+            plotNo,
+            village: input.village,
+            reason:
+              (bhunakshaResult?.statusReason as string) ??
+              "no_bhunaksha_polygon",
+          })
+        : null;
       plotDiagram = await runPlotDiagramStep({
         reportId,
         gps: villageGpsForDiagram,
         village: input.village,
-        plotNo: bhunakshaResult?.data?.plotNo ?? input.identifier,
-        targetPolygon: bhunakshaPolygon,
+        plotNo,
+        ...(bhunakshaPolygon ? { targetPolygon: bhunakshaPolygon } : {}),
+        ...(synthesized
+          ? {
+              fallback: {
+                reason: synthesized.reason,
+                centroid: synthesized.centroid,
+                synthesized,
+              },
+            }
+          : {}),
         traceId: `rpt-${reportId.slice(0, 8)}`,
       });
     } catch (err) {
@@ -621,6 +649,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
         cacheHit: false,
         rendered: false,
         durationMs: 0,
+        ...(isApproximate ? { approximate: true, approximateReason: (bhunakshaResult?.statusReason as string) ?? "no_bhunaksha_polygon" } : {}),
       };
     }
   }

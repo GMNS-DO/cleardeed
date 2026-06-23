@@ -452,6 +452,15 @@ export type MapperPlotDiagramInput = {
     minLon: number;
     maxLon: number;
   } | null;
+  // MapCard v1.1 — approximate-mode plumbing. When the diagram step
+  // took the fallback path (Bhunaksha returned no polygon), the
+  // step synthesizes a 60m target polygon + emits a Khordha
+  // district boundary so the map still renders. The mapper threads
+  // these through to MapCardInput so the bootstrap can flag the
+  // district layer + adjust the caption.
+  approximate?: boolean;
+  approximateReason?: string | null;
+  khordhaBoundary?: unknown;
 } | null;
 
 /**
@@ -1115,6 +1124,17 @@ export function mapToReportInput(
           neighbors: plotDiagram.neighbors ?? [],
           roads: plotDiagram.roads ?? [],
           bounds: plotDiagram.bounds ?? null,
+          // MapCard v1.1 — approximate-mode plumbing. When the
+          // diagram step took the fallback path, the mapper
+          // surfaces `approximate: true` + the WFS reason so the
+          // renderer can flag the caption + emit data-mode. The
+          // synthesized GeoJSON is passed through `targetPolygon`
+          // + `bounds` (the bootstrap positions the camera there).
+          // The Khordha boundary is rendered as a separate
+          // data-district attribute.
+          approximate: plotDiagram.approximate ?? false,
+          approximateReason: plotDiagram.approximateReason ?? null,
+          khordhaBoundary: plotDiagram.khordhaBoundary ?? null,
           // Built server-side from village+tahasil+plotNo; falls
           // back to the Bhulekh homepage when the mapper cannot
           // derive the deep link. The bootstrap script reads this

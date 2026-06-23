@@ -72,6 +72,22 @@ export type MapCardInput = {
       maxLon: number;
     } | null;
     bhulekhUrl?: string | null;
+    // MapCard v1.1 — approximate-mode plumbing. When the diagram
+    // step took the fallback path (Bhunaksha returned no polygon),
+    // `approximate` is true and `approximateReason` carries the
+    // WFS failure reason. The map renders a district outline +
+    // centroid marker instead of a target polygon. The mapper
+    // passes through the synthesized GeoJSON via `targetPolygon`
+    // + `bounds` so the bootstrap can position the camera.
+    approximate?: boolean;
+    approximateReason?: string | null;
+    // The Khordha district boundary Feature (only present in
+    // approximate mode). The bootstrap adds it as a source +
+    // district-fill / district-line layers so the buyer sees
+    // district context while the centroid marker is the only
+    // plot-level cue. ~17KB JSON; embedded as a data-district
+    // attribute on the mapcard-v1 div.
+    khordhaBoundary?: unknown;
   } | null;
   plotNo?: string;
   village?: string;
@@ -232,6 +248,17 @@ function renderInteractiveCard(input: MapCardInput): string {
   const safeUrl = escapeAttr(url);
   const caption = buildCaption(input);
   const isPartial = state === "partial";
+  // MapCard v1.1 — approximate mode (Bhunaksha returned no polygon).
+  // The data-* attributes flag this so the bootstrap adds the
+  // district source + layers and skips the chauhaddi arrows.
+  // data-plot is set to the synthesized 60m square (not null) so
+  // a future v1.2 can show the gold target outline at district
+  // zoom without re-architecting the bootstrap.
+  const isApproximate = pd.approximate === true;
+  const mode = isApproximate ? "approximate" : "exact";
+  const dataDistrict = isApproximate
+    ? escapeJsonForAttr(pd.khordhaBoundary ?? null)
+    : '""';
 
   // Geo data — JSON-encoded into single-quoted data-* attributes.
   // `JSON.stringify` of the polygon/neighbors/roads is safe because
@@ -303,11 +330,12 @@ function renderInteractiveCard(input: MapCardInput): string {
     ${statusBadge(state)}
   </div>
 
-  <div class="map-card-frame" data-premium-frame="map" data-state="${state}">
+  <div class="map-card-frame" data-premium-frame="map" data-state="${state}"${isApproximate ? ' data-mode="approximate"' : ' data-mode="exact"'}>
     <img class="mapcard-poster" src="${safeUrl}" alt="${escapeAttr(caption)} — cadastral plot map showing target plot and surrounding plots" loading="lazy" />
     <div id="mapcard-v1"
          class="mapcard-interactive"
          data-state="${state}"
+         data-mode="${mode}"
          data-plot=${dataPlot}
          data-neighbors=${dataNeighbors}
          data-roads=${dataRoads}
@@ -316,6 +344,7 @@ function renderInteractiveCard(input: MapCardInput): string {
          data-bhulekh-url="${dataBhulekhUrl}"
          data-plot-no="${dataPlotNo}"
          data-village="${dataVillage}"
+         data-district=${dataDistrict}
     ></div>
     <div class="map-card-layer-toggle" role="group" aria-label="Map layers">
       <button class="map-card-layer-btn is-active" data-layer="both" aria-pressed="true" type="button">Both</button>
@@ -324,7 +353,7 @@ function renderInteractiveCard(input: MapCardInput): string {
     </div>
   </div>
 
-  <p class="source-line map-card-caption">${caption}${isPartial ? " · some neighbour plots may be missing" : ""}</p>
+  <p class="source-line map-card-caption">${caption}${isApproximate ? ` · approximate location (${escapeHtml(pd.approximateReason ?? "no_bhunaksha_polygon")})` : ""}${!isApproximate && isPartial ? " · some neighbour plots may be missing" : ""}</p>
 
   <div class="map-card-actions">
     <a class="map-card-cta" href="${escapeAttr(bhulekhUrl)}" target="_blank" rel="noopener noreferrer">Verify on Bhulekh →</a>

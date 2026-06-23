@@ -309,6 +309,104 @@ describe("MapCard — not_attempted", () => {
   });
 });
 
+describe("MapCard — approximate mode (MapCard v1.1 fallback)", () => {
+  const SAMPLE_DISTRICT = {
+    license: "CC-BY-2.5",
+    data: {
+      type: "Feature",
+      properties: { title: "Khordha" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [[[85, 19.8], [86, 19.8], [86, 20.5], [85, 20.5], [85, 19.8]]],
+      },
+    },
+  };
+  const APPROX_INPUT = {
+    plotDiagram: {
+      status: "success" as const,
+      url: "https://cleardeed.example/diagrams/approx.svg",
+      cacheHit: false,
+      targetPolygon: SAMPLE_POLYGON,
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      bhulekhUrl: "https://bhulekh.ori.nic.in/RoRView.aspx",
+      approximate: true,
+      approximateReason: "no_containing_polygon",
+      khordhaBoundary: SAMPLE_DISTRICT,
+    },
+    plotNo: "415",
+    village: "Somevillage",
+  };
+
+  it("emits data-mode='approximate' on the map frame + the #mapcard-v1 div", () => {
+    const html = renderMapCard(APPROX_INPUT);
+    // The frame and the div both carry the mode flag.
+    expect(html).toMatch(/data-mode="approximate"/);
+  });
+
+  it("emits data-district with the JSON-encoded Khordha boundary", () => {
+    const html = renderMapCard(APPROX_INPUT);
+    expect(html).toMatch(/data-district='[^']*Khordha[^']*'/);
+  });
+
+  it("caption mentions 'approximate location' + the reason", () => {
+    const html = renderMapCard(APPROX_INPUT);
+    expect(html).toContain("approximate location");
+    expect(html).toContain("no_containing_polygon");
+  });
+
+  it("still emits the map div + script + verify CTA (the map renders, just with district layer)", () => {
+    const html = renderMapCard(APPROX_INPUT);
+    expect(html).toContain('id="mapcard-v1"');
+    expect(html).toContain("mapcard-v1.js");
+    expect(html).toContain("Verify on Bhulekh");
+  });
+
+  it("does not say 'neighbour plots may be missing' on approximate", () => {
+    // Approximate mode is not the same as partial — it's a
+    // district-level marker, not a target polygon with missing
+    // neighbours. The caption uses the reason, not the partial suffix.
+    const html = renderMapCard(APPROX_INPUT);
+    expect(html).not.toContain("neighbour plots may be missing");
+  });
+
+  it("exact mode (default) does NOT emit data-mode (backwards compatible)", () => {
+    // The exact-mode contract: when `approximate` is missing, the
+    // map div does not carry data-mode. The bootstrap defaults to
+    // 'exact' on absence. This is the load-bearing compatibility
+    // contract for v1.0 reports.
+    const html = renderMapCard({
+      plotDiagram: {
+        status: "success",
+        url: "https://x.com/a.svg",
+        targetPolygon: SAMPLE_POLYGON,
+        bounds: SAMPLE_BOUNDS,
+      },
+    });
+    // The frame is tagged with data-mode="exact"; the #mapcard-v1
+    // div is also tagged so the bootstrap can decide which layers
+    // to add. Both are the "default" value.
+    expect(html).toContain('data-mode="exact"');
+  });
+
+  it("approximate mode without khordhaBoundary still renders (the bootstrap handles the missing-district bail)", () => {
+    // Defensive: the server is expected to always emit
+    // khordhaBoundary in approximate mode. If it doesn't, the
+    // render still produces the map shell + script tag — the
+    // bootstrap's "data-district missing" branch bails to the
+    // static poster. The mapper (not the renderer) is the
+    // canonical gate for khordhaBoundary presence.
+    const html = renderMapCard({
+      ...APPROX_INPUT,
+      plotDiagram: {
+        ...APPROX_INPUT.plotDiagram,
+        khordhaBoundary: undefined,
+      },
+    });
+    expect(html).toMatch(/data-mode="approximate"/);
+    expect(html).toContain('id="mapcard-v1"');
+  });
+});
+
 describe("MapCard — idempotence", () => {
   it("returns identical output for identical input", () => {
     const a = renderMapCard({

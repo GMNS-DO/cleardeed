@@ -2,6 +2,34 @@ import { z } from "zod";
 
 declare function setTimeout(handler: () => void, timeout?: number): unknown;
 
+// Khordha district boundary GeoJSON Feature (DataMeet CC-BY-2.5, ~1900
+// vertices). Used by the MapCard v1 approximate-mode fallback to render
+// a district outline on reports where Bhunaksha returned no plot polygon.
+// Statically imported so no I/O is required at request time.
+import khordhaBoundaryJson from "./assets/khordha-district-boundary.json";
+
+/** Khordha district boundary as a GeoJSON Feature. Coordinates are [lon, lat] (WGS84). */
+export const KHORDHA_BOUNDARY_FEATURE = khordhaBoundaryJson as unknown as {
+  license: "CC-BY-2.5";
+  description: { en: string };
+  sources: string;
+  zoom: number;
+  latitude: number;
+  longitude: number;
+  data: {
+    type: "Feature";
+    properties: { title: string };
+    geometry: { type: "Polygon"; coordinates: number[][][] };
+  };
+};
+
+/** Convenience: the outer ring of the Khordha boundary (number[][] of [lon, lat]). */
+export function getKhordhaBoundaryOuterRing(): number[][] {
+  const feat = KHORDHA_BOUNDARY_FEATURE.features?.[0];
+  if (!feat) return [];
+  return feat.geometry?.coordinates?.[0] ?? [];
+}
+
 export const GPSCoordinates = z.object({
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
@@ -185,6 +213,8 @@ export const RoRLandDetail = z.object({
 export const RoRMutationReference = z.object({
   caseType: z.string().optional(),
   caseNo: z.string().optional(),
+  orderYear: z.number().int().optional(),
+  newKhatiyan: z.string().optional(),
   orderDate: z.string().optional(),
   plotNo: z.string().optional(),
   sourceField: z.string(),
@@ -213,6 +243,23 @@ export type RoRResult = z.infer<typeof RoRResult>;
 const NullableText = z.string().optional().nullable();
 const RawCellValue = z.union([z.string(), z.null()]);
 
+export const BhulekhChauhaddi = z.object({
+  north: NullableText,
+  south: NullableText,
+  east: NullableText,
+  west: NullableText,
+});
+
+export type BhulekhChauhaddi = z.infer<typeof BhulekhChauhaddi>;
+
+export const BhulekhSection6Area = z.object({
+  acres: NullableText,
+  decimals: NullableText,
+  hectares: NullableText,
+});
+
+export type BhulekhSection6Area = z.infer<typeof BhulekhSection6Area>;
+
 export const BhulekhRoRPlotRowV1 = z.object({
   plotNo: NullableText,
   chakNameOdia: NullableText,
@@ -228,6 +275,7 @@ export const BhulekhRoRPlotRowV1 = z.object({
   areaComputation: NullableText,
   sourceRowHash: NullableText,
   remarksOdia: NullableText,
+  chauhaddi: BhulekhChauhaddi.optional(),
   raw: z.record(RawCellValue).default({}),
 });
 
@@ -261,7 +309,16 @@ export const BhulekhRoRDocumentV1 = z.object({
     residenceOdia: NullableText,
     rightsOdia: NullableText,
     tenantBlockRawOdia: NullableText,
+    khewatNo: NullableText,
+    hasPoA: z.union([z.boolean(), z.null()]).optional(),
+    ownerFieldMissing: z.boolean().optional(),
   }),
+  section6: z
+    .object({
+      area: BhulekhSection6Area.optional(),
+      referenceCount: z.number().int().optional(),
+    })
+    .optional(),
   dues: z.object({
     jalkar: NullableText,
     khajana: NullableText,

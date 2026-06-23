@@ -444,4 +444,113 @@ describe("Phase 2 v1 — input.plotDiagram wiring", () => {
     // No polygon on failed — the input field is null.
     expect(pd.targetPolygon).toBeNull();
   });
+
+  // MapCard v1.1 — approximate-mode wiring. When Bhunaksha returned
+  // no polygon, the diagram step synthesizes a 60m target polygon +
+  // surfaces the Khordha boundary. The mapper must surface both so
+  // MapCard can render the district outline + approximate caption.
+  it("threads approximate + khordhaBoundary through when the fallback path ran", () => {
+    const targetPolygon = {
+      type: "Polygon" as const,
+      coordinates: [
+        [
+          [85.701, 20.272],
+          [85.70101, 20.272],
+          [85.70101, 20.27201],
+          [85.701, 20.27201],
+          [85.701, 20.272],
+        ],
+      ],
+    };
+    const khordhaBoundary = {
+      data: [
+        {
+          type: "Feature",
+          properties: { title: "Khordha" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[[85, 19.8], [86, 19.8], [86, 20.5], [85, 20.5], [85, 19.8]]],
+          },
+        },
+      ],
+    };
+    const reportInput = mapToReportInput(
+      {
+        reportId: "test-v1-approx",
+        sources: [],
+        completedAt: "2026-06-25T00:00:00Z",
+        validationFindings: [],
+      },
+      {
+        gps: { lat: 20.272, lon: 85.701 },
+        claimedOwnerName: "Owner",
+        disclaimerText: "Disclaimer.",
+      },
+      {
+        status: "success",
+        url: "https://storage.example.com/approx.svg",
+        cacheHit: false,
+        rendered: true,
+        // Synthesized 60m target — what the diagram step produces.
+        targetPolygon,
+        neighbors: [],
+        roads: [],
+        bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+        approximate: true,
+        approximateReason: "no_containing_polygon",
+        khordhaBoundary,
+      }
+    );
+    const pd: any = (reportInput as any).plotDiagram;
+    expect(pd.approximate).toBe(true);
+    expect(pd.approximateReason).toBe("no_containing_polygon");
+    expect(pd.khordhaBoundary).toEqual(khordhaBoundary);
+    // The synthesized polygon still flows through so the bootstrap
+    // can position the camera + render a tiny gold outline at the
+    // village centroid.
+    expect(pd.targetPolygon).toEqual(targetPolygon);
+  });
+
+  it("defaults approximate=false / approximateReason=null / khordhaBoundary=null on the success path", () => {
+    // The v1.0 exact-mode path doesn't populate the new fields.
+    // The mapper MUST default them so the renderer / bootstrap
+    // can rely on a stable shape (no undefined access).
+    const targetPolygon = {
+      type: "Polygon" as const,
+      coordinates: [
+        [
+          [85.701, 20.272],
+          [85.702, 20.272],
+          [85.702, 20.273],
+          [85.701, 20.273],
+          [85.701, 20.272],
+        ],
+      ],
+    };
+    const reportInput = mapToReportInput(
+      {
+        reportId: "test-v1-exact",
+        sources: [],
+        completedAt: "2026-06-25T00:00:00Z",
+        validationFindings: [],
+      },
+      {
+        gps: { lat: 20.272, lon: 85.701 },
+        claimedOwnerName: "Owner",
+        disclaimerText: "Disclaimer.",
+      },
+      {
+        status: "success",
+        url: "https://x.com/y.svg",
+        targetPolygon,
+        bounds: { minLat: 20.27, maxLat: 20.28, minLon: 85.7, maxLon: 85.71 },
+        neighbors: [],
+        roads: [],
+      }
+    );
+    const pd: any = (reportInput as any).plotDiagram;
+    expect(pd.approximate).toBe(false);
+    expect(pd.approximateReason).toBeNull();
+    expect(pd.khordhaBoundary).toBeNull();
+  });
 });

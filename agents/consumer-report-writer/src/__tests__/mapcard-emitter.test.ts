@@ -231,3 +231,74 @@ describe("emitter — id stability across calls (idempotence)", () => {
     expect(a).toBe(b);
   });
 });
+
+// MapCard v1.1 — approximate-mode emitter contract.
+//
+// Pin the wire shape between map-card.ts (emitter) and mapcard-v1.js
+// (bootstrap). The bootstrap reads data-mode and data-district via
+// getAttribute. If the attribute name or quoting changes here, the
+// bootstrap will silently miss the mode flag and render a v1.0
+// exact-mode map (district outline layer will be missing, chauhaddi
+// arrows may try to draw on missing neighbours).
+describe("emitter — approximate-mode contract (MapCard v1.1)", () => {
+  const SAMPLE_DISTRICT = {
+    data: [
+      {
+        type: "Feature",
+        properties: { title: "Khordha" },
+        geometry: {
+          type: "Polygon",
+          coordinates: [[[85, 19.8], [86, 19.8], [86, 20.5], [85, 20.5], [85, 19.8]]],
+        },
+      },
+    ],
+  };
+  const html = renderMapCard({
+    plotDiagram: {
+      status: "success",
+      url: "https://x.com/approx.svg",
+      targetPolygon: SAMPLE_POLYGON,
+      neighbors: [],
+      roads: [],
+      bounds: { minLat: 19.8, maxLat: 20.5, minLon: 85, maxLon: 86 },
+      bhulekhUrl: "https://bhulekh.ori.nic.in/RoRView.aspx",
+      approximate: true,
+      approximateReason: "no_containing_polygon",
+      khordhaBoundary: SAMPLE_DISTRICT,
+    },
+    plotNo: "415",
+    village: "Somevillage",
+  });
+
+  it("emits data-mode='approximate' on the #mapcard-v1 div", () => {
+    // The bootstrap reads data-mode to decide whether to add the
+    // district source/layers. If the attribute name or value drifts,
+    // the district layer will be missing.
+    expect(html).toMatch(/id="mapcard-v1"[^>]*data-mode="approximate"|data-mode="approximate"[^>]*id="mapcard-v1"/);
+  });
+
+  it("emits data-district with the JSON-encoded Khordha boundary, single-quoted", () => {
+    // Single-quoted because the value contains double quotes (JSON).
+    // The bootstrap uses getAttribute + JSON.parse.
+    expect(html).toMatch(/data-district='[^']*Khordha[^']*'/);
+  });
+
+  it("emits data-mode='exact' on the v1.0 success path (backwards-compatible default)", () => {
+    // v1.0 reports have neither approximate nor a district boundary.
+    // The bootstrap must still find a data-mode attr so its default
+    // branch (no district layer) is reachable.
+    const v10html = renderMapCard({
+      plotDiagram: {
+        status: "success",
+        url: "https://x.com/v10.svg",
+        targetPolygon: SAMPLE_POLYGON,
+        neighbors: SAMPLE_NEIGHBORS,
+        bounds: SAMPLE_BOUNDS,
+      },
+    });
+    expect(v10html).toMatch(/id="mapcard-v1"[^>]*data-mode="exact"|data-mode="exact"[^>]*id="mapcard-v1"/);
+    // data-district is empty string in exact mode (the bootstrap
+    // bails on missing data-district only in approximate mode).
+    expect(v10html).toMatch(/data-district=""/);
+  });
+});
