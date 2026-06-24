@@ -1,0 +1,15 @@
+{
+  "reportId": "pid-smoke-pattern-1782344157267-pni4tx",
+  "result": {
+    "candidateCount": 2,
+    "eventCount": 3,
+    "factCount": 3,
+    "ok": true
+  },
+  "supabaseCounts": {
+    "patternCandidatesLast60s": 2,
+    "patternEventsLast60s": 3,
+    "patternFactsLast60s": 3
+  },
+  "ranAt": "2026-06-24T23:36:00.862Z"
+}
