@@ -181,6 +181,9 @@ export function buildPatternPayload(
           logicDescription: insight.body,
           status: "RAW_SIGNAL",
           evidenceCount: 1,
+          reviewedExampleCount: 0,
+          supportingEventIds: [],
+          supportingArtifactIds: [],
           ruleVersion: DEFAULT_RULE_VERSION,
           metadata: {
             ruleId: insight.ruleId,

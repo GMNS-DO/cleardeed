@@ -71,6 +71,7 @@ import {
 // result into pid_artifacts / pid_fact_assertions / pid_events. Off by
 // default. Failures are logged + swallowed; they must not break the report.
 import { recordFetchResult } from "./pid/record-fetch-result";
+import { recordPatternFires } from "./pid/record-pattern-fires";
 
 /** Runtime set of valid SourceId values, for narrowing guard. */
 const VALID_SOURCE_IDS: ReadonlySet<string> = new Set<string>(ALL_SOURCE_IDS);
@@ -397,11 +398,51 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
   );
 
   // ── Step 7: A10 ConsumerReportWriter ───────────────────────────────────────
-  const { html, title } = generateConsumerReport(reportInput);
+  const { html, title, insights } = generateConsumerReport(reportInput);
 
   // ── Step 8: A11 OutputAuditor — liability gate ─────────────────────────────
   const { auditOrThrow } = await import("@cleardeed/output-auditor");
   auditOrThrow(html, orchestratorOutput.reportId); // throws on critical violations
+
+  // ── Sub-plan B Step 5: persist fired fraud patterns to the PID corpus ─────
+  // Mirrors the V11 wire-up. recordPatternFires is kill-switched and
+  // non-blocking; any failure is logged and the report still returns.
+  if (insights && insights.length > 0) {
+    try {
+      const ror = (reportInput as { ror?: unknown }).ror as
+        | {
+            page1?: {
+              khatiyanNumber?: string | null;
+              village?: string | null;
+              tahasil?: string | null;
+              tenant?: { name?: string | null } | null;
+            } | null;
+            page2?: { selectedPlotNumber?: string | null } | null;
+          }
+        | undefined;
+      const ruleInput = {
+        ror: ror ?? null,
+        claimedOwnerName: reportInput.claimedOwnerName ?? null,
+        tehsil: input.tehsil ?? null,
+        village: input.village ?? null,
+        plotGPS: (reportInput as { plotGPS?: unknown }).plotGPS ?? null,
+        ownerResidenceGPS: (reportInput as { ownerResidenceGPS?: unknown })
+          .ownerResidenceGPS ?? null,
+      };
+      await recordPatternFires({
+        insights,
+        ctx: {
+          reportId: orchestratorOutput.reportId,
+          propertyId: null,
+          ruleInput,
+        },
+      });
+    } catch (err) {
+      console.warn(
+        `[pid/pattern] recordPatternFires threw: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+  }
 
   // ── Step 9: Build source summary ───────────────────────────────────────────
   const sourceSummary = {
@@ -1265,7 +1306,7 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
     }
   }
 
-  const { html, title } = generateConsumerReport(reportInput);
+  const { html, title, insights } = generateConsumerReport(reportInput);
 
   // ── Step 8: A11 OutputAuditor ────────────────────────────────────────────
   try {
@@ -1274,6 +1315,47 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
   } catch (err) {
     console.error("[pipeline/v11] A11 OutputAuditor blocked report:", err);
     throw err;
+  }
+
+  // ── Sub-plan B Step 5: persist fired fraud patterns to the PID corpus ─────
+  // Runs AFTER the A11 audit so a blocked report doesn't write rows.
+  // recordPatternFires is kill-switched + non-blocking; any failure is logged
+  // and the report still returns successfully.
+  if (insights && insights.length > 0) {
+    try {
+      const ror = (reportInput as { ror?: unknown }).ror as
+        | {
+            page1?: {
+              khatiyanNumber?: string | null;
+              village?: string | null;
+              tahasil?: string | null;
+              tenant?: { name?: string | null } | null;
+            } | null;
+            page2?: { selectedPlotNumber?: string | null } | null;
+          }
+        | undefined;
+      const ruleInput = {
+        ror: ror ?? null,
+        claimedOwnerName: reportInput.claimedOwnerName ?? null,
+        tehsil: input.tehsil ?? null,
+        village: input.village ?? null,
+        plotGPS: (reportInput as { plotGPS?: unknown }).plotGPS ?? null,
+        ownerResidenceGPS: (reportInput as { ownerResidenceGPS?: unknown })
+          .ownerResidenceGPS ?? null,
+      };
+      await recordPatternFires({
+        insights,
+        ctx: {
+          reportId,
+          propertyId: null,
+          ruleInput,
+        },
+      });
+    } catch (err) {
+      console.warn(
+        `[pid/pattern] recordPatternFires threw: ${err instanceof Error ? err.message : err}`,
+      );
+    }
   }
 
   // ── Step 9: Source summaries ─────────────────────────────────────────────────
