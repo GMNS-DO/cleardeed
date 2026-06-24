@@ -120,6 +120,8 @@ describe("recordFetchResult", () => {
         input: { village: "X" },
         data: { tenants: [] },
         fetchedAt: "2026-06-25T10:00:00.000Z",
+        rawArtifactHash: "a".repeat(64),
+        rawArtifactPath: "raw/bhulekh/x.html",
       }
     );
     expect(out?.artifactId).toBe("art-1");
