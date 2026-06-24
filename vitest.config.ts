@@ -45,6 +45,7 @@ export default defineConfig({
       "apps/web/src/lib/supabase/middleware.test.ts",
       "apps/web/src/lib/villages.test.ts",
       "apps/web/src/lib/pipeline/pid/keys.test.ts",
+      "apps/web/src/lib/pipeline/pid/mapper.test.ts",
       "apps/web/src/lib/pipeline/pid/types.test.ts",
       "apps/web/src/lib/pipeline/pid/client.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.test.ts",
