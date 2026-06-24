@@ -47,6 +47,25 @@ describeIf("PID live smoke — direct recordFetchResult writes", () => {
 
     process.env.PID_RECORDING_ENABLED = "true";
 
+    // Seed pid_sources — FK target for pid_artifacts, pid_fact_assertions,
+    // pid_events. Idempotent (ON CONFLICT DO NOTHING).
+    const seedClient = supabaseAdmin();
+    const sourceIds = ["bhulekh", "bhunaksha", "nominatim"];
+    await seedClient.from("pid_sources").upsert(
+      sourceIds.map((sid) => ({
+        source_id: sid,
+        source_name: sid,
+        source_category: "test",
+        priority: "P2",
+        source_roles: [],
+        availability: "active",
+        access_modes: ["bulk"],
+        collection_mode: "manual",
+        status: "active",
+      })),
+      { onConflict: "source_id", ignoreDuplicates: true },
+    );
+
     const fetchedAt = nowIso();
 
     // 1) Bhulekh — artifact + tenant fact
@@ -112,10 +131,16 @@ describeIf("PID live smoke — direct recordFetchResult writes", () => {
       .from("pid_events")
       .select("id", { count: "exact", head: true })
       .eq("metadata->>report_id", reportId);
-    const { count: factCount } = await supabase
-      .from("pid_fact_assertions")
-      .select("id", { count: "exact", head: true })
-      .eq("metadata->>report_id", reportId);
+    // Facts are linked to reports via artifact_id (the mapper threads
+    // report_id into artifact.metadata, not fact metadata).
+    const artifactIds = artifacts.map((a) => a.id);
+    const { count: factCount } =
+      artifactIds.length === 0
+        ? { count: 0 }
+        : await supabase
+            .from("pid_fact_assertions")
+            .select("id", { count: "exact", head: true })
+            .in("artifact_id", artifactIds);
 
     writeFileSync(
       "qa/pid_smoke/khordha-report-1.json",

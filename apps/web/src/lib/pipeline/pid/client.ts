@@ -21,6 +21,66 @@ import {
   type PropertyInput,
 } from "./types";
 
+// Top-level key transform: TS Zod schemas use camelCase, Postgres columns are
+// snake_case. Without this, Supabase would quote camelCase keys as columns and
+// the server would reject with "column does not exist" — and the error was
+// being swallowed, silently dropping every PID write.
+// We only transform top-level keys; nested JSONB columns (query, metadata,
+// bbox, value_json, parties) keep their inner shape — they're written as JSON
+// via the JSONB column type and the inner keys are caller-controlled.
+const CAMEL_TO_SNAKE: Record<string, string> = {
+  artifactKey: "artifact_key",
+  artifactType: "artifact_type",
+  sourceId: "source_id",
+  collectionRunId: "collection_run_id",
+  documentType: "document_type",
+  sourceUrl: "source_url",
+  sourceOrigin: "source_origin",
+  accessMode: "access_mode",
+  storagePath: "storage_path",
+  storageBucket: "storage_bucket",
+  storageKey: "storage_key",
+  byteSize: "byte_size",
+  contentType: "content_type",
+  httpStatus: "http_status",
+  retrievedAt: "retrieved_at",
+  canonicalKey: "canonical_key",
+  khataNumber: "khata_number",
+  plotNumber: "plot_number",
+  surveyNumber: "survey_number",
+  areaValue: "area_value",
+  areaUnit: "area_unit",
+  geometryRef: "geometry_ref",
+  identityConfidence: "identity_confidence",
+  eventType: "event_type",
+  eventDate: "event_date",
+  recordedAt: "recorded_at",
+  propertyId: "property_id",
+  documentId: "document_id",
+  caseId: "case_id",
+  chargeId: "charge_id",
+  eventSummary: "event_summary",
+  reviewStatus: "review_status",
+  subjectType: "subject_type",
+  subjectId: "subject_id",
+  rawValue: "raw_value",
+  normalizedValue: "normalized_value",
+  valueJson: "value_json",
+  artifactId: "artifact_id",
+  extractionId: "extraction_id",
+  pageNumber: "page_number",
+  charStart: "char_start",
+  charEnd: "char_end",
+};
+
+function camelToSnake<T extends Record<string, unknown>>(input: T): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) {
+    out[CAMEL_TO_SNAKE[k] ?? k] = v;
+  }
+  return out;
+}
+
 async function singleInsert(
   table: string,
   payload: Record<string, unknown>,
@@ -70,7 +130,11 @@ export async function pidUpsertArtifact(input: SourceArtifact): Promise<string |
     console.warn(`[pid/client] pidUpsertArtifact validation failed: ${parsed.error.message}`);
     return null;
   }
-  return singleUpsert("pid_artifacts", parsed.data as unknown as Record<string, unknown>, "artifact_key");
+  return singleUpsert(
+    "pid_artifacts",
+    camelToSnake(parsed.data as unknown as Record<string, unknown>),
+    "artifact_key",
+  );
 }
 
 export async function pidInsertFactAssertion(input: FactAssertionInput): Promise<string | null> {
@@ -79,7 +143,10 @@ export async function pidInsertFactAssertion(input: FactAssertionInput): Promise
     console.warn(`[pid/client] pidInsertFactAssertion validation failed: ${parsed.error.message}`);
     return null;
   }
-  return singleInsert("pid_fact_assertions", parsed.data as unknown as Record<string, unknown>);
+  return singleInsert(
+    "pid_fact_assertions",
+    camelToSnake(parsed.data as unknown as Record<string, unknown>),
+  );
 }
 
 export async function pidInsertEvent(input: EventInput): Promise<string | null> {
@@ -88,7 +155,10 @@ export async function pidInsertEvent(input: EventInput): Promise<string | null> 
     console.warn(`[pid/client] pidInsertEvent validation failed: ${parsed.error.message}`);
     return null;
   }
-  return singleInsert("pid_events", parsed.data as unknown as Record<string, unknown>);
+  return singleInsert(
+    "pid_events",
+    camelToSnake(parsed.data as unknown as Record<string, unknown>),
+  );
 }
 
 export async function pidUpsertProperty(input: PropertyInput): Promise<string | null> {
@@ -100,7 +170,8 @@ export async function pidUpsertProperty(input: PropertyInput): Promise<string | 
   // Canonical key is the natural unique key. If not provided, build one from
   // (district, tahasil, village, khata, plot) — collisions across the same
   // tuple upsert into the same row, which is what we want.
-  const payload = parsed.data as unknown as Record<string, unknown>;
+  // camelToSnake first so payload.* lookups below use snake_case keys.
+  const payload = camelToSnake(parsed.data as unknown as Record<string, unknown>);
   if (!payload.canonical_key) {
     payload.canonical_key = [
       payload.district,
