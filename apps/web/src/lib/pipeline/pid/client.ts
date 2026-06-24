@@ -65,26 +65,42 @@ async function singleUpsert(
 }
 
 export async function pidUpsertArtifact(input: SourceArtifact): Promise<string | null> {
-  const parsed = SourceArtifactSchema.parse(input);
-  return singleUpsert("pid_artifacts", parsed as unknown as Record<string, unknown>, "artifact_key");
+  const parsed = SourceArtifactSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn(`[pid/client] pidUpsertArtifact validation failed: ${parsed.error.message}`);
+    return null;
+  }
+  return singleUpsert("pid_artifacts", parsed.data as unknown as Record<string, unknown>, "artifact_key");
 }
 
 export async function pidInsertFactAssertion(input: FactAssertionInput): Promise<string | null> {
-  const parsed = FactAssertionInputSchema.parse(input);
-  return singleInsert("pid_fact_assertions", parsed as unknown as Record<string, unknown>);
+  const parsed = FactAssertionInputSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn(`[pid/client] pidInsertFactAssertion validation failed: ${parsed.error.message}`);
+    return null;
+  }
+  return singleInsert("pid_fact_assertions", parsed.data as unknown as Record<string, unknown>);
 }
 
 export async function pidInsertEvent(input: EventInput): Promise<string | null> {
-  const parsed = EventInputSchema.parse(input);
-  return singleInsert("pid_events", parsed as unknown as Record<string, unknown>);
+  const parsed = EventInputSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn(`[pid/client] pidInsertEvent validation failed: ${parsed.error.message}`);
+    return null;
+  }
+  return singleInsert("pid_events", parsed.data as unknown as Record<string, unknown>);
 }
 
 export async function pidUpsertProperty(input: PropertyInput): Promise<string | null> {
-  const parsed = PropertyInputSchema.parse(input);
+  const parsed = PropertyInputSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn(`[pid/client] pidUpsertProperty validation failed: ${parsed.error.message}`);
+    return null;
+  }
   // Canonical key is the natural unique key. If not provided, build one from
   // (district, tahasil, village, khata, plot) — collisions across the same
   // tuple upsert into the same row, which is what we want.
-  const payload = parsed as unknown as Record<string, unknown>;
+  const payload = parsed.data as unknown as Record<string, unknown>;
   if (!payload.canonical_key) {
     payload.canonical_key = [
       payload.district,

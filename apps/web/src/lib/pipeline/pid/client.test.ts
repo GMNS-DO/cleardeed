@@ -69,6 +69,20 @@ describe("pidUpsertArtifact", () => {
     });
     expect(id).toBeNull();
   });
+
+  it("returns null (does not throw) on malformed artifactKey — honors non-blocking contract", async () => {
+    // artifactKey must be 64 hex chars; passing a short non-hex value fails Zod validation.
+    const id = await pidUpsertArtifact({
+      artifactKey: "not-hex-too-short",
+      sourceId: "bhulekh",
+      artifactType: "html",
+      storagePath: "p",
+      sha256: "b".repeat(64),
+      query: {},
+      metadata: {},
+    });
+    expect(id).toBeNull();
+  });
 });
 
 describe("pidInsertFactAssertion", () => {
