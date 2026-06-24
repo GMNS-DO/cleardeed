@@ -75,6 +75,7 @@ export default defineConfig({
       "qa/all_fetchers_live_smoke.test.ts",
       "qa/invalid_input_gate.test.ts",
       "qa/auto-review-guardrails.test.ts",
+      "qa/pid_smoke/**/*.test.ts",
       "qa/perf-baseline.test.mjs",
       "qa/load-test.test.mjs",
       "qa/funnel_dedup.test.ts",
