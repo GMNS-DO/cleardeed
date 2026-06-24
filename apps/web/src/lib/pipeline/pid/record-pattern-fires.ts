@@ -38,6 +38,15 @@ export interface RecordPatternFiresInput {
   insights: readonly Insight[];
   ctx: {
     reportId: string;
+    /**
+     * Optional FK to a properties row. Currently always null — the
+     * pid_properties table exists (Sub-plan A) but the pipeline does not
+     * yet thread its row id into the pattern-persistence path. Pattern
+     * candidates are therefore orphaned (no FK to a property). This is
+     * acceptable for V1 corpus seeding; a follow-up can join
+     * pid_pattern_candidates to pid_properties via canonical_key once the
+     * pipeline emits property ids in B.5 wiring.
+     */
     propertyId?: string | null;
     ruleInput: BuildPatternPayloadInput["ctx"]["ruleInput"];
   };

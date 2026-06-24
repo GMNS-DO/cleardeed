@@ -66,6 +66,7 @@ const DEFAULT_RULE_VERSION = "v1.5";
 function canonicalize(s: string | null | undefined): string {
   if (s === null || s === undefined) return "";
   return String(s)
+    .normalize("NFC") // canonicalize Unicode combining marks (Odia, Devanagari, etc.)
     .toLowerCase()
     .trim()
     .replace(/\s+/g, " ")

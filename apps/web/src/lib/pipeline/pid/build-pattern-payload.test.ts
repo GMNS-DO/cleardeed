@@ -120,6 +120,26 @@ describe("computePatternCandidateKey", () => {
     expect(k.startsWith("ROR-INS-180:")).toBe(true);
     expect(k.length).toBe("ROR-INS-180:".length + 16);
   });
+
+  it("normalizes Unicode combining marks (NFC) — decomposed and composed forms hash the same", () => {
+    // "ମ" + combining chandrabindu (U+0B2E U+0B01) vs the precomposed
+    // chandrabindu variant. Visually identical but different code-point
+    // sequences. NFC normalization collapses them to the same bytes.
+    const decomposed = "ମଁ"; // ମ + chandrabindu as separate codepoints
+    const composed = "ମ଀".normalize("NFC"); // precomposed
+    void composed;
+
+    const insight = makeInsight({ ruleId: "ROR-INS-180" });
+    const kDecomposed = computePatternCandidateKey(insight, {
+      ...baseRuleInput,
+      village: decomposed,
+    });
+    const kComposed = computePatternCandidateKey(insight, {
+      ...baseRuleInput,
+      village: "ମ଀", // chandrabindu-on-m in precomposed form
+    });
+    expect(kDecomposed).toBe(kComposed);
+  });
 });
 
 describe("buildPatternPayload — empty / filtered input", () => {

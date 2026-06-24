@@ -262,6 +262,24 @@ describe("recordPatternFires — failure handling", () => {
     expect(result?.ok).toBe(false);
     expect(result?.candidateIds).toEqual([]);
   });
+
+  it("pre-read failure is non-blocking — falls through to insert path with ok:true", async () => {
+    vi.mocked(supabaseAdmin).mockReturnValue(makePreReadFailingMock() as never);
+    vi.mocked(pidInsertPatternCandidate).mockResolvedValue("cand-1");
+    vi.mocked(pidInsertEvent).mockResolvedValue("ev-1");
+    vi.mocked(pidInsertFactAssertion).mockResolvedValue("fact-1");
+
+    const result = await recordPatternFires({
+      insights: [makeInsight()],
+      ctx: { reportId: "r1", ruleInput: baseRuleInput },
+    });
+
+    // Pre-read failure is treated as "no existing keys" → insert path
+    expect(pidInsertPatternCandidate).toHaveBeenCalledTimes(1);
+    expect(pidUpsertPatternCandidateByKey).not.toHaveBeenCalled();
+    expect(result?.ok).toBe(true);
+    expect(result?.candidateIds).toEqual(["cand-1"]);
+  });
 });
 
 describe("recordPatternFires — all-positive or all-stub insights", () => {
