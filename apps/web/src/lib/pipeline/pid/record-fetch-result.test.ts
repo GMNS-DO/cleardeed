@@ -127,4 +127,37 @@ describe("recordFetchResult", () => {
     expect(out?.artifactId).toBe("art-1");
     expect(out?.propertyId).toBeUndefined();
   });
+
+  it("bridges sourceId from the first arg into the mapper (whole-branch review regression)", async () => {
+    vi.mocked(pidUpsertProperty).mockResolvedValue("prop-1");
+    vi.mocked(pidUpsertArtifact).mockResolvedValue("art-1");
+    vi.mocked(pidInsertFactAssertion).mockResolvedValue("fact-1");
+    vi.mocked(pidInsertEvent).mockResolvedValue("ev-1");
+
+    // The real SourceResult from the pipeline has `.source`, not `.sourceId`,
+    // so the MapperInput's sourceId field is undefined at runtime. The
+    // recordFetchResult fix must override that with the explicit sourceId
+    // arg from the call site. We pass `sourceId: "WRONG"` on the mapper input
+    // to verify the arg wins (not the mapper input field).
+    await recordFetchResult(
+      "bhulekh",
+      { village: "X" },
+      {
+        status: "ok",
+        // @ts-expect-error — intentionally wrong; the fix must override
+        sourceId: "WRONG",
+        input: { village: "X" },
+        data: { tenants: [{ name: "Ram" }] },
+        fetchedAt: "2026-06-25T10:00:00.000Z",
+        rawArtifactHash: "a".repeat(64),
+        rawArtifactPath: "raw/bhulekh/x.html",
+      }
+    );
+
+    // pidInsertFactAssertion receives a fact whose sourceId came from the
+    // mapper. The mapper must have been called with sourceId="bhulekh",
+    // not "WRONG" and not undefined.
+    const factCall = vi.mocked(pidInsertFactAssertion).mock.calls[0]?.[0];
+    expect(factCall?.sourceId).toBe("bhulekh");
+  });
 });

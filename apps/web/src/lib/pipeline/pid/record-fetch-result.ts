@@ -34,7 +34,13 @@ export async function recordFetchResult(
   _reportId?: string
 ): Promise<RecordFetchResultOutput | null> {
   try {
-    const payload = mapSourceResultToPid(sourceResult);
+    // Bridge the seam: recordFetchResult's first arg (sourceId) is the
+    // orchestrator's call-site source name (e.g. "nominatim"). The mapper
+    // reads sourceId off the MapperInput object, but the real SourceResult
+    // carries it as `.source` (not `.sourceId`), so without this override
+    // the mapper gets sourceId=undefined and every PID row gets
+    // source_id=NULL. The spread makes the explicit arg win.
+    const payload = mapSourceResultToPid({ ...sourceResult, sourceId });
 
     // Short-circuit: nothing recordable
     if (
