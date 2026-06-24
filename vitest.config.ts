@@ -49,6 +49,7 @@ export default defineConfig({
       "apps/web/src/lib/pipeline/pid/types.test.ts",
       "apps/web/src/lib/pipeline/pid/client.test.ts",
       "apps/web/src/lib/pipeline/pid/record-fetch-result.test.ts",
+      "apps/web/src/lib/pipeline/pid/build-pattern-payload.test.ts",
       "apps/web/src/lib/pipeline/corpus.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.snapshot.test.ts",
