@@ -15,10 +15,12 @@ import {
   FactAssertionInputSchema,
   EventInputSchema,
   PropertyInputSchema,
+  PatternCandidateInputSchema,
   type SourceArtifact,
   type FactAssertionInput,
   type EventInput,
   type PropertyInput,
+  type PatternCandidateInput,
 } from "./types";
 
 // Top-level key transform: TS Zod schemas use camelCase, Postgres columns are
@@ -71,6 +73,16 @@ const CAMEL_TO_SNAKE: Record<string, string> = {
   pageNumber: "page_number",
   charStart: "char_start",
   charEnd: "char_end",
+  candidateKey: "candidate_key",
+  patternFamily: "pattern_family",
+  candidateName: "candidate_name",
+  logicDescription: "logic_description",
+  evidenceCount: "evidence_count",
+  reviewedExampleCount: "reviewed_example_count",
+  supportingEventIds: "supporting_event_ids",
+  supportingArtifactIds: "supporting_artifact_ids",
+  ruleVersion: "rule_version",
+  falsePositiveNotes: "false_positive_notes",
 };
 
 function camelToSnake<T extends Record<string, unknown>>(input: T): Record<string, unknown> {
@@ -184,4 +196,47 @@ export async function pidUpsertProperty(input: PropertyInput): Promise<string | 
       .join("|");
   }
   return singleUpsert("pid_properties", payload, "canonical_key");
+}
+
+// ── Sub-plan B: pattern candidate persistence ──────────────────────────────
+// Insert-only path: first time a detector fires on a unique subject, the
+// candidate row is created. Returns the new id, or null on any failure
+// (validation, unique conflict, network). Conflicts are intentionally not
+// surfaced here — the orchestrator (B.4) does a pre-read to decide whether
+// to insert or upsert, because singleInsert swallows Supabase error codes
+// (AD-4 of the Sub-plan B plan).
+export async function pidInsertPatternCandidate(
+  input: PatternCandidateInput,
+): Promise<string | null> {
+  const parsed = PatternCandidateInputSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn(
+      `[pid/client] pidInsertPatternCandidate validation failed: ${parsed.error.message}`,
+    );
+    return null;
+  }
+  return singleInsert(
+    "pid_pattern_candidates",
+    camelToSnake(parsed.data as unknown as Record<string, unknown>),
+  );
+}
+
+// Upsert path: repeat firings of the same (ruleId, subject) candidate bump
+// evidence_count, append supporting_event_ids, and update updated_at.
+// onConflict = "candidate_key" — the unique index from migration 006.
+export async function pidUpsertPatternCandidateByKey(
+  input: PatternCandidateInput,
+): Promise<string | null> {
+  const parsed = PatternCandidateInputSchema.safeParse(input);
+  if (!parsed.success) {
+    console.warn(
+      `[pid/client] pidUpsertPatternCandidateByKey validation failed: ${parsed.error.message}`,
+    );
+    return null;
+  }
+  return singleUpsert(
+    "pid_pattern_candidates",
+    camelToSnake(parsed.data as unknown as Record<string, unknown>),
+    "candidate_key",
+  );
 }
