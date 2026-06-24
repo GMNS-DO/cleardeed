@@ -109,3 +109,46 @@ export const PropertyInputSchema = z.object({
   metadata: z.record(z.unknown()).default({}),
 });
 export type PropertyInput = z.infer<typeof PropertyInputSchema>;
+
+// ── Sub-plan B: pattern detector writes ────────────────────────────────────
+// When a fraud pattern detector (ROR-INS-XXX) fires, we persist:
+//   1) one pid_pattern_candidates row (per unique candidateKey)
+//   2) one pid_event of eventType "pattern_detected"
+//   3) one pid_fact_assertion with predicate "pattern_fired:<ruleId>"
+//
+// candidateKey is the idempotency key: same rule firing twice on the same
+// subject (same plot/khata/owner) bumps evidence_count instead of creating
+// a duplicate row. Format: "<ruleId>:<sha256_first_16_hex_of_canonical_subject>".
+
+export const PATTERN_EVENT_TYPE = "pattern_detected" as const;
+export const PATTERN_FACT_PREDICATE_PREFIX = "pattern_fired:" as const;
+
+export const PatternCandidateStatusSchema = z.enum([
+  "RAW_SIGNAL",
+  "CANDIDATE",
+  "REVIEWED",
+  "PROBABLE",
+  "VALIDATED",
+  "REJECTED",
+]);
+export type PatternCandidateStatus = z.infer<typeof PatternCandidateStatusSchema>;
+
+export const PatternCandidateInputSchema = z.object({
+  candidateKey: z.string().min(1).max(256),
+  patternFamily: z.string().min(1),
+  candidateName: z.string().optional(),
+  logicDescription: z.string().optional(),
+  status: PatternCandidateStatusSchema.default("RAW_SIGNAL"),
+  evidenceCount: z.number().int().nonnegative().default(1),
+  reviewedExampleCount: z.number().int().nonnegative().default(0),
+  supportingEventIds: z.array(uuid).default([]),
+  supportingArtifactIds: z.array(uuid).default([]),
+  ruleVersion: z.string().min(1),
+  falsePositiveNotes: z.string().optional(),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type PatternCandidateInput = z.infer<typeof PatternCandidateInputSchema>;
+
+// Reuse the existing FactAssertionInputSchema for pattern_fired facts.
+// The convention is: predicate starts with PATTERN_FACT_PREDICATE_PREFIX and
+// value_json carries { ruleId, candidateKey, severity, panel, headline, disclosure }.
