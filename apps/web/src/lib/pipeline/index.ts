@@ -30,6 +30,10 @@ import { ecourtsFetch } from "@cleardeed/fetcher-ecourts";
 const PID_SYNTHESIS_ENABLED = process.env.PID_SYNTHESIS_ENABLED === "true";
 // PID A/B test — randomize cluster display order to measure click-through rate
 const PID_EXPERIMENT_CLUSTER_ORDER = process.env.PID_EXPERIMENT_CLUSTER_ORDER === "true";
+// PID recording — off by default per D-024/D-025. When enabled, every
+// fetcher return writes a pid_artifact + pid_fact_assertions + pid_event
+// row. Failures are logged and swallowed (non-blocking).
+const PID_RECORDING_ENABLED = process.env.PID_RECORDING_ENABLED === "true";
 import { igrEcFetch } from "@cleardeed/fetcher-igr-ec";
 import { lookupSRO as igrSroLookup } from "@cleardeed/fetcher-igr-sro";
 import { cersaiFetch } from "@cleardeed/fetcher-cersai";
@@ -63,6 +67,10 @@ import {
   type FireResult,
   type SourceId,
 } from "./contracts/fire";
+// PID recording (sub-plan A, Task A.7) — best-effort writes of every fetcher
+// result into pid_artifacts / pid_fact_assertions / pid_events. Off by
+// default. Failures are logged + swallowed; they must not break the report.
+import { recordFetchResult } from "./pid/record-fetch-result";
 
 /** Runtime set of valid SourceId values, for narrowing guard. */
 const VALID_SOURCE_IDS: ReadonlySet<string> = new Set<string>(ALL_SOURCE_IDS);
@@ -1212,6 +1220,48 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
       reportInput.synthesisInsights = allClusters;
     } else {
       console.log(`[pid/synthesis] reportId=${reportId} no_clusters`);
+    }
+  }
+
+  // PID recording (sub-plan A, Task A.7). Off by default. Each call is
+  // best-effort: a PID write failure must never break the report. The
+  // reportId is threaded into metadata so the read path can join back to
+  // the consumer report.
+  if (PID_RECORDING_ENABLED) {
+    const pidInput: Record<string, unknown> = {
+      village: input.village ?? null,
+      tahasil: input.tehsil ?? null,
+      plot: (input as { plotNo?: string }).plotNo ?? null,
+      gps_lat: (input as { gpsLat?: number }).gpsLat ?? null,
+      gps_lon: (input as { gpsLon?: number }).gpsLon ?? null,
+    };
+    if (nominatimSrc) {
+      try {
+        await recordFetchResult("nominatim", pidInput, nominatimSrc as never, reportId);
+      } catch (err) {
+        console.warn(`[pid/recording] nominatim threw: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    if (bhunakshaSrc) {
+      try {
+        await recordFetchResult("bhunaksha", pidInput, bhunakshaSrc as never, reportId);
+      } catch (err) {
+        console.warn(`[pid/recording] bhunaksha threw: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    if (bhulekhSrc) {
+      try {
+        await recordFetchResult("bhulekh", pidInput, bhulekhSrc as never, reportId);
+      } catch (err) {
+        console.warn(`[pid/recording] bhulekh threw: ${err instanceof Error ? err.message : err}`);
+      }
+    }
+    if (ecourtsSrc) {
+      try {
+        await recordFetchResult("ecourts", pidInput, ecourtsSrc as never, reportId);
+      } catch (err) {
+        console.warn(`[pid/recording] ecourts threw: ${err instanceof Error ? err.message : err}`);
+      }
     }
   }
 
