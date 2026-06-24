@@ -1,56 +1,112 @@
 /**
  * PID live smoke test. GATED on RUN_PID_SMOKE=1.
  *
- * Run: RUN_PID_SMOKE=1 pnpm vitest run qa/pid_smoke/smoke.test.ts
+ * Run: RUN_PID_SMOKE=1 PID_RECORDING_ENABLED=true \
+ *      pnpm vitest run qa/pid_smoke/smoke.test.ts
  *
- * This is the only test in the PID layer that hits the real Supabase. It
- * generates a real report on the demo plot (20.272688, 85.701271) and
- * asserts that pid_artifacts, pid_fact_assertions, and pid_events rows
- * were written. Skipped by default so CI never hits prod.
+ * This test calls `recordFetchResult` DIRECTLY with 3 crafted source-result
+ * inputs to validate the Supabase write path end-to-end (pid_property,
+ * pid_artifacts, pid_fact_assertions, pid_events). It does NOT run the
+ * fetcher pipeline (which takes 5+ minutes against production sources).
+ *
+ * Expected runtime: <5 seconds. Skipped by default so CI never hits prod.
  */
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
-import { generateReportV11 } from "../../apps/web/src/lib/pipeline/index";
+import { writeFileSync } from "node:fs";
+import { recordFetchResult } from "../../apps/web/src/lib/pipeline/pid/record-fetch-result";
+import type { MapperInput } from "../../apps/web/src/lib/pipeline/pid/mapper";
 import { supabaseAdmin } from "../../apps/web/src/lib/db";
 import {
   readPidArtifactsForReport,
 } from "../../apps/web/src/lib/pipeline/corpus";
-import { writeFileSync } from "node:fs";
 
 const ENABLED = process.env.RUN_PID_SMOKE === "1";
 const describeIf = ENABLED ? describe : describe.skip;
 
-describeIf("PID live smoke — Khordha demo plot", () => {
-  it("writes pid_artifacts + pid_fact_assertions + pid_events for a real report", async () => {
+const REPORT_BASE = {
+  village: "Mendhasala",
+  tahasil: "Bhubaneswar",
+  district: "Khordha",
+};
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function hash(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
+
+describeIf("PID live smoke — direct recordFetchResult writes", () => {
+  it("writes pid_artifacts + pid_fact_assertions + pid_events via direct calls", async () => {
     const reportId = createHash("sha256")
       .update(`smoke-${Date.now()}`)
       .digest("hex")
       .slice(0, 36);
 
     process.env.PID_RECORDING_ENABLED = "true";
-    process.env.REPORT_CREATE_TOKEN =
-      process.env.REPORT_CREATE_TOKEN ?? "smoke-token";
 
-    await generateReportV11({
-      reportId,
-      village: "Mendhasala",
-      tehsil: "Bhubaneswar",
-      tehsilValue: "2",
-      villageCode: "105",
-      searchMode: "Plot",
-      identifier: "309",
-      claimedOwnerName: "Demo Owner",
-    } as never);
+    const fetchedAt = nowIso();
 
-    // Wait for any async writes to flush (PID writes are awaited but
-    // Supabase client can buffer; 1s is plenty for the size of these rows).
+    // 1) Bhulekh — artifact + tenant fact
+    const bhulekh: MapperInput = {
+      status: "ok",
+      sourceId: "bhulekh",
+      input: { ...REPORT_BASE, plotNo: "309" },
+      data: {
+        ...REPORT_BASE,
+        plotNo: "309",
+        tenants: [{ name: "Smoke Test Owner" }],
+      },
+      fetchedAt,
+      rawArtifactHash: hash(`bhulekh-${reportId}`),
+      rawArtifactPath: `smoke/${reportId}/bhulekh.html`,
+      rawContentType: "text/html",
+      rawByteSize: 12_345,
+      rawHttpStatus: 200,
+    };
+
+    // 2) Bhunaksha — plot_number fact
+    const bhunaksha: MapperInput = {
+      status: "ok",
+      sourceId: "bhunaksha",
+      input: { ...REPORT_BASE },
+      data: {
+        ...REPORT_BASE,
+        plotNo: "309",
+      },
+      fetchedAt,
+    };
+
+    // 3) Nominatim — display_name fact
+    const nominatim: MapperInput = {
+      status: "ok",
+      sourceId: "nominatim",
+      input: { ...REPORT_BASE },
+      data: {
+        ...REPORT_BASE,
+        displayName: "Mendhasala, Odisha, India",
+      },
+      fetchedAt,
+    };
+
+    const r1 = await recordFetchResult("bhulekh", REPORT_BASE, bhulekh, reportId);
+    const r2 = await recordFetchResult("bhunaksha", REPORT_BASE, bhunaksha, reportId);
+    const r3 = await recordFetchResult("nominatim", REPORT_BASE, nominatim, reportId);
+
+    expect(r1).not.toBeNull();
+    expect(r2).not.toBeNull();
+    expect(r3).not.toBeNull();
+
+    // Wait briefly for any async flush (writes are awaited but Postgres
+    // replication / SDK buffering can add a small lag).
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Use the read path now that reportId is wired into metadata.
+    // Read-back via the production read path.
     const artifacts = await readPidArtifactsForReport(reportId);
     const artifactCount = artifacts.length;
 
-    // Facts and events are filtered by report_id metadata too.
     const supabase = supabaseAdmin();
     const { count: eventCount } = await supabase
       .from("pid_events")
@@ -69,16 +125,21 @@ describeIf("PID live smoke — Khordha demo plot", () => {
           artifactCount,
           factCount,
           eventCount,
-          ranAt: new Date().toISOString(),
+          r1: { artifactId: r1?.artifactId, factIds: r1?.factIds, eventId: r1?.eventId, propertyId: r1?.propertyId },
+          r2: { artifactId: r2?.artifactId, factIds: r2?.factIds, eventId: r2?.eventId, propertyId: r2?.propertyId },
+          r3: { artifactId: r3?.artifactId, factIds: r3?.factIds, eventId: r3?.eventId, propertyId: r3?.propertyId },
+          ranAt: fetchedAt,
         },
         null,
         2,
       ),
     );
 
-    expect(artifactCount).toBeGreaterThan(0);
-    expect(eventCount ?? 0).toBeGreaterThan(0);
-    // facts may be 0 if no fetcher produced data — only assert > 0 if bhulekh fired
-    expect(artifactCount ?? 0).toBeGreaterThan(0);
-  }, 120_000);
+    // Pid_artifacts: at least one (bhulekh had rawArtifactHash + rawArtifactPath).
+    expect(artifactCount).toBeGreaterThanOrEqual(1);
+    // Pid_events: one fetch_completed per recordFetchResult call (3 total).
+    expect(eventCount ?? 0).toBeGreaterThanOrEqual(3);
+    // Pid_fact_assertions: at minimum the bhulekh tenant fact.
+    expect(factCount ?? 0).toBeGreaterThanOrEqual(1);
+  }, 30_000);
 });
