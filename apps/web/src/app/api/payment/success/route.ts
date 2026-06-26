@@ -146,37 +146,9 @@ export async function POST(req: NextRequest) {
 
   // ── Fast path: report was pre-generated during checkout ────────────────────
   if (resolvedPreGeneratedReportId || resolvedPreGeneratedHtml) {
-    // Priority 0: pregen ran but failed — return its error, don't re-run pipeline.
-    // Avoids the 60-90s slow path when the upstream portal is the actual bottleneck.
-    if (resolvedPreGeneratedReportId) {
-      try {
-        const preResult = await getReport(resolvedPreGeneratedReportId);
-        const preReport = preResult?.report;
-        if (preReport && !isUsableBhulekhReport(preReport as Record<string, unknown>)) {
-          const errorMessage = (preReport as { errorMessage?: string | null }).errorMessage
-            ?? "Bhulekh RoR fetch did not return usable data. Please retry in a few minutes.";
-          console.warn(`[/api/payment/success] Reusing failed pregen ${resolvedPreGeneratedReportId}: ${errorMessage}`);
-          await trackEvent({
-            eventName: "payment_success",
-            reportId: resolvedPreGeneratedReportId,
-            metadata: { orderId: razorpay_order_id, reusedFailedPregen: true },
-          });
-          return NextResponse.json(
-            {
-              error: `Payment succeeded, but ${errorMessage}`,
-              reportId: resolvedPreGeneratedReportId,
-              reportUrl: buildReportUrl(resolvedPreGeneratedReportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
-              status: "failed",
-            },
-            { status: 502 }
-          );
-        }
-      } catch (err) {
-        console.warn(`[/api/payment/success] DB lookup for failed-pregen ${resolvedPreGeneratedReportId} failed:`, err);
-      }
-    }
-
-    // Priority 1: Check DB for pre-generated report
+    // Check DB for pre-generated report. If pre-gen failed (returned unusable Bhulekh
+    // data), we fall through to the slow path below to retry the pipeline — we don't
+    // return an error immediately, since retrying may succeed.
     if (resolvedPreGeneratedReportId) {
       console.info(`[/api/payment/success] Looking for pre-generated report in DB: ${resolvedPreGeneratedReportId}`);
       try {
