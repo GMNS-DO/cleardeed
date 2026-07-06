@@ -29,8 +29,9 @@ export interface CheckoutData {
   whatsapp?: string;
 }
 
-/** Create a Razorpay order for ₹1 */
+/** Create a Razorpay order for the specified tier */
 export async function createRazorpayOrder(params: {
+  tier: "standard" | "verified" | "guaranteed";
   email?: string;
   plotDescription?: string;
 }): Promise<{ orderId: string; amount: number; currency: string; receipt: string }> {

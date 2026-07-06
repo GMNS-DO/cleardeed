@@ -14,10 +14,23 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { generateReportV11 } from "@/lib/pipeline";
-import { createReport, updateReportResults, supabaseAdmin, bumpReportExpiry } from "@/lib/db";
+import {
+  bumpReportExpiry,
+  createReport,
+  getReportBhulekhStatus,
+  getReportErrorMessage,
+  getReportHtml,
+  getReportSourceSummary,
+  getReportTitle,
+  markReportPaid,
+  supabaseAdmin,
+  updateReportResults,
+  type ReportLike,
+} from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import { trackEvent } from "@/lib/track";
+import { tierFromAmountPaise } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +48,8 @@ interface CheckoutSession {
   /** T-013: auth.uid() captured at checkout time. */
   auth_uid?: string | null;
   preGeneratedReportId?: string | null;
+  preGeneratedHtml?: string | null;
+  preGeneratedTitle?: string | null;
   /** "refresh" for pay-to-refresh; absent (or anything else) for first purchase. */
   kind?: string;
   /** Set when kind === "refresh" — the report whose expires_at should be bumped. */
@@ -63,10 +78,10 @@ async function getCheckoutSession(orderId: string): Promise<CheckoutSession | nu
   }
 }
 
-function isUsableBhulekhReport(report: Record<string, unknown> | null | undefined): boolean {
-  const html = String(report?.html ?? report?.report_html ?? "");
-  const bhulekhStatus = String(report?.bhulekhStatus ?? report?.bhulekh_status ?? "");
-  const sourceSummary = report?.sourceSummary ?? report?.source_summary;
+function isUsableBhulekhReport(report: ReportLike): boolean {
+  const html = getReportHtml(report) ?? "";
+  const bhulekhStatus = getReportBhulekhStatus(report) ?? "";
+  const sourceSummary = getReportSourceSummary(report);
   const sourceSummaryText = typeof sourceSummary === "string" ? sourceSummary : JSON.stringify(sourceSummary ?? {});
 
   if (!html.trim()) return false;
@@ -177,14 +192,16 @@ export async function POST(req: NextRequest) {
     try {
       const result = await getReport(session.preGeneratedReportId);
       const report = result?.report;
-      if (report?.html && isUsableBhulekhReport(report as Record<string, unknown>)) {
-        const reportHtml = addReportAccessTokensToHtml(report.html, session.preGeneratedReportId);
+      const existingHtml = getReportHtml(report);
+      const existingTitle = getReportTitle(report) ?? "ClearDeed Report";
+      if (existingHtml && isUsableBhulekhReport(report)) {
+        const reportHtml = addReportAccessTokensToHtml(existingHtml, session.preGeneratedReportId);
         if (session.email) {
           const { sendReportEmail } = await import("@/lib/email");
           await sendReportEmail({
             to: session.email,
             reportId: session.preGeneratedReportId,
-            reportTitle: report.title ?? "ClearDeed Report",
+            reportTitle: existingTitle,
             reportHtml,
           });
         }
@@ -194,6 +211,24 @@ export async function POST(req: NextRequest) {
           reportId: session.preGeneratedReportId,
           metadata: { orderId, fastPath: true, amount: event.payload?.order?.entity?.amount ?? 0 },
         });
+        // T-014: mark report paid so the metering gate on /api/report/create
+        // sees the count move from N → N+1 after this user buys a paid tier.
+        // Idempotent — RPC refuses to downgrade or change price.
+        const orderAmount = event.payload?.order?.entity?.amount ?? 0;
+        const paidTier = tierFromAmountPaise(orderAmount);
+        if (paidTier && paidTier !== "free_preview") {
+          try {
+            await markReportPaid({
+              reportId: session.preGeneratedReportId,
+              paidTier,
+              pricePaidPaise: orderAmount,
+              paidAt: new Date().toISOString(),
+              paidOrderId: orderId,
+            });
+          } catch (markErr) {
+            console.warn("[/api/webhook/razorpay] markReportPaid failed (fast path):", markErr);
+          }
+        }
         // Funnel: report delivered to buyer (webhook path)
         await trackEvent({
           eventName: "report_delivered",
@@ -204,15 +239,31 @@ export async function POST(req: NextRequest) {
           handled: true,
           reportId: session.preGeneratedReportId,
           reportUrl: buildReportUrl(session.preGeneratedReportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
-          status: report.errorMessage ? "generated_with_error" : "generated",
+          status: getReportErrorMessage(report) ? "generated_with_error" : "generated",
           emailSent: Boolean(session.email),
         });
-      } else if (report?.html) {
+      } else if (existingHtml) {
         console.warn(`[/api/webhook/razorpay] Pre-generated report ${session.preGeneratedReportId} has unusable Bhulekh data; refusing to deliver hollow report.`);
       }
     } catch (err) {
       console.warn(`[/api/webhook/razorpay] Could not retrieve pre-generated report:`, err);
     }
+  }
+
+  if (!session.tehsil || !session.village || !session.villageCode || !session.searchMode || !session.identifier) {
+    console.error(`[/api/webhook/razorpay] Payment captured for ${orderId}, but checkout session is missing report inputs`, {
+      hasTehsil: Boolean(session.tehsil),
+      hasVillage: Boolean(session.village),
+      hasVillageCode: Boolean(session.villageCode),
+      hasSearchMode: Boolean(session.searchMode),
+      hasIdentifier: Boolean(session.identifier),
+    });
+    return NextResponse.json({
+      handled: true,
+      status: "failed",
+      emailSent: false,
+      error: "Payment captured, but checkout session was missing report inputs.",
+    });
   }
 
   // ── Create report record in DB ──────────────────────────────────────────────
@@ -239,7 +290,7 @@ export async function POST(req: NextRequest) {
     pipelineOutput = await generateReportV11({
       reportId,
       tehsil: session.tehsil,
-      tehsilValue: session.tehsilValue,
+      tehsilValue: session.tehsilValue ?? session.tehsil,
       village: session.village,
       villageCode: session.villageCode,
       searchMode: session.searchMode as "Plot" | "Khatiyan" | "Tenant",
@@ -270,6 +321,25 @@ export async function POST(req: NextRequest) {
       });
     } catch (dbError) {
       console.warn("[/api/webhook/razorpay] DB update failed:", dbError);
+    }
+
+    // T-014: slow path — mark this report as paid so the metering gate
+    // on /api/report/create sees the user has used their free preview.
+    // Same idempotency guarantee as the fast path.
+    const orderAmountSlow = event.payload?.order?.entity?.amount ?? 0;
+    const paidTierSlow = tierFromAmountPaise(orderAmountSlow);
+    if (paidTierSlow && paidTierSlow !== "free_preview") {
+      try {
+        await markReportPaid({
+          reportId,
+          paidTier: paidTierSlow,
+          pricePaidPaise: orderAmountSlow,
+          paidAt: new Date().toISOString(),
+          paidOrderId: orderId,
+        });
+      } catch (markErr) {
+        console.warn("[/api/webhook/razorpay] markReportPaid failed (slow path):", markErr);
+      }
     }
   }
 

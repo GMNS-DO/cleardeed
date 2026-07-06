@@ -12,13 +12,14 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { generateReport, generateReportV11 } from "@/lib/pipeline";
-import { createReport, updateReportResults, upsertSourceResult } from "@/lib/db";
+import { createReport, updateReportResults, upsertSourceResult, countUserPaidReports, setReportV11Inputs } from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import { trackError } from "@/lib/track";
 import { getAuthUser } from "@/lib/auth-helpers";
 import type { SourceResult } from "@cleardeed/orchestrator";
 import { validateKhordhaGPS } from "@cleardeed/schema";
+import { decideMetering } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,7 @@ interface V11Input {
   claimedOwnerName?: string;
   whatsapp?: string;
   email?: string;
+  tier?: "standard" | "verified" | "guaranteed";
 }
 
 type ReportInput = V10Input | V11Input;
@@ -56,6 +58,27 @@ export async function POST(req: NextRequest) {
   try {
     // Report creation is open for concierge launch (no token gate in launch phase)
     // Admin token is only required for /admin routes.
+
+    // T-014: metering gate. Authenticated users get FREE_PREVIEW_LIMIT_PER_USER
+    // free reports; subsequent reports must have a paid Razorpay order attached.
+    // Anonymous (no auth) users always pass — they get the default free preview
+    // and the report is created with user_id=NULL.
+    if (resolvedUserId) {
+      const paidReportsCount = await countUserPaidReports(resolvedUserId);
+      const gate = decideMetering({ userId: resolvedUserId, paidReportsCount });
+      if (gate.kind === "require_payment") {
+        return NextResponse.json(
+          {
+            error: "Payment required",
+            code: "METERING_REQUIRES_PAYMENT",
+            reason: gate.reason,
+            remainingPreviews: gate.remainingPreviews,
+            orderEndpoint: gate.orderEndpoint,
+          },
+          { status: 402 }
+        );
+      }
+    }
 
     const body = await req.json() as ReportInput;
     const isV11 = "tehsil" in body && body.tehsil && "village" in body && body.village && "identifier" in body;
@@ -83,8 +106,23 @@ export async function POST(req: NextRequest) {
         });
         reportId = dbResult.reportId;
         persistenceEnabled = true;
+
+        // T-009 follow-up (migration 020): persist V1.1 dropdown inputs on the
+        // report row so the lawyer dashboard rerun button can replay the exact
+        // tehsil/village/identifier the user picked. Without this, rerun returns
+        // V11_RERUN_UNSUPPORTED because the dropdown inputs were never stored.
+        await setReportV11Inputs({
+          reportId,
+          tehsil: v11.tehsil,
+          tehsilCode: v11.tehsilValue,
+          village: v11.village,
+          villageCode: v11.villageCode,
+          plotNo: v11.identifier,
+          searchMode: v11.searchMode,
+          tier: v11.tier,
+        });
       } catch (dbError) {
-        console.warn("[api/report/create] Supabase create failed:", dbError);
+        console.warn("[api/report/create] Supabase create or V1.1 inputs persist failed:", dbError);
       }
 
       // Run V1.1 pipeline

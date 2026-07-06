@@ -7,11 +7,11 @@
  *
  * Protected routes (require auth):
  *   - /dashboard      — buyer's own report history
- *   - /checkout/*     — pre-payment form (forces login BEFORE paywall)
  *
  * Public routes (no auth required):
  *   - /               — landing page
  *   - /login          — phone-OTP entry
+ *   - /checkout       — compatibility redirect back to the landing-page form
  *   - /report/[id]    — token URL still works (CLD-DEMO* bypass + ?token= HMAC)
  *   - /api/leads, /api/checkout, /api/payment/success, /api/webhook/razorpay
  *     — payment infrastructure must work even if session is broken
@@ -32,8 +32,7 @@ export async function middleware(request: NextRequest) {
 
   // Auth gate: redirect to /login if not authenticated.
   // The login page itself is public (handled by matcher exclusion below).
-  const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/checkout");
+  const isProtected = pathname.startsWith("/dashboard");
   if (isProtected && !user) {
     return buildLoginRedirect(request);
   }

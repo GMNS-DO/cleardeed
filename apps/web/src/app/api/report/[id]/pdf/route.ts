@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderPdf } from "@cleardeed/pdf-renderer";
-import { getReport } from "@/lib/db";
+import { getReport, getReportHtml, getReportTitle } from "@/lib/db";
 import { isReportViewAuthorized } from "@/lib/report-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-type ReportRecord = {
-  html?: string | null;
-  report_html?: string | null;
-  title?: string | null;
-  report_title?: string | null;
-};
 
 function safeFilenamePart(value: string): string {
   return value.replace(/[^a-z0-9-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "report";
@@ -33,8 +26,8 @@ export async function GET(
   }
 
   try {
-    const { report } = await getReport(id) as { report?: ReportRecord | null };
-    const html = report?.report_html ?? report?.html ?? null;
+    const { report } = await getReport(id);
+    const html = getReportHtml(report);
 
     if (!html) {
       return NextResponse.json(
@@ -44,7 +37,7 @@ export async function GET(
     }
 
     const pdfBuffer = await renderPdf({ html });
-    const title = report?.report_title ?? report?.title ?? id;
+    const title = getReportTitle(report) ?? id;
     const filename = `ClearDeed-${safeFilenamePart(title)}.pdf`;
 
     return new NextResponse(new Uint8Array(pdfBuffer), {

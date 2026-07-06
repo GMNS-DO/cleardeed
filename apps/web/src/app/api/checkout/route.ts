@@ -33,13 +33,13 @@ export async function POST(req: NextRequest) {
       {
         error: "login_required",
         message: "Sign in with your phone to continue.",
-        next: `/login?next=${encodeURIComponent("/checkout")}`,
+        next: `/login?next=${encodeURIComponent("/")}`,
       },
       { status: 401 }
     );
   }
 
-  const { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName, email, whatsapp } = body as {
+  const { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName, email, whatsapp, tier } = body as {
     orderId?: unknown;
     tehsil?: string;
     tehsilValue?: string;
@@ -50,11 +50,12 @@ export async function POST(req: NextRequest) {
     claimedOwnerName?: string;
     email?: string;
     whatsapp?: string;
+    tier?: string;
   };
 
-  if (!orderId || !tehsil || !village || !villageCode || !searchMode || !identifier) {
+  if (!orderId || !tehsil || !village || !villageCode || !searchMode || !identifier || !tier) {
     return NextResponse.json(
-      { error: "Missing required fields: orderId, tehsil, village, villageCode, searchMode, identifier" },
+      { error: "Missing required fields: orderId, tehsil, village, villageCode, searchMode, identifier, tier" },
       { status: 400 }
     );
   }
@@ -73,8 +74,11 @@ export async function POST(req: NextRequest) {
     claimedOwnerName: (claimedOwnerName as string) || undefined,
     email: (email as string) || undefined,
     whatsapp: (whatsapp as string) || undefined,
+    tier: (tier as string) || undefined,
     auth_uid: authUser?.id ?? null,
     preGeneratedReportId: (body as { preGeneratedReportId?: string }).preGeneratedReportId ?? null,
+    preGeneratedHtml: (body as { preGeneratedHtml?: string }).preGeneratedHtml ?? null,
+    preGeneratedTitle: (body as { preGeneratedTitle?: string }).preGeneratedTitle ?? null,
     preGeneratedBhunakshaPolygon: polygonRaw,
   };
 

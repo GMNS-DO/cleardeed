@@ -67,7 +67,7 @@ export async function updateSession(request: NextRequest): Promise<SessionRefres
 
 /**
  * Build a redirect response to /login with `next` carrying the original pathname + search.
- * Used by apps/web/src/middleware.ts to gate /checkout/* and /dashboard.
+ * Used by apps/web/src/middleware.ts to gate protected pages such as /dashboard.
  */
 export function buildLoginRedirect(request: NextRequest): NextResponse {
   const url = request.nextUrl.clone();
