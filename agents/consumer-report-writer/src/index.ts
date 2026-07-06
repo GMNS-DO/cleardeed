@@ -1051,6 +1051,11 @@ function deriveReportContext(input: z.infer<typeof ConsumerReportGenInputSchema>
   const bhulekhUsable = sourceStatus.bhulekh === "success" && tenants.length > 0;
   const bhunakshaUsable = sourceStatus.bhunaksha === "success";
   const gpsDisplay = formatGpsDisplay(gps);
+  const fetchedDate = new Date(data.generatedAt).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
   const plotVillage = geoFetch?.village ?? revenueRecords?.village ?? "—";
   const plotTahasil = geoFetch?.tahasil ?? "—";
