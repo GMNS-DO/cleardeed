@@ -123,6 +123,15 @@ async function runAllFetchers(
         claimedOwnerName: input.claimedOwnerName,
       })
     );
+    // Log full Bhulekh result for debugging
+    console.info("[orchestrator] Bhulekh result:", JSON.stringify({
+      status: bhulekhResult.status,
+      statusReason: bhulekhResult.statusReason,
+      error: bhulekhResult.error,
+      hasData: !!bhulekhResult.data,
+      dataKeys: bhulekhResult.data ? Object.keys(bhulekhResult.data) : [],
+      tenantsCount: (bhulekhResult.data as Record<string, unknown>)?.tenants ? ((bhulekhResult.data as Record<string, unknown>).tenants as unknown[]).length : 0,
+    }));
     recordResult(bhulekhResult);
 
     // T-049 — EOW Khordha blacklist cross-reference. Runs synchronously

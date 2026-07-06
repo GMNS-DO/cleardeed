@@ -379,4 +379,48 @@ describe("bhunaksha fetcher", () => {
       }
     );
   });
+
+  describe("DPR-LOC-001 Khordha bbox gate", () => {
+    function mockEmptyWfs() {
+      return {
+        ok: true,
+        json: () => Promise.resolve({ type: "FeatureCollection", features: [], totalFeatures: 0, numberReturned: 0 }),
+      };
+    }
+
+    it("emits gps_outside_khordha_bbox warning when GPS is outside Khordha bbox", async () => {
+      mockFetch.mockResolvedValue(mockEmptyWfs());
+      // Cuttack (lat ~20.5) is just outside Khordha's maxLat 20.4
+      const result = await bhunakshaFetch({ lat: 20.5, lon: 85.85, layer: "khurda_bhubaneswar" });
+      const codes = (result.warnings ?? []).map((w) => w.code);
+      expect(codes).toContain("gps_outside_khordha_bbox");
+    });
+
+    it("emits gps_near_khordha_boundary warning when GPS is within ~110m of bbox edge", async () => {
+      mockFetch.mockResolvedValue(mockEmptyWfs());
+      // Within 0.001 deg (~110m) of minLat 19.6
+      const result = await bhunakshaFetch({ lat: 19.6005, lon: 85.75, layer: "khurda_bhubaneswar" });
+      const codes = (result.warnings ?? []).map((w) => w.code);
+      expect(codes).toContain("gps_near_khordha_boundary");
+      expect(codes).not.toContain("gps_outside_khordha_bbox");
+    });
+
+    it("does not emit either warning when GPS is centrally in Khordha", async () => {
+      mockFetch.mockResolvedValue(mockEmptyWfs());
+      // Bhubaneswar city center
+      const result = await bhunakshaFetch({ lat: 20.27, lon: 85.84, layer: "khurda_bhubaneswar" });
+      const codes = (result.warnings ?? []).map((w) => w.code);
+      expect(codes).not.toContain("gps_outside_khordha_bbox");
+      expect(codes).not.toContain("gps_near_khordha_boundary");
+    });
+
+    it("does not apply Khordha bbox gate to a different layer (e.g. cuttack expansion)", async () => {
+      mockFetch.mockResolvedValue(mockEmptyWfs());
+      // Puri (lat ~19.8) is outside Khordha bbox but using a hypothetical puri layer
+      const result = await bhunakshaFetch({ lat: 19.8, lon: 85.85, layer: "puri_puri" });
+      const codes = (result.warnings ?? []).map((w) => w.code);
+      expect(codes).not.toContain("gps_outside_khordha_bbox");
+      expect(codes).not.toContain("gps_near_khordha_boundary");
+    });
+  });
 });

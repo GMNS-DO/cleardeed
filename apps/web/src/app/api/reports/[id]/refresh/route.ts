@@ -13,7 +13,13 @@
  * Razorpay. The client then redirects to /report/{id} on success.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, getReport, isReportExpired, type DbReport } from "@/lib/db";
+import {
+  getReport,
+  getReportExpiryFields,
+  getReportOwnerId,
+  isReportExpired,
+  supabaseAdmin,
+} from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-helpers";
 
 export const runtime = "nodejs";
@@ -58,19 +64,17 @@ export async function POST(
   // ── Sanity-check the report exists, is actually expired, and belongs to the
   //    calling user. T-013: a paid report can only be refreshed by its owner.
   try {
-    const { report } = await getReport(reportId) as {
-      report: (DbReport & { userId?: string | null; expiresAt?: string | null; revokedAt?: string | null }) | null;
-    };
+    const { report } = await getReport(reportId);
     if (!report) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
-    if (!isReportExpired(report)) {
+    if (!isReportExpired(getReportExpiryFields(report))) {
       return NextResponse.json(
         { error: "Report is still valid — no refresh needed." },
         { status: 409 }
       );
     }
-    const ownerId = report.userId ?? report.user_id ?? null;
+    const ownerId = getReportOwnerId(report);
     if (ownerId && authUser?.id !== ownerId) {
       return NextResponse.json(
         { error: "You can only refresh your own reports." },

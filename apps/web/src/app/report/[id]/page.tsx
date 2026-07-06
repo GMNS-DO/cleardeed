@@ -15,7 +15,13 @@
  */
 
 import { CONSUMER_REPORT_FIXTURE } from "@cleardeed/consumer-report-writer/fixtures/golden-path";
-import { getReport, isReportExpired } from "@/lib/db";
+import {
+  getReport,
+  getReportExpiryFields,
+  getReportHtml,
+  getReportStatus,
+  isReportExpired,
+} from "@/lib/db";
 import {
   addReportAccessTokensToHtml,
   injectReportExpiryIntoHtml,
@@ -24,6 +30,7 @@ import {
 } from "@/lib/report-access";
 import { FunnelTracker } from "@/components/FunnelTracker";
 import RefreshButtonClient from "./RefreshButtonClient";
+import ReportToolbarClient from "./ReportToolbarClient";
 
 export const dynamic = "force-dynamic";
 
@@ -45,42 +52,35 @@ export default async function ReportPage({ params, searchParams }: PageProps) {
     return <ReportUnavailable reportId={reportId} status="unauthorized" message="This report link is missing or has an invalid access token." />;
   }
 
-  return <LiveReport reportId={reportId} />;
+  return <LiveReport reportId={reportId} token={token} />;
 }
 
 // ── Live report ────────────────────────────────────────────────────────────────
 
-async function LiveReport({ reportId }: { reportId: string }) {
+async function LiveReport({ reportId, token }: { reportId: string; token: string | undefined }) {
   try {
-    const { report } = await getReport(reportId) as {
-      report?: {
-        html?: string | null;
-        status?: string | null;
-        title?: string | null;
-        errorMessage?: string | null;
-        expiresAt?: string | null;
-        revokedAt?: string | null;
-      } | null;
-    };
+    const { report } = await getReport(reportId);
+    const reportHtml = getReportHtml(report);
+    const expiry = getReportExpiryFields(report);
 
-    if (!report?.html) {
-      return <ReportUnavailable reportId={reportId} status={report?.status ?? "not_found"} />;
+    if (!reportHtml) {
+      return <ReportUnavailable reportId={reportId} status={getReportStatus(report) ?? "not_found"} />;
     }
 
     // Sprint 5: server-side expiry gate.
-    if (isReportExpired({
-      expires_at: report.expiresAt ?? null,
-      revoked_at: report.revokedAt ?? null,
-    })) {
-      return <ReportExpired reportId={reportId} expiresAt={report.expiresAt ?? null} revokedAt={report.revokedAt ?? null} />;
+    if (isReportExpired(expiry)) {
+      return <ReportExpired reportId={reportId} expiresAt={expiry.expires_at} revokedAt={expiry.revoked_at} />;
     }
 
-    const htmlWithTokens = addReportAccessTokensToHtml(report.html, reportId);
-    const htmlWithExpiry = injectReportExpiryIntoHtml(htmlWithTokens, report.expiresAt ?? null);
+    const htmlWithTokens = addReportAccessTokensToHtml(reportHtml, reportId);
+    const htmlWithExpiry = injectReportExpiryIntoHtml(htmlWithTokens, expiry.expires_at);
+    const pdfHref = `/api/report/${encodeURIComponent(reportId)}/pdf${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 
     return (
       <>
         <FunnelTracker event="report_delivered" reportId={reportId} />
+        <ReportToolbarClient reportId={reportId} pdfHref={pdfHref} />
+        <style>{`@media print { [data-testid="report-toolbar"] { display: none !important; } }`}</style>
         <div dangerouslySetInnerHTML={{ __html: htmlWithExpiry }} />
       </>
     );

@@ -55,7 +55,16 @@ vi.mock("./db", async (importOriginal) => {
   };
 });
 
-import { isReportExpired, bumpReportExpiry } from "./db";
+import {
+  bumpReportExpiry,
+  getReportErrorMessage,
+  getReportExpiryFields,
+  getReportHtml,
+  getReportOwnerId,
+  getReportStatus,
+  getReportTitle,
+  isReportExpired,
+} from "./db";
 
 describe("isReportExpired", () => {
   const NOW = new Date("2026-06-12T12:00:00Z");
@@ -82,6 +91,52 @@ describe("isReportExpired", () => {
   it("returns true when revoked_at is set, even if expires_at is in the future", () => {
     const future = new Date(NOW.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString();
     expect(isReportExpired({ expires_at: future, revoked_at: NOW.toISOString() }, NOW)).toBe(true);
+  });
+});
+
+describe("report shape helpers", () => {
+  it("reads camelCase fields returned by get_report RPC", () => {
+    const report = {
+      html: "<main>ready</main>",
+      title: "ClearDeed Report",
+      status: "complete",
+      errorMessage: null,
+      expiresAt: "2026-09-01T00:00:00.000Z",
+      revokedAt: null,
+      userId: "user_123",
+    };
+
+    expect(getReportHtml(report)).toBe("<main>ready</main>");
+    expect(getReportTitle(report)).toBe("ClearDeed Report");
+    expect(getReportStatus(report)).toBe("complete");
+    expect(getReportErrorMessage(report)).toBeNull();
+    expect(getReportExpiryFields(report)).toEqual({
+      expires_at: "2026-09-01T00:00:00.000Z",
+      revoked_at: null,
+    });
+    expect(getReportOwnerId(report)).toBe("user_123");
+  });
+
+  it("reads snake_case fields returned by direct reports table queries", () => {
+    const report = {
+      report_html: "<main>ready</main>",
+      report_title: "ClearDeed Report",
+      report_status: "complete",
+      error_message: "portal timeout",
+      expires_at: "2026-09-01T00:00:00.000Z",
+      revoked_at: "2026-07-01T00:00:00.000Z",
+      user_id: "user_123",
+    };
+
+    expect(getReportHtml(report)).toBe("<main>ready</main>");
+    expect(getReportTitle(report)).toBe("ClearDeed Report");
+    expect(getReportStatus(report)).toBe("complete");
+    expect(getReportErrorMessage(report)).toBe("portal timeout");
+    expect(getReportExpiryFields(report)).toEqual({
+      expires_at: "2026-09-01T00:00:00.000Z",
+      revoked_at: "2026-07-01T00:00:00.000Z",
+    });
+    expect(getReportOwnerId(report)).toBe("user_123");
   });
 });
 

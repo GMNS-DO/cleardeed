@@ -330,6 +330,16 @@ export async function bhunakshaFetch(
   input: BhunakshaInput
 ): Promise<z.infer<typeof BhunakshaResult>> {
   const fetchedAt = new Date().toISOString();
+
+  // DPR-LOC-001: Khordha bbox gate.
+  // Khordha district bbox (deg): lat 19.6–20.4, lon 85.6–85.9 (revenue layer khurda_bhubaneswar).
+  // Outside this bbox the WFS returns nothing — but we want a typed warning,
+  // not a silent "0 features" with the buyer left wondering.
+  const KHORDHA_BBOX = { minLat: 19.6, maxLat: 20.4, minLon: 85.6, maxLon: 85.9 };
+  const outsideKhordha = input.layer === "khurda_bhubaneswar" && (
+    input.lat < KHORDHA_BBOX.minLat || input.lat > KHORDHA_BBOX.maxLat ||
+    input.lon < KHORDHA_BBOX.minLon || input.lon > KHORDHA_BBOX.maxLon
+  );
   const { lat, lon, layer = "khurda_bhubaneswar", searchRadius = 0.001, villageName, plotNo } = input;
   const templateHash = sha256(WFS_TEMPLATE);
   const inputsTried: z.infer<typeof BhunakshaResult>["inputsTried"] = [];
@@ -386,6 +396,30 @@ export async function bhunakshaFetch(
     }
 
     const data = query.data;
+
+    if (outsideKhordha) {
+      warnings.push({
+        code: "gps_outside_khordha_bbox",
+        message: `GPS (${input.lat}, ${input.lon}) is outside the Khordha district bbox (lat 19.6–20.4, lon 85.6–85.9). V1 only covers Khordha; verify the plot is within Khordha or use a different layer.`,
+      });
+    } else if (input.layer === "khurda_bhubaneswar") {
+      // DPR-LOC-001: near-boundary check (within 100m of bbox edge).
+      // Plots near the Khordha-Cuttack or Khordha-Puri border can have ambiguous
+      // coverage; flag them for the lawyer to verify the district.
+      const NEAR_BOUNDARY_DEG = 0.001; // ~110m at 20°N
+      const distanceToNearestEdge = Math.min(
+        input.lat - KHORDHA_BBOX.minLat,
+        KHORDHA_BBOX.maxLat - input.lat,
+        input.lon - KHORDHA_BBOX.minLon,
+        KHORDHA_BBOX.maxLon - input.lon,
+      );
+      if (distanceToNearestEdge < NEAR_BOUNDARY_DEG) {
+        warnings.push({
+          code: "gps_near_khordha_boundary",
+          message: `GPS is within ~110m of the Khordha district boundary; verify the plot is administratively within Khordha before relying on this report.`,
+        });
+      }
+    }
 
     if (!data.features || data.features.length === 0) {
       return {

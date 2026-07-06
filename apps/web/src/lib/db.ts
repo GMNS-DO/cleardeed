@@ -70,6 +70,7 @@ export function supabaseAdmin(): SupabaseClient {
 export interface DbReport {
   id: string;
   user_id: string | null;
+  userId?: string | null;
   created_at: string;
   updated_at: string;
   gps_lat: number;
@@ -78,19 +79,57 @@ export interface DbReport {
   father_husband_name: string | null;
   plot_description: string | null;
   report_html: string | null;
+  html?: string | null;
   report_html_lawyer: string | null;
+  htmlLawyer?: string | null;
   report_title: string | null;
+  title?: string | null;
   report_status: string;
+  status?: string | null;
   nominatim_status: string | null;
+  nominatimStatus?: string | null;
   bhunaksha_status: string | null;
+  bhunakshaStatus?: string | null;
   bhulekh_status: string | null;
+  bhulekhStatus?: string | null;
   ecourts_status: string | null;
+  ecourtsStatus?: string | null;
   rccms_status: string | null;
+  rccmsStatus?: string | null;
   validation_findings: unknown[];
+  validationFindings?: unknown[];
   error_message: string | null;
+  errorMessage?: string | null;
   source_summary: Record<string, unknown>;
+  sourceSummary?: Record<string, unknown>;
   expires_at: string | null;
+  expiresAt?: string | null;
   revoked_at: string | null;
+  revokedAt?: string | null;
+  // Migration 019: paid tier
+  paid_tier: string | null;
+  paidTier?: string | null;
+  paid_order_id: string | null;
+  paidOrderId?: string | null;
+  price_paid_paise: number | null;
+  pricePaidPaise?: number | null;
+  paid_at: string | null;
+  paidAt?: string | null;
+  // Migration 020: V1.1 dropdown inputs
+  tehsil: string | null;
+  tehsil_code: string | null;
+  village: string | null;
+  village_code: string | null;
+  plot_no: string | null;
+  search_mode: string | null;
+  v11Inputs?: {
+    tehsil?: string | null;
+    tehsilCode?: string | null;
+    village?: string | null;
+    villageCode?: string | null;
+    plotNo?: string | null;
+    searchMode?: string | null;
+  } | null;
 }
 
 /**
@@ -103,6 +142,59 @@ export function isReportExpired(report: { expires_at: string | null; revoked_at:
   if (report.revoked_at) return true;
   if (!report.expires_at) return false;
   return new Date(report.expires_at).getTime() <= now.getTime();
+}
+
+export type ReportLike = Partial<DbReport> | null | undefined;
+
+function nullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+export function getReportHtml(report: ReportLike): string | null {
+  return nullableString(report?.html) ?? nullableString(report?.report_html);
+}
+
+export function getReportTitle(report: ReportLike): string | null {
+  return nullableString(report?.title) ?? nullableString(report?.report_title);
+}
+
+export function getReportStatus(report: ReportLike): string | null {
+  return nullableString(report?.status) ?? nullableString(report?.report_status);
+}
+
+export function getReportErrorMessage(report: ReportLike): string | null {
+  return nullableString(report?.errorMessage) ?? nullableString(report?.error_message);
+}
+
+export function getReportBhulekhStatus(report: ReportLike): string | null {
+  return nullableString(report?.bhulekhStatus) ?? nullableString(report?.bhulekh_status);
+}
+
+export function getReportSourceSummary(report: ReportLike): Record<string, unknown> | null {
+  const camel = report?.sourceSummary;
+  if (camel && typeof camel === "object" && !Array.isArray(camel)) return camel as Record<string, unknown>;
+  const snake = report?.source_summary;
+  if (snake && typeof snake === "object" && !Array.isArray(snake)) return snake as Record<string, unknown>;
+  return null;
+}
+
+export function getReportExpiresAt(report: ReportLike): string | null {
+  return nullableString(report?.expiresAt) ?? nullableString(report?.expires_at);
+}
+
+export function getReportRevokedAt(report: ReportLike): string | null {
+  return nullableString(report?.revokedAt) ?? nullableString(report?.revoked_at);
+}
+
+export function getReportExpiryFields(report: ReportLike): { expires_at: string | null; revoked_at: string | null } {
+  return {
+    expires_at: getReportExpiresAt(report),
+    revoked_at: getReportRevokedAt(report),
+  };
+}
+
+export function getReportOwnerId(report: ReportLike): string | null {
+  return nullableString(report?.userId) ?? nullableString(report?.user_id);
 }
 
 export interface CreateReportParams {
@@ -192,6 +284,39 @@ export async function createReport(params: CreateReportParams): Promise<{ report
 }
 
 /**
+ * Persist V1.1 dropdown inputs on a report row so the lawyer dashboard rerun
+ * button can replay the exact tehsil/village/identifier the user picked.
+ *
+ * Migration 020 introduced these columns + the set_v11_inputs RPC. Without
+ * persistence, the rerun route reads the report, sees null tehsil/village, and
+ * returns V11_RERUN_UNSUPPORTED.
+ */
+export async function setReportV11Inputs(params: {
+  reportId: string;
+  tehsil?: string;
+  tehsilCode?: string;
+  village?: string;
+  villageCode?: string;
+  plotNo?: string;
+  searchMode?: string;
+  tier?: string;
+}): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase.rpc("set_v11_inputs", {
+    p_report_id: params.reportId,
+    p_tehsil: params.tehsil ?? null,
+    p_tehsil_code: params.tehsilCode ?? null,
+    p_village: params.village ?? null,
+    p_village_code: params.villageCode ?? null,
+    p_plot_no: params.plotNo ?? null,
+    p_search_mode: params.searchMode ?? null,
+    p_tier: params.tier ?? null,
+  });
+
+  if (error) throw new Error(`set_v11_inputs failed: ${error.message}`);
+}
+
+/**
  * Upsert a source result for a report.
  */
 export async function upsertSourceResult(params: SourceResultParams): Promise<void> {
@@ -266,6 +391,63 @@ export async function bumpReportExpiry(reportId: string): Promise<{ expiresAt: s
     return { expiresAt: null };
   }
   return { expiresAt: (data as { expires_at?: string } | null)?.expires_at ?? null };
+}
+
+/**
+ * T-014: Mark a report as paid. Called from the Razorpay webhook after
+ * payment.captured is verified. Wraps the mark_report_paid() RPC defined
+ * in migration 019 — the RPC enforces idempotency (refuses to downgrade
+ * an already-paid tier or change price).
+ *
+ * Errors are surfaced so the webhook handler can decide whether to retry.
+ * Never silently no-ops on RPC failure.
+ */
+export async function markReportPaid(params: {
+  reportId: string;
+  paidTier: string;
+  pricePaidPaise: number;
+  paidAt: string;
+  paidOrderId: string;
+}): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase.rpc("mark_report_paid", {
+    p_report_id: params.reportId,
+    p_paid_tier: params.paidTier,
+    p_price_paid_paise: params.pricePaidPaise,
+    p_paid_at: params.paidAt,
+    p_paid_order_id: params.paidOrderId,
+  });
+
+  if (error) {
+    throw new Error(`mark_report_paid failed for ${params.reportId}: ${error.message}`);
+  }
+}
+
+/**
+ * T-014: Count paid reports for a user. Wraps the count_user_paid_reports()
+ * RPC defined in migration 019. Used by decideMetering() in the /api/report/create
+ * gate to enforce FREE_PREVIEW_LIMIT_PER_USER.
+ *
+ * Returns 0 if userId is null (anonymous requests get the default free preview
+ * without metering). Returns 0 if the RPC errors — best-effort, never blocks
+ * report creation on a count failure.
+ */
+export async function countUserPaidReports(userId: string | null): Promise<number> {
+  if (!userId) return 0;
+  try {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase.rpc("count_user_paid_reports", {
+      p_user_id: userId,
+    });
+    if (error) {
+      console.warn(`[countUserPaidReports] ${userId}: ${error.message} — returning 0`);
+      return 0;
+    }
+    return typeof data === "number" ? data : 0;
+  } catch (err) {
+    console.warn(`[countUserPaidReports] threw for ${userId}:`, err);
+    return 0;
+  }
 }
 
 /**

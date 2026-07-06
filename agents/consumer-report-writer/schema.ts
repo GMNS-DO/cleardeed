@@ -187,6 +187,11 @@ export const ConsumerReportInputSchema = z.object({
   encumbranceReasoner: EncumbranceReasonerResultSchema.nullable(),
   regulatoryScreener: RegulatoryFlagsReportSchema.nullable(),
 
+  // Per-source status (mirrors orchestrator output; read by the renderer to
+  // gate copy on whether each source succeeded). Matches the runtime
+  // ConsumerReportGenInputSchema in mapper.ts.
+  sourceStatus: z.record(z.string()).optional().default({}),
+
   // Validation
   validationFindings: z.array(ValidationFindingSchema),
 

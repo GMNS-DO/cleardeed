@@ -156,6 +156,17 @@ export const CONSUMER_REPORT_FIXTURE: ConsumerReportInput = {
       "Regulatory overlays were not checked in this fixture; manual verification is required for forest, PESA, CRZ, airport, archaeological, and town-planning restrictions.",
   },
 
+  // Source status (mimics orchestrator output)
+  sourceStatus: {
+    nominatim: "success",
+    bhunaksha: "success",
+    bhulekh: "success",
+    ecourts: "partial",
+    rccms: "failed",
+    bda: "success",
+    igrEc: "failed",
+  },
+
   // Validation findings
   validationFindings: [
     {

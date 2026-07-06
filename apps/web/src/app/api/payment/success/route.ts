@@ -20,7 +20,19 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { generateReportV11 } from "@/lib/pipeline";
-import { createReport, updateReportResults, getReport, supabaseAdmin } from "@/lib/db";
+import {
+  createReport,
+  getReport,
+  getReportBhulekhStatus,
+  getReportErrorMessage,
+  getReportHtml,
+  getReportSourceSummary,
+  getReportTitle,
+  setReportV11Inputs,
+  supabaseAdmin,
+  updateReportResults,
+  type ReportLike,
+} from "@/lib/db";
 import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import { trackEvent } from "@/lib/track";
@@ -40,6 +52,7 @@ interface CheckoutSession {
   claimedOwnerName?: string;
   email?: string;
   whatsapp?: string;
+  tier?: "standard" | "verified" | "guaranteed";
   /** T-013: auth.uid() captured at checkout time. */
   auth_uid?: string | null;
   preGeneratedReportId?: string | null;
@@ -69,10 +82,10 @@ async function getCheckoutSession(orderId?: string): Promise<CheckoutSession | n
   }
 }
 
-function isUsableBhulekhReport(report: Record<string, unknown> | null | undefined): boolean {
-  const html = String(report?.html ?? report?.report_html ?? "");
-  const bhulekhStatus = String(report?.bhulekhStatus ?? report?.bhulekh_status ?? "");
-  const sourceSummary = report?.sourceSummary ?? report?.source_summary;
+function isUsableBhulekhReport(report: ReportLike): boolean {
+  const html = getReportHtml(report) ?? "";
+  const bhulekhStatus = getReportBhulekhStatus(report) ?? "";
+  const sourceSummary = getReportSourceSummary(report);
   const sourceSummaryText = typeof sourceSummary === "string" ? sourceSummary : JSON.stringify(sourceSummary ?? {});
 
   if (!html.trim()) return false;
@@ -102,6 +115,7 @@ export async function POST(req: NextRequest) {
     identifier,
     claimedOwnerName,
     email,
+    tier,
     preGeneratedReportId,
   } = body;
 
@@ -133,6 +147,7 @@ export async function POST(req: NextRequest) {
   const resolvedIdentifier = identifier || checkoutSession?.identifier || "";
   const resolvedClaimedOwnerName = claimedOwnerName || checkoutSession?.claimedOwnerName || undefined;
   const resolvedEmail = email || checkoutSession?.email || undefined;
+  const resolvedTier = (tier as string) || checkoutSession?.tier || undefined;
   const resolvedPreGeneratedReportId = preGeneratedReportId || checkoutSession?.preGeneratedReportId || undefined;
   const resolvedPreGeneratedHtml = checkoutSession?.preGeneratedHtml || undefined;
 
@@ -146,59 +161,33 @@ export async function POST(req: NextRequest) {
 
   // ── Fast path: report was pre-generated during checkout ────────────────────
   if (resolvedPreGeneratedReportId || resolvedPreGeneratedHtml) {
-    // Priority 0: pregen ran but failed — return its error, don't re-run pipeline.
-    // Avoids the 60-90s slow path when the upstream portal is the actual bottleneck.
-    if (resolvedPreGeneratedReportId) {
-      try {
-        const preResult = await getReport(resolvedPreGeneratedReportId);
-        const preReport = preResult?.report;
-        if (preReport && !isUsableBhulekhReport(preReport as Record<string, unknown>)) {
-          const errorMessage = (preReport as { errorMessage?: string | null }).errorMessage
-            ?? "Bhulekh RoR fetch did not return usable data. Please retry in a few minutes.";
-          console.warn(`[/api/payment/success] Reusing failed pregen ${resolvedPreGeneratedReportId}: ${errorMessage}`);
-          await trackEvent({
-            eventName: "payment_success",
-            reportId: resolvedPreGeneratedReportId,
-            metadata: { orderId: razorpay_order_id, reusedFailedPregen: true },
-          });
-          return NextResponse.json(
-            {
-              error: `Payment succeeded, but ${errorMessage}`,
-              reportId: resolvedPreGeneratedReportId,
-              reportUrl: buildReportUrl(resolvedPreGeneratedReportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
-              status: "failed",
-            },
-            { status: 502 }
-          );
-        }
-      } catch (err) {
-        console.warn(`[/api/payment/success] DB lookup for failed-pregen ${resolvedPreGeneratedReportId} failed:`, err);
-      }
-    }
-
-    // Priority 1: Check DB for pre-generated report
+    // Check DB for pre-generated report. If pre-gen failed (returned unusable Bhulekh
+    // data), we fall through to the slow path below to retry the pipeline — we don't
+    // return an error immediately, since retrying may succeed.
     if (resolvedPreGeneratedReportId) {
       console.info(`[/api/payment/success] Looking for pre-generated report in DB: ${resolvedPreGeneratedReportId}`);
       try {
         const result = await getReport(resolvedPreGeneratedReportId);
         const report = result?.report;
-        const hasUsableHtml = report?.html && isUsableBhulekhReport(report as Record<string, unknown>);
+        const existingHtml = getReportHtml(report);
+        const existingTitle = getReportTitle(report) ?? "ClearDeed Report";
+        const hasUsableHtml = Boolean(existingHtml && isUsableBhulekhReport(report));
         console.info(`[/api/payment/success] DB report:`, report ? {
-          hasHtml: Boolean(report.html),
-          htmlLength: (report.html as string)?.length ?? 0,
+          hasHtml: Boolean(existingHtml),
+          htmlLength: existingHtml?.length ?? 0,
           isUsable: hasUsableHtml,
-          title: report.title,
+          title: existingTitle,
         } : "null");
 
-        if (hasUsableHtml) {
+        if (hasUsableHtml && existingHtml) {
           console.info(`[/api/payment/success] Using pre-generated report from DB ${resolvedPreGeneratedReportId}`);
-          const preGeneratedHtml = addReportAccessTokensToHtml(report.html, resolvedPreGeneratedReportId);
+          const preGeneratedHtml = addReportAccessTokensToHtml(existingHtml, resolvedPreGeneratedReportId);
           let emailSent = false;
           if (resolvedEmail) {
             const emailResult = await sendReportEmail({
               to: resolvedEmail,
               reportId: resolvedPreGeneratedReportId,
-              reportTitle: report.title ?? "ClearDeed Report",
+              reportTitle: existingTitle,
               reportHtml: preGeneratedHtml,
             });
             emailSent = emailResult.success;
@@ -218,13 +207,13 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             reportId: resolvedPreGeneratedReportId,
             reportUrl: buildReportUrl(resolvedPreGeneratedReportId, process.env.CLEARDEED_BASE_URL ?? req.nextUrl.origin),
-            title: report.title ?? "ClearDeed Report",
+            title: existingTitle,
             html: preGeneratedHtml,
             emailSent,
-            status: report.errorMessage ? "generated_with_error" : "generated",
+            status: getReportErrorMessage(report) ? "generated_with_error" : "generated",
             bhunakshaPolygon: checkoutSession?.preGeneratedBhunakshaPolygon ?? null,
           });
-        } else if (report?.html) {
+        } else if (existingHtml) {
           console.warn(`[/api/payment/success] DB report ${resolvedPreGeneratedReportId} has no usable Bhulekh data`);
         }
       } catch (err) {
@@ -325,6 +314,17 @@ export async function POST(req: NextRequest) {
         validationFindings: pipelineOutput?.validationFindings,
         sourceSummary: pipelineOutput?.sourceSummary,
         errorMessage: reportError ?? undefined,
+      });
+      // Persist V1.1 dropdown inputs and paid tier on the report row
+      await setReportV11Inputs({
+        reportId,
+        tehsil: resolvedTehsil,
+        tehsilCode: resolvedTehsilValue,
+        village: resolvedVillage,
+        villageCode: resolvedVillageCode,
+        plotNo: resolvedIdentifier,
+        searchMode: resolvedSearchMode,
+        tier: resolvedTier,
       });
     } catch (dbError) {
       console.warn("[/api/payment/success] DB update failed:", dbError);

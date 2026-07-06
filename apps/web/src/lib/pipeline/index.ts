@@ -577,6 +577,16 @@ export async function generateReportV11(input: V11PipelineInput): Promise<V11Pip
 
   if (bhulekhSrc?.status !== "success" || !bhulekhData?.tenants?.length) {
     const reason = bhulekhSrc?.statusReason ?? bhulekhSrc?.error ?? bhulekhSrc?.status ?? "unknown";
+    // Log full orchestrator output for debugging
+    console.error("[pipeline] Bhulekh failed:", JSON.stringify({
+      input: { tehsil: input.tehsil, tehsilCode: input.tehsilValue, village: input.village, villageCode: input.villageCode, searchMode: input.searchMode, identifier: input.identifier },
+      bhulekhStatus: bhulekhSrc?.status,
+      bhulekhStatusReason: bhulekhSrc?.statusReason,
+      bhulekhError: bhulekhSrc?.error,
+      hasData: !!bhulekhSrc?.data,
+      dataKeys: bhulekhSrc?.data ? Object.keys(bhulekhSrc.data) : [],
+      allSources: orchestratorOutput.sources.map(s => ({ source: s.source, status: s.status, statusReason: s.statusReason })),
+    }, null, 2));
     throw new Error(`Bhulekh RoR fetch did not return usable owner/plot records: ${reason}`);
   }
 

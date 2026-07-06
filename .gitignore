@@ -9,3 +9,11 @@ build/
 .vercel
 .turbo
 .env*.local
+
+# Transient / generated (added during branch landing 2026-07-06)
+.worktrees/
+**/.temp/
+supabase/.temp/
+cookies.txt
+*.traineddata
+*.tsbuildinfo

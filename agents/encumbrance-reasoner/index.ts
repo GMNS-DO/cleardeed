@@ -6,6 +6,7 @@
  *
  * Future: User-uploaded EC review, automatic encumbrance search via IGR API.
  */
+import { computeEcFeeRs, FEE_TABLE, feeLine } from "./fee-schedule";
 
 export interface PlotIdentifier {
   district: string;
@@ -81,7 +82,7 @@ export function reasonEncumbrance(input: { plotIdentifier: PlotIdentifier }): En
     ` - Identity proof (Aadhaar/PAN)`,
     ` - Property details (Khata No, Plot No, Village, Tahasil, District)`,
     ` - Copy of previous registered deed (if available)`,
-    ` - Government fee (typically ₹100 - ₹500 depending on search period and pages)`,
+    ` - Government fee: ${feeLine("IGRSL_EC_FEE_PER_13Y")} (covers first 13 years) + ${feeLine("IGRSL_EC_FEE_PER_EXTRA_YEAR")} beyond. For a 30-year search the total is Rs. ${computeEcFeeRs(30)}.`,
     `Confirm and pay the current government fee shown on the portal or at the Sub-Registrar office`,
     `Download the Encumbrance Certificate for the last 30 years`,
     `Review the EC for: prior transfers, mortgages, liens, court attachments, pending mutations`,

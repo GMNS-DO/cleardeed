@@ -5,6 +5,7 @@ import { KHRDHA_TEHSIL_OPTIONS } from "@/lib/khordha-location";
 import { fetchVillages, searchVillages, type Village } from "@/lib/villages";
 import { createRazorpayOrder } from "@/lib/payment";
 import { MapboxBoundaryMap } from "@/components/MapboxBoundaryMap";
+import { getSupabaseBrowserAuth } from "@/lib/supabase/browser";
 
 type SearchMode = "Plot" | "Khatiyan" | "Tenant";
 type FormState = "form" | "ordering" | "paying" | "generating" | "success" | "error";
@@ -18,9 +19,12 @@ interface FormData {
   sellerName: string;
   whatsapp: string;
   email: string;
+  tier: "standard" | "verified" | "guaranteed";
 }
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
+const CHECKOUT_DRAFT_KEY = "cleardeed:checkout-draft:v1";
+const CHECKOUT_DRAFT_MAX_AGE_MS = 30 * 60 * 1000;
 
 const TEHSIL_OPTIONS = KHRDHA_TEHSIL_OPTIONS.map((t) => ({
   value: t.bhulekh_value,
@@ -45,6 +49,14 @@ const SEARCH_HINTS: Record<SearchMode, string> = {
   Khatiyan: "Khatiyan/khata number from RoR or mutation records",
   Tenant: "Tenant name as it appears in Bhulekh RoR records",
 };
+
+function isSearchMode(value: unknown): value is SearchMode {
+  return value === "Plot" || value === "Khatiyan" || value === "Tenant";
+}
+
+function isTier(value: unknown): value is FormData["tier"] {
+  return value === "standard" || value === "verified" || value === "guaranteed";
+}
 
 // Load Razorpay script dynamically
 function loadRazorpayScript(): Promise<boolean> {
@@ -84,6 +96,7 @@ export function BhulekhInputForm() {
     sellerName: "",
     whatsapp: "",
     email: "",
+    tier: "standard",
   });
 
   const preGeneratedReportIdRef = useRef<string | null>(null);
@@ -94,6 +107,34 @@ export function BhulekhInputForm() {
     loadRazorpayScript().then((loaded) => {
       razorpayLoaded.current = loaded;
     });
+  }, []);
+
+  // Restore a checkout attempt after the buyer completes phone OTP login.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as { form?: Partial<FormData>; step?: number; savedAt?: number };
+      sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+      if (!draft.savedAt || Date.now() - draft.savedAt > CHECKOUT_DRAFT_MAX_AGE_MS || !draft.form) return;
+      const draftForm = draft.form;
+      setForm((current) => ({
+        ...current,
+        tehsilValue: typeof draftForm.tehsilValue === "string" ? draftForm.tehsilValue : current.tehsilValue,
+        village: typeof draftForm.village === "string" ? draftForm.village : current.village,
+        villageCode: typeof draftForm.villageCode === "string" ? draftForm.villageCode : current.villageCode,
+        searchMode: isSearchMode(draftForm.searchMode) ? draftForm.searchMode : current.searchMode,
+        identifier: typeof draftForm.identifier === "string" ? draftForm.identifier : current.identifier,
+        sellerName: typeof draftForm.sellerName === "string" ? draftForm.sellerName : current.sellerName,
+        whatsapp: typeof draftForm.whatsapp === "string" ? draftForm.whatsapp : current.whatsapp,
+        email: typeof draftForm.email === "string" ? draftForm.email : current.email,
+        tier: isTier(draftForm.tier) ? draftForm.tier : current.tier,
+      }));
+      setStep(draft.step === 2 || draft.step === 3 ? draft.step : 1);
+      setVillageQuery("");
+    } catch {
+      sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    }
   }, []);
 
   // Load the village directory once on mount.
@@ -137,7 +178,7 @@ export function BhulekhInputForm() {
     if (!form.email.trim()) return false;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   }, [form.email]);
-  const canCheckout = Boolean(canAdvanceStep3 && emailValid);
+  const canCheckout = Boolean(canAdvanceStep3 && emailValid && form.tier);
 
   const selectedTehsilLabel = useMemo(
     () => TEHSIL_OPTIONS.find((t) => t.value === form.tehsilValue)?.name_en ?? "",
@@ -147,8 +188,29 @@ export function BhulekhInputForm() {
   const handlePay = useCallback(async () => {
     if (!canCheckout || formState === "ordering" || formState === "paying" || formState === "generating") return;
 
-    setFormState("ordering");
     setErrorMsg(null);
+
+    try {
+      const supabase = getSupabaseBrowserAuth();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        sessionStorage.setItem(
+          CHECKOUT_DRAFT_KEY,
+          JSON.stringify({ form, step, savedAt: Date.now() })
+        );
+        window.location.href = `/login?next=${encodeURIComponent("/")}`;
+        return;
+      }
+    } catch {
+      sessionStorage.setItem(
+        CHECKOUT_DRAFT_KEY,
+        JSON.stringify({ form, step, savedAt: Date.now() })
+      );
+      window.location.href = `/login?next=${encodeURIComponent("/")}`;
+      return;
+    }
+
+    setFormState("ordering");
 
     // Ensure Razorpay script is loaded
     if (!razorpayLoaded.current) {
@@ -180,6 +242,7 @@ export function BhulekhInputForm() {
           identifier: form.identifier,
           claimedOwnerName: form.sellerName || undefined,
           email: form.email,
+          tier: form.tier,
         }),
       }).then(async (r) => {
         const data = await r.json() as {
@@ -213,6 +276,7 @@ export function BhulekhInputForm() {
       // Step 1: Create Razorpay order in parallel with pre-gen. This is
       // typically <500ms — the gating step for opening the modal.
       const orderRes = await createRazorpayOrder({
+        tier: form.tier,
         email: form.email,
         plotDescription: `${form.village} · ${form.identifier}`,
       });
@@ -232,6 +296,7 @@ export function BhulekhInputForm() {
         claimedOwnerName: form.sellerName || undefined,
         email: form.email,
         whatsapp: form.whatsapp || undefined,
+        tier: form.tier,
         preGeneratedReportId: null, // patched below when pre-gen finishes
         preGeneratedHtml: null,
         preGeneratedTitle: null,
@@ -302,7 +367,7 @@ export function BhulekhInputForm() {
 
       const rzp = new Razorpay({
         key: RAZORPAY_KEY_ID,
-        amount: "100", // ₹1 in paise
+        amount: orderRes.amount.toString(),
         currency: "INR",
         name: "ClearDeed",
         description: `Property report — ${form.village} · Plot ${form.identifier}`,
@@ -358,7 +423,15 @@ export function BhulekhInputForm() {
                 preGeneratedReportId: resolvedPreGenerated?.reportId ?? undefined,
               }),
             });
-            const data = await result.json() as { reportId?: string; title?: string; html?: string; emailSent?: boolean; error?: string; bhunakshaPolygon?: number[][][] | null };
+            const data = await result.json() as {
+              reportId?: string;
+              reportUrl?: string | null;
+              title?: string;
+              html?: string;
+              emailSent?: boolean;
+              error?: string;
+              bhunakshaPolygon?: number[][][] | null;
+            };
             console.info("[BhulekhInputForm] payment/success bhunakshaPolygon in response:", data.bhunakshaPolygon != null ? `found (${data.bhunakshaPolygon.length} rings)` : "NULL");
             const preGeneratedBhunakshaPolygon = null;
             console.info("[BhulekhInputForm] preGeneratedBhunakshaPolygon from pregen:", preGeneratedBhunakshaPolygon != null ? `found` : "NULL");
@@ -374,20 +447,23 @@ export function BhulekhInputForm() {
               setFormState("error");
               return;
             }
-            setReportData({
-              reportId: data.reportId ?? "",
-              title: data.title ?? "",
-              html: data.html ?? "",
-              emailSent: data.emailSent ?? false,
-              bhunakshaPolygon: data.bhunakshaPolygon ?? null,
-            });
+
+            if (!data.reportId) {
+              setErrorMsg("Payment succeeded, but the report ID was missing. Email us at support@cleardeed.in and we will recover it.");
+              setFormState("error");
+              return;
+            }
+
+            // Redirect to the server-minted report URL so production access
+            // tokens are preserved. The fallback is for local/dev only.
+            const reportUrl = data.reportUrl || `/report/${encodeURIComponent(data.reportId)}`;
+            window.location.href = reportUrl;
           } catch (e) {
             console.warn("[BhulekhInputForm] Payment success callback failed:", e);
             setErrorMsg("Payment succeeded, but report generation did not complete. Email us at support@cleardeed.in and we will recover it.");
             setFormState("error");
             return;
           }
-          setFormState("success");
         },
       });
 
@@ -405,7 +481,7 @@ export function BhulekhInputForm() {
       setErrorMsg(msg);
       setFormState("error");
     }
-  }, [form, selectedTehsilLabel, canCheckout, formState]);
+  }, [form, step, selectedTehsilLabel, canCheckout, formState]);
 
   // ── Success / Report state ───────────────────────────────────────────────
   if (formState === "success" || formState === "generating") {
@@ -687,6 +763,54 @@ export function BhulekhInputForm() {
             {selectedTehsilLabel} / <strong className="text-[#17231d]">{form.village}</strong> ·{" "}
             {SEARCH_LABELS[form.searchMode]}{" "}
             <strong className="text-[#17231d]">{form.identifier}</strong>
+          </div>
+
+          {/* Tier Selection */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-[#17231d]">
+              Report type <span className="text-[#c0392b]">*</span>
+            </label>
+            <div className="flex flex-col gap-2">
+              {([
+                { key: "standard", label: "Standard", price: "₹699", badge: null },
+                { key: "verified", label: "Verified", price: "₹1,999", badge: "Popular" },
+                { key: "guaranteed", label: "Guaranteed", price: "₹4,999", badge: "Best value" },
+              ] as const).map(({ key, label, price, badge }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, tier: key }))}
+                  className={`flex items-center justify-between rounded border px-3 py-2.5 text-left text-sm transition-colors ${
+                    form.tier === key
+                      ? "border-[#1d6f5b] bg-[#f0f7f4]"
+                      : "border-[#d9ddd4] bg-white hover:border-[#1d6f5b] hover:bg-[#f7f7f2]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                      form.tier === key ? "border-[#1d6f5b] bg-[#1d6f5b]" : "border-[#d9ddd4]"
+                    }`}>
+                      {form.tier === key && (
+                        <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-[#17231d]">{label}</span>
+                      {badge && (
+                        <span className={`ml-2 rounded px-1.5 py-0.5 text-xs font-medium ${
+                          key === "verified"
+                            ? "bg-[#1d6f5b] text-white"
+                            : "bg-[#8a5f1d] text-white"
+                        }`}>
+                          {badge}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="font-bold text-[#17231d]">{price}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>

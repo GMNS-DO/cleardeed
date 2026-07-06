@@ -6,19 +6,18 @@
  * via the standard /api/payment/success flow.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getReport } from "@/lib/db";
+import { getReport, getReportErrorMessage, getReportHtml, getReportStatus, getReportTitle } from "@/lib/db";
 import { isReportViewAuthorized } from "@/lib/report-access";
 
 export const dynamic = "force-dynamic";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ token?: string }>;
 }
 
-export async function GET(req: NextRequest, { params, searchParams }: RouteParams) {
+export async function GET(req: NextRequest, { params }: RouteParams) {
   const { id: reportId } = await params;
-  const { token } = await searchParams;
+  const token = req.nextUrl.searchParams.get("token");
 
   if (!isReportViewAuthorized(reportId, token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,10 +27,10 @@ export async function GET(req: NextRequest, { params, searchParams }: RouteParam
     const result = await getReport(reportId);
     const report = result?.report;
     return NextResponse.json({
-      html: report?.html ?? null,
-      title: report?.title ?? null,
-      status: report?.status ?? null,
-      errorMessage: report?.errorMessage ?? null,
+      html: getReportHtml(report),
+      title: getReportTitle(report),
+      status: getReportStatus(report),
+      errorMessage: getReportErrorMessage(report),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

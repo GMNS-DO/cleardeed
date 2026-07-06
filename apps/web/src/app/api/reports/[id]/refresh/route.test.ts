@@ -24,6 +24,11 @@ vi.mock("../../../../../lib/db", () => ({
   // We mock getReport and isReportExpired; the supabase admin client is mocked
   // separately for the upsert call.
   getReport: (...args: unknown[]) => getReportMock(...args),
+  getReportExpiryFields: (report: { expiresAt?: string | null; expires_at?: string | null; revokedAt?: string | null; revoked_at?: string | null }) => ({
+    expires_at: report.expiresAt ?? report.expires_at ?? null,
+    revoked_at: report.revokedAt ?? report.revoked_at ?? null,
+  }),
+  getReportOwnerId: (report: { userId?: string | null; user_id?: string | null }) => report.userId ?? report.user_id ?? null,
   isReportExpired: (report: { expires_at: string | null; revoked_at: string | null }) => {
     if (report.revoked_at) return true;
     if (!report.expires_at) return false;
@@ -152,5 +157,30 @@ describe("POST /api/reports/:id/refresh", () => {
     const stored = supabaseUpsertMock.mock.calls[0][0];
     expect(stored.session_data).toEqual({ kind: "refresh", reportId: "rep_expired", auth_uid: "user-test" });
     expect(stored.expires_at).toBeTruthy();
+  });
+
+  it("treats camelCase expiresAt from get_report RPC as expired", async () => {
+    const past = new Date(Date.now() - 1000).toISOString();
+    getReportMock.mockResolvedValue({
+      report: { id: "rep_expired_rpc", userId: "user-test", expiresAt: past, revokedAt: null, html: "<p>x</p>", status: "complete" },
+    });
+
+    global.fetch = vi.fn(async (url) => {
+      if (String(url).includes("api.razorpay.com/v1/orders")) {
+        return new Response(
+          JSON.stringify({ id: "order_rpc123", amount: 29900, currency: "INR", status: "created" }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return new Response("not found", { status: 404 });
+    }) as typeof fetch;
+
+    const req = new NextRequest("http://localhost/api/reports/rep_expired_rpc/refresh", { method: "POST" });
+    const res = await POST(req, { params: Promise.resolve({ id: "rep_expired_rpc" }) });
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.orderId).toBe("order_rpc123");
+    expect(body.reportId).toBe("rep_expired_rpc");
   });
 });
