@@ -49,8 +49,8 @@ const BHULEKH_URL = "https://bhulekh.ori.nic.in";
 const ROR_VIEW_URL = `${BHULEKH_URL}/RoRView.aspx`;
 const ROR_REPORT_URL = `${BHULEKH_URL}/SRoRFront_Uni.aspx`;
 const ROR_BACK_URL = `${BHULEKH_URL}/SRoRBack_Uni.aspx`;
-const TIMEOUT_MS = 30_000;
-const SCREENSHOT_TIMEOUT_MS = 15_000;
+const TIMEOUT_MS = 60_000; // Increased from 30s to 60s
+const SCREENSHOT_TIMEOUT_MS = 30_000; // Increased from 15s to 30s
 const PARSER_VERSION = "bhulekh-ror-html-v3";
 const MAX_ATTEMPTS = 3;
 
@@ -226,6 +226,7 @@ class BhulekhSession {
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "*/*",
         "Accept-Language": "en-US,en;q=0.9",
+        ...(this.cookies.length > 0 ? { "Cookie": this.buildCookieHeader() } : {}),
         ...(init.headers ?? {}),
       },
       credentials: "omit",
@@ -298,6 +299,31 @@ class BhulekhSession {
 
     // Extract hidden fields from current page
     this.extractHiddenFields(res.text);
+  }
+
+  /**
+   * Re-bootstrap the session when it expires or returns errors.
+   * Resets cookies and hidden fields, then re-initializes.
+   */
+  async rebootstrap(): Promise<void> {
+    console.log("[BhulekhSession] Session expired, re-bootstrapping...");
+    this.cookies = [];
+    this.hiddenFields = {};
+    await this.bootstrap();
+  }
+
+  /**
+   * Check if the response indicates session expiry and needs re-bootstrap.
+   */
+  isSessionExpired(text: string, headers: Headers): boolean {
+    return (
+      text.includes("BhulekhError.aspx") ||
+      text.includes("Session has expired") ||
+      text.includes("session has been expired") ||
+      headers.get("location")?.includes("BhulekhError") ||
+      headers.get("location")?.includes("Session") ||
+      false
+    );
   }
 
   /**
@@ -890,13 +916,33 @@ export async function fetch(input: {
         console.log("[bhulekh] Retrying with a fresh browser session...");
       }
       const useFreshBrowser = input.previewOnly || isServerlessBrowserRuntime();
-      const browser = useFreshBrowser ? await launchFreshBrowser() : await getBrowser();
+      let browser: Browser;
+      try {
+        browser = useFreshBrowser ? await launchFreshBrowser() : await getBrowser();
+      } catch (browserError) {
+        const errMsg = browserError instanceof Error ? browserError.message : String(browserError);
+        console.error("[bhulekh] Browser launch failed:", errMsg);
+        throw Object.assign(
+          new Error(`Browser launch failed: ${errMsg}`),
+          { code: "BROWSER_LAUNCH_FAILED", originalError: browserError }
+        );
+      }
       browserToClose = useFreshBrowser ? browser : null;
       browserPage = await browser.newPage();
       await browserPage.setExtraHTTPHeaders({
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
       });
-      await browserPage.goto(ROR_VIEW_URL, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+      try {
+        await browserPage.goto(ROR_VIEW_URL, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+      } catch (navError) {
+        const errMsg = navError instanceof Error ? navError.message : String(navError);
+        console.error("[bhulekh] Navigation failed:", errMsg);
+        await browser.close().catch(() => {});
+        throw Object.assign(
+          new Error(`Navigation to Bhulekh failed: ${errMsg}`),
+          { code: "NAVIGATION_FAILED", originalError: navError }
+        );
+      }
       const currentUrl = browserPage.url();
       console.log("[bhulekh] Initial URL:", currentUrl);
       if (currentUrl.includes("BhulekhError.aspx")) {
@@ -1060,10 +1106,24 @@ export async function fetch(input: {
     return retryResult.value;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorType = err instanceof Error ? err.constructor.name : typeof err;
+    const errorCode = (err as { code?: string }).code;
     const retryMeta = (err as { attempts?: RetryAttemptRecord[] }).attempts;
+
+    // Add debug context for production troubleshooting
+    const debugContext = {
+      errorType,
+      errorCode,
+      attempts: retryMeta?.length ?? maxAttempts,
+      lastInputs: inputsTried.slice(-1),
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("[BHULEKH-ERROR]", JSON.stringify(debugContext));
+
     return buildFailedResult(
       fetchedAt,
-      `Bhulekh fetch failed: ${errorMessage}`,
+      `Bhulekh fetch failed: ${errorMessage}${errorCode ? ` (${errorCode})` : ''}`,
       resolvedVillageInfo?.english ?? input.village,
       {
         attempts: retryMeta?.length ?? maxAttempts,
@@ -1435,10 +1495,12 @@ function isRetryableBhulekhError(error: unknown): boolean {
   if (code && ["PLOT_NOT_FOUND", "KHATIYAN_NOT_FOUND"].includes(code)) {
     return false;
   }
-  if (code && ["VILLAGE_DROPDOWN_EMPTY", "PLOT_DROPDOWN_EMPTY"].includes(code)) {
+  // Retry on infrastructure/transient errors
+  if (code && ["BROWSER_LAUNCH_FAILED", "NAVIGATION_FAILED", "VILLAGE_DROPDOWN_EMPTY", "PLOT_DROPDOWN_EMPTY"].includes(code)) {
     return true;
   }
-  return /EVENTVALIDATION|TIMEOUT|fetch failed|network|socket|ECONNRESET|ETIMEDOUT/i.test(message);
+  // Retry on browser/timeout/network errors
+  return /BROWSER|CHROMIUM|EXECUTABLE|PLAYWRIGHT|TIMEOUT|TIMED OUT|fetch failed|network|socket|ECONNRESET|ETIMEDOUT|EVENTTARGET|NET::|navigation/i.test(message);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
