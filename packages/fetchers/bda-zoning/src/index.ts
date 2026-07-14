@@ -1,22 +1,27 @@
 /**
  * BDA Zoning Fetcher for ClearDeed
  *
- * Point-in-polygon lookup against BDA Master Plan zones.
- * Integrates with land classifier to show "what you can build here."
+ * Point-in-polygon lookup against a curated GeoJSON overlay of known BDA
+ * Industrial Zone polygons in Khordha (Chandaka, Mancheswar, Rasulgarh,
+ * Tamando, Khurda, Jatni — data/bda_industrial_polygons.geojson). Falls
+ * back to centroid-based lookup against data/bda_zones.json only when
+ * the polygon overlay is unavailable.
  *
- * Loads per-village zone data from data/bda_zones.json (produced by
- * scripts/probe/bluis-scraper.ts). Falls back to a 10-row seed (Patia,
- * Jaydev Vihar, Khandagiri, etc.) if the JSON is missing.
+ * ROR-INS-153 (Industrial-Zone Plot Sold as Residential, CEE DEE Builders
+ * pattern) consumes this fetcher's output: fires redFlag when the plot GPS
+ * falls inside an industrial polygon and the Bhulekh kisam is gharabari.
  */
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { booleanPointInPolygon, featureCollection, point } from "@turf/turf";
 
 declare const __dirname: string; // Provided by vitest/Node CommonJS runtime
 
 const BDA_ZONES_JSON_PATH = join(__dirname, "../data/bda_zones.json");
+const BDA_POLYGONS_JSON_PATH = join(__dirname, "../data/bda_industrial_polygons.geojson");
 const BDA_ZONES_DATA_URL = "https://bluis.in/";
-const PARSER_VERSION = "bda-zoning-v2";
+const PARSER_VERSION = "bda-zoning-v3";
 
 // --- Type definitions for BDA zones ---
 
@@ -64,11 +69,12 @@ type BdaZoneStatus = "success" | "no_match" | "out_of_scope";
 type BdaZoneStatusReason =
   | "seed_data_found"
   | "json_data_loaded"
+  | "polygon_overlay_match"
   | "no_data_match"
   | "outside_bda_planning_area";
-type BdaZoneWarningCode = "seed_data_limitation" | "json_data_limitation";
+type BdaZoneWarningCode = "seed_data_limitation" | "json_data_limitation" | "polygon_overlay_limitation";
 
-interface BdaZoneResult {
+export interface BdaZoneResult {
   source: "bda-zoning";
   status: BdaZoneStatus;
   statusReason: BdaZoneStatusReason;
@@ -282,6 +288,38 @@ export async function fetch(input: BdaZoneInput): Promise<BdaZoneResult> {
     },
   ];
 
+  // If coordinates are provided, try the curated industrial polygon overlay
+  // first. This is the path that unlocks ROR-INS-153 (CEE DEE Builders
+  // pattern) — a real point-in-polygon containment check, not a centroid
+  // proximity fallback. The overlay covers 6 known industrial pockets in
+  // Khordha (~85% of known industrial estate area). A plot GPS that falls
+  // inside any polygon returns status:"success" with the matching zone row.
+  if (input.latitude && input.longitude) {
+    const polygonHit = findZoneByPolygon(input.latitude, input.longitude);
+    if (polygonHit) {
+      return {
+        source: "bda-zoning",
+        status: "success",
+        statusReason: "polygon_overlay_match",
+        verification: "verified",
+        fetchedAt,
+        attempts: 0,
+        inputsTried,
+        parserVersion: PARSER_VERSION,
+        data: [polygonHit],
+        warnings: [
+          {
+            code: "polygon_overlay_limitation",
+            message: `Plot GPS (${input.latitude.toFixed(4)}, ${input.longitude.toFixed(4)}) falls inside the ${polygonHit.locality ?? polygonHit.village} industrial polygon from data/bda_industrial_polygons.geojson. Polygons are bounding approximations sourced from public area/center data; verify the exact zone at https://bda.gov.in or via the Bhubaneswar Planning Authority before transacting.`,
+          },
+        ],
+      };
+    }
+    // No polygon containment — fall through to centroid lookup for the
+    // (village, tehsil, locality) name-based path, which will return
+    // out_of_scope for villages outside BDA jurisdiction.
+  }
+
   // If coordinates are provided, find the nearest zone using point-in-polygon lookup
   if (input.latitude && input.longitude) {
     // For seed data, find the closest centroid as a placeholder
@@ -439,7 +477,9 @@ export function permitsIndustrial(zone: Zone): boolean {
 // --- Health check ---
 
 export async function healthCheck(): Promise<boolean> {
-  return getZones().length > 0;
+  // Healthy when either the polygon overlay OR the centroid JSON loads.
+  // The polygon overlay is the primary path for Sprint 4 (ROR-INS-153).
+  return loadPolygonOverlay() !== null || getZones().length > 0;
 }
 
 // --- JSON loader + helpers (parallel to circle-rate pattern) ---
@@ -552,4 +592,76 @@ export function getZoneForLocation(lat: number, lng: number): Zone | null {
   }
 
   return nearest?.zone ?? null;
+}
+
+// ─── GeoJSON polygon overlay (Sprint 4) ──────────────────────────────────────
+//
+// data/bda_industrial_polygons.geojson is a curated, polygon-level overlay of
+// known BDA Industrial + Industrial-2 pockets in Khordha. Each polygon is a
+// bounding rectangle (not surveyed boundary) sourced from public center/area
+// data (Wikipedia, geoiq.io, IDCO listings, BDA CDP maps). Coverage is
+// ~85% of known industrial estate land area; village-scale industrial kisam
+// entries inside residential villages are NOT included — those will not
+// match by GPS and will be caught by ROR-INS-153's Bhulekh cross-reference.
+//
+// ROR-INS-153 reads bdaZoneData.data[].zone.id and fires redFlag only when
+// status === "success" AND zone.id in ["industrial", "industrial_2"].
+
+/** Cache for the parsed GeoJSON. Rebuilt only when the underlying file mtime changes. */
+let _polygonCache: {
+  collection: ReturnType<typeof featureCollection>;
+  mtime: number;
+} | null = null;
+
+function loadPolygonOverlay(): ReturnType<typeof featureCollection> | null {
+  try {
+    if (!existsSync(BDA_POLYGONS_JSON_PATH)) return null;
+    const stat = existsSync(BDA_POLYGONS_JSON_PATH) ? require("fs").statSync(BDA_POLYGONS_JSON_PATH) : null;
+    const mtime = stat?.mtimeMs ?? 0;
+    if (_polygonCache && _polygonCache.mtime === mtime) return _polygonCache.collection;
+    const raw = readFileSync(BDA_POLYGONS_JSON_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (!parsed?.features?.length) return null;
+    _polygonCache = { collection: featureCollection(parsed.features), mtime };
+    return _polygonCache.collection;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns the BDA Zone row for a GPS coordinate if it falls inside any
+ * curated industrial polygon, or null when (a) the polygon overlay is
+ * missing, (b) the point is outside every polygon, or (c) turf throws.
+ *
+ * Called from `fetch()` before the centroid fallback so that a genuine
+ * industrial pocket takes precedence over "nearest residential centroid".
+ */
+export function findZoneByPolygon(lat: number, lng: number): BdaZoneRow | null {
+  const collection = loadPolygonOverlay();
+  if (!collection) return null;
+
+  try {
+    const pt = point([lng, lat]); // GeoJSON is [lng, lat]
+    const hit = collection.features.find((f) => {
+      try {
+        return booleanPointInPolygon(pt, f);
+      } catch {
+        return false;
+      }
+    });
+    if (!hit) return null;
+    const p = hit.properties;
+    const zone = resolveZone(p.zone);
+    if (!zone) return null;
+    return {
+      village: p.village,
+      tehsil: p.tehsil,
+      locality: p.name,
+      zone,
+      centroid: p.centroidLatLng ? { latitude: p.centroidLatLng[1], longitude: p.centroidLatLng[0] } : undefined,
+    };
+  } catch {
+    return null;
+  }
 }

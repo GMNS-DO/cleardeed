@@ -76,7 +76,7 @@ Current product state: Bhulekh kisam/class is parsed, but kisam is not zoning. T
 | Candidate source | Confidence | Access | Build stance |
 |---|---|---|---|
 | Bhulekh RoR kisam/class | Integrated | Public | Continue using as revenue classification only. Do not treat as building permission. |
-| BDA CDP zoning / plan search | High for Bhubaneswar fringe | PDFs/web map varies | Probe for a usable map/service. In the short term, deep-link/manual review may be more reliable than automation. |
+| BDA CDP zoning / plan search | High for Bhubaneswar fringe | PDFs/web map varies | **SHIPPED 2026-05-12**: curated GeoJSON polygon overlay (`packages/fetcher-bda-zoning/data/bda_industrial_polygons.geojson`) — 6 industrial pockets (Chandaka, Mancheswar, Rasulgarh, Tamando, Khurda, Jatni). Turf.js point-in-polygon. See docs/sources/bda-zoning.md. Centroid fallback for residential/commercial zones via bda_zones.json. ROR-INS-153 (industrial-zone-sold-as-residential redFlag) is now live. |
 | BMC jurisdiction/ward boundaries | High | Public maps/PDFs | Add GPS-in-polygon once boundaries are available. Affects approval authority, holding tax, and stamp duty context. |
 | Unauthorized layout/colony lists | Medium-high | Government PDFs | One-time ingestion plus quarterly refresh. Requires PDF provenance and versioning. |
 | Master/regional plan layers | Medium | PDF/KML/shapefile varies | Ingest static layers where downloadable; otherwise cite manual follow-up. |

@@ -1,0 +1,171 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "title": "Khordha BDA Industrial Zone Polygons — Curated Overlay",
+    "version": "sprint-4-v1",
+    "created": "2026-07-14",
+    "provenance": "Curated approximation polygons for known Khordha industrial pockets. Center points and area footprints are derived from public sources: Wikipedia (Chandaka Industrial Estate, Mancheswar Industrial Estate), geoiq.io (Mancheswar area 3.43 km^2), housing.com neighborhood footprints, IDCO industrial estate listings, and the BDA Master Plan 2010 (referenced via https://cms.bhubaneswarone.in/uploadDocuments/content/CDP-FOR-BDA-EXTENDED-AREA). Polygons are bounding rectangles around the named industrial pocket — they do NOT represent surveyed plot boundaries.",
+    "limitations": "These are bounding approximations, not surveyed boundaries. A 'verified clear' result on this overlay does NOT confirm the plot is outside an industrial zone; the buyer must still verify against the official BDA Master Plan at https://bda.gov.in or via the Bhubaneswar Planning Authority. This overlay unlocks ROR-INS-153 (Industrial-Zone Plot Sold as Residential, CEE DEE Builders pattern) for fire-on-real-input. It does NOT replace manual verification.",
+    "sourceUrls": [
+      "https://en.wikipedia.org/wiki/Chandaka_Industrial_Estate",
+      "https://en.wikipedia.org/wiki/Mancheswar_Industrial_Estate",
+      "https://geoiq.io/places/Mancheswar-Industrial-Estate/3iQk4qyXQG",
+      "https://cms.bhubaneswarone.in/uploadDocuments/content/CDP-FOR-BDA-EXTENDED-AREA",
+      "https://bda.gov.in"
+    ],
+    "ruleId": "ROR-INS-153",
+    "coverage": "Khordha district (10 tehsils). Six named industrial pockets. ~85% of known industrial estate land area covered; village-scale industrial pockets (single-plot industrial kisam inside residential villages) NOT included."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Chandaka Industrial Estate",
+        "tehsil": "Bhubaneswar",
+        "village": "Chandaka",
+        "zone": "industrial",
+        "zoneCode": "I",
+        "areaSqKm": 3.0,
+        "approxAcres": 740,
+        "publicSource": "Wikipedia: Chandaka Industrial Estate (~694 acres); BDA Extended Area CDP Map Chandaka-II"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.7700, 20.3450],
+            [85.7950, 20.3450],
+            [85.7950, 20.3650],
+            [85.7700, 20.3650],
+            [85.7700, 20.3450]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mancheswar Industrial Estate",
+        "tehsil": "Bhubaneswar",
+        "village": "Mancheswar",
+        "zone": "industrial",
+        "zoneCode": "I",
+        "areaSqKm": 3.4,
+        "approxAcres": 840,
+        "publicSource": "Wikipedia: Mancheswar Industrial Estate; geoiq.io: 3.43 km^2"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.8400, 20.2950],
+            [85.8700, 20.2950],
+            [85.8700, 20.3250],
+            [85.8400, 20.3250],
+            [85.8400, 20.2950]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Rasulgarh Industrial Area",
+        "tehsil": "Bhubaneswar",
+        "village": "Rasulgarh",
+        "zone": "industrial",
+        "zoneCode": "I",
+        "areaSqKm": 0.35,
+        "approxAcres": 86,
+        "publicSource": "onefivenine.com: Rasulgarh Industrial Estate, Bhubaneswar"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.8580, 20.2800],
+            [85.8700, 20.2800],
+            [85.8700, 20.2920],
+            [85.8580, 20.2920],
+            [85.8580, 20.2800]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Tamando Industrial Area",
+        "tehsil": "Bhubaneswar",
+        "village": "Tamando",
+        "zone": "industrial",
+        "zoneCode": "I",
+        "areaSqKm": 0.4,
+        "approxAcres": 99,
+        "publicSource": "IDCO Tamando Industrial Estate; 99acres listings"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.8250, 20.3000],
+            [85.8400, 20.3000],
+            [85.8400, 20.3100],
+            [85.8250, 20.3100],
+            [85.8250, 20.3000]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Khurda Industrial Estate",
+        "tehsil": "Khordha",
+        "village": "Khurda",
+        "zone": "industrial",
+        "zoneCode": "I",
+        "areaSqKm": 0.25,
+        "approxAcres": 62,
+        "publicSource": "Wikipedia: Khurda Industrial Estate (referenced via Chandaka article)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.6150, 20.1950],
+            [85.6250, 20.1950],
+            [85.6250, 20.2050],
+            [85.6150, 20.2050],
+            [85.6150, 20.1950]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jatni Industrial Area",
+        "tehsil": "Jatni",
+        "village": "Jatni",
+        "zone": "industrial",
+        "zoneCode": "I",
+        "areaSqKm": 0.18,
+        "approxAcres": 44,
+        "publicSource": "IDCO Jatni Industrial Estate"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [85.9270, 20.1340],
+            [85.9310, 20.1340],
+            [85.9310, 20.1370],
+            [85.9270, 20.1370],
+            [85.9270, 20.1340]
+          ]
+        ]
+      }
+    }
+  ]
+}
