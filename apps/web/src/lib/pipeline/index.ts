@@ -384,10 +384,12 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
 
   // ── Step 6: Map orchestrator output + tier2 → A10 input ────────────────────
   // The legacy V1 path doesn't run the bhunaksha-plot-report fetcher (that's a
-  // V1.1 step). The V11 path at generateReportV11 declares and populates it.
-  // Declaring it as null here so the ternary below is well-defined; in strict
+  // V1.1 step) and doesn't run the plot-diagram step (that's V11-only).
+  // The V11 path at generateReportV11 declares and populates both locals.
+  // Declaring them as null here so the calls below are well-defined; in strict
   // mode, referencing an undeclared identifier throws ReferenceError.
   const bhunakshaPlotReport: SourceResult | null = null;
+  const plotDiagram: PlotDiagramStepResult | null = null;
   const reportInput = mapToReportInput(
     {
       reportId: orchestratorOutput.reportId,

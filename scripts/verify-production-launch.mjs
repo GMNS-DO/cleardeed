@@ -26,16 +26,18 @@ await check("DPDP pages render", async () => {
   return "privacy + terms";
 });
 
-await check("Razorpay order creates ₹1 checkout", async () => {
+await check("Razorpay order creates Standard ₹699 checkout", async () => {
   const response = await postJson("/api/order", {
+    tier: "standard",
     email: `smoke+${runId}@cleardeed.in`,
     plotDescription: "Production smoke-test order",
   });
 
   assert(response.status === 200, `expected 200, got ${response.status}: ${response.text}`);
   assert(typeof response.json?.orderId === "string", "order response did not include orderId");
-  assert(response.json?.amount === 100, `expected ₹1/100 paise amount, got ${response.json?.amount}`);
+  assert(response.json?.amount === 69900, `expected ₹699/69900 paise Standard tier amount, got ${response.json?.amount}`);
   assert(response.json?.currency === "INR", "order currency was not INR");
+  assert(response.json?.tier === "standard", `expected tier=standard, got ${response.json?.tier}`);
   return `orderId=${response.json.orderId}`;
 });
 
