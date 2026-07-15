@@ -1,0 +1,53 @@
+{
+  "_comment": "SLA thresholds for the ClearDeed pipeline. The webhook SLA gate short-circuits when the sum of Bhulekh elapsed time + SLA headroom exceeds the source SLA, avoiding a useless 30s wait.",
+  "sources": {
+    "bhulekh": {
+      "slaMs": 22000,
+      "headroomMs": 2000,
+      "thresholdP95Ms": 18000,
+      "thresholdP99Ms": 21000,
+      "lastCalibratedAt": "2026-07-15",
+      "calibrationSource": "scripts/benchmark-bhulekh-sla.ts (Session 070)"
+    },
+    "ecourts": {
+      "slaMs": 28000,
+      "headroomMs": 2000,
+      "thresholdP95Ms": 24000,
+      "thresholdP99Ms": 27000,
+      "lastCalibratedAt": "2026-07-15",
+      "calibrationSource": "Scripted harness (10-run captcha solve-rate measurement, Session 070)"
+    },
+    "bhunaksha": {
+      "slaMs": 12000,
+      "headroomMs": 1000,
+      "thresholdP95Ms": 10000,
+      "thresholdP99Ms": 11000,
+      "lastCalibratedAt": "2026-07-15",
+      "calibrationSource": "Derived from WFS GetFeatureInfo p95 (Session 034 baseline)"
+    },
+    "nominatim": {
+      "slaMs": 6000,
+      "headroomMs": 1000,
+      "thresholdP95Ms": 5000,
+      "thresholdP99Ms": 5500,
+      "lastCalibratedAt": "2026-07-15",
+      "calibrationSource": "Nominatim usage policy 1 req/s limit, derived"
+    },
+    "rccms": {
+      "slaMs": 18000,
+      "headroomMs": 2000,
+      "thresholdP95Ms": 14000,
+      "thresholdP99Ms": 16000,
+      "lastCalibratedAt": "2026-07-15",
+      "calibrationSource": "NO-GO verdict — placeholder path, derived from BHULEKH"
+    }
+  },
+  "webhookCircuitBreaker": {
+    "enabled": true,
+    "overallTimeoutMs": 30000,
+    "blockingWindowMs": 18000,
+    "maxStallRuns": 2
+  },
+  "pipelineStatusOnCircuitBreak": "generated_with_error",
+  "pipelineStatusOnRuntimeError": "failed"
+}

@@ -6,7 +6,7 @@
  * tierFromAmountPaise reversal, and the free preview policy constant.
  */
 import { describe, it, expect } from "vitest";
-import { TIERS, parseTier, tierFromAmountPaise, FREE_PREVIEW_LIMIT_PER_USER, isPaidTier, decideMetering } from "./pricing";
+import { TIERS, parseTier, tierFromAmountPaise, FREE_PREVIEW_LIMIT_PER_USER, isPaidTier, decideMetering, getGuaranteeTerms } from "./pricing";
 
 describe("TIERS constant", () => {
   it("has four entries", () => {
@@ -122,6 +122,22 @@ describe("isPaidTier", () => {
     expect(isPaidTier("premium")).toBe(false);
     expect(isPaidTier("enterprise")).toBe(false);
     expect(isPaidTier("STANDARD")).toBe(false); // wrong case
+  });
+});
+
+describe("getGuaranteeTerms", () => {
+  it("returns guarantee terms for the guaranteed tier", () => {
+    const terms = getGuaranteeTerms("guaranteed");
+    expect(terms).not.toBeNull();
+    expect(terms?.termsUrl).toBe("https://cleardeed.in/guarantee-terms");
+    expect(terms?.consentLabel).toContain("18-month");
+    expect(terms?.consentSummary).toContain("verified clear");
+  });
+
+  it("returns null for non-guaranteed tiers", () => {
+    expect(getGuaranteeTerms("standard")).toBeNull();
+    expect(getGuaranteeTerms("verified")).toBeNull();
+    expect(getGuaranteeTerms("free_preview")).toBeNull();
   });
 });
 

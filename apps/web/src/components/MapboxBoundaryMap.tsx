@@ -186,30 +186,34 @@ export function MapboxBoundaryMap({ polygon, fallbackCenter, villageName, plotNo
   return (
     <div className="flex flex-col gap-2">
       {/* Toggle */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-[#5b665f]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[#5b665f]">
           {villageName && plotNo ? `${villageName} · Plot ${plotNo}` : villageName ? villageName : "Plot boundary"}
         </span>
-        <div className="flex rounded border border-[#d9ddd4] overflow-hidden text-xs">
+        <div className="flex shrink-0 rounded border border-[#d9ddd4] overflow-hidden text-xs">
           <button
             type="button"
             onClick={() => setMapStyle("satellite")}
-            className={`px-3 py-1 ${mapStyle === "satellite" ? "bg-[#1d6f5b] text-white" : "bg-white text-[#5b665f]"}`}
+            className={`px-2 py-1 sm:px-3 ${mapStyle === "satellite" ? "bg-[#1d6f5b] text-white" : "bg-white text-[#5b665f]"}`}
           >
             Satellite
           </button>
           <button
             type="button"
             onClick={() => setMapStyle("streets")}
-            className={`px-3 py-1 border-l border-[#d9ddd4] ${mapStyle === "streets" ? "bg-[#1d6f5b] text-white" : "bg-white text-[#5b665f]"}`}
+            className={`px-2 py-1 sm:px-3 border-l border-[#d9ddd4] ${mapStyle === "streets" ? "bg-[#1d6f5b] text-white" : "bg-white text-[#5b665f]"}`}
           >
             Streets
           </button>
         </div>
       </div>
 
-      {/* Map container */}
-      <div className="relative rounded border border-[#d9ddd4] overflow-hidden" style={{ height: 320 }}>
+      {/* Map container — height scales down on the smallest phones to keep
+          satellite/streets controls from pushing the map out of view. */}
+      <div
+        className="relative rounded border border-[#d9ddd4] overflow-hidden"
+        style={{ height: "min(320px, 56vw)" }}
+      >
         {mapError ? (
           <div className="flex h-full items-center justify-center bg-[#f7f7f2] text-sm text-[#5b665f]">
             {mapError}

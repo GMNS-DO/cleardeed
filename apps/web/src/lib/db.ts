@@ -129,7 +129,15 @@ export interface DbReport {
     villageCode?: string | null;
     plotNo?: string | null;
     searchMode?: string | null;
+    pdpdAccepted?: boolean | null;
   } | null;
+  // Migration 025: pipeline outcome for consumer-facing error UX
+  pipeline_status?: "queued" | "running" | "success" | "failed" | "generated_with_error" | null;
+  pipelineStatus?: "queued" | "running" | "success" | "failed" | "generated_with_error" | null;
+  pipeline_error?: string | null;
+  pipelineError?: string | null;
+  pipeline_completed_at?: string | null;
+  pipelineCompletedAt?: string | null;
 }
 
 /**
@@ -193,6 +201,21 @@ export function getReportExpiryFields(report: ReportLike): { expires_at: string 
   };
 }
 
+/** Read the pipeline outcome flag. Null / missing means not yet completed. */
+export function getPipelineStatus(report: ReportLike): string | null {
+  const raw = report?.pipelineStatus ?? report?.pipeline_status ?? null;
+  if (raw && ["queued","running","success","failed","generated_with_error"].includes(raw)) return raw;
+  return null;
+}
+
+/** Pipeline error string, only meaningful when getPipelineStatus is "failed" or "generated_with_error". */
+export function getPipelineError(report: ReportLike): string | null {
+  return typeof report?.pipeline_error === "string" && report.pipeline_error.length > 0
+    ? report.pipeline_error
+    : typeof report?.pipelineError === "string" && report.pipelineError.length > 0
+      ? report.pipelineError
+      : null;
+}
 export function getReportOwnerId(report: ReportLike): string | null {
   return nullableString(report?.userId) ?? nullableString(report?.user_id);
 }
@@ -340,7 +363,25 @@ export async function upsertSourceResult(params: SourceResultParams): Promise<vo
  */
 export async function updateReportResults(params: UpdateReportParams): Promise<void> {
   const supabase = getSupabaseServerClient();
-  const { error } = await supabase.rpc("update_report_results", {
+  // Supabase types `rpc` with two overloads (10-param and 11-param). The
+  // 11-param overload is required because the production DB schema includes
+  // `p_report_html_lawyer`. We always supply it (empty string when absent)
+  // so the runtime call always matches the 11-param shape; the TS cast
+  // forces TypeScript to pick that overload.
+  const rpcArgs: {
+    p_report_id: string;
+    p_report_html: string;
+    p_report_title: string;
+    p_nominatim_status: string | null;
+    p_bhunaksha_status: string | null;
+    p_bhulekh_status: string | null;
+    p_ecourts_status: string | null;
+    p_rccms_status: string | null;
+    p_validation_findings: unknown[];
+    p_source_summary: Record<string, unknown>;
+    p_error_message: string | null;
+    p_report_html_lawyer: string;
+  } = {
     p_report_id: params.reportId,
     p_report_html: params.reportHtml,
     p_report_title: params.reportTitle,
@@ -352,8 +393,10 @@ export async function updateReportResults(params: UpdateReportParams): Promise<v
     p_validation_findings: params.validationFindings ?? [],
     p_source_summary: params.sourceSummary ?? {},
     p_error_message: params.errorMessage ?? null,
-    p_report_html_lawyer: params.reportHtmlLawyer ?? null,
-  });
+    p_report_html_lawyer: params.reportHtmlLawyer ?? "",  // always present — uniform signature for overload resolution
+  };
+
+  const { error } = await supabase.rpc("update_report_results", rpcArgs);
 
   if (error) throw new Error(`update_report_results failed: ${error.message}`);
 }
@@ -394,6 +437,27 @@ export async function bumpReportExpiry(reportId: string): Promise<{ expiresAt: s
 }
 
 /**
+ * Update the pipeline_status column on a report row. Idempotent — callers
+ * can overwrite a previous status (e.g. queued → running → success).
+ */
+export async function setPipelineStatus(params: {
+  reportId: string;
+  pipelineStatus: "queued" | "running" | "success" | "failed" | "generated_with_error";
+  pipelineError?: string | null;
+}): Promise<void> {
+  const supabase = getSupabaseServerClient();
+  const { error } = await supabase
+    .from("reports")
+    .update({
+      pipeline_status: params.pipelineStatus,
+      pipeline_error: params.pipelineError ?? null,
+      pipeline_completed_at: new Date().toISOString(),
+    })
+    .eq("id", params.reportId);
+  if (error) throw new Error(`setPipelineStatus failed: ${error.message}`);
+}
+
+/**
  * T-014: Mark a report as paid. Called from the Razorpay webhook after
  * payment.captured is verified. Wraps the mark_report_paid() RPC defined
  * in migration 019 — the RPC enforces idempotency (refuses to downgrade
@@ -421,6 +485,37 @@ export async function markReportPaid(params: {
   if (error) {
     throw new Error(`mark_report_paid failed for ${params.reportId}: ${error.message}`);
   }
+}
+
+/**
+ * Look up the lawyer record attached to a report. Used by the lawyer co-sign
+ * UI in ReportShell. Returns null when no lawyer is attached — the UI renders
+ * a "no lawyer on file" state in that case.
+ */
+export async function getLawyer(reportId: string): Promise<{
+  lawyerName: string;
+  lawyerFirm: string;
+  licenseNumber?: string | null;
+  email?: string | null;
+  photoUrl?: string | null;
+  signedAt: string | null;
+}> | null {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("lawyer_name, lawyer_firm, lawyer_signed_at")
+    .eq("id", reportId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as Record<string, unknown>;
+  return {
+    lawyerName: (row.lawyer_name as string) ?? "",
+    lawyerFirm: (row.lawyer_firm as string) ?? "",
+    licenseNumber: (row.lawyer_license_number as string | undefined) ?? null,
+    email: (row.lawyer_email as string | undefined) ?? null,
+    photoUrl: (row.lawyer_photo_url as string | undefined) ?? null,
+    lawyerSignedAt: (row.lawyer_signed_at as string | null) ?? null,
+  };
 }
 
 /**

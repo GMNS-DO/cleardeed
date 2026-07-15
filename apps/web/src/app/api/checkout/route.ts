@@ -5,13 +5,14 @@
  * Called before opening the Razorpay modal — data is retrieved by the webhook
  * after successful payment.
  *
- * Input: { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName?, email?, whatsapp? }
+ * Input: { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName?, email?, whatsapp?, tier, guaranteeAccepted?, lawyerId? }
  * Output: { stored: true } or { error }
  */
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db";
 import { trackEvent } from "@/lib/track";
 import { getAuthUser } from "@/lib/auth-helpers";
+import { parseTier } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName, email, whatsapp, tier } = body as {
+  const { orderId, tehsil, tehsilValue, village, villageCode, searchMode, identifier, claimedOwnerName, email, whatsapp, tier, guaranteeAccepted, lawyerId, pdpdAccepted } = body as {
     orderId?: unknown;
     tehsil?: string;
     tehsilValue?: string;
@@ -51,11 +52,63 @@ export async function POST(req: NextRequest) {
     email?: string;
     whatsapp?: string;
     tier?: string;
+    /**
+     * PI-3 T2 — buyer-side consent to the 18-month correctness guarantee.
+     * Required ONLY when tier === "guaranteed"; free / standard / verified
+     * do not need it.
+     */
+    guaranteeAccepted?: boolean;
+    /**
+     * T3 — optional lawyer selection for the advocate co-sign half of the
+     * Guaranteed tier. Persisted as a hint; webhook reads it from
+     * session_data and writes reports.lawyer_id.
+     */
+    lawyerId?: string | null;
+    /**
+     * PDPD Act consent — required for ALL tiers. The buyer affirms that
+     * their plot and contact details may be used solely to produce this
+     * report. Refusal is a hard gate; the report cannot be generated.
+     */
+    pdpdAccepted?: boolean;
   };
 
   if (!orderId || !tehsil || !village || !villageCode || !searchMode || !identifier || !tier) {
     return NextResponse.json(
       { error: "Missing required fields: orderId, tehsil, village, villageCode, searchMode, identifier, tier" },
+      { status: 400 }
+    );
+  }
+
+  const parsedTier = parseTier(tier);
+  if (!parsedTier) {
+    return NextResponse.json(
+      { error: "invalid_tier", message: `Unknown tier "${tier}".` },
+      { status: 400 }
+    );
+  }
+
+  // PDPD consent: required for all tiers. Without it we cannot legally
+  // store the buyer's contact details against the report.
+  if (pdpdAccepted !== true) {
+    return NextResponse.json(
+      {
+        error: "consent_required",
+        message: "Please accept the privacy policy before purchasing.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // PI-3 T2: the 18-month guarantee is the headline reason to pay ₹4,999.
+  // Buyers must affirmatively accept the terms before Razorpay opens. The
+  // webhook reads `guaranteeAccepted` from session_data and stamps
+  // reports.guarantee_accepted_at.
+  if (parsedTier === "guaranteed" && guaranteeAccepted !== true) {
+    return NextResponse.json(
+      {
+        error: "guarantee_consent_required",
+        message: "You must accept the 18-month guarantee terms to purchase the Guaranteed tier.",
+      },
       { status: 400 }
     );
   }
@@ -80,6 +133,15 @@ export async function POST(req: NextRequest) {
     preGeneratedHtml: (body as { preGeneratedHtml?: string }).preGeneratedHtml ?? null,
     preGeneratedTitle: (body as { preGeneratedTitle?: string }).preGeneratedTitle ?? null,
     preGeneratedBhunakshaPolygon: polygonRaw,
+    // PI-3 T2: persist the consent flag. Only meaningful when the buyer opted
+    // in (guaranteed tier); false/absent for every other tier. The webhook
+    // uses this to set reports.guarantee_accepted_at on successful payment.
+    guaranteeAccepted: parsedTier === "guaranteed" ? guaranteeAccepted === true : false,
+    // T3: optional lawyer selection. Accept whatever the client passes;
+    // never require it. Webhook reads it and writes reports.lawyer_id.
+    lawyerId: lawyerId ?? null,
+    // PDPD consent — persisted for audit trail.
+    pdpdAccepted: pdpdAccepted === true,
   };
 
   // Store with 30-minute expiry

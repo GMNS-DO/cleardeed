@@ -1,9 +1,11 @@
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
+  plugins: [react()],
   test: {
-    environment: "node",
+    environment: "jsdom",
     testTimeout: 300_000,
     include: [
       "packages/captcha-breaker/src/**/*.test.ts",
@@ -56,6 +58,7 @@ export default defineConfig({
       "apps/web/src/lib/pipeline/contracts/fire.snapshot.test.ts",
       "apps/web/src/lib/pipeline/contracts/fire.wire.test.ts",
       "apps/web/src/lib/pipeline/contracts/contract-test-factory.test.ts",
+      "apps/web/src/app/report/[id]/components/**/*.test.tsx",
       "apps/web/src/lib/db.expiry.test.ts",
       "apps/web/src/lib/db.v11.test.ts",
       "apps/web/src/lib/plot-diagram-storage.test.ts",
@@ -64,11 +67,15 @@ export default defineConfig({
       "apps/web/src/lib/survey.test.ts",
       "apps/web/src/lib/report-access.test.ts",
       "apps/web/src/lib/razorpay-config.test.ts",
+      "apps/web/src/lib/pricing.test.ts",
       "apps/web/src/lib/rate-limit.test.ts",
       "apps/web/src/app/api/reports/[id]/refresh/route.test.ts",
       "apps/web/src/app/api/user/delete/route.test.ts",
       "apps/web/src/app/api/survey/[token]/route.test.ts",
+      "apps/web/src/app/api/checkout/route.test.ts",
       "apps/web/src/app/api/admin/dashboard/rerun/route.test.ts",
+      "apps/web/src/app/api/admin/lawyers/__tests__/**/*.test.ts",
+      "apps/web/src/app/api/lawyers/__tests__/**/*.test.ts",
       "qa/fetcher_tests/**/*.test.ts",
       "qa/section_validators/**/*.test.ts",
       "qa/cross_source_validator.test.ts",
@@ -86,6 +93,7 @@ export default defineConfig({
       "qa/funnel_events.test.ts",
       "qa/docs.test.ts",
       "qa/launch-checklist.test.mjs",
+      "qa/trust-layer/**/*.test.ts",
     ],
   },
   resolve: {
@@ -93,10 +101,12 @@ export default defineConfig({
       "@cleardeed/captcha-breaker": path.resolve(__dirname, "packages/captcha-breaker/src/index.ts"),
       "@/*": path.resolve(__dirname, "./apps/web/src/*"),
       "@/lib/db": path.resolve(__dirname, "./apps/web/src/lib/db"),
+      "@/lib/pricing": path.resolve(__dirname, "./apps/web/src/lib/pricing"),
       "@/lib/auth-helpers": path.resolve(__dirname, "./apps/web/src/lib/auth-helpers"),
       "@/lib/supabase/server": path.resolve(__dirname, "./apps/web/src/lib/supabase/server"),
       "@/lib/supabase/browser": path.resolve(__dirname, "./apps/web/src/lib/supabase/browser"),
       "@/lib/report-access": path.resolve(__dirname, "./apps/web/src/lib/report-access"),
+      "@/lib/dashboard-auth": path.resolve(__dirname, "./apps/web/src/lib/dashboard-auth"),
       "@/lib/track": path.resolve(__dirname, "./apps/web/src/lib/track"),
       "@/lib/email": path.resolve(__dirname, "./apps/web/src/lib/email"),
       "@/lib/payment": path.resolve(__dirname, "./apps/web/src/lib/payment"),

@@ -1030,7 +1030,19 @@ function submitFeedbackComment(section, btn) {
     ),
   ].join("\n");
 
-  return { html: html + "\n" + insightBlocks, title, insights };
+  // PI-3 T2 — append the 18-month guarantee footer when the buyer paid
+  // for the Guaranteed tier and accepted the terms. buildGuaranteeFooter
+  // returns "" when either precondition is missing, so non-guaranteed
+  // tier reports are byte-for-byte unchanged.
+  const guaranteeFooter = buildGuaranteeFooter({
+    paidTier: data.paidTier ?? undefined,
+    guaranteeAcceptedAt: data.guaranteeAcceptedAt ?? null,
+    lawyerName: data.lawyer?.name ?? null,
+    lawyerFirm: data.lawyer?.firm ?? null,
+    signedAt: data.signedAt ?? null,
+  });
+
+  return { html: html + "\n" + insightBlocks + guaranteeFooter, title, insights };
 }
 
 // ── Layer split: Buyer (1-2 page compact) and Lawyer (full drill-down) ──────
@@ -2577,6 +2589,32 @@ export function buildSourceStatusStrip(
   return `<div class="source-status-strip" id="source-status" aria-label="Data source status">${chips}</div>`;
 }
 
+// PI-3 T2 — 18-month correctness guarantee footer. Returns "" when the report
+// is not the Guaranteed tier or the buyer did not accept the guarantee terms,
+// so non-guaranteed reports are byte-for-byte unchanged.
+export function buildGuaranteeFooter(input: {
+  paidTier?: string;
+  guaranteeAcceptedAt?: string | null;
+  lawyerName?: string | null;
+  lawyerFirm?: string | null;
+  signedAt?: string | null;
+}): string {
+  if (input.paidTier !== "guaranteed" || !input.guaranteeAcceptedAt) return "";
+  const lawyerBlock = input.lawyerName
+    ? `<div class="guarantee-lawyer-block">
+      <strong>Signed by:</strong> ${escapeText(input.lawyerName)}${input.lawyerFirm ? `, ${escapeText(input.lawyerFirm)}` : ""}
+      ${input.signedAt ? `<br><time>${escapeText(input.signedAt)}</time>` : ""}
+    </div>`
+    : "";
+
+  return `<div class="guarantee-footer" style="margin-top:32px;padding:16px;border-top:2px solid #1d6f5b;background:#f4faf7;">
+  <p style="font-weight:600;color:#1d6f5b;">🛡️ 18-month correctness guarantee</p>
+  <p style="font-size:13px;color:#17231d;">This report carries a correctness guarantee for "verified clear" claims only. If a claim labeled "verified clear" is proven wrong within 18 months of report generation, you are entitled to a full refund plus complimentary panel-lawyer review. <a href="https://cleardeed.in/guarantee-terms" target="_blank" rel="noopener">Full terms</a>.</p>
+  ${lawyerBlock}
+  <p style="font-size:12px;color:#5b665f;margin-top:8px;">⚠️ ClearDeed is an information aggregator, not a legal opinion. This guarantee covers only claims explicitly labeled "verified clear" in the report. Consult a lawyer before transacting.</p>
+</div>`;
+}
+
 // Single-line footer with the report id, the disclaimer, and the survey link.
 // The survey link is a placeholder; the app's feedback page is wired separately.
 export function buildFeedbackFooter(input: { reportId: string }): string {
@@ -2587,6 +2625,27 @@ export function buildFeedbackFooter(input: { reportId: string }): string {
     <a class="feedback-footer-lawyer" href="/report/${encodeURIComponent(input.reportId)}?layer=lawyer">Full lawyer drill-down</a>
     <a class="feedback-footer-survey" href="/survey?reportId=${encodeURIComponent(input.reportId)}">Tell us what you found</a>
   </footer>`;
+}
+
+// PI-4 T2: PDPD Act 2023 disclosure footer. Mandated by S.5 (notice before
+// collection) and S.8 (purpose limitation). Rendered in every paid report
+// so the buyer has a permanent audit reference for the consent they gave
+// at checkout. Hidden when pdpdAcceptedAt is null so legacy reports don't
+// retroactively show a consent timestamp they never gave.
+export function buildPdPdFooter(input: {
+  pdpdAcceptedAt?: string | null;
+  contactEmail?: string | null;
+  grievanceOfficer?: string | null;
+}): string {
+  if (!input.pdpdAcceptedAt) return "";
+  const acceptedAt = escapeText(input.pdpdAcceptedAt);
+  const email = escapeText(input.contactEmail ?? "privacy@cleardeed.in");
+  const officer = escapeText(input.grievanceOfficer ?? "Grievance Officer, ClearDeed");
+  return `<aside class="pdpd-footer" data-testid="pdpd-footer" style="margin-top:24px;padding:14px 16px;border:1px solid #cfd8d2;background:#fbfdfc;font-size:12px;color:#17231d;line-height:1.5;">
+  <p style="font-weight:600;margin:0 0 4px 0;">Privacy consent (Digital Personal Data Protection Act, 2023)</p>
+  <p style="margin:0 0 6px 0;">You consented at <time datetime="${acceptedAt}">${acceptedAt}</time> to ClearDeed processing your plot identifiers, claimed owner name, and contact details solely to generate this due-diligence report. Data is not sold or used for marketing. You may request erasure at any time.</p>
+  <p style="margin:0;">Grievance officer: ${officer} · <a href="mailto:${email}">${email}</a> · <a href="/privacy" target="_blank" rel="noopener">Full privacy notice</a></p>
+</aside>`;
 }
 
 // Build the 6 toggle-panel contents for the buyer page. Each panel is a
@@ -2723,6 +2782,11 @@ export function buildBuyerPage(input: {
     reason?: string | null;
     cacheHit?: boolean;
   };
+  // PI-3 T2 — guarantee footer fields.
+  paidTier?: string;
+  guaranteeAcceptedAt?: string | null;
+  lawyer?: { name?: string; firm?: string } | null;
+  signedAt?: string | null;
 }): string {
   const riskInsightsInput = input.riskInsights;
   const hasRiskBuckets =
@@ -2807,6 +2871,10 @@ export function buildBuyerPage(input: {
     sections: input.sections,
     sourceMeta: input.sourceMeta,
     plotDiagram: input.plotDiagram,
+    paidTier: input.paidTier,
+    guaranteeAcceptedAt: input.guaranteeAcceptedAt ?? null,
+    lawyer: input.lawyer,
+    signedAt: input.signedAt,
   };
   const ctx = deriveBuyerPageContext(normalized, input.css);
   const body = renderBuyerPageHtml(ctx);
@@ -2882,6 +2950,11 @@ interface BuyerPageInternalInput {
     reason?: string | null;
     cacheHit?: boolean;
   };
+  // PI-3 T2 — guarantee fields threaded into the footer block.
+  paidTier?: string;
+  guaranteeAcceptedAt?: string | null;
+  lawyer?: { name?: string; firm?: string } | null;
+  signedAt?: string | null;
 }
 
 // SourceProvenance: the subset of SourceResultBase that the trust strip
@@ -2958,6 +3031,13 @@ interface BuyerPageContext {
     reason?: string | null;
     cacheHit?: boolean;
   };
+  // PI-3 T2 — guarantee footer fields. All optional so the buyer-page
+  // rendering is byte-for-byte identical when tier !== "guaranteed" or
+  // when acceptance has not yet been stamped by the webhook.
+  paidTier?: string;
+  guaranteeAcceptedAt?: string | null;
+  lawyer?: { name?: string; firm?: string } | null;
+  signedAt?: string | null;
 }
 
 function deriveLandClass(
@@ -3016,6 +3096,10 @@ function deriveBuyerPageContext(input: BuyerPageInternalInput, css?: string): Bu
     theme: input.theme ?? {},
     shell: input.shell,
     plotDiagram: input.plotDiagram,
+    paidTier: input.paidTier,
+    guaranteeAcceptedAt: input.guaranteeAcceptedAt ?? null,
+    lawyer: input.lawyer ?? null,
+    signedAt: input.signedAt,
   };
 }
 
@@ -3049,7 +3133,14 @@ function renderBuyerPageHtml(ctx: BuyerPageContext): string {
   }));
   const navHtml = buildStickyNav(navQuestions);
   const navScript = buildStickyNavScript();
-  const footerHtml = buildFeedbackFooter({ reportId: ctx.reportId });
+  const footerHtml = buildFeedbackFooter({ reportId: ctx.reportId })
+    + buildGuaranteeFooter({
+        paidTier: ctx.paidTier,
+        guaranteeAcceptedAt: ctx.guaranteeAcceptedAt,
+        lawyerName: ctx.lawyer?.name,
+        lawyerFirm: ctx.lawyer?.firm,
+        signedAt: ctx.signedAt,
+      });
 
   return `${heroHtml}
 ${statusStripHtml}

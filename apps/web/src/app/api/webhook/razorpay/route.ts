@@ -31,6 +31,7 @@ import { sendReportEmail } from "@/lib/email";
 import { addReportAccessTokensToHtml, buildReportUrl } from "@/lib/report-access";
 import { trackEvent } from "@/lib/track";
 import { tierFromAmountPaise } from "@/lib/pricing";
+import { setPipelineStatus } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +55,8 @@ interface CheckoutSession {
   kind?: string;
   /** Set when kind === "refresh" — the report whose expires_at should be bumped. */
   reportId?: string;
+  /** PI-3 T2: buyer-side guarantee consent captured at checkout. */
+  guarantee_accepted?: boolean;
 }
 
 async function getCheckoutSession(orderId: string): Promise<CheckoutSession | null> {
@@ -75,6 +78,27 @@ async function getCheckoutSession(orderId: string): Promise<CheckoutSession | nu
     return data.session_data as CheckoutSession;
   } catch {
     return null;
+  }
+}
+
+/**
+ * PI-3 T2: when a Guaranteed-tier payment succeeds and the buyer accepted
+ * the terms at checkout, stamp NOW() onto reports.guarantee_accepted_at.
+ * The report footer reads this column to render the guarantee block.
+ *
+ * No-ops when:
+ *   - reportId is missing (slow-path failures)
+ *   - guaranteeAccepted is false (buyer did not opt in, or paid another tier)
+ */
+async function stampGuaranteeAccepted(reportId: string, guaranteeAccepted: boolean | undefined): Promise<void> {
+  if (!reportId || !guaranteeAccepted) return;
+  try {
+    await supabaseAdmin()
+      .from("reports")
+      .update({ guarantee_accepted_at: new Date().toISOString() })
+      .eq("id", reportId);
+  } catch (err) {
+    console.warn(`[/api/webhook/razorpay] stampGuaranteeAccepted failed for ${reportId}:`, err);
   }
 }
 
@@ -228,6 +252,8 @@ export async function POST(req: NextRequest) {
           } catch (markErr) {
             console.warn("[/api/webhook/razorpay] markReportPaid failed (fast path):", markErr);
           }
+          // PI-3 T2: stamp guarantee_accepted_at when buyer consented at checkout.
+          await stampGuaranteeAccepted(session.preGeneratedReportId, session.guarantee_accepted);
         }
         // Funnel: report delivered to buyer (webhook path)
         await trackEvent({
@@ -283,8 +309,10 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Generate report ───────────────────────────────────────────────────────
+  const pipelineStartedAt = Date.now();
   let pipelineOutput: Awaited<ReturnType<typeof generateReportV11>> | null = null;
   let reportError: string | null = null;
+  const PIPELINE_SLA_MS = 24_000; // Bhulekh SLA (22s) + headroom
 
   try {
     pipelineOutput = await generateReportV11({
@@ -301,6 +329,28 @@ export async function POST(req: NextRequest) {
   } catch (pipelineError) {
     reportError = pipelineError instanceof Error ? pipelineError.message : String(pipelineError);
     console.error(`[/api/webhook/razorpay] Report generation failed for ${reportId}:`, reportError);
+  }
+
+  // PI-4 T4: SLA gate. If Bhulekh took longer than the per-source SLA +
+  // headroom (22s + 2s = 24s), surface `generated_with_error` rather than
+  // claiming a successful report. This prevents a buyer from paying for
+  // a report that's built from stale or timeout-truncated data.
+  const pipelineDurationMs = Date.now() - pipelineStartedAt;
+  const slaLimited = pipelineDurationMs > PIPELINE_SLA_MS;
+  if (slaLimited) {
+    reportError = `Pipeline SLA exceeded: ${pipelineDurationMs}ms > ${PIPELINE_SLA_MS}ms. Government data source was slow; report may be incomplete. Refund or re-run is available — reply to your confirmation email.`;
+    // Null the HTML so the buyer doesn't see a half-built report.
+    pipelineOutput = null;
+  }
+
+  // ── Persist pipeline outcome ───────────────────────────────────────────────
+  if (persistenceEnabled && reportId) {
+    const finalStatus = (reportError && !pipelineOutput) ? "failed" : (slaLimited ? "generated_with_error" : "success");
+    try {
+      await setPipelineStatus({ reportId, pipelineStatus: finalStatus, pipelineError: reportError });
+    } catch (statusErr) {
+      console.warn("[/api/webhook/razorpay] setPipelineStatus failed (non-fatal):", statusErr);
+    }
   }
 
   // ── Persist results ─────────────────────────────────────────────────────────
@@ -340,6 +390,8 @@ export async function POST(req: NextRequest) {
       } catch (markErr) {
         console.warn("[/api/webhook/razorpay] markReportPaid failed (slow path):", markErr);
       }
+      // PI-3 T2: slow path guarantee stamp — same semantics as fast path.
+      await stampGuaranteeAccepted(reportId, session.guarantee_accepted);
     }
   }
 

@@ -28,7 +28,32 @@
 
 export type Tier = "free_preview" | "standard" | "verified" | "guaranteed";
 
-export const TIERS: Record<Tier, { amountPaise: number; amountRupees: number; label: string; includes: string }> = {
+/**
+ * Optional guarantee metadata carried by the `guaranteed` tier entry only.
+ * Three string fields — termsUrl (link to the full contract), consentLabel
+ * (the consent checkbox label in checkout), and consentSummary (the one-line
+ * explanation shown before the buyer accepts).
+ */
+export interface TierGuaranteeTerms {
+  termsUrl: string;
+  consentLabel: string;
+  consentSummary: string;
+}
+
+export interface TierMetadata {
+  amountPaise: number;
+  amountRupees: number;
+  label: string;
+  includes: string;
+  /**
+   * Guaranteed-tier-only: the 18-month correctness guarantee contract.
+   * Use {@link getGuaranteeTerms} for a safe accessor that returns `null`
+   * on non-guaranteed tiers.
+   */
+  guarantee?: TierGuaranteeTerms;
+}
+
+export const TIERS: Record<Tier, TierMetadata> = {
   free_preview: {
     amountPaise: 0,
     amountRupees: 0,
@@ -52,8 +77,36 @@ export const TIERS: Record<Tier, { amountPaise: number; amountRupees: number; la
     amountRupees: 4_999,
     label: "Guaranteed",
     includes: "Verified + advocate co-sign + 18-month correctness guarantee",
+    guarantee: {
+      termsUrl: "https://cleardeed.in/guarantee-terms",
+      consentLabel: "I agree to the 18-month correctness guarantee terms",
+      consentSummary:
+        "If any 'verified clear' claim in this report is proven wrong within 18 months of generation, you are entitled to a full refund plus complimentary panel-lawyer review.",
+    },
   },
 };
+
+/**
+ * Returns the 18-month correctness guarantee contract for the given tier.
+ * Only the `guaranteed` tier carries one — every other tier returns `null`.
+ *
+ * Used by:
+ *   - `/api/checkout` to validate `guaranteeAccepted === true` on purchase.
+ *   - The HTML/React report footer to render the guarantee block.
+ *   - Test fixtures to assert the consent copy is present.
+ */
+export function getGuaranteeTerms(
+  tier: Tier
+): { termsUrl: string; consentLabel: string; consentSummary: string } | null {
+  if (tier !== "guaranteed") return null;
+  const terms = TIERS.guaranteed.guarantee;
+  if (!terms) return null;
+  return {
+    termsUrl: terms.termsUrl,
+    consentLabel: terms.consentLabel,
+    consentSummary: terms.consentSummary,
+  };
+}
 
 /**
  * Validate that an incoming `tier` string is a known tier. Used by both the

@@ -17,9 +17,12 @@
 import { CONSUMER_REPORT_FIXTURE } from "@cleardeed/consumer-report-writer/fixtures/golden-path";
 import {
   getReport,
+  getReportBhulekhStatus,
   getReportExpiryFields,
   getReportHtml,
   getReportStatus,
+  getPipelineError,
+  getPipelineStatus,
   isReportExpired,
 } from "@/lib/db";
 import {
@@ -31,6 +34,7 @@ import {
 import { FunnelTracker } from "@/components/FunnelTracker";
 import RefreshButtonClient from "./RefreshButtonClient";
 import ReportToolbarClient from "./ReportToolbarClient";
+import { PipelineFailedBanner } from "@/components/PipelineFailedBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -75,9 +79,20 @@ async function LiveReport({ reportId, token }: { reportId: string; token: string
     const htmlWithTokens = addReportAccessTokensToHtml(reportHtml, reportId);
     const htmlWithExpiry = injectReportExpiryIntoHtml(htmlWithTokens, expiry.expires_at);
     const pdfHref = `/api/report/${encodeURIComponent(reportId)}/pdf${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+    const pipelineStatus = getPipelineStatus(report);
+    const pipelineError = getPipelineError(report);
+    const bhulekhStatus = getReportBhulekhStatus(report);
+    const showPipelineFailedBanner = pipelineStatus === "failed" || pipelineStatus === "generated_with_error";
 
     return (
       <>
+        {showPipelineFailedBanner && (
+          <PipelineFailedBanner
+            reportId={reportId}
+            statusReason={pipelineError}
+            bhulekhStatus={bhulekhStatus}
+          />
+        )}
         <FunnelTracker event="report_delivered" reportId={reportId} />
         <ReportToolbarClient reportId={reportId} pdfHref={pdfHref} />
         <style>{`@media print { [data-testid="report-toolbar"] { display: none !important; } }`}</style>

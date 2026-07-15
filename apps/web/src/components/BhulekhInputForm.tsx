@@ -20,6 +20,7 @@ interface FormData {
   whatsapp: string;
   email: string;
   tier: "standard" | "verified" | "guaranteed";
+  pdpdAccepted: boolean;
 }
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
@@ -97,6 +98,7 @@ export function BhulekhInputForm() {
     whatsapp: "",
     email: "",
     tier: "standard",
+    pdpdAccepted: false,
   });
 
   const preGeneratedReportIdRef = useRef<string | null>(null);
@@ -129,6 +131,7 @@ export function BhulekhInputForm() {
         whatsapp: typeof draftForm.whatsapp === "string" ? draftForm.whatsapp : current.whatsapp,
         email: typeof draftForm.email === "string" ? draftForm.email : current.email,
         tier: isTier(draftForm.tier) ? draftForm.tier : current.tier,
+        pdpdAccepted: typeof draftForm.pdpdAccepted === "boolean" ? draftForm.pdpdAccepted : current.pdpdAccepted,
       }));
       setStep(draft.step === 2 || draft.step === 3 ? draft.step : 1);
       setVillageQuery("");
@@ -178,7 +181,7 @@ export function BhulekhInputForm() {
     if (!form.email.trim()) return false;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   }, [form.email]);
-  const canCheckout = Boolean(canAdvanceStep3 && emailValid && form.tier);
+  const canCheckout = Boolean(canAdvanceStep3 && emailValid && form.tier && form.pdpdAccepted);
 
   const selectedTehsilLabel = useMemo(
     () => TEHSIL_OPTIONS.find((t) => t.value === form.tehsilValue)?.name_en ?? "",
@@ -243,6 +246,7 @@ export function BhulekhInputForm() {
           claimedOwnerName: form.sellerName || undefined,
           email: form.email,
           tier: form.tier,
+          pdpdAccepted: form.pdpdAccepted,
         }),
       }).then(async (r) => {
         const data = await r.json() as {
@@ -297,6 +301,7 @@ export function BhulekhInputForm() {
         email: form.email,
         whatsapp: form.whatsapp || undefined,
         tier: form.tier,
+        pdpdAccepted: form.pdpdAccepted,
         preGeneratedReportId: null, // patched below when pre-gen finishes
         preGeneratedHtml: null,
         preGeneratedTitle: null,
@@ -866,11 +871,22 @@ export function BhulekhInputForm() {
             />
           </div>
 
-          {errorMsg && (
-            <div className="rounded border border-[#e8a29a] bg-[#fff0ee] px-3 py-2 text-sm text-[#8d2118]">
-              {errorMsg}
-            </div>
-          )}
+          <label className="mt-3 flex items-start gap-2 text-xs text-[#3b4a3f]">
+            <input
+              id="pdpd-consent"
+              type="checkbox"
+              checked={form.pdpdAccepted}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, pdpdAccepted: e.target.checked }))
+              }
+              className="mt-0.5 h-3.5 w-3.5 rounded border-[#d9ddd4] accent-[#1d6f5b]"
+            />
+            <span>
+              I agree to ClearDeed&rsquo;s{" "}
+              <a className="text-[#1d6f5b] underline" href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>
+              . My plot and contact details are used only to produce this report and are never sold.
+            </span>
+          </label>
 
           <div className="flex gap-2">
             <button
@@ -896,7 +912,7 @@ export function BhulekhInputForm() {
           </div>
 
           <p className="text-center text-xs text-[#5b665f]">
-            ₹1 for the full report. Shown here after payment and emailed to <strong>{form.email || "your email"}</strong>.
+            You are paying only for the report. Report delivery is not guaranteed.
           </p>
 
           <div className="flex items-center justify-center gap-2">
