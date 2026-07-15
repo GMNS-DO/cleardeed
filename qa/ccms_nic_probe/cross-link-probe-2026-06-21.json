@@ -1,0 +1,105 @@
+{
+  "probe": "ccms.nic.in cross-link from Bhulekh identifiers",
+  "date": "2026-06-21",
+  "context": "T-031 follow-up: re-test ccms.nic.in with REAL Bhulekh identifiers (real Khordha khatas/plots/tenants), not synthetic 0000/0000 sentinels. Goal: determine whether the four intended Bhulekh→ccms cross-link paths are usable for revenue-court auto-discovery.",
+  "prior_evidence": "2026-06-21 session-052 NO-GO finding (synthetic 0000/0000 returned 'Record Not Found' with no result columns). That finding only proved the EMPTY case. This probe proves the POPULATED case.",
+
+  "probe_harness": "qa/ccms_nic_probe/cross-link-probe.mjs",
+  "captcha_solver": "tesseract.js (ocrConfidence captured per attempt; avg 80+, min 36)",
+  "captcha_protected_endpoints": ["/halKhata.html (hal-khata)", "/halPlot.html (hal-plot)", "/findCase.html (case-no forward)"],
+  "captcha_free_endpoints": ["/partyName.html (party-name)", "/fetchallCaseDetails.html (case-no all-details)"],
+
+  "real_bhulekh_inputs": [
+    {"khata": 94, "plot": "309", "village": "Mendhasala", "tenants_sample": ["Ramesh Mohapatra", "Bijayalaxmi Moharana"]},
+    {"khata": 412, "plot": "D/588", "village": "Chandrasekharpur", "tenants_sample": []},
+    {"khata": 318, "plot": "127/2", "village": "Khandagiri", "tenants_sample": ["Bijayalaxmi Moharana"]},
+    {"khata": 245, "plot": "89A", "village": "Sundarpada", "tenants_sample": ["Krushna Pradhan"]}
+  ],
+
+  "results_by_path": {
+    "path_1_hal_khata_with_real_khata_value": {
+      "endpoints_used": "POST /halKhata.html?hallkhatano=<K>&villageId=<V>",
+      "captcha": "solved on first attempt for 3/4; once on retry",
+      "schema_columns_returned": ["SL NO.", "Case No", "Section", "Court Name", "Petitioner Name", "Opposite Party Name"],
+      "row_counts": {
+        "khata=94 Mendhasala": 596,
+        "khata=412 Chandrasekharpur": 148,
+        "khata=318 Khandagiri": 253,
+        "khata=245 Sundarpada": 288
+      },
+      "row_count_too_large_to_be_filtered": "596 rows from a single Khordha village khata is implausible. Cross-checked court names in body: KALAHANDI, KALAHANDI, BHUBANESWAR, CUTTACK, GANJAM, JAJPUR. No Mendhasala court. The hallkhatano input is being IGNORED and the endpoint returns the full state-wide paginated docket."
+    },
+
+    "path_2_hal_plot_with_real_plot_value": {
+      "endpoints_used": "POST /halPlot.html?halplotno=<P>&villageId=<V>",
+      "captcha": "solved on first attempt for 3/4",
+      "schema_columns_returned": ["SL NO.", "Case No", "Section", "Court Name", "Petitioner Name", "Opposite Party Name"],
+      "row_counts": {
+        "plot=309 Mendhasala": 134,
+        "plot=D/588 Chandrasekharpur": 1,
+        "plot=127/2 Khandagiri": 1,
+        "plot=89A Sundarpada": 1
+      },
+      "interpretation": "plot=309 also returned 134 state-wide rows (same KALAHANDI/BHUBANESWAR court names). Subdivided plots (D/588, 127/2, 89A) returned single-row 'no match' pages. Same root cause as hal-khata: plotno is ignored, returns full paginated list."
+    },
+
+    "path_3_party_name_with_real_tenant_names": {
+      "endpoints_used": "POST /partyName.html?petresName=<T>&villageId=<V>",
+      "captcha": "none required",
+      "schema_columns_returned": ["SL NO.", "Section", "Case No", "Court Name", "Petitioner Name", "Opposite Party"],
+      "row_counts": {
+        "Ramesh Mohapatra Mendhasala": 1,
+        "Bijayalaxmi Moharana Khandagiri": 1,
+        "Krushna Pradhan Sundarpada": 1
+      },
+      "interpretation": "Three real tenant names returned 1 row each — the captcha-free search appears to ALWAYS return exactly one row regardless of name. Inspection of those single-row pages (5547 bytes each) shows the same body as the captcha-failure response. Party-name endpoint is essentially non-functional from the API; the form may require additional fields not exposed in the JSON contract."
+    },
+
+    "path_4_case_no_forward_lookup": {
+      "endpoints_used": "POST /findCase.html?caseNumber=<CN>&courtId=<ID>",
+      "captcha": "solved on first attempt",
+      "schema_columns_returned": [],
+      "row_count": "undefined (no rows returned)",
+      "interpretation": "Single caseNo forward lookup returns an EMPTY result table with no records. Captcha was valid. CourtId field semantics unclear (no public courtId registry found). Either the endpoint requires an exact internal caseNo format (not the public '9999/2020' shape) or it is silently broken."
+    },
+
+    "path_5_case_no_all_details": {
+      "endpoints_used": "POST /fetchallCaseDetails.html?caseno=<CN>",
+      "captcha": "none required",
+      "schema_columns_returned": ["SlNo.", "CaseNo", "CaseType", "Status", "Action"],
+      "row_count": "undefined",
+      "interpretation": "Returns the cases LIST schema even when given a single caseno. Likely a different endpoint than intended (no per-case detail returned)."
+    }
+  },
+
+  "schema_analysis": {
+    "khata_plot_village_mouza_columns_present": false,
+    "all_returned_schemas_only_have": ["SL NO.", "Case No", "Section", "Court Name", "Petitioner Name", "Opposite Party Name"],
+    "pagination_metadata_in_response": "absent — no 'totalRecords', 'totalPages', or page-size fields in any of the 8 successful response bodies. Pagination is server-side opaque.",
+    "filtered_or_unfiltered": "results are UNFILTERED relative to the queried hallkhatano/halplotno — query key appears to be ignored, full paginated state-wide docket returned"
+  },
+
+  "verdict": "NO-GO. The cross-link from Bhulekh identifiers to ccms.nic.in revenue cases is structurally unbuildable on three independent grounds: (1) the result schema has no Khata/Plot/Village/Mouza/Tahasil columns, so even when the response is large, there is no way to verify a row belongs to the queried plot; (2) the hallkhatano/halplotno input fields are ignored — a real Khordha khata returns 596 state-wide rows including cases from KALAHANDI, GANJAM, JAJPUR (proven via body inspection); (3) the captcha-free party-name endpoint returns 1 row for every query (likely captcha-failure stub), and caseNo forward lookup returns 0 rows even when captcha is valid.",
+
+  "go_no_go_per_path": {
+    "hal_khata_reverse_lookup": "NO",
+    "hal_plot_reverse_lookup": "NO",
+    "party_name_search": "NO (response shape suggests always-1-row stub, not real matching)",
+    "case_no_forward_lookup": "NO (empty response on valid captcha; unclear courtId semantics)",
+    "case_no_all_details": "NO (returns list schema, not per-case detail)"
+  },
+
+  "action_items": [
+    "T-031 STATUS remains DONE-CLOSED-STRUCTURAL-NO-GO. This probe strengthens the prior finding with real Khordha khatas instead of synthetic 0000/0000. No follow-up automated fetcher work.",
+    "Surface ccms.nic.in as a manual-verification step in the buyer's 'What to Ask Next' panel (per T-031 action item already on roadmap). Include the actual working search URL: https://ccms.nic.in/CMISWebSite/halkhata/halKhata.html",
+    "DPR-CRT-002 stays DONE: rccms placeholder correctly returns manual_required; ccms.nic.in manual step is consistent with the legal-disclaimer copy ('consult a panel advocate for revenue court verification')",
+    "No ccms fetcher in agents/ or packages/fetchers/ to be built."
+  ],
+
+  "artifacts": {
+    "probe_script": "qa/ccms_nic_probe/cross-link-probe.mjs",
+    "results_json": "qa/ccms_nic_probe/cross-link-probe-2026-06-21.json",
+    "saved_html_responses": "/tmp/ccms-probe/*.html (khata-94, khata-412, khata-318, khata-245, plot-415, plot-D_588, plot-127_2, plot-89A, party-*3, case-9999_2020-find, case-9999_2020-all)",
+    "size_summary": "khata-94 Mendhasala = 418KB (596 rows paginated); plot-415 Mendhasala = 95KB (134 rows)"
+  }
+}

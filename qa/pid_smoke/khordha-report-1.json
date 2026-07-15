@@ -1,0 +1,30 @@
+{
+  "reportId": "03d577d212b59ac196bb45a06b8e118da5a8",
+  "artifactCount": 1,
+  "factCount": 6,
+  "eventCount": 3,
+  "r1": {
+    "artifactId": "581e2689-dcf3-411f-bd4c-caee7bf0828c",
+    "factIds": [
+      "b3b01a19-f144-4320-9b9b-6eeb167ec3b3",
+      "75cba29c-1e77-4547-b370-93fcdc9a4843"
+    ],
+    "eventId": "a7decd60-a9b1-4739-8a9d-d10c27f2f45e",
+    "propertyId": "812872d3-932b-4c33-842f-217f43e1442b"
+  },
+  "r2": {
+    "factIds": [
+      "7fc27563-75e3-4581-b751-bc74d214c737"
+    ],
+    "eventId": "5305ba80-af8c-40f3-abc1-d38f34c02ae1",
+    "propertyId": "812872d3-932b-4c33-842f-217f43e1442b"
+  },
+  "r3": {
+    "factIds": [
+      "2ef77011-0c00-4dab-83b4-874e919c2695"
+    ],
+    "eventId": "fd9126c0-4391-4f1d-b7b0-30850d0fc383",
+    "propertyId": "09de23d5-83a1-4257-a7d5-b35e978f4473"
+  },
+  "ranAt": "2026-06-24T18:50:12.336Z"
+}

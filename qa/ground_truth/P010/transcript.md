@@ -14,7 +14,7 @@
 ## Auto-run results
 
 ### Bhunaksha Plot Report (D-036)
-- **Status: success** (elapsed 4315ms)
+- **Status: success** (elapsed 3429ms)
 - **GIS code:** 20021110342
 - **Plot no:** 110
 - **Khatiyan:** 500
@@ -23,7 +23,7 @@
 - **Source URL:** https://app3bhunakshaodisha.nic.in/bhunaksha/21/plotreportOR.jsp?state=21&giscode=20021110342&plotno=110
 
 ### Bhunaksha Polygon (existing fetcher)
-- **Status: failed** (elapsed 1422ms)
+- **Status: failed** (elapsed 877ms)
 - **Error:** fetch_or_parse_error
 
 ## Founder checklist

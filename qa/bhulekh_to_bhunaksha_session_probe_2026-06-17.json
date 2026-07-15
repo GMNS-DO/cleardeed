@@ -1,0 +1,116 @@
+{
+  "startedAt": "2026-06-17T18:25:15.744Z",
+  "finishedAt": "2026-06-17T18:25:21.692Z",
+  "observations": [
+    {
+      "ts": "2026-06-17T18:25:15.746Z",
+      "event": "probe_start",
+      "startedAt": "2026-06-17T18:25:15.744Z",
+      "plot": "Mendhasala/415"
+    },
+    {
+      "ts": "2026-06-17T18:25:16.176Z",
+      "event": "step",
+      "step": "1a_initial_load",
+      "url": "https://bhulekh.ori.nic.in/RoRView.aspx"
+    },
+    {
+      "ts": "2026-06-17T18:25:17.592Z",
+      "event": "after_initial_load",
+      "url": "https://bhulekh.ori.nic.in/BhulekhError.aspx"
+    },
+    {
+      "ts": "2026-06-17T18:25:17.635Z",
+      "event": "step",
+      "step": "1b_click_here_linkbutton"
+    },
+    {
+      "ts": "2026-06-17T18:25:19.243Z",
+      "event": "after_here_click",
+      "url": "https://bhulekh.ori.nic.in/RoRView.aspx"
+    },
+    {
+      "ts": "2026-06-17T18:25:19.245Z",
+      "event": "bootstrap_cookies",
+      "count": 1,
+      "names": [
+        "ASP.NET_SessionId"
+      ]
+    },
+    {
+      "ts": "2026-06-17T18:25:19.245Z",
+      "event": "step",
+      "step": "2_cascade"
+    },
+    {
+      "ts": "2026-06-17T18:25:19.246Z",
+      "event": "cascade_pick",
+      "id": "ddlDistrict",
+      "value": "20"
+    },
+    {
+      "ts": "2026-06-17T18:25:20.063Z",
+      "event": "tahasil_options_after_district",
+      "count": 11,
+      "sample": [
+        {
+          "value": "Select Tahasil",
+          "text": "Select Tahasil"
+        },
+        {
+          "value": "3",
+          "text": "ଖୋର୍ଦ୍ଧା"
+        },
+        {
+          "value": "10",
+          "text": "ଚିଲିକା"
+        }
+      ]
+    },
+    {
+      "ts": "2026-06-17T18:25:20.063Z",
+      "event": "cascade_pick",
+      "id": "ddlTahsil",
+      "value": "2"
+    },
+    {
+      "ts": "2026-06-17T18:25:20.864Z",
+      "event": "village_options_after_tahasil",
+      "count": 185,
+      "mendhasalaMatch": {
+        "value": "105",
+        "text": "ମେଣ୍ଢାଶାଳ"
+      }
+    },
+    {
+      "ts": "2026-06-17T18:25:20.864Z",
+      "event": "cascade_pick",
+      "id": "ddlVillage",
+      "value": "105"
+    },
+    {
+      "ts": "2026-06-17T18:25:21.642Z",
+      "event": "bind_data_options_after_village",
+      "count": 0,
+      "sample": []
+    },
+    {
+      "ts": "2026-06-17T18:25:21.642Z",
+      "event": "bind_data_no_415_match",
+      "bindDataOpts": []
+    },
+    {
+      "ts": "2026-06-17T18:25:21.643Z",
+      "event": "fatal",
+      "error": "Plot 415 not present in ddlBindData for Mendhasala",
+      "stack": "Error: Plot 415 not present in ddlBindData for Mendhasala\n    at main (file:///Users/deekshamohapatra/Documents/cleardeed/qa/bhulekh_to_bhunaksha_session_probe.mjs:193:13)"
+    },
+    {
+      "ts": "2026-06-17T18:25:21.692Z",
+      "event": "probe_end",
+      "startedAt": "2026-06-17T18:25:15.744Z",
+      "finishedAt": "2026-06-17T18:25:21.692Z",
+      "observationCount": 15
+    }
+  ]
+}

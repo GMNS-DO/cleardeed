@@ -19,7 +19,7 @@
   - Founder action: identify the Bhunaksha RI + mouza codes and add to `gis-codes.ts`
 
 ### Bhunaksha Polygon (existing fetcher)
-- **Status: failed** (elapsed 1053ms)
+- **Status: failed** (elapsed 940ms)
 - **Error:** fetch_or_parse_error
 
 ## Founder checklist

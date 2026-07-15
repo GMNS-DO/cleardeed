@@ -62,7 +62,7 @@ const nextConfig = {
       "@cleardeed/land-classifier": path.resolve(__dirname, "../../agents/land-classifier/index.ts"),
       "@cleardeed/encumbrance-reasoner": path.resolve(__dirname, "../../agents/encumbrance-reasoner/index.ts"),
       "@cleardeed/regulatory-screener": path.resolve(__dirname, "../../agents/regulatory-screener/index.ts"),
-      "@cleardeed/pdf-renderer": path.resolve(__dirname, "../../packages/pdf-renderer/index.ts"),
+      "@cleardeed/pdf-renderer": path.resolve(__dirname, "../../packages/pdf-renderer/src/index.ts"),
       "@cleardeed/fetcher-public-dashboard": path.resolve(__dirname, "../../packages/fetchers/public-dashboard/src/index.ts"),
       "@cleardeed/fetcher-govt-fee": path.resolve(__dirname, "../../packages/fetchers/govt-fee/src/index.ts"),
       "@cleardeed/fetcher-igr-certified-copy": path.resolve(__dirname, "../../packages/fetchers/igr-certified-copy/src/index.ts"),

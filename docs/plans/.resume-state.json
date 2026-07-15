@@ -1,0 +1,80 @@
+{
+  "currentPI": 1,
+  "currentTaskId": "T1",
+  "lastSessionId": "2026-07-14-t12",
+  "lastSessionDate": "2026-07-14",
+  "sessionSummary": "Completed PI-0 (Report Shell Redesign — 12/12 tasks). Cursor advanced to PI-1 T1 (BDA Zoning + Bhuvan Flood). Cuttack expansion (T-045) deferred from PI 1 — rationale recorded in docs/plans/MASTER-PLAN.md §PI 1.",
+  "resumeHint": "Pick up T1 in PI-1 (BDA Zoning + Bhuvan Flood)",
+  "history": [
+    {
+      "session": "2026-07-14-ROR-INS-153",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T1",
+      "summary": "Locked component hierarchy + token palette + interface contracts (PI-0 T1-T4 prep)"
+    },
+    {
+      "session": "2026-07-14-t5",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T5",
+      "summary": "Completed T5 (S1-T1+S1-T2: ReportShell.tsx server wrapper + layer toggle (buyer|lawyer) + convert ReportUnavailable/ReportExpired to Tailwind)"
+    },
+    {
+      "session": "2026-07-14-t6",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T6",
+      "summary": "Completed T6 (S1-T3: Section compositors — PropertyHeader, VerdictCard, ExposureStrip, QuestionTile, QuestionPanel)"
+    },
+    {
+      "session": "2026-07-14-t7",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T7",
+      "summary": "Completed T7 (S1-T4+S1-T5: Wire MapboxBoundaryMap into Q1 ownership panel + plotDiagram SVG as img with alt text)"
+    },
+    {
+      "session": "2026-07-14-t11",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T11",
+      "summary": "Completed T11 (S3-T1+S3-T2: Document bundle API (/api/report/[id]/bundle ZIP) + per-source raw artifacts + plot_diagram.svg)"
+    },
+    {
+      "session": "2026-07-14-t8",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T8",
+      "summary": "Completed T8 (S1-T6: Day 3 End-State Check (all tests green, no regressions) — 8 pre-existing live-source failures, zero PI-0 regressions)"
+    },
+    {
+      "session": "2026-07-14-t9",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T9",
+      "summary": "Completed T9 (S2-T1: Token migration — agent theme.ts untouched; new report-tokens.ts is the canonical light-palette source of truth)"
+    },
+    {
+      "session": "2026-07-14-t10",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T10",
+      "summary": "Completed T10 (S2-T2+S2-T3: Q2–Q6 section compositors + collapse/expand — BuyerLayer is a client component with useState; Q1 uses QuestionPanel + OwnerSection + PlotMap + ExposureStrip)"
+    },
+    {
+      "session": "2026-07-14-t12",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T12",
+      "summary": "Completed T12 (S3-T3: End-state check — all tests green, no regressions, 320px mobile responsive, PDF export intact)"
+    },
+    {
+      "session": "2026-07-14-pi0-complete",
+      "date": "2026-07-14",
+      "pi": 0,
+      "taskId": "T12",
+      "summary": "PI-0 complete (12/12 tasks). Cursor advanced to PI-1 T1 (BDA Zoning + Bhuvan Flood). Cuttack expansion (T-045) deferred — scope decision recorded in docs/plans/MASTER-PLAN.md."
+    }
+  ]
+}

@@ -383,11 +383,16 @@ export async function generateReport(input: PipelineInput): Promise<PipelineOutp
   };
 
   // ── Step 6: Map orchestrator output + tier2 → A10 input ────────────────────
+  // The legacy V1 path doesn't run the bhunaksha-plot-report fetcher (that's a
+  // V1.1 step). The V11 path at generateReportV11 declares and populates it.
+  // Declaring it as null here so the ternary below is well-defined; in strict
+  // mode, referencing an undeclared identifier throws ReferenceError.
+  const bhunakshaPlotReport: SourceResult | null = null;
   const reportInput = mapToReportInput(
     {
       reportId: orchestratorOutput.reportId,
       sources: bhunakshaPlotReport
-        ? [...orchestratorOutput.sources, bhunakshaPlotReport as SourceResult]
+        ? [...orchestratorOutput.sources, bhunakshaPlotReport]
         : orchestratorOutput.sources,
       completedAt: orchestratorOutput.completedAt,
       validationFindings: orchestratorOutput.validationFindings ?? [],

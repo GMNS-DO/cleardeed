@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-07-14T20:11:04.771Z",
+  "dateStamp": "2026-07-14",
+  "sourceMapCount": 97,
+  "registryRuleCount": 97,
+  "counts": {
+    "DONE": 76,
+    "DONE_STUB": 3,
+    "DONE_MANUAL_VERIFIED": 1,
+    "NO_GO_MIGRATION": 4,
+    "DONE_MANUAL_OPTIONAL": 10,
+    "DONE_MANUAL_STUB": 1,
+    "DONE_LICENSE_GATED": 2
+  },
+  "orphanedRuleIds": [],
+  "staleRuleIds": [],
+  "rules": [
+    {
+      "id": "ROR-INS-010",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-011",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-012",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-013",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-014",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-015",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-016",
+      "source": "bhulekh",
+      "disposition": "DONE_STUB"
+    },
+    {
+      "id": "ROR-INS-020",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-021",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-022",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-023",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-024",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-025",
+      "source": "bhulekh",
+      "disposition": "DONE_STUB"
+    },
+    {
+      "id": "ROR-INS-026",
+      "source": "bhulekh+nominatim",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-030",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-031",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-032",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-033",
+      "source": "bhulekh",
+      "disposition": "DONE_STUB"
+    },
+    {
+      "id": "ROR-INS-034",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-035",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-040",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-041",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-042",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-043",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-044",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-045",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-046",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-050",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-051",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-052",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-053",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-054",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-055",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-060",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-061",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-062",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-063",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-064",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-065",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-070",
+      "source": "bhulekh+bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-071",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-072",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-073",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-074",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-075",
+      "source": "bhulekh+igr-ec",
+      "disposition": "DONE_MANUAL_VERIFIED"
+    },
+    {
+      "id": "ROR-INS-076",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-077",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-078",
+      "source": "bhulekh+bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-079",
+      "source": "bhulekh+bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-080",
+      "source": "bhulekh+bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-081",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-082",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-083",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-090",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-091",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-092",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-093",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-094",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-100",
+      "source": "ecourts",
+      "disposition": "NO_GO_MIGRATION"
+    },
+    {
+      "id": "ROR-INS-101",
+      "source": "ecourts",
+      "disposition": "NO_GO_MIGRATION"
+    },
+    {
+      "id": "ROR-INS-102",
+      "source": "high-court",
+      "disposition": "NO_GO_MIGRATION"
+    },
+    {
+      "id": "ROR-INS-103",
+      "source": "cersai",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-104",
+      "source": "drt",
+      "disposition": "DONE_MANUAL_STUB"
+    },
+    {
+      "id": "ROR-INS-110",
+      "source": "igr-ec",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-111",
+      "source": "igr-ec",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-112",
+      "source": "igr-ec",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-113",
+      "source": "cersai",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-114",
+      "source": "ecourts",
+      "disposition": "NO_GO_MIGRATION"
+    },
+    {
+      "id": "ROR-INS-120",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-121",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-122",
+      "source": "igr-ec",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-130",
+      "source": "circle-rate",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-131",
+      "source": "circle-rate",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-132",
+      "source": "circle-rate",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-140",
+      "source": "pipeline",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-141",
+      "source": "pipeline",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-142",
+      "source": "pipeline",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-143",
+      "source": "pipeline",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-150",
+      "source": "bda-zoning",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-151",
+      "source": "bda-zoning",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-152",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-153",
+      "source": "bda-zoning",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-155",
+      "source": "bda-zoning",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-156",
+      "source": "bda-zoning",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-160",
+      "source": "bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-161",
+      "source": "bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-162",
+      "source": "bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-163",
+      "source": "bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-170",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-180",
+      "source": "bhulekh+igr-ec",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-181",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-182",
+      "source": "bhulekh",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-183",
+      "source": "cersai",
+      "disposition": "DONE_MANUAL_OPTIONAL"
+    },
+    {
+      "id": "ROR-INS-200",
+      "source": "bhuvan-flood",
+      "disposition": "DONE_LICENSE_GATED"
+    },
+    {
+      "id": "ROR-INS-201",
+      "source": "bhuvan-flood",
+      "disposition": "DONE_LICENSE_GATED"
+    },
+    {
+      "id": "ROR-INS-210",
+      "source": "bhulekh+bhunaksha",
+      "disposition": "DONE"
+    },
+    {
+      "id": "ROR-INS-211",
+      "source": "bhulekh+bhunaksha",
+      "disposition": "DONE"
+    }
+  ],
+  "verdict": "PASS"
+}
