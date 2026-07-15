@@ -1,7 +1,7 @@
 -- Migration 026: drop legacy 10-param overload of update_report_results
 --
 -- Background:
---   Migration 001 defined `update_report_results` with 10 params. Migration 021
+--   Migration 001 defined `update_report_results` with 10 params. Migration 028
 --   extended it to 12 params (11 explicit + 1 implicit null default) using
 --   `CREATE OR REPLACE FUNCTION`. Because 021 originally shipped WITHOUT
 --   `OR REPLACE`, the production DB ended up with TWO overloads. PostgREST

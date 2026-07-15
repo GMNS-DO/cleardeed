@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "measuredAt": "2026-06-18T19:05:01.560Z",
+    "baseUrl": "https://services.ecourts.gov.in/ecourtindia_v6",
+    "partyName": "Mohapatra",
+    "runsRequested": 10,
+    "runsRecorded": 1,
+    "jitterMs": 3000,
+    "parserVersion": "ecourts-party-table-parser-v3",
+    "notes": "Per-run cap on form submission to avoid burning the live portal. Aggregates computed only over runs that reached a captcha."
+  },
+  "aggregate": {
+    "totalRuns": 1,
+    "captchaRendered": 0,
+    "portalUnreachable": 1,
+    "fetchFailed": 0,
+    "captchaConfidence": {
+      "average": null,
+      "min": null,
+      "max": null,
+      "runs": 0
+    },
+    "note": "submit-success rate is not measured here: the probe stops at captcha extraction to avoid hammering the live portal with 10 form submissions. Run the fetcher through the orchestrator or a separate integration test for that metric."
+  },
+  "runs": [
+    {
+      "runIndex": 1,
+      "partyName": "Mohapatra",
+      "startedAtIso": "2026-06-18T19:04:57.483Z",
+      "durationMs": 3933,
+      "status": "fetch_failed",
+      "error": "Error: page.goto: net::ERR_TOO_MANY_REDIRECTS at https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
+      "note": "portal_unreachable",
+      "attemptSummary": null,
+      "negativeGate": null
+    }
+  ]
+}
