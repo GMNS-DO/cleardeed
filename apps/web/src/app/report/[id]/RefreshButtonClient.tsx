@@ -103,24 +103,12 @@ export default function RefreshButtonClient({
         data-testid="refresh-button"
         data-report-id={reportId}
         data-amount-inr={REFRESH_PRICE_INR}
-        style={{
-          display: "inline-block",
-          width: "100%",
-          padding: "14px 20px",
-          background: "#17231d",
-          color: "#fff",
-          border: "none",
-          borderRadius: "4px",
-          fontSize: "16px",
-          fontWeight: 600,
-          cursor: loading ? "wait" : "pointer",
-          opacity: loading ? 0.7 : 1,
-        }}
+        className="block w-full rounded border-none bg-[#17231d] px-5 py-3.5 text-base font-semibold text-white hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
       >
         {loading ? "Processing..." : `Pay ₹${REFRESH_PRICE_INR} to refresh`}
       </button>
       {error ? (
-        <p style={{ color: "#c00", fontSize: "13px", marginTop: "8px" }}>{error}</p>
+        <p className="mt-2 text-[13px] text-[#c00]">{error}</p>
       ) : null}
     </>
   );
